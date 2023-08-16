@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SmokeAnalytics</string>
+    <string name="bottom_navigation_item_home_title">Home</string>
+</resources>
