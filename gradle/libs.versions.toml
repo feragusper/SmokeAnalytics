@@ -1,0 +1,73 @@
+[versions]
+androidxAppcompat = "1.6.1"
+androidxCoreKtx = "1.10.1"
+androidxActivityCompose = "1.7.2"
+androidxNavigationCompose = "2.7.0"
+composeBOM = "2023.08.00"
+espressoCore = "3.5.1"
+gradle = "8.1.0"
+hilt = "2.47"
+hiltNavigationCompose = "1.1.0-alpha01"
+junit = "1.1.5"
+kotlinGradlePlugin = "1.8.10"
+material = "1.9.0"
+navVersion = "2.7.0"
+composeCompiler = "1.4.7"
+material3 = "1.1.1"
+coroutinesTest = "1.6.4"
+mockk = "1.12.0"
+
+[libraries]
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppcompat" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCoreKtx" }
+androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
+androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junit" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navVersion" }
+androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navVersion" }
+androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navVersion" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBOM" }
+compose-activity = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
+compose-material = { module = "androidx.compose.material:material" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
+coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+[bundles]
+androidx-base = [
+    "androidx-appcompat",
+    "androidx-core-ktx",
+]
+androidx-navigation = [
+    "androidx-navigation-compose",
+    "androidx-navigation-fragment-ktx",
+    "androidx-navigation-testing",
+    "androidx-navigation-ui-ktx",
+    "hilt-navigation-compose",
+]
+android-test = [
+    "androidx-espresso-core",
+    "androidx-junit",
+]
+compose = [
+    "compose-ui",
+    "compose-ui-tooling",
+    "compose-activity",
+    "compose-material"
+]
+compose-debug = [
+    "compose-ui-tooling",
+]
+compose-material = [
+    "compose-material",
+]
