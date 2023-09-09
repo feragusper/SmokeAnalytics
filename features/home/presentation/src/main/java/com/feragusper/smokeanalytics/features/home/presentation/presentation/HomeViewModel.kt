@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation
 
-import com.feragusper.smokeanalytics.architecture.presentation.MVIViewModel
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult

@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation.process
 
-import com.feragusper.smokeanalytics.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import javax.inject.Inject

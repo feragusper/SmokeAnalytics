@@ -4,18 +4,22 @@ androidxCoreKtx = "1.10.1"
 androidxActivityCompose = "1.7.2"
 androidxNavigationCompose = "2.7.0"
 composeBOM = "2023.08.00"
+coroutinesTest = "1.6.4"
 espressoCore = "3.5.1"
-gradle = "8.1.0"
+firebaseBOM="32.2.2"
+gradle = "8.1.1"
 hilt = "2.47"
 hiltNavigationCompose = "1.1.0-alpha01"
+javaxInject = "1"
 junit = "1.1.5"
+junit4 = "4.13.2"
+junitBOM = "5.9.3"
 kotlinGradlePlugin = "1.8.10"
 material = "1.9.0"
-navVersion = "2.7.0"
-composeCompiler = "1.4.7"
 material3 = "1.1.1"
-coroutinesTest = "1.6.4"
 mockk = "1.12.0"
+navVersion = "2.7.0"
+playServicesAuth="20.6.0"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
@@ -34,14 +38,25 @@ compose-material = { module = "androidx.compose.material:material" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
+firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junitBOM" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine" }
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+playservices-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 
 [bundles]
 androidx-base = [
@@ -58,6 +73,15 @@ androidx-navigation = [
 android-test = [
     "androidx-espresso-core",
     "androidx-junit",
+]
+test = [
+    "junit-bom",
+    "junit4",
+    "mockk",
+    "junit-jupiter-engine",
+    "junit-jupiter-api",
+    "junit-jupiter-params",
+    "junit-vintage-engine"
 ]
 compose = [
     "compose-ui",

@@ -1,11 +1,11 @@
 plugins {
-    `android-library`
+    `android-lib`
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace = "com.feragusper.smokeanalytics.design"
+    namespace = "com.feragusper.smokeanalytics.libraries.design"
 }
 
 dependencies {

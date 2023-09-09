@@ -3,6 +3,7 @@ plugins {
     id("kotlin-kapt")
     kotlin("android")
     id("dagger.hilt.android.plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -19,13 +20,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("$rootDir/debug.keystore")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
@@ -77,7 +87,11 @@ dependencies {
     implementation(project(":libraries:design"))
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":features:home:presentation"))
+    implementation(project(":features:profile:presentation"))
     kapt(libs.hilt.compiler)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
     debugImplementation(libs.bundles.compose.debug)
 
