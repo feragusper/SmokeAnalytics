@@ -1,12 +1,12 @@
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
-    `android-library`
+    `android-lib`
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
 }
 
 android {
-    namespace = "com.feragusper.smokeanalytics.architecture"
+    namespace = "com.feragusper.smokeanalytics.libraries.architecture.presentation"
 }
 
 dependencies {

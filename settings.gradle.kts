@@ -17,5 +17,10 @@ rootProject.name = "SmokeAnalytics"
 include(":app")
 include(":libraries:design")
 include(":libraries:architecture:presentation")
+include(":libraries:authentication:presentation")
+include(":libraries:authentication:domain")
+include(":libraries:authentication:data")
+include(":features:profile:presentation")
 include(":features:home:presentation")
+
  

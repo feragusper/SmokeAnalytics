@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,7 +26,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.feragusper.smokeanalytics.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator
+import com.feragusper.smokeanalytics.features.profile.navigation.profileNavigationGraph
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
 import dagger.hilt.android.AndroidEntryPoint
@@ -58,6 +61,11 @@ sealed class BottomNavigationScreens(
         R.string.bottom_navigation_item_home_title,
         Icons.Filled.Home
     )
+    object Profile : BottomNavigationScreens(
+        ProfileNavigator.ROUTE,
+        R.string.bottom_navigation_item_profile_title,
+        Icons.Filled.AccountCircle
+    )
 }
 
 @Composable
@@ -66,6 +74,7 @@ private fun MainContainerScreen() {
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
+        BottomNavigationScreens.Profile,
     )
     Scaffold(
         bottomBar = {
@@ -116,6 +125,7 @@ private fun MainScreenNavigationConfigurations(
 ) {
     NavHost(navController, startDestination = BottomNavigationScreens.Home.route) {
         homeNavigationGraph(HomeNavigator())
+        profileNavigationGraph(ProfileNavigator())
     }
 }
 

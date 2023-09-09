@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.feragusper.smokeanalytics.architecture.presentation.mvi.MVIViewState
-import com.feragusper.smokeanalytics.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.features.home.presentation.R
 
 class HomeViewState : MVIViewState<HomeIntent> {

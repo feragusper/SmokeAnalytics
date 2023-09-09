@@ -1,6 +1,6 @@
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
-    `android-library`
+    `android-lib`
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
 }
@@ -22,9 +22,7 @@ dependencies {
 
     kapt(libs.hilt.compiler)
 
-    testImplementation(libs.androidx.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.coroutinesTest)
+    testImplementation(libs.bundles.test)
 
     debugImplementation(libs.bundles.compose.debug)
 
