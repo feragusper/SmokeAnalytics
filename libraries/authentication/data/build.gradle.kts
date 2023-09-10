@@ -19,4 +19,7 @@ dependencies {
     implementation(libs.playservices.auth)
 
     implementation("androidx.compose.runtime:runtime:1.5.0")
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.bundles.test)
 }
