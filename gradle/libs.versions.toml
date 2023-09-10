@@ -6,7 +6,7 @@ androidxNavigationCompose = "2.7.0"
 composeBOM = "2023.08.00"
 coroutinesTest = "1.6.4"
 espressoCore = "3.5.1"
-firebaseBOM="32.2.2"
+firebaseBOM = "32.2.2"
 gradle = "8.1.1"
 hilt = "2.47"
 hiltNavigationCompose = "1.1.0-alpha01"
@@ -14,12 +14,13 @@ javaxInject = "1"
 junit = "1.1.5"
 junit4 = "4.13.2"
 junitBOM = "5.9.3"
+kluent = "1.71"
 kotlinGradlePlugin = "1.8.10"
 material = "1.9.0"
 material3 = "1.1.1"
-mockk = "1.12.0"
+mockk = "1.13.3"
 navVersion = "2.7.0"
-playServicesAuth="20.6.0"
+playServicesAuth = "20.6.0"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
@@ -53,6 +54,7 @@ hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-p
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
+kluent = { module = "org.amshove.kluent:kluent", version.ref = "kluent" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -75,13 +77,14 @@ android-test = [
     "androidx-junit",
 ]
 test = [
-    "junit-bom",
     "junit4",
     "mockk",
     "junit-jupiter-engine",
     "junit-jupiter-api",
     "junit-jupiter-params",
-    "junit-vintage-engine"
+    "junit-vintage-engine",
+    "coroutinesTest",
+    "kluent",
 ]
 compose = [
     "compose-ui",

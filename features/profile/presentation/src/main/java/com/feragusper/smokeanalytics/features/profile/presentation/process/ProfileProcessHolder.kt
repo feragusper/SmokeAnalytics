@@ -6,16 +6,16 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.process
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
 class ProfileProcessHolder @Inject constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val signOutUseCase: SignOutUseCase,
 ) : MVIProcessHolder<ProfileIntent, ProfileResult> {
 
-    override fun processIntent(intent: ProfileIntent): Flow<ProfileResult> = when(intent) {
+    override fun processIntent(intent: ProfileIntent): Flow<ProfileResult> = when (intent) {
         ProfileIntent.FetchUser -> processFetchUser()
         ProfileIntent.SignOut -> processSignOut()
     }
@@ -24,7 +24,7 @@ class ProfileProcessHolder @Inject constructor(
         emit(ProfileResult.Loading)
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(ProfileResult.UserLoggedOut)
-            is Session.Logged -> emit(ProfileResult.UserLoggedIn(session.user.displayName))
+            is Session.LoggedIn -> emit(ProfileResult.UserLoggedIn(session.user.displayName))
         }
     }
 
@@ -33,5 +33,4 @@ class ProfileProcessHolder @Inject constructor(
         signOutUseCase()
         emit(ProfileResult.UserLoggedOut)
     }
-
 }

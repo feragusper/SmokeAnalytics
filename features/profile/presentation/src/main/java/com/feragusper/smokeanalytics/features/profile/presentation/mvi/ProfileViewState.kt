@@ -23,8 +23,8 @@ import com.feragusper.smokeanalytics.libraries.authentication.presentation.Googl
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 
 data class ProfileViewState(
-    private val displayLoading: Boolean = false,
-    private val currentUserName: String? = null,
+    internal val displayLoading: Boolean = false,
+    internal val currentUserName: String? = null,
 ) : MVIViewState<ProfileIntent> {
 
     @Composable
@@ -36,7 +36,7 @@ data class ProfileViewState(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
                 verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (displayLoading) {
                     CircularProgressIndicator()
@@ -45,39 +45,18 @@ data class ProfileViewState(
                         text = stringResource(R.string.profile_title),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                     currentUserName?.let { displayName ->
                         Text(
                             text = "Authenticated as $displayName",
-                            modifier = Modifier.padding(6.dp)
+                            modifier = Modifier.padding(6.dp),
                         )
                         Button(onClick = { intent(ProfileIntent.SignOut) }) {
                             Text(text = "Sign out")
                         }
                     } ?: run {
                         GoogleSignInComponent { intent(ProfileIntent.FetchUser) }
-//                        Button(
-//                            onClick = { intent(ProfileIntent.SignIn) },
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .padding(start = 16.dp, end = 16.dp),
-//                            shape = RoundedCornerShape(6.dp),
-//                            colors = ButtonDefaults.buttonColors(
-//                                containerColor = Color.Black,
-//                                contentColor = Color.White
-//                            )
-//                        ) {
-//                            Image(
-//                                modifier = Modifier.size(24.dp),
-//                                painter = painterResource(id = R.drawable.google),
-//                                contentDescription = ""
-//                            )
-//                            Text(
-//                                text = "Sign in with Google",
-//                                modifier = Modifier.padding(6.dp)
-//                            )
-//                        }
                     }
                 }
             }

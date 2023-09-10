@@ -1,4 +1,4 @@
-package com.feragusper.features.home.presentation
+package com.feragusper.smokeanalytics.features.home.presentation
 
 import org.junit.Test
 
