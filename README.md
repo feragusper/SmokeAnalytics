@@ -1,6 +1,6 @@
 # Smoke Analytics
 
-[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/android.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/android.yml)
+[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
 
 Android application to track smoking habits and run analytics on them.
 
@@ -39,7 +39,7 @@ It requires java 17 to run.
 
 Support
 -------
-If you've found an error in this project, please file an issue: https://github.com/feragusper/EventBriteLite/issues
+If you've found an error in this project, please file an issue: https://github.com/feragusper/SmokeAnalytics/issues
 
 Patches are encouraged, and may be submitted by forking this project and submitting a pull request through GitHub.
 
