@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -14,11 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.features.home.presentation.R
 
-class HomeViewState : MVIViewState<HomeIntent> {
+data class HomeViewState(
+    internal val displayLoading: Boolean = false,
+    internal val displaySmokeAddedSuccess: Boolean = false,
+) : MVIViewState<HomeIntent> {
 
     @Composable
     override fun Compose(intent: (HomeIntent) -> Unit) {
@@ -29,14 +33,17 @@ class HomeViewState : MVIViewState<HomeIntent> {
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
                 verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = stringResource(R.string.home_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
+                Button(onClick = { intent(HomeIntent.AddSmoke) }) {
+                    Text(text = stringResource(R.string.home_button_add_smoke))
+                }
             }
         }
     }

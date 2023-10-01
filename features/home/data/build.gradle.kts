@@ -6,18 +6,18 @@ plugins {
 }
 
 android {
-    namespace = "com.feragusper.smokeanalytics.libraries.authentication.data"
+    namespace = "com.feragusper.smokeanalytics.features.home.data"
 }
 
 dependencies {
-    implementation(project(":libraries:authentication:domain"))
+    implementation(project(":features:home:domain"))
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
 
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.playservices.auth)
+    implementation(libs.firebase.firestore)
 
+    implementation(libs.firebase.auth)
     implementation(libs.compose.runtime)
 
     testImplementation(platform(libs.junit.bom))
