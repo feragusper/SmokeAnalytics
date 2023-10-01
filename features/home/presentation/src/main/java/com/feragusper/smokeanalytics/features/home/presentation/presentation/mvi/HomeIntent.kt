@@ -3,4 +3,5 @@ package com.feragusper.smokeanalytics.features.home.presentation.presentation.mv
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent
 
 sealed class HomeIntent : MVIIntent {
+    object AddSmoke : HomeIntent()
 }

@@ -12,6 +12,8 @@ android {
 dependencies {
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":libraries:design"))
+    implementation(project(":features:home:domain"))
+    implementation(project(":features:home:data"))
 
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.compose.bom))
