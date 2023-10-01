@@ -1,14 +1,24 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation.process
 
-import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
-import javax.inject.Inject
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
-class HomeProcessHolder @Inject constructor() : MVIProcessHolder<HomeIntent, HomeResult> {
+class HomeProcessHolder @Inject constructor(
+    private val addSmokeUseCase: AddSmokeUseCase,
+) : MVIProcessHolder<HomeIntent, HomeResult> {
 
-    override fun processIntent(intent: HomeIntent): Flow<HomeResult> = flowOf()
+    override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
+        HomeIntent.AddSmoke -> processAddSmoke()
+    }
 
+    private fun processAddSmoke(): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        addSmokeUseCase.invoke()
+        emit(HomeResult.AddSmokeSuccess)
+    }
 }
