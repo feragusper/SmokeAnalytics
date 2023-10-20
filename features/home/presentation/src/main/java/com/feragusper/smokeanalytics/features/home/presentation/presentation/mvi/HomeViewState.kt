@@ -12,10 +12,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.feragusper.smokeanalytics.features.home.presentation.R
+import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 
@@ -23,6 +25,11 @@ data class HomeViewState(
     internal val displayLoading: Boolean = false,
     internal val displaySmokeAddedSuccess: Boolean = false,
 ) : MVIViewState<HomeIntent> {
+    interface TestTags {
+        companion object {
+            const val BUTTON_ADD_SMOKE = "buttonAddSmoke"
+        }
+    }
 
     @Composable
     override fun Compose(intent: (HomeIntent) -> Unit) {
@@ -41,7 +48,10 @@ data class HomeViewState(
                     color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
                 )
-                Button(onClick = { intent(HomeIntent.AddSmoke) }) {
+                Button(
+                    modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
+                    onClick = { intent(HomeIntent.AddSmoke) }
+                ) {
                     Text(text = stringResource(R.string.home_button_add_smoke))
                 }
             }
