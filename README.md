@@ -19,11 +19,11 @@ Libraries included
 - Compose
 - Navigation Component
 - JUnit
-- Mockito
+- Mockk
 
 CI
 --
-There's already a workflow available for downloading the last stable build at https://github.com/feragusper/SmokeAnalytics/actions
+There's already a workflow available for downloading the last stable build at https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment.yml
 
 Getting Started
 ---------------

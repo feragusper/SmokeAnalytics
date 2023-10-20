@@ -21,7 +21,7 @@ class HomeViewModel @Inject constructor(
     override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
         when (result) {
             is HomeResult.Loading -> previous.copy(
-                displayLoading = false,
+                displayLoading = true,
             )
 
             HomeResult.AddSmokeSuccess -> previous.copy(

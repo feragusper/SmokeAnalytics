@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun GoogleSignInComponent(onSignInSuccess: () -> Unit) {
+fun GoogleSignInComponent(modifier: Modifier, onSignInSuccess: () -> Unit) {
     val componentActivity = LocalContext.current as ComponentActivity
     val coroutine = rememberCoroutineScope()
     val oneTapClient = Identity.getSignInClient(componentActivity)
@@ -102,7 +102,7 @@ fun GoogleSignInComponent(onSignInSuccess: () -> Unit) {
                 oneTapClient = oneTapClient,
             )
         },
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp),
         shape = RoundedCornerShape(6.dp),
