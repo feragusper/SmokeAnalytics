@@ -1,32 +1,38 @@
 [versions]
 androidxAppcompat = "1.6.1"
 androidxCoreKtx = "1.12.0"
-androidxActivityCompose = "1.7.2"
-androidxNavigationCompose = "2.7.2"
-composeBOM = "2023.09.00"
-composeRuntime = "1.5.1"
-coroutinesTest = "1.6.4"
+androidxActivityCompose = "1.8.0"
+androidxNavigationCompose = "2.7.4"
+androidxComposeBOM = "2023.10.01"
+androidxCompose = "1.5.4"
+coroutinesTest = "1.7.1"
 espressoCore = "3.5.1"
-firebaseBOM = "32.2.3"
-gradle = "8.1.1"
-hilt = "2.47"
-hiltNavigationCompose = "1.1.0-alpha01"
+firebaseBOM = "32.4.0"
+gradle = "8.1.2"
+hilt = "2.48"
+hiltNavigationCompose = "1.1.0-rc01"
 javaxInject = "1"
 junit = "1.1.5"
 junit4 = "4.13.2"
 junitBOM = "5.9.3"
 kluent = "1.71"
 kotlinGradlePlugin = "1.8.10"
-material = "1.9.0"
-material3 = "1.1.1"
+material3 = "1.1.2"
 mockk = "1.13.3"
-navVersion = "2.7.2"
+navVersion = "2.7.4"
 playServicesAuth = "20.7.0"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppcompat" }
-androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBOM" }
+androidx-compose-activity = { module = "androidx.activity:activity-compose" }
+androidx-compose-material = { module = "androidx.compose.material:material" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidxCompose" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "androidxCompose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCoreKtx" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junit" }
@@ -34,14 +40,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navVersion" }
 androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navVersion" }
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navVersion" }
-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBOM" }
-compose-activity = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
-compose-material = { module = "androidx.compose.material:material" }
-compose-ui = { module = "androidx.compose.ui:ui" }
-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
-compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "composeRuntime" }
-coroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
 firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
@@ -61,6 +60,7 @@ kluent = { module = "org.amshove.kluent:kluent", version.ref = "kluent" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 playservices-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 
 [bundles]
@@ -86,18 +86,20 @@ test = [
     "junit-jupiter-api",
     "junit-jupiter-params",
     "junit-vintage-engine",
-    "coroutinesTest",
+    "coroutines-test",
     "kluent",
 ]
+compose-test = [
+    "mockkAndroid",
+    "androidx-compose-ui-test-junit4",
+]
 compose = [
-    "compose-ui",
-    "compose-ui-tooling",
-    "compose-activity",
-    "compose-material"
+    "androidx-compose-ui",
+    "androidx-compose-ui-tooling",
+    "androidx-compose-activity",
+    "androidx-compose-material"
 ]
 compose-debug = [
-    "compose-ui-tooling",
-]
-compose-material = [
-    "compose-material",
+    "androidx-compose-ui-tooling",
+    "androidx-compose-ui-test-manifest",
 ]

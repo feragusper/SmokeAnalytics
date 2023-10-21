@@ -3,8 +3,6 @@ package com.feragusper.smokeanalytics.libraries.authentication.data
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import io.mockk.every
 import io.mockk.mockk
 import org.amshove.kluent.internal.assertEquals

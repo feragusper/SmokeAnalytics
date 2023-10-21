@@ -23,7 +23,7 @@ class ProfileViewModelTest {
 
     private lateinit var viewModel: ProfileViewModel
 
-    private var profileProcessHolder: ProfileProcessHolder = mockk()
+    private var processHolder: ProfileProcessHolder = mockk()
     private lateinit var state: ProfileViewState
     private val intentResults = MutableStateFlow<ProfileResult>(ProfileResult.Loading)
 
@@ -31,7 +31,7 @@ class ProfileViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        every { profileProcessHolder.processIntent(ProfileIntent.FetchUser) } returns intentResults
+        every { processHolder.processIntent(ProfileIntent.FetchUser) } returns intentResults
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -44,7 +44,7 @@ class ProfileViewModelTest {
     fun `GIVEN a loading result WHEN viewmodel is created THEN it displays loading`() {
         runBlocking {
             intentResults.emit(ProfileResult.Loading)
-            viewModel = ProfileViewModel(profileProcessHolder)
+            viewModel = ProfileViewModel(processHolder)
             state = viewModel.states().first()
         }
 
@@ -58,7 +58,7 @@ class ProfileViewModelTest {
         fun `GIVEN a user logged out result WHEN viewmodel is created THEN it hides loading`() {
             runBlocking {
                 intentResults.emit(ProfileResult.UserLoggedOut)
-                viewModel = ProfileViewModel(profileProcessHolder)
+                viewModel = ProfileViewModel(processHolder)
                 state = viewModel.states().first()
             }
 
@@ -70,7 +70,7 @@ class ProfileViewModelTest {
         fun `GIVEN a user logged in result WHEN viewmodel is created THEN it hides loading and displays name`() {
             runBlocking {
                 intentResults.emit(ProfileResult.UserLoggedIn("Fernando Perez"))
-                viewModel = ProfileViewModel(profileProcessHolder)
+                viewModel = ProfileViewModel(processHolder)
                 state = viewModel.states().first()
             }
 

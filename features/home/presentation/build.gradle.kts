@@ -7,6 +7,10 @@ plugins {
 
 android {
     namespace = "com.feragusper.smokeanalytics.features.home.presentation"
+
+    defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 }
 
 dependencies {
@@ -16,7 +20,7 @@ dependencies {
     implementation(project(":features:home:data"))
 
     implementation(libs.bundles.androidx.base)
-    implementation(platform(libs.compose.bom))
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.hilt)
@@ -28,6 +32,7 @@ dependencies {
 
     debugImplementation(libs.bundles.compose.debug)
 
+    androidTestImplementation(libs.bundles.compose.test)
     androidTestImplementation(libs.androidx.navigation.testing)
     androidTestImplementation(libs.bundles.android.test)
 }

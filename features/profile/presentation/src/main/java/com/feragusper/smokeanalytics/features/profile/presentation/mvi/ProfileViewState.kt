@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +28,14 @@ data class ProfileViewState(
     internal val currentUserName: String? = null,
 ) : MVIViewState<ProfileIntent> {
 
+    interface TestTags {
+        companion object {
+            const val BUTTON_SIGN_OUT = "buttonSignOut"
+            const val BUTTON_SIGN_IN = "buttonSignIn"
+            const val VIEW_PROGRESS = "viewProgress"
+        }
+    }
+
     @Composable
     override fun Compose(intent: (ProfileIntent) -> Unit) {
         Scaffold {
@@ -39,7 +48,9 @@ data class ProfileViewState(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (displayLoading) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        modifier = Modifier.testTag(TestTags.VIEW_PROGRESS)
+                    )
                 } else {
                     Text(
                         text = stringResource(R.string.profile_title),
@@ -50,13 +61,18 @@ data class ProfileViewState(
                     currentUserName?.let { displayName ->
                         Text(
                             text = "Authenticated as $displayName",
-                            modifier = Modifier.padding(6.dp),
+                            modifier = Modifier.padding(6.dp)
                         )
-                        Button(onClick = { intent(ProfileIntent.SignOut) }) {
+                        Button(
+                            modifier = Modifier.testTag(TestTags.BUTTON_SIGN_OUT),
+                            onClick = { intent(ProfileIntent.SignOut) }
+                        ) {
                             Text(text = "Sign out")
                         }
                     } ?: run {
-                        GoogleSignInComponent { intent(ProfileIntent.FetchUser) }
+                        GoogleSignInComponent(
+                            modifier = Modifier.testTag(TestTags.BUTTON_SIGN_IN)
+                        ) { intent(ProfileIntent.FetchUser) }
                     }
                 }
             }

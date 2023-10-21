@@ -18,7 +18,7 @@ dependencies {
     implementation(libs.firebase.firestore)
 
     implementation(libs.firebase.auth)
-    implementation(libs.compose.runtime)
+    implementation(libs.androidx.compose.runtime)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)
