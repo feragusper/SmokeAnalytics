@@ -1,9 +1,8 @@
-import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
-import org.gradle.api.JavaVersion
-
 plugins {
     id("com.android.library")
     kotlin("android")
+    id("org.jetbrains.kotlinx.kover")
+    id("org.sonarqube")
 }
 
 android {
@@ -11,7 +10,6 @@ android {
 
     defaultConfig {
         minSdk = Android.minSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -36,5 +34,28 @@ android {
         unitTests.all {
             it.useJUnitPlatform()
         }
+    }
+
+    packaging {
+        resources.excludes.addAll(
+            listOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+            )
+        )
+    }
+}
+
+koverReport(KoverConfig(layout).koverReport)
+
+koverReport {
+
+    defaults {
+        mergeWith("release")
+    }
+
+    // configure reports for 'release' build variant
+    androidReports("release") {
+        // same as for 'defaults' with the exception of 'mergeWith'
     }
 }
