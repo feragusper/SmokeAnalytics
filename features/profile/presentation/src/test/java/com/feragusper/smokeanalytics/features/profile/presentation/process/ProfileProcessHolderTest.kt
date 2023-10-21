@@ -1,8 +1,7 @@
-package com.feragusper.smokeanalytics.features.profile.presentation
+package com.feragusper.smokeanalytics.features.profile.presentation.process
 
 import com.feragusper.smokeanalytics.features.profile.presentation.mvi.ProfileIntent
 import com.feragusper.smokeanalytics.features.profile.presentation.mvi.ProfileResult
-import com.feragusper.smokeanalytics.features.profile.presentation.process.ProfileProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase

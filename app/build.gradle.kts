@@ -16,8 +16,6 @@ android {
         targetSdk = Android.targetSdk
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -66,12 +64,6 @@ android {
         }
     }
 
-    testOptions {
-        unitTests.all {
-            it.useJUnitPlatform()
-        }
-    }
-
     lint {
         disable.add("EnsureInitializerMetadata")
     }
@@ -79,7 +71,7 @@ android {
 
 dependencies {
     implementation(libs.bundles.androidx.base)
-    implementation(platform(libs.compose.bom))
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
@@ -90,11 +82,4 @@ dependencies {
     implementation(project(":features:profile:presentation"))
     kapt(libs.hilt.compiler)
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-
-    debugImplementation(libs.bundles.compose.debug)
-
-    androidTestImplementation(libs.androidx.navigation.testing)
-    androidTestImplementation(libs.bundles.android.test)
 }

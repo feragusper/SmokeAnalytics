@@ -23,7 +23,7 @@ abstract class MVIViewModel<I : MVIIntent, S : MVIViewState<I>, R : MVIResult, N
 
     private val intentChannel: Channel<I> = Channel(Channel.UNLIMITED)
 
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    @OptIn(FlowPreview::class)
     private val stateChannel: StateFlow<S> = intentChannel
         .receiveAsFlow()
         .flatMapMerge(transform = ::transformer)

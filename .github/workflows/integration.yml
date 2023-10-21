@@ -7,8 +7,13 @@ on:
 
 jobs:
   build:
-    name: Run tests and lint
-    runs-on: ubuntu-latest
+    name: Run Tests and Lint
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        api-level: [ 29 ]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,9 +34,38 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
 
-      - name: Run tests
-        run: bash ./gradlew test --stacktrace
+      - name: Check
+        run: bash ./gradlew check --stacktrace
 
-      - name: Run Lint
-        run: ./gradlew lint
-        continue-on-error: false
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+
+      - name: Create AVD and Generate Snapshot for Caching
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run Android Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest
+
+      - name: Upload Coverage Reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
