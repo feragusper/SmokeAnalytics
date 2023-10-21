@@ -1,6 +1,3 @@
-import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
-import org.gradle.api.JavaVersion
-
 plugins {
     id("com.android.library")
     kotlin("android")
@@ -11,7 +8,6 @@ android {
 
     defaultConfig {
         minSdk = Android.minSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -36,5 +32,14 @@ android {
         unitTests.all {
             it.useJUnitPlatform()
         }
+    }
+
+    packaging {
+        resources.excludes.addAll(
+            listOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+            )
+        )
     }
 }
