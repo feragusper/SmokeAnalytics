@@ -1,6 +1,8 @@
 plugins {
     id("com.android.library")
     kotlin("android")
+    id("org.jetbrains.kotlinx.kover")
+    id("org.sonarqube")
 }
 
 android {
@@ -41,5 +43,19 @@ android {
                 "META-INF/LICENSE-notice.md",
             )
         )
+    }
+}
+
+koverReport(KoverConfig(layout).koverReport)
+
+koverReport {
+
+    defaults {
+        mergeWith("release")
+    }
+
+    // configure reports for 'release' build variant
+    androidReports("release") {
+        // same as for 'defaults' with the exception of 'mergeWith'
     }
 }
