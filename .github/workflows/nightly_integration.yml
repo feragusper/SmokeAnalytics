@@ -1,0 +1,62 @@
+name: Nightly Integration
+
+on:
+  schedule:
+    - cron: '37 19 * * *'
+
+jobs:
+  build:
+    name: Nightly Integration
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        api-level: [ 29 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Config keys
+        env:
+          GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
+        run: |
+          echo google.auth.server.client.id=\"GOOGLE_AUTH_SERVER_CLIENT_ID\" > ./local.properties
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
+
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+
+      - name: Create AVD and Generate Snapshot for Caching
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run Android Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest
