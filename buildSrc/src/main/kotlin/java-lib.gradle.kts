@@ -14,8 +14,11 @@ val koverConfig = KoverConfig(layout)
 
 koverReport(koverConfig.koverReport)
 
-sonarqube {
-    properties(SonarConfig(koverConfig).sonarProperties)
-}
+sonarqube(
+    SonarConfig(
+        koverConfig = koverConfig,
+        project = project
+    ).sonarExtension
+)
 
 project.tasks["sonarqube"].dependsOn "koverReport"
