@@ -34,8 +34,8 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
 
-      - name: Run Unit Tests
-        run: bash ./gradlew test --stacktrace
+      - name: Check
+        run: bash ./gradlew check --stacktrace
 
       - name: AVD cache
         uses: actions/cache@v3
@@ -65,6 +65,7 @@ jobs:
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest
 
-      - name: Run Lint
-        run: ./gradlew lint
-        continue-on-error: false
+      - name: Upload Coverage Reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

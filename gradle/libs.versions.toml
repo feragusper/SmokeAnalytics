@@ -1,7 +1,6 @@
 [versions]
 androidxAppcompat = "1.6.1"
 androidxCoreKtx = "1.12.0"
-androidxActivityCompose = "1.8.0"
 androidxNavigationCompose = "2.7.4"
 androidxComposeBOM = "2023.10.01"
 androidxCompose = "1.5.4"
@@ -17,10 +16,12 @@ junit4 = "4.13.2"
 junitBOM = "5.9.3"
 kluent = "1.71"
 kotlinGradlePlugin = "1.8.10"
+kover = "0.7.4"
 material3 = "1.1.2"
 mockk = "1.13.3"
 navVersion = "2.7.4"
 playServicesAuth = "20.7.0"
+sonarqubeGradlePlugin = "4.0.0.2929"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
@@ -41,7 +42,6 @@ androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fr
 androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navVersion" }
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navVersion" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
-firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
 firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
@@ -58,10 +58,12 @@ hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", ve
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
 kluent = { module = "org.amshove.kluent:kluent", version.ref = "kluent" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 playservices-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+sonarqube-gradle-plugin = { module = "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin", version.ref = "sonarqubeGradlePlugin" }
 
 [bundles]
 androidx-base = [
