@@ -14,14 +14,18 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -61,6 +65,7 @@ sealed class BottomNavigationScreens(
         R.string.bottom_navigation_item_home_title,
         Icons.Filled.Home
     )
+
     object Profile : BottomNavigationScreens(
         ProfileNavigator.ROUTE,
         R.string.bottom_navigation_item_profile_title,
@@ -76,24 +81,27 @@ private fun MainContainerScreen() {
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Profile,
     )
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
-        bottomBar = {
-            SpookyAppBottomNavigation(navController, bottomNavigationItems)
-        },
-    ) {
+        bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
         MainScreenNavigationConfigurations(
-            modifier = Modifier.padding(it),
-            navController = navController
+            modifier = Modifier.padding(innerPadding),
+            navController = navController,
         )
     }
 }
 
 @Composable
-private fun SpookyAppBottomNavigation(
+private fun BottomNavigation(
     navController: NavHostController,
     items: List<BottomNavigationScreens>
 ) {
-    BottomNavigation {
+    BottomNavigation(
+        elevation = 0.dp,
+    ) {
         val currentRoute = currentRoute(navController)
         items.forEach { screen ->
             BottomNavigationItem(
@@ -120,10 +128,14 @@ private fun SpookyAppBottomNavigation(
 
 @Composable
 private fun MainScreenNavigationConfigurations(
-    modifier: Modifier = Modifier,
-    navController: NavHostController
+    navController: NavHostController,
+    modifier: Modifier,
 ) {
-    NavHost(navController, startDestination = BottomNavigationScreens.Home.route) {
+    NavHost(
+        modifier = modifier,
+        navController = navController,
+        startDestination = BottomNavigationScreens.Home.route
+    ) {
         homeNavigationGraph(HomeNavigator())
         profileNavigationGraph(ProfileNavigator())
     }

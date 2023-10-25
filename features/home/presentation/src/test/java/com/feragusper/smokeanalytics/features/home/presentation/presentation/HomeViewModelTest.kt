@@ -40,20 +40,6 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `GIVEN add smoke success result WHEN viewmodel is created THEN it hides loading`() {
-        every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
-
-        runBlocking {
-            intentResults.emit(HomeResult.AddSmokeSuccess)
-
-            viewModel.intents().trySend(HomeIntent.AddSmoke)
-            state = viewModel.states().first()
-        }
-
-        state.displayLoading shouldBeEqualTo false
-    }
-
-    @Test
     fun `GIVEN loading result WHEN viewmodel is created THEN it hides loading`() {
         every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
 
@@ -65,5 +51,37 @@ class HomeViewModelTest {
         }
 
         state.displayLoading shouldBeEqualTo true
+    }
+
+    @Test
+    fun `GIVEN add smoke success result WHEN viewmodel is created THEN it hides loading and shows success`() {
+        every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
+
+        runBlocking {
+            intentResults.emit(HomeResult.AddSmokeSuccess)
+
+            viewModel.intents().trySend(HomeIntent.AddSmoke)
+            state = viewModel.states().first()
+        }
+
+        state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedSuccess shouldBeEqualTo true
+        state.displaySmokeAddedError shouldBeEqualTo false
+    }
+
+    @Test
+    fun `GIVEN add smoke error result WHEN viewmodel is created THEN it hides loading and shows error`() {
+        every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
+
+        runBlocking {
+            intentResults.emit(HomeResult.AddSmokeError)
+
+            viewModel.intents().trySend(HomeIntent.AddSmoke)
+            state = viewModel.states().first()
+        }
+
+        state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedSuccess shouldBeEqualTo false
+        state.displaySmokeAddedError shouldBeEqualTo true
     }
 }
