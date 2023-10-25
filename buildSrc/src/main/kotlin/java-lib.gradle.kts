@@ -10,15 +10,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-val koverConfig = KoverConfig(layout)
-
-koverReport(koverConfig.koverReport)
-
-sonarqube(
-    SonarConfig(
-        koverConfig = koverConfig,
-        project = project
-    ).sonarExtension
-)
-
-project.tasks["sonarqube"].dependsOn "koverReport"
+koverReport(KoverConfig(layout).koverReport)
