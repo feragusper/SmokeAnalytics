@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.HomeViewModel
 
 @Composable
 fun HomeView(viewModel: HomeViewModel) {

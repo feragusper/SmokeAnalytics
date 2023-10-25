@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -20,5 +21,7 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.Loading)
         addSmokeUseCase.invoke()
         emit(HomeResult.AddSmokeSuccess)
+    }.catch {
+        emit(HomeResult.AddSmokeError)
     }
 }

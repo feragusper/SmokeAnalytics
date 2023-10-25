@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.feragusper.smokeanalytics.features.profile.presentation.mvi.ProfileIntent
 import com.feragusper.smokeanalytics.features.profile.presentation.mvi.ProfileViewState
 import io.mockk.every
@@ -14,9 +13,7 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-//@RunWith(AndroidJUnit4::class)
 class ProfileViewTest {
 
     @get:Rule
@@ -28,7 +25,8 @@ class ProfileViewTest {
     fun testLoading() {
         prepareScreen()
 
-        composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_OUT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_OUT)
+            .assertDoesNotExist()
         composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_IN).assertDoesNotExist()
         composeTestRule.onNodeWithTag(ProfileViewState.TestTags.VIEW_PROGRESS).assertIsDisplayed()
     }
@@ -40,7 +38,8 @@ class ProfileViewTest {
         )
 
         composeTestRule.onNodeWithTag(ProfileViewState.TestTags.VIEW_PROGRESS).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_OUT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_OUT)
+            .assertDoesNotExist()
         composeTestRule.onNodeWithTag(ProfileViewState.TestTags.BUTTON_SIGN_IN).assertIsDisplayed()
     }
 

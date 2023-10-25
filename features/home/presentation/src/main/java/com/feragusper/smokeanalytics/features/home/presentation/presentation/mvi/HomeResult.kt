@@ -5,4 +5,5 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 sealed class HomeResult : MVIResult {
     object Loading : HomeResult()
     object AddSmokeSuccess : HomeResult()
+    object AddSmokeError : HomeResult()
 }

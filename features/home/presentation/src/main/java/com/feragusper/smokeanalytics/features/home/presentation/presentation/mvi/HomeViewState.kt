@@ -9,7 +9,11 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -24,6 +28,7 @@ import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
     internal val displaySmokeAddedSuccess: Boolean = false,
+    internal val displaySmokeAddedError: Boolean = false,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
         companion object {
@@ -33,7 +38,10 @@ data class HomeViewState(
 
     @Composable
     override fun Compose(intent: (HomeIntent) -> Unit) {
-        Scaffold {
+        val snackbarHostState = remember { SnackbarHostState() }
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) {
             Column(
                 modifier = Modifier
                     .padding(it)
@@ -56,7 +64,14 @@ data class HomeViewState(
                 }
             }
         }
+
+        LaunchedEffect(displaySmokeAddedError) {
+            if (displaySmokeAddedError) {
+                snackbarHostState.showSnackbar("An error has occurred")
+            }
+        }
     }
+
 }
 
 @Preview

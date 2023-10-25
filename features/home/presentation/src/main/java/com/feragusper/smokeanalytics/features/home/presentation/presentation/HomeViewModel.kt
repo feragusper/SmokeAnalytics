@@ -22,11 +22,20 @@ class HomeViewModel @Inject constructor(
         when (result) {
             is HomeResult.Loading -> previous.copy(
                 displayLoading = true,
+                displaySmokeAddedSuccess = false,
+                displaySmokeAddedError = false,
             )
 
             HomeResult.AddSmokeSuccess -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
+                displaySmokeAddedError = false,
+            )
+
+            HomeResult.AddSmokeError -> previous.copy(
+                displayLoading = false,
+                displaySmokeAddedSuccess = false,
+                displaySmokeAddedError = true,
             )
         }
 }

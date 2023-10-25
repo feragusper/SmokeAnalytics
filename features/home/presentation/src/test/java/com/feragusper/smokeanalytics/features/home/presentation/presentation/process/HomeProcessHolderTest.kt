@@ -49,4 +49,16 @@ class HomeProcessHolderTest {
         }
     }
 
+
+    @Test
+    fun `GIVEN add smoke throws exception WHEN add smoke intent is processed THEN it should result with loading and error`() {
+        coEvery { addSmokeUseCase() } throws (IllegalStateException("User not logged in"))
+
+        runBlocking {
+            results = processHolder.processIntent(HomeIntent.AddSmoke)
+            assertEquals(HomeResult.Loading, results.first())
+            assertEquals(HomeResult.AddSmokeError, results.last())
+        }
+    }
+
 }
