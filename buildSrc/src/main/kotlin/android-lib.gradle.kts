@@ -46,16 +46,7 @@ android {
     }
 }
 
-val koverConfig = KoverConfig(layout)
-
-koverReport(koverConfig.koverReport)
-
-sonarqube(
-    SonarConfig(
-        koverConfig = koverConfig,
-        project = project
-    ).sonarExtension
-)
+koverReport(KoverConfig(layout).koverReport)
 
 koverReport {
 

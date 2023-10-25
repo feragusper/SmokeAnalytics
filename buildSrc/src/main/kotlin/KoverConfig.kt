@@ -8,7 +8,7 @@ class KoverConfig(
 ) {
 
     private val koverReportDir = "smoke-analytics-report"
-    val koverReportFileXML: Provider<RegularFile> = layout.buildDirectory.file("$koverReportDir/result.xml")
+    private val koverReportFileXML: Provider<RegularFile> = layout.buildDirectory.file("$koverReportDir/result.xml")
 
     val koverReport = Action<kotlinx.kover.gradle.plugin.dsl.KoverReportExtension> {
         // common filters for all reports of all variants
