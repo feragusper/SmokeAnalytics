@@ -11,7 +11,7 @@ class AddSmokeUseCaseTest {
     private val addSmokeUseCase = AddSmokeUseCase(smokeRepository)
 
     @Test
-    fun `GIVEN the session is anonymous WHEN invoke is executed THEN it should return anonymous session`() {
+    fun `GIVEN add smoke answers WHEN invoke is executed THEN it should finish`() {
         coEvery { smokeRepository.addSmoke() } answers { }
 
         runBlocking {
