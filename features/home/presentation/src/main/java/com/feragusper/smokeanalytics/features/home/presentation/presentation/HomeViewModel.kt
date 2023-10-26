@@ -16,6 +16,10 @@ class HomeViewModel @Inject constructor(
 
     override lateinit var navigator: HomeNavigator
 
+    init {
+        intents().trySend(HomeIntent.FetchSmokes)
+    }
+
     override suspend fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
 
     override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
@@ -26,13 +30,31 @@ class HomeViewModel @Inject constructor(
                 displaySmokeAddedError = false,
             )
 
+            is HomeResult.FetchSmokesSuccess -> previous.copy(
+                displayLoading = false,
+                displaySmokeAddedSuccess = true,
+                displaySmokeAddedError = false,
+                smokesPerDay = result.smokeCountListResult.byToday,
+                smokesPerWeek = result.smokeCountListResult.byWeek,
+                smokesPerMonth = result.smokeCountListResult.byMonth,
+            )
+
             HomeResult.AddSmokeSuccess -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
                 displaySmokeAddedError = false,
+                smokesPerDay = previous.smokesPerDay?.plus(1),
+                smokesPerWeek = previous.smokesPerWeek?.plus(1),
+                smokesPerMonth = previous.smokesPerMonth?.plus(1),
             )
 
             HomeResult.AddSmokeError -> previous.copy(
+                displayLoading = false,
+                displaySmokeAddedSuccess = false,
+                displaySmokeAddedError = true,
+            )
+
+            HomeResult.FetchSmokesError -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
                 displaySmokeAddedError = true,

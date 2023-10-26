@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
+import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import io.mockk.coEvery
@@ -24,12 +26,16 @@ class HomeProcessHolderTest {
     private lateinit var processHolder: HomeProcessHolder
 
     private var addSmokeUseCase: AddSmokeUseCase = mockk()
+    private var fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        processHolder = HomeProcessHolder(addSmokeUseCase)
+        processHolder = HomeProcessHolder(
+            addSmokeUseCase = addSmokeUseCase,
+            fetchSmokeCountListUseCase = fetchSmokeCountListUseCase
+        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,4 +67,28 @@ class HomeProcessHolderTest {
         }
     }
 
+    @Test
+    fun `GIVEN fetch smoke count list is success WHEN add smoke intent is processed THEN it should result with loading and success`() {
+        val smokeCountListResult: SmokeCountListResult = mockk()
+
+        coEvery { fetchSmokeCountListUseCase() } answers { smokeCountListResult }
+
+        runBlocking {
+            results = processHolder.processIntent(HomeIntent.FetchSmokes)
+            assertEquals(HomeResult.Loading, results.first())
+            assertEquals(HomeResult.FetchSmokesSuccess(smokeCountListResult), results.last())
+        }
+    }
+
+
+    @Test
+    fun `GIVEN fetch smoke count list throws exception WHEN add smoke intent is processed THEN it should result with loading and error`() {
+        coEvery { fetchSmokeCountListUseCase() } throws (IllegalStateException("User not logged in"))
+
+        runBlocking {
+            results = processHolder.processIntent(HomeIntent.FetchSmokes)
+            assertEquals(HomeResult.Loading, results.first())
+            assertEquals(HomeResult.FetchSmokesError, results.last())
+        }
+    }
 }

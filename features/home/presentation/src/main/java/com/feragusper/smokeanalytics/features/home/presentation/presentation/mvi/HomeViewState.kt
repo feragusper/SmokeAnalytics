@@ -29,6 +29,9 @@ data class HomeViewState(
     internal val displayLoading: Boolean = false,
     internal val displaySmokeAddedSuccess: Boolean = false,
     internal val displaySmokeAddedError: Boolean = false,
+    internal val smokesPerDay: Int? = null,
+    internal val smokesPerWeek: Int? = null,
+    internal val smokesPerMonth: Int? = null,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
         companion object {
@@ -56,6 +59,30 @@ data class HomeViewState(
                     color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
                 )
+                smokesPerDay?.let { smokesPerDay ->
+                    Text(
+                        text = smokesPerDay.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                smokesPerWeek?.let { smokesPerDay ->
+                    Text(
+                        text = smokesPerDay.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                smokesPerMonth?.let { smokesPerDay ->
+                    Text(
+                        text = smokesPerDay.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Button(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
                     onClick = { intent(HomeIntent.AddSmoke) }
