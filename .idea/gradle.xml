@@ -31,6 +31,7 @@
             <option value="$PROJECT_DIR$/features/profile/presentation" />
             <option value="$PROJECT_DIR$/libraries" />
             <option value="$PROJECT_DIR$/libraries/architecture" />
+            <option value="$PROJECT_DIR$/libraries/architecture/domain" />
             <option value="$PROJECT_DIR$/libraries/architecture/presentation" />
             <option value="$PROJECT_DIR$/libraries/authentication" />
             <option value="$PROJECT_DIR$/libraries/authentication/data" />
