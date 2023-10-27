@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test
 
 class ProfileViewModelTest {
 
-    private lateinit var viewModel: ProfileViewModel
-
     private var processHolder: ProfileProcessHolder = mockk()
     private lateinit var state: ProfileViewState
     private val intentResults = MutableStateFlow<ProfileResult>(ProfileResult.Loading)
@@ -44,38 +42,58 @@ class ProfileViewModelTest {
     fun `GIVEN a loading result WHEN viewmodel is created THEN it displays loading`() {
         runBlocking {
             intentResults.emit(ProfileResult.Loading)
-            viewModel = ProfileViewModel(processHolder)
-            state = viewModel.states().first()
+            state = ProfileViewModel(processHolder).states().first()
         }
 
         state.displayLoading shouldBeEqualTo true
     }
 
-    @Nested
-    inner class FetchUserResult {
-
-        @Test
-        fun `GIVEN a user logged out result WHEN viewmodel is created THEN it hides loading`() {
-            runBlocking {
-                intentResults.emit(ProfileResult.UserLoggedOut)
-                viewModel = ProfileViewModel(processHolder)
-                state = viewModel.states().first()
-            }
-
-            state.displayLoading shouldBeEqualTo false
-            state.currentUserName shouldBeEqualTo null
+    @Test
+    fun `GIVEN a user logged out result WHEN viewmodel is created THEN it shows logged out state`() {
+        runBlocking {
+            intentResults.emit(ProfileResult.UserLoggedOut)
+            state = ProfileViewModel(processHolder).states().first()
         }
 
-        @Test
-        fun `GIVEN a user logged in result WHEN viewmodel is created THEN it hides loading and displays name`() {
+        state.displayLoading shouldBeEqualTo false
+        state.currentUserName shouldBeEqualTo null
+    }
+
+    @Nested
+    inner class UserLoggedIn {
+
+        private lateinit var viewModel: ProfileViewModel
+
+        @BeforeEach
+        fun setUp() {
             runBlocking {
                 intentResults.emit(ProfileResult.UserLoggedIn("Fernando Perez"))
                 viewModel = ProfileViewModel(processHolder)
+            }
+        }
+
+        @Test
+        fun `GIVEN a user logged in result WHEN viewmodel is created THEN shows logged in state`() {
+            runBlocking {
                 state = viewModel.states().first()
             }
 
             state.displayLoading shouldBeEqualTo false
             state.currentUserName shouldBeEqualTo "Fernando Perez"
+        }
+
+        @Test
+        fun `GIVEN a user logged in result WHEN sign out is sent THEN shows logged out state`() {
+            every { processHolder.processIntent(ProfileIntent.SignOut) } returns intentResults
+            viewModel.intents().trySend(ProfileIntent.SignOut)
+
+            runBlocking {
+                intentResults.emit(ProfileResult.UserLoggedOut)
+                state = viewModel.states().first()
+            }
+
+            state.displayLoading shouldBeEqualTo false
+            state.currentUserName shouldBeEqualTo null
         }
     }
 }

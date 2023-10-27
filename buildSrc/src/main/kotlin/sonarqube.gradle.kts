@@ -21,14 +21,15 @@ subprojects {
                 filesSafeProperty(
                     "sonar.sources",
                     "$projectDir/src/main",
-                    "$projectDir/build.gradle",
                 )
                 filesSafeProperty(
                     "sonar.tests",
                     "$projectDir/src/test/java",
-                    "$projectDir/src/test/kotlin",
                 )
-                property("sonar.exclusions", "build/**,**/assets/**,**/test/**,**/androidTest/**")
+                property(
+                    "sonar.exclusions",
+                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ","),
+                )
                 property("sonar.java.coveragePlugin", "jacoco")
                 property("sonar.import_unknown_files", true)
 
@@ -47,10 +48,16 @@ subprojects {
                         "$javaClasses/debugUnitTest",
                     )
                     property("sonar.junit.reportPaths", "$buildDir/test-results/testDebugUnitTest")
-                    property("sonar.coverage.jacoco.xmlReportPaths", "$buildDir/smoke-analytics-report/result.xml")
+                    property(
+                        "sonar.coverage.jacoco.xmlReportPaths",
+                        "$buildDir/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
+                    )
                 } else if (plugins.hasPlugin(JavaPlugin::class.java)) {
                     property("sonar.junit.reportPaths", "$buildDir/test-results/test")
-                    property("sonar.coverage.jacoco.xmlReportPaths", "$buildDir/smoke-analytics-report/result.xml")
+                    property(
+                        "sonar.coverage.jacoco.xmlReportPaths",
+                        "$buildDir/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
+                    )
                 }
             }
         }

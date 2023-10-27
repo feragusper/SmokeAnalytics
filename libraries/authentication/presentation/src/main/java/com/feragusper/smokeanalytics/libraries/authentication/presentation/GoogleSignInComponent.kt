@@ -35,7 +35,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun GoogleSignInComponent(modifier: Modifier, onSignInSuccess: () -> Unit) {
+fun GoogleSignInComponent(
+    modifier: Modifier,
+    onSignInSuccess: () -> Unit,
+    onSignInError: () -> Unit,
+) {
     val componentActivity = LocalContext.current as ComponentActivity
     val coroutine = rememberCoroutineScope()
     val oneTapClient = Identity.getSignInClient(componentActivity)
@@ -100,6 +104,7 @@ fun GoogleSignInComponent(modifier: Modifier, onSignInSuccess: () -> Unit) {
                 launcher = launcher,
                 signInRequest = signInRequest,
                 oneTapClient = oneTapClient,
+                onSignInError = onSignInError
             )
         },
         modifier = modifier
@@ -128,9 +133,10 @@ private fun signIn(
     launcher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult>,
     signInRequest: BeginSignInRequest,
     oneTapClient: SignInClient,
+    onSignInError: () -> Unit,
 ) {
-    try {
-        coroutine.launch {
+    coroutine.launch {
+        try {
             launcher.launch(
                 IntentSenderRequest.Builder(
                     oneTapClient.beginSignIn(
@@ -138,10 +144,11 @@ private fun signIn(
                     ).await().pendingIntent,
                 ).build(),
             )
+        } catch (e: Exception) {
+            // No saved credentials found. Launch the One Tap sign-up flow, or
+            // do nothing and continue presenting the signed-out UI.
+            Log.d("LOG", e.message.toString())
+            onSignInError()
         }
-    } catch (e: Exception) {
-        // No saved credentials found. Launch the One Tap sign-up flow, or
-        // do nothing and continue presenting the signed-out UI.
-        Log.d("LOG", e.message.toString())
     }
 }

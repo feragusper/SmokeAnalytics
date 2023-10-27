@@ -4,4 +4,5 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 
 sealed class HomeIntent : MVIIntent {
     object AddSmoke : HomeIntent()
+    object FetchSmokes : HomeIntent()
 }

@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation
 
+import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState
@@ -23,14 +24,13 @@ class HomeViewModelTest {
 
     private var processHolder: HomeProcessHolder = mockk()
     private val intentResults = MutableStateFlow<HomeResult>(HomeResult.Loading)
-    private lateinit var viewModel: HomeViewModel
     private lateinit var state: HomeViewState
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        viewModel = HomeViewModel(processHolder)
+        every { processHolder.processIntent(HomeIntent.FetchSmokes) } returns intentResults
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,22 +40,55 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `GIVEN add smoke success result WHEN viewmodel is created THEN it hides loading`() {
+    fun `GIVEN fetch smokes result WHEN viewmodel is created THEN it shows smoke counts`() {
+        val viewModel = HomeViewModel(processHolder)
+
+        val smokesPerDay = 1
+        val smokesPerWeek = 2
+        val smokesPerMonth = 3
+        runBlocking {
+            intentResults.emit(
+                HomeResult.FetchSmokesSuccess(
+                    SmokeCountListResult(
+                        byToday = smokesPerDay,
+                        byWeek = smokesPerWeek,
+                        byMonth = smokesPerMonth,
+                    )
+                )
+            )
+            state = viewModel.states().first()
+        }
+
+        state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedError shouldBeEqualTo false
+        state.smokesPerDay shouldBeEqualTo smokesPerDay
+        state.smokesPerWeek shouldBeEqualTo smokesPerWeek
+        state.smokesPerMonth shouldBeEqualTo smokesPerMonth
+    }
+
+    @Test
+    fun `GIVEN fetch smokes error WHEN viewmodel is created THEN it shows fetch smokes error`() {
         every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
 
+        val viewModel = HomeViewModel(processHolder)
+
         runBlocking {
-            intentResults.emit(HomeResult.AddSmokeSuccess)
+            intentResults.emit(HomeResult.FetchSmokesError)
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
             state = viewModel.states().first()
         }
 
         state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedSuccess shouldBeEqualTo false
+        state.displaySmokeAddedError shouldBeEqualTo true
     }
 
     @Test
     fun `GIVEN loading result WHEN viewmodel is created THEN it hides loading`() {
         every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
+
+        val viewModel = HomeViewModel(processHolder)
 
         runBlocking {
             intentResults.emit(HomeResult.Loading)
@@ -66,4 +99,42 @@ class HomeViewModelTest {
 
         state.displayLoading shouldBeEqualTo true
     }
+
+    @Test
+    fun `GIVEN add smoke success result WHEN viewmodel is created THEN it hides loading and shows success`() {
+        every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
+
+        val viewModel = HomeViewModel(processHolder)
+
+        runBlocking {
+            intentResults.emit(HomeResult.AddSmokeSuccess)
+
+            viewModel.intents().trySend(HomeIntent.AddSmoke)
+            state = viewModel.states().first()
+        }
+
+        state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedSuccess shouldBeEqualTo true
+        state.displaySmokeAddedError shouldBeEqualTo false
+    }
+
+    @Test
+    fun `GIVEN add smoke error result WHEN viewmodel is created THEN it hides loading and shows error`() {
+        every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
+
+        val viewModel = HomeViewModel(processHolder)
+
+        runBlocking {
+            intentResults.emit(HomeResult.AddSmokeError)
+
+            viewModel.intents().trySend(HomeIntent.AddSmoke)
+            state = viewModel.states().first()
+        }
+
+        state.displayLoading shouldBeEqualTo false
+        state.displaySmokeAddedSuccess shouldBeEqualTo false
+        state.displaySmokeAddedError shouldBeEqualTo true
+    }
+
+
 }
