@@ -25,9 +25,9 @@ jobs:
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
 
       - name: Setup Ruby
-        uses: actions/setup-ruby@v1
+        uses: actions/setup-ruby@v1.1.3
         with:
-          ruby-version: '2.7.0'
+          ruby-version: '2.7'
 
       - name: Install bundler
         run: |
