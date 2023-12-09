@@ -27,10 +27,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.feragusper.smokeanalytics" />
-                  <option name="mobileSdkAppId" value="1:235081091876:android:af94ef5bb170110b9141b1" />
-                  <option name="projectId" value="smoke-analytics" />
-                  <option name="projectNumber" value="235081091876" />
+                  <option name="appId" value="PLACEHOLDER" />
+                  <option name="mobileSdkAppId" value="" />
+                  <option name="projectId" value="" />
+                  <option name="projectNumber" value="" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

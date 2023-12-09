@@ -5,7 +5,7 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
     branches:
       - master
 
@@ -27,10 +27,8 @@ jobs:
           java-version: 17
 
       - name: Config keys
-        env:
-          GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
         run: |
-          echo google.auth.server.client.id=\"GOOGLE_AUTH_SERVER_CLIENT_ID\" > ./local.properties
+          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
 
