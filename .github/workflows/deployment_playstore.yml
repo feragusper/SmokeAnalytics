@@ -1,4 +1,4 @@
-name: Android Build & Deploy
+name: Deploy to Play Store
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
       - name: Setup Ruby
         uses: actions/setup-ruby@v1
         with:
-          ruby-version: '2.6'
+          ruby-version: '2.7.0'
 
       - name: Install bundler
         run: |
