@@ -1,0 +1,54 @@
+name: Android Build & Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Config keys
+        run: |
+          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
+
+      - name: Setup Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+
+      - name: Install bundler
+        run: |
+          gem install bundler:2.2.27
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Config keystore
+        env:
+          GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
+        shell: bash
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_PROPERTIES }}" > ./release.keystore.properties.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.properties.json.asc > ./release.keystore.properties.json
+          echo "${{ secrets.RELEASE_KEYSTORE }}" > ./release.keystore.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.asc > ./release.keystore
+          echo "${{ secrets.PLAYSTORE_CREDENTIALS }}" > ./playstore.credentials.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
+
+      - name: Build bundle
+        run: bash ./gradlew bundle --stacktrace
+
+      - name: Build & deploy Android release
+        run: bundler exec fastlane android deploy

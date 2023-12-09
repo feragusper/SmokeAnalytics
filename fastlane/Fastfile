@@ -1,0 +1,15 @@
+default_platform(:android)
+
+platform :android do
+    desc "Deploy to Play Store"
+    lane :deploy_playstore do |options|
+        bundle_prod(app: app_name)
+        upload_to_play_store(
+            release_status: "completed",
+            track: "Beta track",
+            timeout: 600,
+            aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH].to_s,
+            json_key: "google-play-key.json"
+        )
+    end
+end
