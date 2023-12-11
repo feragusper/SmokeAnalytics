@@ -1,3 +1,9 @@
+import com.google.common.base.Charsets
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-kapt")
@@ -10,17 +16,33 @@ android {
     namespace = "com.feragusper.smokeanalytics"
     compileSdk = Android.compileSdk
 
+    val gitVersion: Int by lazy {
+        val stdout = ByteArrayOutputStream()
+        rootProject.exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+            standardOutput = stdout
+        }
+        stdout.toString().trim().toInt()
+    }
+
     defaultConfig {
         applicationId = "com.feragusper.smokeanalytics"
         minSdk = Android.minSdk
         targetSdk = Android.targetSdk
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gitVersion
+        versionName = "0.1.0.$gitVersion"
     }
 
     signingConfigs {
         getByName("debug") {
             storeFile = file("$rootDir/debug.keystore")
+        }
+        create("release") {
+            val properties = properties("release.keystore.properties")
+            storeFile = file("$rootDir/release.keystore")
+            storePassword = properties.getProperty("storePassword")
+            keyAlias = properties.getProperty("keyAlias")
+            keyPassword = properties.getProperty("keyPassword")
         }
     }
 
@@ -31,6 +53,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             signingConfig = signingConfigs.getByName("debug")
@@ -67,6 +90,18 @@ android {
     lint {
         disable.add("EnsureInitializerMetadata")
     }
+}
+
+fun properties(propertiesFileName: String): Properties {
+    val properties = Properties()
+    val propertiesFile = File(rootDir, propertiesFileName)
+
+    if (propertiesFile.isFile) {
+        InputStreamReader(FileInputStream(propertiesFile), Charsets.UTF_8).use { reader ->
+            properties.load(reader)
+        }
+    }
+    return properties
 }
 
 dependencies {
