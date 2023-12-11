@@ -1,7 +1,11 @@
 name: Deploy to Play Store
 
 on:
-  workflow_dispatch:
+#  workflow_dispatch:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches:
+      - master
 
 jobs:
   deploy:
