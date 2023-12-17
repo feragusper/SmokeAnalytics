@@ -3,10 +3,16 @@ package com.feragusper.smokeanalytics.features.home.presentation.presentation.mv
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 
-sealed class HomeResult : MVIResult {
-    object Loading : HomeResult()
-    object AddSmokeSuccess : HomeResult()
-    object AddSmokeError : HomeResult()
-    data class FetchSmokesSuccess(val smokeCountListResult: SmokeCountListResult) : HomeResult()
-    object FetchSmokesError : HomeResult()
+sealed interface HomeResult : MVIResult {
+    object Loading : HomeResult
+    object NotLoggedIn : HomeResult
+    object GoToLogin : HomeResult
+    object AddSmokeSuccess : HomeResult
+    sealed interface AddSmokeError : HomeResult {
+        object Generic : AddSmokeError
+        object NotLoggedIn : AddSmokeError
+    }
+
+    data class FetchSmokesSuccess(val smokeCountListResult: SmokeCountListResult) : HomeResult
+    object FetchSmokesError : HomeResult
 }

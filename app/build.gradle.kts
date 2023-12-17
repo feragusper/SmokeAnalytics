@@ -12,25 +12,27 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val gitCode: Int by lazy {
+    val stdout = ByteArrayOutputStream()
+    rootProject.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        standardOutput = stdout
+    }
+    stdout.toString().trim().toInt()
+}
+
+val majorMinorPatchVersionName = "0.1.0.$gitCode"
+
 android {
     namespace = "com.feragusper.smokeanalytics"
     compileSdk = Android.compileSdk
-
-    val gitVersion: Int by lazy {
-        val stdout = ByteArrayOutputStream()
-        rootProject.exec {
-            commandLine("git", "rev-list", "--count", "HEAD")
-            standardOutput = stdout
-        }
-        stdout.toString().trim().toInt()
-    }
 
     defaultConfig {
         applicationId = "com.feragusper.smokeanalytics"
         minSdk = Android.minSdk
         targetSdk = Android.targetSdk
-        versionCode = gitVersion
-        versionName = "0.1.0.$gitVersion"
+        versionCode = gitCode
+        versionName = majorMinorPatchVersionName
     }
 
     signingConfigs {
@@ -117,4 +119,10 @@ dependencies {
     implementation(project(":features:profile:presentation"))
     kapt(libs.hilt.compiler)
 
+}
+
+task("printVersionName") {
+    doLast {
+        println(majorMinorPatchVersionName)
+    }
 }
