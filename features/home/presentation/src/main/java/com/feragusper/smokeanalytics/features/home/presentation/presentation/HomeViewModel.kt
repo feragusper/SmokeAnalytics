@@ -24,40 +24,51 @@ class HomeViewModel @Inject constructor(
 
     override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
         when (result) {
-            is HomeResult.Loading -> previous.copy(
+            HomeResult.Loading -> previous.copy(
                 displayLoading = true,
                 displaySmokeAddedSuccess = false,
-                displaySmokeAddedError = false,
+                smokeAddError = null,
             )
+
+            HomeResult.NotLoggedIn -> previous.copy(
+                displayLoading = false,
+                displaySmokeAddedSuccess = false,
+                smokeAddError = null,
+            )
+
+            HomeResult.GoToLogin -> {
+                navigator.navigateToProfile()
+                previous
+            }
 
             is HomeResult.FetchSmokesSuccess -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
-                displaySmokeAddedError = false,
+                smokeAddError = null,
                 smokesPerDay = result.smokeCountListResult.byToday,
                 smokesPerWeek = result.smokeCountListResult.byWeek,
                 smokesPerMonth = result.smokeCountListResult.byMonth,
+                latestSmokes = result.smokeCountListResult.latestSmokes,
             )
 
             HomeResult.AddSmokeSuccess -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
-                displaySmokeAddedError = false,
+                smokeAddError = null,
                 smokesPerDay = previous.smokesPerDay?.plus(1),
                 smokesPerWeek = previous.smokesPerWeek?.plus(1),
                 smokesPerMonth = previous.smokesPerMonth?.plus(1),
             )
 
-            HomeResult.AddSmokeError -> previous.copy(
+            is HomeResult.AddSmokeError -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
-                displaySmokeAddedError = true,
+                smokeAddError = result,
             )
 
             HomeResult.FetchSmokesError -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
-                displaySmokeAddedError = true,
             )
         }
 }

@@ -30,11 +30,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator
-import com.feragusper.smokeanalytics.features.profile.navigation.profileNavigationGraph
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
+import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator
+import com.feragusper.smokeanalytics.features.profile.navigation.profileNavigationGraph
+import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -136,15 +136,17 @@ private fun MainScreenNavigationConfigurations(
         navController = navController,
         startDestination = BottomNavigationScreens.Home.route
     ) {
-        homeNavigationGraph(HomeNavigator())
-        profileNavigationGraph(ProfileNavigator())
+        val profileNavigator = ProfileNavigator(navController)
+        homeNavigationGraph(HomeNavigator(profileNavigator.navigateToProfile))
+        profileNavigationGraph(profileNavigator)
     }
 }
 
 @Composable
 private fun currentRoute(navController: NavHostController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    return navBackStackEntry?.arguments?.getString("KEY_ROUTE")
+
+    return navBackStackEntry?.destination?.parent?.route
 }
 
 @Preview(showBackground = true)

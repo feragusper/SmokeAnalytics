@@ -53,6 +53,11 @@ class FetchSmokeCountListUseCaseTest {
                     byToday = 1,
                     byWeek = 2,
                     byMonth = 3,
+                    latestSmokes = listOf(
+                        Smoke(today),
+                        Smoke(thisWeek),
+                        Smoke(thisMonth),
+                    )
                 )
             )
         }

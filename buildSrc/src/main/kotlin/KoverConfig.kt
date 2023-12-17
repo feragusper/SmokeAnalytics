@@ -11,12 +11,16 @@ class KoverConfig(
         internal const val KOVER_REPORT_DIR = "smoke-analytics-report"
         internal const val KOVER_REPORT_XML_FILE = "result.xml"
         internal val koverReportExclusionsClasses = listOf(
-            "**.*Application",
-            "**.*Activity",
+            "**/*Application.*",
+            "**/*Activity.*",
+            "**/*Navigator.*",
+            "**/*NavigationGraph.*",
+            "**/*ViewState.*",
         )
     }
 
-    private val koverReportFileXML: Provider<RegularFile> = layout.buildDirectory.file("$KOVER_REPORT_DIR/$KOVER_REPORT_XML_FILE")
+    private val koverReportFileXML: Provider<RegularFile> =
+        layout.buildDirectory.file("$KOVER_REPORT_DIR/$KOVER_REPORT_XML_FILE")
 
     val koverReport = Action<kotlinx.kover.gradle.plugin.dsl.KoverReportExtension> {
         // common filters for all reports of all variants
