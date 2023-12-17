@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.features.home.presentation.navigation
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable

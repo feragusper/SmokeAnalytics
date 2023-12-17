@@ -5,6 +5,8 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -13,6 +15,7 @@ import javax.inject.Inject
 class HomeProcessHolder @Inject constructor(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
+    private val fetchSessionUseCase: FetchSessionUseCase,
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
 
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
@@ -21,17 +24,31 @@ class HomeProcessHolder @Inject constructor(
     }
 
     private fun processFetchSmokes() = flow {
-        emit(HomeResult.Loading)
-        emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
+            is Session.LoggedIn -> {
+                emit(HomeResult.Loading)
+                emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
+            }
+        }
     }.catch {
         emit(HomeResult.FetchSmokesError)
     }
 
     private fun processAddSmoke(): Flow<HomeResult> = flow {
-        emit(HomeResult.Loading)
-        addSmokeUseCase.invoke()
-        emit(HomeResult.AddSmokeSuccess)
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> {
+                emit(HomeResult.AddSmokeError.NotLoggedIn)
+                emit(HomeResult.GoToLogin)
+            }
+
+            is Session.LoggedIn -> {
+                emit(HomeResult.Loading)
+                addSmokeUseCase.invoke()
+                emit(HomeResult.AddSmokeSuccess)
+            }
+        }
     }.catch {
-        emit(HomeResult.AddSmokeError)
+        emit(HomeResult.AddSmokeError.Generic)
     }
 }

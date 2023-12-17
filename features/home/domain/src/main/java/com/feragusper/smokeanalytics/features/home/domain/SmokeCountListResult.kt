@@ -4,4 +4,5 @@ data class SmokeCountListResult(
     val byToday: Int,
     val byWeek: Int,
     val byMonth: Int,
+    val latestSmokes: List<Smoke>,
 )

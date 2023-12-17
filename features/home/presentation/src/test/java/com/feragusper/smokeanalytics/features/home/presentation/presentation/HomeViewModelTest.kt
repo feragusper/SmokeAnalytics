@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation
 
+import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
@@ -11,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -46,6 +46,7 @@ class HomeViewModelTest {
         val smokesPerDay = 1
         val smokesPerWeek = 2
         val smokesPerMonth = 3
+        val latestSmokes: List<Smoke> = listOf(mockk())
         runBlocking {
             intentResults.emit(
                 HomeResult.FetchSmokesSuccess(
@@ -53,6 +54,7 @@ class HomeViewModelTest {
                         byToday = smokesPerDay,
                         byWeek = smokesPerWeek,
                         byMonth = smokesPerMonth,
+                        latestSmokes = latestSmokes
                     )
                 )
             )
@@ -60,10 +62,11 @@ class HomeViewModelTest {
         }
 
         state.displayLoading shouldBeEqualTo false
-        state.displaySmokeAddedError shouldBeEqualTo false
+        state.smokeAddError shouldBeEqualTo null
         state.smokesPerDay shouldBeEqualTo smokesPerDay
         state.smokesPerWeek shouldBeEqualTo smokesPerWeek
         state.smokesPerMonth shouldBeEqualTo smokesPerMonth
+        state.latestSmokes shouldBeEqualTo latestSmokes
     }
 
     @Test
@@ -81,7 +84,6 @@ class HomeViewModelTest {
 
         state.displayLoading shouldBeEqualTo false
         state.displaySmokeAddedSuccess shouldBeEqualTo false
-        state.displaySmokeAddedError shouldBeEqualTo true
     }
 
     @Test
@@ -115,7 +117,7 @@ class HomeViewModelTest {
 
         state.displayLoading shouldBeEqualTo false
         state.displaySmokeAddedSuccess shouldBeEqualTo true
-        state.displaySmokeAddedError shouldBeEqualTo false
+        state.smokeAddError shouldBeEqualTo null
     }
 
     @Test
@@ -125,7 +127,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(processHolder)
 
         runBlocking {
-            intentResults.emit(HomeResult.AddSmokeError)
+            intentResults.emit(HomeResult.AddSmokeError.Generic)
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
             state = viewModel.states().first()
@@ -133,7 +135,7 @@ class HomeViewModelTest {
 
         state.displayLoading shouldBeEqualTo false
         state.displaySmokeAddedSuccess shouldBeEqualTo false
-        state.displaySmokeAddedError shouldBeEqualTo true
+        state.smokeAddError shouldBeEqualTo HomeResult.AddSmokeError.Generic
     }
 
 

@@ -20,6 +20,7 @@ fun lastInstantToday(): Calendar {
 
 fun firstInstantThisWeek(): Calendar {
     val calendar = firstInstantToday()
+    calendar.firstDayOfWeek = Calendar.MONDAY
     calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
     return calendar
 }
@@ -34,7 +35,7 @@ fun lastInstantThisWeek(): Calendar {
 
 fun firstInstantThisMonth(): Calendar {
     val calendar = firstInstantToday()
-    calendar.set(Calendar.DAY_OF_WEEK, 1)
+    calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH))
     return calendar
 }
 
