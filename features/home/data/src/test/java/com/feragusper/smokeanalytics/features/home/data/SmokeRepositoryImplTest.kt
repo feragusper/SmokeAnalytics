@@ -10,17 +10,16 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.amshove.kluent.internal.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.Calendar
 import java.util.Date
 
 class SmokeRepositoryImplTest {
@@ -56,7 +55,10 @@ class SmokeRepositoryImplTest {
         @Test
         fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() {
             val date = Date()
-            every { firebaseFirestore.collection("$USERS/$uid/$SMOKES") } answers {
+            every {
+                firebaseFirestore.collection("$USERS/$uid/$SMOKES")
+                    .orderBy(Smoke::date.name, Query.Direction.DESCENDING)
+            } answers {
                 mockk<CollectionReference>().apply {
                     every { get() } answers {
                         mockk<Task<QuerySnapshot>>().apply {

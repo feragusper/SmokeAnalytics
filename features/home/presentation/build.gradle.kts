@@ -16,6 +16,7 @@ android {
 dependencies {
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":libraries:design"))
+    implementation(project(":libraries:authentication:domain"))
     implementation(project(":features:home:domain"))
     implementation(project(":features:home:data"))
 

@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.profile.navigation
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.navOptions
 import androidx.navigation.navigation
 import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator.Companion.ROUTE
 import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator.Companion.START
@@ -13,6 +14,7 @@ fun NavGraphBuilder.profileNavigationGraph(
     navigator: ProfileNavigator
 ) {
     navigation(startDestination = START, route = ROUTE) {
+        navOptions { launchSingleTop = true }
         composable(route = START) {
             val viewModel = hiltViewModel<ProfileViewModel>()
             viewModel.navigator = navigator
