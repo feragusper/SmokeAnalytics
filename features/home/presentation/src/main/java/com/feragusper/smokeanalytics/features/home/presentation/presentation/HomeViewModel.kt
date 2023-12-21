@@ -51,14 +51,10 @@ class HomeViewModel @Inject constructor(
                 latestSmokes = result.smokeCountListResult.latestSmokes,
             )
 
-            HomeResult.AddSmokeSuccess -> previous.copy(
-                displayLoading = false,
-                displaySmokeAddedSuccess = true,
-                smokeAddError = null,
-                smokesPerDay = previous.smokesPerDay?.plus(1),
-                smokesPerWeek = previous.smokesPerWeek?.plus(1),
-                smokesPerMonth = previous.smokesPerMonth?.plus(1),
-            )
+            HomeResult.AddSmokeSuccess -> {
+                intents().trySend(HomeIntent.FetchSmokes)
+                previous
+            }
 
             is HomeResult.AddSmokeError -> previous.copy(
                 displayLoading = false,
