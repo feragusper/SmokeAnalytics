@@ -16,6 +16,8 @@ class KoverConfig(
             "**/*Navigator.*",
             "**/*NavigationGraph.*",
             "**/*ViewState.*",
+            "**/*Color.kt",
+            "**/*Typography.kt",
         )
     }
 
