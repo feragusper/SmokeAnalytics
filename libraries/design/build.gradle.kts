@@ -11,4 +11,5 @@ android {
 dependencies {
     implementation(libs.bundles.androidx.base)
     implementation(libs.material3)
+    implementation(libs.bundles.compose)
 }
