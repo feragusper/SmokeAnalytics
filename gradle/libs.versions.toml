@@ -28,7 +28,7 @@ android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppcompat" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidxComposeBOM" }
 androidx-compose-activity = { module = "androidx.activity:activity-compose" }
-androidx-compose-material = { module = "androidx.compose.material:material" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidxCompose" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
@@ -99,7 +99,7 @@ compose = [
     "androidx-compose-ui",
     "androidx-compose-ui-tooling",
     "androidx-compose-activity",
-    "androidx-compose-material"
+    "androidx-compose-material3"
 ]
 compose-debug = [
     "androidx-compose-ui-tooling",
