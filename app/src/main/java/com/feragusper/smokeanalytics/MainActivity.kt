@@ -3,16 +3,14 @@ package com.feragusper.smokeanalytics
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -24,8 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -42,7 +40,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SmokeAnalyticsTheme {
+            SmokeAnalyticsTheme(
+                dynamicColor = false,
+            ) {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -53,24 +53,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-sealed class BottomNavigationScreens(
-    val route: String,
-    @StringRes val resourceId: Int,
-    val icon: ImageVector
-) {
-    object Home : BottomNavigationScreens(
-        HomeNavigator.ROUTE,
-        R.string.bottom_navigation_item_home_title,
-        Icons.Filled.Home
-    )
-
-    object Profile : BottomNavigationScreens(
-        ProfileNavigator.ROUTE,
-        R.string.bottom_navigation_item_profile_title,
-        Icons.Filled.AccountCircle
-    )
 }
 
 @Composable
@@ -99,24 +81,19 @@ private fun BottomNavigation(
     navController: NavHostController,
     items: List<BottomNavigationScreens>
 ) {
-    BottomNavigation(
-        elevation = 0.dp,
-    ) {
+    NavigationBar {
         val currentRoute = currentRoute(navController)
         items.forEach { screen ->
-            BottomNavigationItem(
+            NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = screen.icon,
+                        imageVector = ImageVector.vectorResource(screen.iconId),
                         contentDescription = ""
                     )
                 },
-                label = { Text(stringResource(id = screen.resourceId)) },
+                label = { Text(stringResource(id = screen.labelId)) },
                 selected = currentRoute == screen.route,
-                alwaysShowLabel = false, // This hides the title for the unselected items
                 onClick = {
-                    // This if check gives us a "singleTop" behavior where we do not create a
-                    // second instance of the composable if we are already on that destination
                     if (currentRoute != screen.route) {
                         navController.navigate(screen.route)
                     }
@@ -149,9 +126,27 @@ private fun currentRoute(navController: NavHostController): String? {
     return navBackStackEntry?.destination?.parent?.route
 }
 
+private sealed class BottomNavigationScreens(
+    val route: String,
+    @StringRes val labelId: Int,
+    @DrawableRes val iconId: Int
+) {
+    object Home : BottomNavigationScreens(
+        HomeNavigator.ROUTE,
+        R.string.bottom_navigation_item_home_title,
+        R.drawable.ic_home
+    )
+
+    object Profile : BottomNavigationScreens(
+        ProfileNavigator.ROUTE,
+        R.string.bottom_navigation_item_profile_title,
+        R.drawable.ic_settings
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
-fun MainContainerScreenPreview() {
+private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
         MainContainerScreen()
     }
