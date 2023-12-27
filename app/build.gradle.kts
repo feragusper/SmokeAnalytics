@@ -116,7 +116,7 @@ dependencies {
     implementation(project(":libraries:design"))
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":features:home:presentation"))
-    implementation(project(":features:profile:presentation"))
+    implementation(project(":features:settings:presentation"))
     kapt(libs.hilt.compiler)
 
 }

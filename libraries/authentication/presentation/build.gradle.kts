@@ -20,6 +20,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":libraries:design"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.hilt)

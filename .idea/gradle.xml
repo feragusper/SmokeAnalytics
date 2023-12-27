@@ -27,8 +27,8 @@
             <option value="$PROJECT_DIR$/features/home/data" />
             <option value="$PROJECT_DIR$/features/home/domain" />
             <option value="$PROJECT_DIR$/features/home/presentation" />
-            <option value="$PROJECT_DIR$/features/profile" />
-            <option value="$PROJECT_DIR$/features/profile/presentation" />
+            <option value="$PROJECT_DIR$/features/settings" />
+            <option value="$PROJECT_DIR$/features/settings/presentation" />
             <option value="$PROJECT_DIR$/libraries" />
             <option value="$PROJECT_DIR$/libraries/architecture" />
             <option value="$PROJECT_DIR$/libraries/architecture/domain" />

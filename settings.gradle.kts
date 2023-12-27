@@ -6,7 +6,9 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    @Suppress("UnstableApiUsage")
     repositories {
         google()
         mavenCentral()
@@ -21,7 +23,7 @@ include(":libraries:architecture:domain")
 include(":libraries:authentication:presentation")
 include(":libraries:authentication:domain")
 include(":libraries:authentication:data")
-include(":features:profile:presentation")
+include(":features:settings:presentation")
 include(":features:home:presentation")
 include(":features:home:data")
 include(":features:home:domain")
