@@ -1,0 +1,5 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_logout">Logout</string>
+    <string name="settings_email">Email</string>
+</resources>

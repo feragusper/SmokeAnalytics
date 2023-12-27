@@ -37,7 +37,7 @@ class HomeViewModel @Inject constructor(
             )
 
             HomeResult.GoToLogin -> {
-                navigator.navigateToProfile()
+                navigator.navigateToSettings()
                 previous
             }
 
