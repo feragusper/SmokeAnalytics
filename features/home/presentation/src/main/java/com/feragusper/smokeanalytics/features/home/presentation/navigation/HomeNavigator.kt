@@ -3,7 +3,7 @@ package com.feragusper.smokeanalytics.features.home.presentation.navigation
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.navigation.MVINavigator
 
 class HomeNavigator(
-    val navigateToProfile: () -> Unit
+    val navigateToSettings: () -> Unit
 ) : MVINavigator {
 
     companion object {

@@ -26,5 +26,6 @@ private fun FirebaseAuth.toSession() = when (currentUser) {
 private fun FirebaseUser.toUser(): Session.User {
     return Session.User(
         displayName = this.displayName,
+        email = this.email,
     )
 }
