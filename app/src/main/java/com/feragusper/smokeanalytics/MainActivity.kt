@@ -30,8 +30,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
-import com.feragusper.smokeanalytics.features.profile.navigation.ProfileNavigator
-import com.feragusper.smokeanalytics.features.profile.navigation.profileNavigationGraph
+import com.feragusper.smokeanalytics.features.settings.navigation.SettingsNavigator
+import com.feragusper.smokeanalytics.features.settings.navigation.settingsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -61,7 +61,7 @@ private fun MainContainerScreen() {
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
-        BottomNavigationScreens.Profile,
+        BottomNavigationScreens.Settings,
     )
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -113,9 +113,9 @@ private fun MainScreenNavigationConfigurations(
         navController = navController,
         startDestination = BottomNavigationScreens.Home.route
     ) {
-        val profileNavigator = ProfileNavigator(navController)
-        homeNavigationGraph(HomeNavigator(profileNavigator.navigateToProfile))
-        profileNavigationGraph(profileNavigator)
+        val settingsNavigator = SettingsNavigator(navController)
+        homeNavigationGraph(HomeNavigator(settingsNavigator.navigateToSettings))
+        settingsNavigationGraph(settingsNavigator)
     }
 }
 
@@ -137,9 +137,9 @@ private sealed class BottomNavigationScreens(
         R.drawable.ic_home
     )
 
-    object Profile : BottomNavigationScreens(
-        ProfileNavigator.ROUTE,
-        R.string.bottom_navigation_item_profile_title,
+    object Settings : BottomNavigationScreens(
+        SettingsNavigator.ROUTE,
+        R.string.bottom_navigation_item_settings_title,
         R.drawable.ic_settings
     )
 }

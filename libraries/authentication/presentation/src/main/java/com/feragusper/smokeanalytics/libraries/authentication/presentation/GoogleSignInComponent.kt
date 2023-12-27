@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.authentication.presentation
 
+import android.app.Activity
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
@@ -13,15 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -36,13 +37,13 @@ import kotlinx.coroutines.tasks.await
 
 @Composable
 fun GoogleSignInComponent(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     onSignInSuccess: () -> Unit,
     onSignInError: () -> Unit,
 ) {
-    val componentActivity = LocalContext.current as ComponentActivity
+    val activity = LocalContext.current as? Activity
     val coroutine = rememberCoroutineScope()
-    val oneTapClient = Identity.getSignInClient(componentActivity)
+    val oneTapClient = activity?.let { Identity.getSignInClient(it) }
     val signInRequest = BeginSignInRequest.builder()
         .setGoogleIdTokenRequestOptions(
             BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
@@ -57,8 +58,8 @@ fun GoogleSignInComponent(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
         onResult = {
             try {
-                val credential = oneTapClient.getSignInCredentialFromIntent(it.data)
-                val idToken = credential.googleIdToken
+                val credential = oneTapClient?.getSignInCredentialFromIntent(it.data)
+                val idToken = credential?.googleIdToken
                 if (idToken != null) {
                     Firebase.auth.signInWithCredential(
                         GoogleAuthProvider.getCredential(
@@ -66,7 +67,7 @@ fun GoogleSignInComponent(
                             null,
                         ),
                     )
-                        .addOnCompleteListener(componentActivity) { task ->
+                        .addOnCompleteListener(activity) { task ->
                             if (task.isSuccessful) {
                                 onSignInSuccess()
                             } else {
@@ -99,30 +100,28 @@ fun GoogleSignInComponent(
     )
     Button(
         onClick = {
-            signIn(
-                coroutine = coroutine,
-                launcher = launcher,
-                signInRequest = signInRequest,
-                oneTapClient = oneTapClient,
-                onSignInError = onSignInError
-            )
+            oneTapClient?.let {
+                signIn(
+                    coroutine = coroutine,
+                    launcher = launcher,
+                    signInRequest = signInRequest,
+                    oneTapClient = it,
+                    onSignInError = onSignInError
+                )
+            }
         },
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp),
         shape = RoundedCornerShape(6.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Black,
-            contentColor = Color.White,
-        ),
     ) {
         Image(
             modifier = Modifier.size(24.dp),
             painter = painterResource(id = R.drawable.google),
-            contentDescription = "",
+            contentDescription = null,
         )
         Text(
-            text = "Sign in with Google",
+            text = stringResource(id = R.string.auth_sign_in_with_google),
             modifier = Modifier.padding(6.dp),
         )
     }
@@ -150,5 +149,16 @@ private fun signIn(
             Log.d("LOG", e.message.toString())
             onSignInError()
         }
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun SettingsLoadingPreview() {
+    SmokeAnalyticsTheme {
+        GoogleSignInComponent(
+            onSignInSuccess = { },
+            onSignInError = {},
+        )
     }
 }
