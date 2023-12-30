@@ -44,18 +44,22 @@ class HomeViewModelTest {
         runTest {
             val viewModel = HomeViewModel(processHolder)
 
+            val hours = 20L
+            val minutes = 10L
             val smokesPerDay = 1
             val smokesPerWeek = 2
             val smokesPerMonth = 3
             val latestSmokes: List<Smoke> = listOf(mockk())
+
             intentResults.emit(
                 HomeResult.FetchSmokesSuccess(
-                    SmokeCountListResult(
-                        byToday = smokesPerDay,
-                        byWeek = smokesPerWeek,
-                        byMonth = smokesPerMonth,
-                        latestSmokes = latestSmokes
-                    )
+                    mockk<SmokeCountListResult>().apply {
+                        every { countByToday } returns smokesPerDay
+                        every { countByWeek } returns smokesPerWeek
+                        every { countByMonth } returns smokesPerMonth
+                        every { todaysSmokes } returns latestSmokes
+                        every { timeSinceLastCigarette } returns (hours to minutes)
+                    }
                 )
             )
             state = viewModel.states().first()
@@ -66,6 +70,7 @@ class HomeViewModelTest {
             state.smokesPerWeek shouldBeEqualTo smokesPerWeek
             state.smokesPerMonth shouldBeEqualTo smokesPerMonth
             state.latestSmokes shouldBeEqualTo latestSmokes
+            state.timeSinceLastCigarette shouldBeEqualTo (hours to minutes)
         }
 
     @Test
@@ -105,6 +110,8 @@ class HomeViewModelTest {
 
             val viewModel = HomeViewModel(processHolder)
 
+            val hours = 20L
+            val minutes = 10L
             val smokesPerDay = 1
             val smokesPerWeek = 2
             val smokesPerMonth = 3
@@ -116,12 +123,13 @@ class HomeViewModelTest {
 
             intentResults.emit(
                 HomeResult.FetchSmokesSuccess(
-                    SmokeCountListResult(
-                        byToday = smokesPerDay,
-                        byWeek = smokesPerWeek,
-                        byMonth = smokesPerMonth,
-                        latestSmokes = latestSmokes
-                    )
+                    mockk<SmokeCountListResult>().apply {
+                        every { countByToday } returns smokesPerDay
+                        every { countByWeek } returns smokesPerWeek
+                        every { countByMonth } returns smokesPerMonth
+                        every { todaysSmokes } returns latestSmokes
+                        every { timeSinceLastCigarette } returns (hours to minutes)
+                    }
                 )
             )
             state = viewModel.states().first()
@@ -132,6 +140,7 @@ class HomeViewModelTest {
             state.smokesPerWeek shouldBeEqualTo smokesPerWeek
             state.smokesPerMonth shouldBeEqualTo smokesPerMonth
             state.latestSmokes shouldBeEqualTo latestSmokes
+            state.timeSinceLastCigarette shouldBeEqualTo (hours to minutes)
         }
 
     @Test

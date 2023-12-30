@@ -1,35 +1,46 @@
 package com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.material3.Divider
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.presentation.R
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import java.util.Date
 
@@ -40,6 +51,7 @@ data class HomeViewState(
     internal val smokesPerDay: Int? = null,
     internal val smokesPerWeek: Int? = null,
     internal val smokesPerMonth: Int? = null,
+    internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
@@ -52,7 +64,29 @@ data class HomeViewState(
     override fun Compose(intent: (HomeIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            floatingActionButton = {
+                if (!displayLoading) {
+                    FloatingActionButton(
+                        onClick = { intent(HomeIntent.AddSmoke) },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
+                                contentDescription = ""
+                            )
+                            Text(
+                                text = stringResource(R.string.home_button_track),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                }
+            }
         ) {
             if (displayLoading) {
                 Box(
@@ -65,74 +99,99 @@ data class HomeViewState(
                 Column(
                     modifier = Modifier
                         .padding(it)
+                        .padding(top = 16.dp)
+                        .padding(horizontal = 16.dp)
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center,
-                    )
-                    smokesPerDay?.let { smokesPerDay ->
-                        Text(
-                            text = stringResource(R.string.home_label_per_day),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = smokesPerDay.toString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    smokesPerWeek?.let { smokesPerWeek ->
-                        Text(
-                            text = stringResource(R.string.home_label_per_week),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = smokesPerWeek.toString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    smokesPerMonth?.let { smokesPerMonth ->
-                        Text(
-                            text = stringResource(R.string.home_label_per_month),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            text = smokesPerMonth.toString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    LazyColumn {
-                        items(latestSmokes ?: emptyList()) { smoke ->
-                            Text(
-                                text = smoke.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                textAlign = TextAlign.Center,
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        smokesPerDay?.let { smokesPerDay ->
+                            Stat(
+                                modifier = Modifier.weight(1f),
+                                titleResourceId = R.string.home_label_per_day,
+                                count = smokesPerDay
+                            )
+                        }
+                        smokesPerWeek?.let { smokesPerWeek ->
+                            Stat(
+                                modifier = Modifier.weight(1f),
+                                titleResourceId = R.string.home_label_per_week,
+                                count = smokesPerWeek
+                            )
+                        }
+                        smokesPerMonth?.let { smokesPerMonth ->
+                            Stat(
+                                modifier = Modifier.weight(1f),
+                                titleResourceId = R.string.home_label_per_month,
+                                count = smokesPerMonth
                             )
                         }
                     }
-                    Button(
-                        modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
-                        onClick = { intent(HomeIntent.AddSmoke) }
+                    timeSinceLastCigarette?.let { timeSinceLastCigarette ->
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = MaterialTheme.shapes.medium
+                                )
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.BottomEnd,
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(
+                                    4.dp,
+                                    Alignment.CenterVertically
+                                ),
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.home_since_your_last_cigarette),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                                Text(
+                                    text = timeSinceLastCigarette.let { (hours, minutes) ->
+                                        listOfNotNull(
+                                            stringResource(
+                                                id = R.string.home_smoked_after_hours_short,
+                                                hours.toInt()
+                                            ).takeIf { hours > 0 },
+                                            stringResource(
+                                                id = R.string.home_smoked_after_minutes_short,
+                                                minutes.toInt()
+                                            )
+                                        ).joinToString(", ")
+                                    },
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                            }
+                            Image(
+                                painter = painterResource(id = R.drawable.il_cigarette_background),
+                                contentDescription = null
+                            )
+                        }
+                    }
+                    Text(
+                        modifier = Modifier.padding(top = 24.dp),
+                        text = stringResource(id = R.string.home_smoked_today),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    LazyColumn(
+                        modifier = Modifier.padding(top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(text = stringResource(R.string.home_button_add_smoke))
+                        itemsIndexed(latestSmokes ?: emptyList()) { index, smoke ->
+                            SmokeItem(
+                                time = smoke.date.timeFormatted(),
+                                timeAfterPrevious = smoke.date.timeAfter(
+                                    latestSmokes?.getOrNull(
+                                        index + 1
+                                    )?.date
+                                ),
+                            )
+                        }
                     }
                 }
             }
@@ -158,9 +217,69 @@ data class HomeViewState(
         }
     }
 
+    @Composable
+    private fun SmokeItem(
+        time: String,
+        timeAfterPrevious: Pair<Long, Long>,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = time,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            val (hours, minutes) = timeAfterPrevious
+            Text(
+                text = "${stringResource(id = R.string.home_smoked_after)} ${
+                    listOfNotNull(
+                        pluralStringResource(
+                            id = R.plurals.home_smoked_after_hours,
+                            hours.toInt(),
+                            hours.toInt()
+                        ).takeIf { hours > 0 },
+                        pluralStringResource(
+                            id = R.plurals.home_smoked_after_minutes,
+                            minutes.toInt(),
+                            minutes.toInt()
+                        )
+                    ).joinToString(" and ")
+                }",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Divider()
+        }
+    }
+
+    @Composable
+    private fun Stat(
+        modifier: Modifier = Modifier,
+        titleResourceId: Int,
+        count: Int
+    ) {
+        Column(
+            modifier = modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        ) {
+            Text(
+                text = stringResource(id = titleResourceId),
+                style = MaterialTheme.typography.labelSmall
+            )
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.displayMedium
+            )
+        }
+    }
+
 }
 
-@Preview
+@CombinedPreviews
 @Composable
 private fun HomeViewLoadingPreview() {
     SmokeAnalyticsTheme {
@@ -170,7 +289,7 @@ private fun HomeViewLoadingPreview() {
     }
 }
 
-@Preview
+@CombinedPreviews
 @Composable
 private fun HomeViewSuccessPreview() {
     SmokeAnalyticsTheme {
@@ -178,6 +297,7 @@ private fun HomeViewSuccessPreview() {
             smokesPerDay = 10,
             smokesPerWeek = 20,
             smokesPerMonth = 30,
+            timeSinceLastCigarette = 1L to 30L,
             latestSmokes = listOf(
                 Smoke(Date()),
                 Smoke(Date()),
