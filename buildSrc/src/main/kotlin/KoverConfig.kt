@@ -18,6 +18,7 @@ class KoverConfig(
             "**/*ViewState.*",
             "**/*Color.kt",
             "**/*Typography.kt",
+            "**/compose/**",
         )
     }
 
@@ -35,6 +36,7 @@ class KoverConfig(
                 packages("com.another.subpackage")
                 // excludes all classes and functions, annotated by specified annotations, wildcards '*' and '?' are available
                 annotatedBy("*Generated*")
+
             }
         }
 
