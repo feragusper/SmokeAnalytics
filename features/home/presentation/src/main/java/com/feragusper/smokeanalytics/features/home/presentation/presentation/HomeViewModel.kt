@@ -45,10 +45,11 @@ class HomeViewModel @Inject constructor(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
                 smokeAddError = null,
-                smokesPerDay = result.smokeCountListResult.byToday,
-                smokesPerWeek = result.smokeCountListResult.byWeek,
-                smokesPerMonth = result.smokeCountListResult.byMonth,
-                latestSmokes = result.smokeCountListResult.latestSmokes,
+                smokesPerDay = result.smokeCountListResult.countByToday,
+                smokesPerWeek = result.smokeCountListResult.countByWeek,
+                smokesPerMonth = result.smokeCountListResult.countByMonth,
+                latestSmokes = result.smokeCountListResult.todaysSmokes,
+                timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette
             )
 
             HomeResult.AddSmokeSuccess -> {

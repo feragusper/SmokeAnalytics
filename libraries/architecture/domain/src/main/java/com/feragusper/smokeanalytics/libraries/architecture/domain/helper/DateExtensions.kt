@@ -1,7 +1,10 @@
 package com.feragusper.smokeanalytics.libraries.architecture.domain.helper
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 fun firstInstantToday(): Calendar {
     val calendar = Calendar.getInstance()
@@ -65,3 +68,13 @@ fun Date.isThisMonth() = isBetweenDates(
     firstInstantThisMonth().time,
     lastInstantThisMonth().time
 )
+
+fun Date.timeElapsedSinceNow(): Pair<Long, Long> = Date().timeAfter(this)
+
+fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
+    (time - dateNotNull.time).let { diff ->
+        TimeUnit.MILLISECONDS.toHours(diff) % 24 to TimeUnit.MILLISECONDS.toMinutes(diff) % 60
+    }
+} ?: (0L to 0L)
+
+fun Date.timeFormatted(): String = SimpleDateFormat("hh:mm", Locale.getDefault()).format(this)
