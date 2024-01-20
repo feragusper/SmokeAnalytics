@@ -62,6 +62,23 @@ android {
         }
     }
 
+    flavorDimensions += "environment"
+
+    productFlavors {
+        val applicationName = "Smoke Analytics"
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            isDefault = true
+            resValue("string", "app_name", "$applicationName (Staging)")
+        }
+        create("production") {
+            resValue("string", "app_name", applicationName)
+            dimension = "environment"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
