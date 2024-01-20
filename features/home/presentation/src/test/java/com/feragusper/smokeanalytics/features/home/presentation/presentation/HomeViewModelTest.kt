@@ -74,6 +74,18 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `GIVEN update time since last cigarette result WHEN viewmodel is created THEN it shows smoke counts`() =
+        runTest {
+            val viewModel = HomeViewModel(processHolder)
+            val timeSinceLastCigarette: Pair<Long, Long> = mockk()
+
+            intentResults.emit(HomeResult.UpdateTimeSinceLastCigarette(timeSinceLastCigarette))
+            state = viewModel.states().first()
+
+            state.timeSinceLastCigarette shouldBeEqualTo timeSinceLastCigarette
+        }
+
+    @Test
     fun `GIVEN fetch smokes error WHEN viewmodel is created THEN it shows fetch smokes error`() =
         runTest {
             every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults

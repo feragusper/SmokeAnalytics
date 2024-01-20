@@ -17,4 +17,5 @@ sealed interface HomeResult : MVIResult {
 
     data class FetchSmokesSuccess(val smokeCountListResult: SmokeCountListResult) : HomeResult
     object FetchSmokesError : HomeResult
+    data class UpdateTimeSinceLastCigarette(val timeSinceLastCigarette: Pair<Long, Long>) : HomeResult
 }

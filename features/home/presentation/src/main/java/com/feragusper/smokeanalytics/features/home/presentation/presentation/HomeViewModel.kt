@@ -7,7 +7,9 @@ import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.concurrent.fixedRateTimer
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -45,16 +47,31 @@ class HomeViewModel @Inject constructor(
                 previous
             }
 
-            is HomeResult.FetchSmokesSuccess -> previous.copy(
-                displayLoading = false,
-                displaySmokeAddedSuccess = true,
-                error = null,
-                smokesPerDay = result.smokeCountListResult.countByToday,
-                smokesPerWeek = result.smokeCountListResult.countByWeek,
-                smokesPerMonth = result.smokeCountListResult.countByMonth,
-                latestSmokes = result.smokeCountListResult.todaysSmokes,
-                timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette
-            )
+            is HomeResult.FetchSmokesSuccess -> {
+                fixedRateTimer(
+                    name = "timer",
+                    period = TimeUnit.MINUTES.toMillis(1),
+                ) {
+                    intents().trySend(HomeIntent.TickTimeSinceLastCigarette(result.smokeCountListResult.lastCigarette))
+                }
+
+                previous.copy(
+                    displayLoading = false,
+                    displaySmokeAddedSuccess = true,
+                    error = null,
+                    smokesPerDay = result.smokeCountListResult.countByToday,
+                    smokesPerWeek = result.smokeCountListResult.countByWeek,
+                    smokesPerMonth = result.smokeCountListResult.countByMonth,
+                    latestSmokes = result.smokeCountListResult.todaysSmokes,
+                    timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette
+                )
+            }
+
+            is HomeResult.UpdateTimeSinceLastCigarette -> {
+                previous.copy(
+                    timeSinceLastCigarette = result.timeSinceLastCigarette
+                )
+            }
 
             HomeResult.AddSmokeSuccess -> {
                 intents().trySend(HomeIntent.FetchSmokes)
