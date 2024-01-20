@@ -46,13 +46,13 @@ import java.util.Date
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
-    internal val displaySmokeAddedSuccess: Boolean = false,
-    internal val smokeAddError: HomeResult.AddSmokeError? = null,
     internal val smokesPerDay: Int? = null,
     internal val smokesPerWeek: Int? = null,
     internal val smokesPerMonth: Int? = null,
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
+    internal val displaySmokeAddedSuccess: Boolean = false,
+    internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
         companion object {
@@ -173,41 +173,45 @@ data class HomeViewState(
                             )
                         }
                     }
-                    Text(
-                        modifier = Modifier.padding(top = 24.dp),
-                        text = stringResource(id = R.string.home_smoked_today),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    LazyColumn(
-                        modifier = Modifier.padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        itemsIndexed(latestSmokes ?: emptyList()) { index, smoke ->
-                            SmokeItem(
-                                time = smoke.date.timeFormatted(),
-                                timeAfterPrevious = smoke.date.timeAfter(
-                                    latestSmokes?.getOrNull(
-                                        index + 1
-                                    )?.date
-                                ),
+                    latestSmokes
+                        .takeIf { latestSmokes -> !latestSmokes.isNullOrEmpty() }
+                        ?.let { latestSmokes ->
+                            Text(
+                                modifier = Modifier.padding(top = 24.dp),
+                                text = stringResource(id = R.string.home_smoked_today),
+                                style = MaterialTheme.typography.titleSmall,
                             )
+                            LazyColumn(
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                itemsIndexed(latestSmokes) { index, smoke ->
+                                    SmokeItem(
+                                        time = smoke.date.timeFormatted(),
+                                        timeAfterPrevious = smoke.date.timeAfter(
+                                            this@HomeViewState.latestSmokes?.getOrNull(
+                                                index + 1
+                                            )?.date
+                                        ),
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
             }
         }
 
         val context = LocalContext.current
-        LaunchedEffect(smokeAddError) {
-            smokeAddError?.let {
+        LaunchedEffect(error) {
+            error?.let {
                 when (it) {
-                    HomeResult.AddSmokeError.Generic -> snackbarHostState.showSnackbar(
+                    HomeResult.Error.Generic -> snackbarHostState.showSnackbar(
                         context.getString(
                             R.string.error_generic
                         )
                     )
 
-                    HomeResult.AddSmokeError.NotLoggedIn -> Toast.makeText(
+                    HomeResult.Error.NotLoggedIn -> Toast.makeText(
                         context,
                         context.getString(R.string.error_not_logged_in),
                         Toast.LENGTH_SHORT

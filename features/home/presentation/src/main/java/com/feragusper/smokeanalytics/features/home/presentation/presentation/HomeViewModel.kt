@@ -27,13 +27,17 @@ class HomeViewModel @Inject constructor(
             HomeResult.Loading -> previous.copy(
                 displayLoading = true,
                 displaySmokeAddedSuccess = false,
-                smokeAddError = null,
+                error = null,
             )
 
             HomeResult.NotLoggedIn -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
-                smokeAddError = null,
+                error = null,
+                smokesPerDay = 0,
+                smokesPerWeek = 0,
+                smokesPerMonth = 0,
+                timeSinceLastCigarette = 0L to 0L,
             )
 
             HomeResult.GoToLogin -> {
@@ -44,7 +48,7 @@ class HomeViewModel @Inject constructor(
             is HomeResult.FetchSmokesSuccess -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = true,
-                smokeAddError = null,
+                error = null,
                 smokesPerDay = result.smokeCountListResult.countByToday,
                 smokesPerWeek = result.smokeCountListResult.countByWeek,
                 smokesPerMonth = result.smokeCountListResult.countByMonth,
@@ -57,15 +61,16 @@ class HomeViewModel @Inject constructor(
                 previous
             }
 
-            is HomeResult.AddSmokeError -> previous.copy(
+            is HomeResult.Error -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
-                smokeAddError = result,
+                error = result,
             )
 
             HomeResult.FetchSmokesError -> previous.copy(
                 displayLoading = false,
                 displaySmokeAddedSuccess = false,
+                error = HomeResult.Error.Generic,
             )
         }
 }

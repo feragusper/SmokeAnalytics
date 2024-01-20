@@ -102,7 +102,7 @@ class HomeProcessHolderTest {
             runBlocking {
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
                 assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.AddSmokeError.Generic, results.last())
+                assertEquals(HomeResult.Error.Generic, results.last())
             }
         }
     }
@@ -119,7 +119,7 @@ class HomeProcessHolderTest {
         fun `WHEN add smoke intent is processed THEN it should result with not logged in`() {
             runBlocking {
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
-                assertEquals(HomeResult.AddSmokeError.NotLoggedIn, results.first())
+                assertEquals(HomeResult.Error.NotLoggedIn, results.first())
                 assertEquals(HomeResult.GoToLogin, results.last())
             }
         }

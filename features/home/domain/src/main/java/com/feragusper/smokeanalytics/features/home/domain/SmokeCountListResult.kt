@@ -8,5 +8,6 @@ data class SmokeCountListResult(
     val countByMonth: Int,
 ) {
     val countByToday = todaysSmokes.size
-    val timeSinceLastCigarette: Pair<Long, Long> = todaysSmokes.first().date.timeElapsedSinceNow()
+    val timeSinceLastCigarette: Pair<Long, Long> =
+        todaysSmokes.firstOrNull()?.date?.timeElapsedSinceNow() ?: (0L to 0L)
 }
