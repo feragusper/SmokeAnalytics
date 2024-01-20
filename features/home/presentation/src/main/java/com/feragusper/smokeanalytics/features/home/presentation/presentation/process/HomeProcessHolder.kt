@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -21,7 +22,17 @@ class HomeProcessHolder @Inject constructor(
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
         HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.FetchSmokes -> processFetchSmokes()
+        is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
     }
+
+    private fun processTickTimeSinceLastCigarette(intent: HomeIntent.TickTimeSinceLastCigarette) =
+        flow {
+            emit(
+                HomeResult.UpdateTimeSinceLastCigarette(
+                    intent.lastCigarette?.date?.timeElapsedSinceNow() ?: (0L to 0L)
+                )
+            )
+        }
 
     private fun processFetchSmokes() = flow {
         when (fetchSessionUseCase()) {
