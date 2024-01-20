@@ -65,7 +65,7 @@ class HomeViewModelTest {
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
-            state.smokeAddError shouldBeEqualTo null
+            state.error shouldBeEqualTo null
             state.smokesPerDay shouldBeEqualTo smokesPerDay
             state.smokesPerWeek shouldBeEqualTo smokesPerWeek
             state.smokesPerMonth shouldBeEqualTo smokesPerMonth
@@ -135,7 +135,7 @@ class HomeViewModelTest {
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
-            state.smokeAddError shouldBeEqualTo null
+            state.error shouldBeEqualTo null
             state.smokesPerDay shouldBeEqualTo smokesPerDay
             state.smokesPerWeek shouldBeEqualTo smokesPerWeek
             state.smokesPerMonth shouldBeEqualTo smokesPerMonth
@@ -150,14 +150,14 @@ class HomeViewModelTest {
 
             val viewModel = HomeViewModel(processHolder)
 
-            intentResults.emit(HomeResult.AddSmokeError.Generic)
+            intentResults.emit(HomeResult.Error.Generic)
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
             state.displaySmokeAddedSuccess shouldBeEqualTo false
-            state.smokeAddError shouldBeEqualTo HomeResult.AddSmokeError.Generic
+            state.error shouldBeEqualTo HomeResult.Error.Generic
         }
 
 }

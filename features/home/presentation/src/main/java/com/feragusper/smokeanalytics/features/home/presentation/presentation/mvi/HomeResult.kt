@@ -8,9 +8,11 @@ sealed interface HomeResult : MVIResult {
     object NotLoggedIn : HomeResult
     object GoToLogin : HomeResult
     object AddSmokeSuccess : HomeResult
-    sealed interface AddSmokeError : HomeResult {
-        object Generic : AddSmokeError
-        object NotLoggedIn : AddSmokeError
+    sealed interface Error : HomeResult {
+        object Generic :
+            Error
+        object NotLoggedIn :
+            Error
     }
 
     data class FetchSmokesSuccess(val smokeCountListResult: SmokeCountListResult) : HomeResult

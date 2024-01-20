@@ -38,7 +38,7 @@ class HomeProcessHolder @Inject constructor(
     private fun processAddSmoke(): Flow<HomeResult> = flow {
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> {
-                emit(HomeResult.AddSmokeError.NotLoggedIn)
+                emit(HomeResult.Error.NotLoggedIn)
                 emit(HomeResult.GoToLogin)
             }
 
@@ -49,6 +49,6 @@ class HomeProcessHolder @Inject constructor(
             }
         }
     }.catch {
-        emit(HomeResult.AddSmokeError.Generic)
+        emit(HomeResult.Error.Generic)
     }
 }
