@@ -77,4 +77,4 @@ fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
     }
 } ?: (0L to 0L)
 
-fun Date.timeFormatted(): String = SimpleDateFormat("hh:mm", Locale.getDefault()).format(this)
+fun Date.timeFormatted(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
