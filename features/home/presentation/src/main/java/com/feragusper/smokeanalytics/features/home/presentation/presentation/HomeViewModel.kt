@@ -28,13 +28,11 @@ class HomeViewModel @Inject constructor(
         when (result) {
             HomeResult.Loading -> previous.copy(
                 displayLoading = true,
-                displaySmokeAddedSuccess = false,
                 error = null,
             )
 
             HomeResult.NotLoggedIn -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
                 error = null,
                 smokesPerDay = 0,
                 smokesPerWeek = 0,
@@ -52,18 +50,17 @@ class HomeViewModel @Inject constructor(
                     name = "timer",
                     period = TimeUnit.MINUTES.toMillis(1),
                 ) {
-                    intents().trySend(HomeIntent.TickTimeSinceLastCigarette(result.smokeCountListResult.lastCigarette))
+                    intents().trySend(HomeIntent.TickTimeSinceLastCigarette(result.smokeCountListResult.lastSmoke))
                 }
 
                 previous.copy(
                     displayLoading = false,
-                    displaySmokeAddedSuccess = true,
                     error = null,
                     smokesPerDay = result.smokeCountListResult.countByToday,
                     smokesPerWeek = result.smokeCountListResult.countByWeek,
                     smokesPerMonth = result.smokeCountListResult.countByMonth,
                     latestSmokes = result.smokeCountListResult.todaysSmokes,
-                    timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette
+                    timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                 )
             }
 
@@ -80,13 +77,11 @@ class HomeViewModel @Inject constructor(
 
             is HomeResult.Error -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
                 error = result,
             )
 
             HomeResult.FetchSmokesError -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
                 error = HomeResult.Error.Generic,
             )
         }

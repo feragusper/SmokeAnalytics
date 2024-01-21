@@ -20,6 +20,7 @@ kover = "0.7.4"
 material3 = "1.1.2"
 mockk = "1.13.7"
 navVersion = "2.7.6"
+timber = "5.0.1"
 playServicesAuth = "20.7.0"
 sonarqubeGradlePlugin = "4.0.0.2929"
 
@@ -62,6 +63,7 @@ kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", ve
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 playservices-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 sonarqube-gradle-plugin = { module = "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin", version.ref = "sonarqubeGradlePlugin" }
 

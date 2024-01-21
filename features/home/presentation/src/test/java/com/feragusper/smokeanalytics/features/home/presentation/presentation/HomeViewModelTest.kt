@@ -98,7 +98,6 @@ class HomeViewModelTest {
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
-            state.displaySmokeAddedSuccess shouldBeEqualTo false
         }
 
     @Test
@@ -168,7 +167,6 @@ class HomeViewModelTest {
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
-            state.displaySmokeAddedSuccess shouldBeEqualTo false
             state.error shouldBeEqualTo HomeResult.Error.Generic
         }
 

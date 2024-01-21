@@ -5,11 +5,11 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -42,7 +42,7 @@ class HomeProcessHolder @Inject constructor(
                 emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
             }
         }
-    }.catch {
+    }.catchAndLog {
         emit(HomeResult.FetchSmokesError)
     }
 
@@ -59,7 +59,7 @@ class HomeProcessHolder @Inject constructor(
                 emit(HomeResult.AddSmokeSuccess)
             }
         }
-    }.catch {
+    }.catchAndLog {
         emit(HomeResult.Error.Generic)
     }
 }

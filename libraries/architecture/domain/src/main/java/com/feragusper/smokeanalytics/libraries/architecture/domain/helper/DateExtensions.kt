@@ -69,7 +69,7 @@ fun Date.isThisMonth() = isBetweenDates(
     lastInstantThisMonth().time
 )
 
-fun Date.timeElapsedSinceNow(): Pair<Long, Long> = Date().timeAfter(this)
+fun Date?.timeElapsedSinceNow(): Pair<Long, Long> = Date().timeAfter(this)
 
 fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
     (time - dateNotNull.time).let { diff ->
