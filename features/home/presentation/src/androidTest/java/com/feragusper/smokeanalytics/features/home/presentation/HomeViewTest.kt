@@ -40,12 +40,10 @@ class HomeViewTest {
 
     private fun prepareScreen(
         displayLoading: Boolean = true,
-        displaySmokeAddedSuccess: Boolean = false,
     ) {
         every { viewModel.states() } returns MutableStateFlow(
             HomeViewState(
                 displayLoading = displayLoading,
-                displaySmokeAddedSuccess = displaySmokeAddedSuccess,
             )
         )
         composeTestRule.setContent {

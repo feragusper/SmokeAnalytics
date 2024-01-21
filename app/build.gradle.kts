@@ -62,6 +62,23 @@ android {
         }
     }
 
+    flavorDimensions += "environment"
+
+    productFlavors {
+        val applicationName = "Smoke Analytics"
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            isDefault = true
+            resValue("string", "app_name", "$applicationName (Staging)")
+        }
+        create("production") {
+            resValue("string", "app_name", applicationName)
+            dimension = "environment"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -113,6 +130,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
     implementation(libs.hilt)
+    implementation(libs.timber)
     implementation(project(":libraries:design"))
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":features:home:presentation"))
