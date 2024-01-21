@@ -11,7 +11,8 @@ class FetchSmokeCountListUseCase @Inject constructor(private val smokeRepository
     private fun List<Smoke>.toSmokeCountListResult() = SmokeCountListResult(
         todaysSmokes = filterToday(),
         countByWeek = filterThisWeek().size,
-        countByMonth = filterThisMonth().size
+        countByMonth = filterThisMonth().size,
+        lastSmoke = firstOrNull(),
     )
 
     private fun List<Smoke>.filterToday() = filter { it.date.isToday() }

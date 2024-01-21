@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.FloatingActionButton
@@ -37,7 +37,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.presentation.R
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
@@ -46,13 +45,12 @@ import java.util.Date
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
-    internal val displaySmokeAddedSuccess: Boolean = false,
-    internal val smokeAddError: HomeResult.AddSmokeError? = null,
     internal val smokesPerDay: Int? = null,
     internal val smokesPerWeek: Int? = null,
     internal val smokesPerMonth: Int? = null,
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
+    internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
         companion object {
@@ -173,41 +171,41 @@ data class HomeViewState(
                             )
                         }
                     }
-                    Text(
-                        modifier = Modifier.padding(top = 24.dp),
-                        text = stringResource(id = R.string.home_smoked_today),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    LazyColumn(
-                        modifier = Modifier.padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        itemsIndexed(latestSmokes ?: emptyList()) { index, smoke ->
-                            SmokeItem(
-                                time = smoke.date.timeFormatted(),
-                                timeAfterPrevious = smoke.date.timeAfter(
-                                    latestSmokes?.getOrNull(
-                                        index + 1
-                                    )?.date
-                                ),
+                    latestSmokes
+                        .takeIf { latestSmokes -> !latestSmokes.isNullOrEmpty() }
+                        ?.let { latestSmokes ->
+                            Text(
+                                modifier = Modifier.padding(top = 24.dp),
+                                text = stringResource(id = R.string.home_smoked_today),
+                                style = MaterialTheme.typography.titleSmall,
                             )
+                            LazyColumn(
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(latestSmokes) { smoke ->
+                                    SmokeItem(
+                                        time = smoke.date.timeFormatted(),
+                                        timeAfterPrevious = smoke.timeElapsedSincePreviousSmoke,
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
             }
         }
 
         val context = LocalContext.current
-        LaunchedEffect(smokeAddError) {
-            smokeAddError?.let {
+        LaunchedEffect(error) {
+            error?.let {
                 when (it) {
-                    HomeResult.AddSmokeError.Generic -> snackbarHostState.showSnackbar(
+                    HomeResult.Error.Generic -> snackbarHostState.showSnackbar(
                         context.getString(
                             R.string.error_generic
                         )
                     )
 
-                    HomeResult.AddSmokeError.NotLoggedIn -> Toast.makeText(
+                    HomeResult.Error.NotLoggedIn -> Toast.makeText(
                         context,
                         context.getString(R.string.error_not_logged_in),
                         Toast.LENGTH_SHORT
@@ -298,13 +296,16 @@ private fun HomeViewSuccessPreview() {
             smokesPerWeek = 20,
             smokesPerMonth = 30,
             timeSinceLastCigarette = 1L to 30L,
-            latestSmokes = listOf(
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-            ),
+            latestSmokes = buildList {
+                repeat(4) {
+                    add(
+                        Smoke(
+                            date = Date(),
+                            timeElapsedSincePreviousSmoke = 1L to 30L
+                        )
+                    )
+                }
+            },
         ).Compose {}
     }
 }

@@ -1,8 +1,8 @@
 name: Nightly Integration
 
-on:
-  schedule:
-    - cron: '37 19 * * *'
+#on:
+#  schedule:
+#    - cron: '37 19 * * *'
 
 jobs:
   build:

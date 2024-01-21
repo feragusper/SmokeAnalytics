@@ -11,6 +11,7 @@ android {
 
 dependencies {
     implementation(project(":features:home:domain"))
+    implementation(project(":libraries:architecture:domain"))
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
 
