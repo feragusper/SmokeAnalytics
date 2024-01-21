@@ -28,17 +28,16 @@ jobs:
 
       - name: Config keys
         run: |
-          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
+          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
+          mkdir ./app/src/staging/
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./app/src/staging/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/src/staging/google-services.json.asc > ./app/src/staging/google-services.json
+          mkdir ./app/src/production/
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/src/production/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/src/production/google-services.json.asc > ./app/src/production/google-services.json
 
       - name: Check
         run: bash ./gradlew check --stacktrace
-
-      - name: Upload Coverage Reports to Codecov
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Cache SonarQube packages
         uses: actions/cache@v3

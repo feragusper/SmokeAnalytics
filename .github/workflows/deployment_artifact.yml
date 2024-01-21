@@ -24,6 +24,7 @@ jobs:
       - name: Config keys
         run: |
           echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
+          mkdir ./app/src/staging/
           echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./app/src/staging/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/src/staging/google-services.json.asc > ./app/src/staging/google-services.json
 
