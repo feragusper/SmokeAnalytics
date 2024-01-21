@@ -4,11 +4,12 @@ import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -21,7 +22,17 @@ class HomeProcessHolder @Inject constructor(
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
         HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.FetchSmokes -> processFetchSmokes()
+        is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
     }
+
+    private fun processTickTimeSinceLastCigarette(intent: HomeIntent.TickTimeSinceLastCigarette) =
+        flow {
+            emit(
+                HomeResult.UpdateTimeSinceLastCigarette(
+                    intent.lastCigarette?.date?.timeElapsedSinceNow() ?: (0L to 0L)
+                )
+            )
+        }
 
     private fun processFetchSmokes() = flow {
         when (fetchSessionUseCase()) {
@@ -31,14 +42,14 @@ class HomeProcessHolder @Inject constructor(
                 emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
             }
         }
-    }.catch {
+    }.catchAndLog {
         emit(HomeResult.FetchSmokesError)
     }
 
     private fun processAddSmoke(): Flow<HomeResult> = flow {
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> {
-                emit(HomeResult.AddSmokeError.NotLoggedIn)
+                emit(HomeResult.Error.NotLoggedIn)
                 emit(HomeResult.GoToLogin)
             }
 
@@ -48,7 +59,7 @@ class HomeProcessHolder @Inject constructor(
                 emit(HomeResult.AddSmokeSuccess)
             }
         }
-    }.catch {
-        emit(HomeResult.AddSmokeError.Generic)
+    }.catchAndLog {
+        emit(HomeResult.Error.Generic)
     }
 }

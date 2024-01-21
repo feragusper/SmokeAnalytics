@@ -1,6 +1,6 @@
 # Smoke Analytics
 
-[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment.yml)
+[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_artifact.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment.yml)
 
 Android application to track smoking habits and run analytics on them.
 

@@ -13,5 +13,6 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.hilt)
+    implementation(libs.timber)
     kapt(libs.hilt.compiler)
 }

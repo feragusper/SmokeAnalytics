@@ -4,7 +4,7 @@
     <string name="home_label_per_week">This week</string>
     <string name="home_label_per_month">This month</string>
     <string name="error_generic">An error has occurred</string>
-    <string name="error_not_logged_in">Please log in and try again.</string>
+    <string name="error_not_logged_in">Please log in to access to this feature.</string>
     <string name="home_smoked_today">Smoked today</string>
     <string name="home_smoked_after">After</string>
     <string name="home_since_your_last_cigarette">Since your last cigarette</string>

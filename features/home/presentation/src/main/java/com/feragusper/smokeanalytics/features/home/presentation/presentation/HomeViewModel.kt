@@ -7,7 +7,9 @@ import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.concurrent.fixedRateTimer
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -26,14 +28,16 @@ class HomeViewModel @Inject constructor(
         when (result) {
             HomeResult.Loading -> previous.copy(
                 displayLoading = true,
-                displaySmokeAddedSuccess = false,
-                smokeAddError = null,
+                error = null,
             )
 
             HomeResult.NotLoggedIn -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
-                smokeAddError = null,
+                error = null,
+                smokesPerDay = 0,
+                smokesPerWeek = 0,
+                smokesPerMonth = 0,
+                timeSinceLastCigarette = 0L to 0L,
             )
 
             HomeResult.GoToLogin -> {
@@ -41,31 +45,44 @@ class HomeViewModel @Inject constructor(
                 previous
             }
 
-            is HomeResult.FetchSmokesSuccess -> previous.copy(
-                displayLoading = false,
-                displaySmokeAddedSuccess = true,
-                smokeAddError = null,
-                smokesPerDay = result.smokeCountListResult.countByToday,
-                smokesPerWeek = result.smokeCountListResult.countByWeek,
-                smokesPerMonth = result.smokeCountListResult.countByMonth,
-                latestSmokes = result.smokeCountListResult.todaysSmokes,
-                timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette
-            )
+            is HomeResult.FetchSmokesSuccess -> {
+                fixedRateTimer(
+                    name = "timer",
+                    period = TimeUnit.MINUTES.toMillis(1),
+                ) {
+                    intents().trySend(HomeIntent.TickTimeSinceLastCigarette(result.smokeCountListResult.lastSmoke))
+                }
+
+                previous.copy(
+                    displayLoading = false,
+                    error = null,
+                    smokesPerDay = result.smokeCountListResult.countByToday,
+                    smokesPerWeek = result.smokeCountListResult.countByWeek,
+                    smokesPerMonth = result.smokeCountListResult.countByMonth,
+                    latestSmokes = result.smokeCountListResult.todaysSmokes,
+                    timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
+                )
+            }
+
+            is HomeResult.UpdateTimeSinceLastCigarette -> {
+                previous.copy(
+                    timeSinceLastCigarette = result.timeSinceLastCigarette
+                )
+            }
 
             HomeResult.AddSmokeSuccess -> {
                 intents().trySend(HomeIntent.FetchSmokes)
                 previous
             }
 
-            is HomeResult.AddSmokeError -> previous.copy(
+            is HomeResult.Error -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
-                smokeAddError = result,
+                error = result,
             )
 
             HomeResult.FetchSmokesError -> previous.copy(
                 displayLoading = false,
-                displaySmokeAddedSuccess = false,
+                error = HomeResult.Error.Generic,
             )
         }
 }
