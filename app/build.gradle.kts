@@ -130,6 +130,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
     implementation(libs.hilt)
+    implementation(libs.timber)
     implementation(project(":libraries:design"))
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":features:home:presentation"))

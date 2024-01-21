@@ -3,20 +3,12 @@ package com.feragusper.smokeanalytics.libraries.architecture.presentation.extens
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.catch
-import kotlin.reflect.KClass
+import timber.log.Timber
 
-/**
- * Limit exception handling to the expected errors
- */
-fun <T, E : Throwable> Flow<T>.catchTyped(
-    type: KClass<E>,
+fun <T> Flow<T>.catchAndLog(
     action: suspend FlowCollector<T>.(cause: Throwable) -> Unit,
-): Flow<T> {
-    return this.catch {
-        if (type.isInstance(it)) {
-            action(it)
-        } else {
-            throw IllegalStateException("Propagating error due to fail fast policy", it)
-        }
-    }
+) = this.catch {
+    Timber.e("ErrorHandling", "Error caught", it)
+    action(it)
 }
+

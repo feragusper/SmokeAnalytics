@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.FloatingActionButton
@@ -37,7 +37,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.presentation.R
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
@@ -51,7 +50,6 @@ data class HomeViewState(
     internal val smokesPerMonth: Int? = null,
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
-    internal val displaySmokeAddedSuccess: Boolean = false,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
     interface TestTags {
@@ -185,14 +183,10 @@ data class HomeViewState(
                                 modifier = Modifier.padding(top = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                itemsIndexed(latestSmokes) { index, smoke ->
+                                items(latestSmokes) { smoke ->
                                     SmokeItem(
                                         time = smoke.date.timeFormatted(),
-                                        timeAfterPrevious = smoke.date.timeAfter(
-                                            this@HomeViewState.latestSmokes?.getOrNull(
-                                                index + 1
-                                            )?.date
-                                        ),
+                                        timeAfterPrevious = smoke.timeElapsedSincePreviousSmoke,
                                     )
                                 }
                             }
@@ -302,13 +296,16 @@ private fun HomeViewSuccessPreview() {
             smokesPerWeek = 20,
             smokesPerMonth = 30,
             timeSinceLastCigarette = 1L to 30L,
-            latestSmokes = listOf(
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-                Smoke(Date()),
-            ),
+            latestSmokes = buildList {
+                repeat(4) {
+                    add(
+                        Smoke(
+                            date = Date(),
+                            timeElapsedSincePreviousSmoke = 1L to 30L
+                        )
+                    )
+                }
+            },
         ).Compose {}
     }
 }
