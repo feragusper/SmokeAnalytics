@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.home.data
 import com.feragusper.smokeanalytics.features.home.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.features.home.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -14,6 +15,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
 import org.amshove.kluent.internal.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -54,7 +56,14 @@ class SmokeRepositoryImplTest {
 
         @Test
         fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() {
-            val date = Date()
+            val date1: Date = mockk<Date>()
+            val date2: Date = mockk<Date>()
+            val timeAfterNothing: Pair<Long, Long> = mockk()
+            val timeAfter2: Pair<Long, Long> = mockk()
+            mockkStatic(Date::timeAfter).apply {
+                every { date2.timeAfter(null) } answers { timeAfterNothing }
+                every { date1.timeAfter(date2) } answers { timeAfter2 }
+            }
             every {
                 firebaseFirestore.collection("$USERS/$uid/$SMOKES")
                     .orderBy(Smoke::date.name, Query.Direction.DESCENDING)
@@ -71,7 +80,10 @@ class SmokeRepositoryImplTest {
                                     every { documents } answers {
                                         listOf(
                                             mockk<DocumentSnapshot>().apply {
-                                                every { getDate(Smoke::date.name) } answers { date }
+                                                every { getDate(Smoke::date.name) } answers { date1 }
+                                            },
+                                            mockk<DocumentSnapshot>().apply {
+                                                every { getDate(Smoke::date.name) } answers { date2 }
                                             },
                                         )
                                     }
@@ -83,7 +95,18 @@ class SmokeRepositoryImplTest {
             }
 
             runTest {
-                assertEquals(authenticationRepository.fetchSmokes(), listOf(Smoke(date = date)))
+                assertEquals(
+                    authenticationRepository.fetchSmokes(), listOf(
+                        Smoke(
+                            date = date1,
+                            timeElapsedSincePreviousSmoke = timeAfter2
+                        ),
+                        Smoke(
+                            date = date2,
+                            timeElapsedSincePreviousSmoke = timeAfterNothing
+                        )
+                    )
+                )
             }
         }
 

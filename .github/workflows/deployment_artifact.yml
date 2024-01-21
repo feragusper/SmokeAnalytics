@@ -23,12 +23,13 @@ jobs:
 
       - name: Config keys
         run: |
-          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./app/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/google-services.json.asc > ./app/google-services.json
+          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
+          mkdir ./app/src/staging/
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./app/src/staging/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./app/src/staging/google-services.json.asc > ./app/src/staging/google-services.json
 
       - name: Build debug APK
-        run: bash ./gradlew assembleDebug --stacktrace
+        run: bash ./gradlew assembleStagingDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
