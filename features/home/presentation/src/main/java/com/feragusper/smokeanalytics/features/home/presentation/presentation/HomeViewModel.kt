@@ -7,6 +7,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
 import com.feragusper.smokeanalytics.features.home.presentation.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Timer
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.fixedRateTimer
@@ -16,6 +17,7 @@ class HomeViewModel @Inject constructor(
     private val processHolder: HomeProcessHolder,
 ) : MVIViewModel<HomeIntent, HomeViewState, HomeResult, HomeNavigator>(initialState = HomeViewState()) {
 
+    private var timer: Timer? = null
     override lateinit var navigator: HomeNavigator
 
     init {
@@ -46,7 +48,8 @@ class HomeViewModel @Inject constructor(
             }
 
             is HomeResult.FetchSmokesSuccess -> {
-                fixedRateTimer(
+                timer?.cancel()
+                timer = fixedRateTimer(
                     name = "timer",
                     period = TimeUnit.MINUTES.toMillis(1),
                 ) {
