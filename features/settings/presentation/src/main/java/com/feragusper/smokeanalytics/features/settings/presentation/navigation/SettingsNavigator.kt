@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.settings.navigation
+package com.feragusper.smokeanalytics.features.settings.presentation.navigation
 
 import androidx.navigation.NavController
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.navigation.MVINavigator
