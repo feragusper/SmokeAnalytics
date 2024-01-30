@@ -5,10 +5,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.HomeView
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.HomeViewModel
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

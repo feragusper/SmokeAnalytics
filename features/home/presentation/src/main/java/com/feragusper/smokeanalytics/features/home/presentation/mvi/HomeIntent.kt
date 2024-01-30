@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
+package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent

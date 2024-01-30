@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi
+package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
@@ -17,5 +17,6 @@ sealed interface HomeResult : MVIResult {
 
     data class FetchSmokesSuccess(val smokeCountListResult: SmokeCountListResult) : HomeResult
     object FetchSmokesError : HomeResult
-    data class UpdateTimeSinceLastCigarette(val timeSinceLastCigarette: Pair<Long, Long>) : HomeResult
+    data class UpdateTimeSinceLastCigarette(val timeSinceLastCigarette: Pair<Long, Long>) :
+        HomeResult
 }
