@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation
+package com.feragusper.smokeanalytics.features.home.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState

@@ -31,8 +31,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
-import com.feragusper.smokeanalytics.features.settings.navigation.SettingsNavigator
-import com.feragusper.smokeanalytics.features.settings.navigation.settingsNavigationGraph
+import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
+import com.feragusper.smokeanalytics.features.settings.presentation.navigation.settingsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 

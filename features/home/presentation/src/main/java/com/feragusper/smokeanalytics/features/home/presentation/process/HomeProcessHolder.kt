@@ -1,9 +1,9 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation.process
+package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder

@@ -1,10 +1,10 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation
+package com.feragusper.smokeanalytics.features.home.presentation
 
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.process.HomeProcessHolder
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Timer
