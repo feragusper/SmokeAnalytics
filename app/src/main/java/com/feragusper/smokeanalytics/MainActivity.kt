@@ -33,6 +33,8 @@ import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeN
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.settingsNavigationGraph
+import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator
+import com.feragusper.smokeanalytics.features.stats.navigation.statsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -62,6 +64,7 @@ private fun MainContainerScreen() {
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
+        BottomNavigationScreens.Stats,
         BottomNavigationScreens.Settings,
     )
     val snackbarHostState = remember { SnackbarHostState() }
@@ -125,6 +128,7 @@ private fun MainScreenNavigationConfigurations(
     ) {
         val settingsNavigator = SettingsNavigator(navController)
         homeNavigationGraph(HomeNavigator(settingsNavigator.navigateToSettings))
+        statsNavigationGraph(StatsNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
 }
@@ -145,6 +149,12 @@ private sealed class BottomNavigationScreens(
         HomeNavigator.ROUTE,
         R.string.bottom_navigation_item_home_title,
         R.drawable.ic_home
+    )
+
+    object Stats : BottomNavigationScreens(
+        StatsNavigator.ROUTE,
+        R.string.bottom_navigation_item_stats_title,
+        R.drawable.ic_stats
     )
 
     object Settings : BottomNavigationScreens(
