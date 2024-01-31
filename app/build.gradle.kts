@@ -135,6 +135,7 @@ dependencies {
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":features:home:presentation"))
     implementation(project(":features:settings:presentation"))
+    implementation(project(":features:stats:presentation"))
     kapt(libs.hilt.compiler)
 
 }
