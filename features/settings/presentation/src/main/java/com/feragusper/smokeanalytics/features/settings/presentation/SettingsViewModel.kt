@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.settings.presentation
 
-import com.feragusper.smokeanalytics.features.settings.navigation.SettingsNavigator
+import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsViewState

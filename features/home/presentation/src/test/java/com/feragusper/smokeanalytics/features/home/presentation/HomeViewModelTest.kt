@@ -1,11 +1,12 @@
-package com.feragusper.smokeanalytics.features.home.presentation.presentation
+package com.feragusper.smokeanalytics.features.home.presentation
+
 
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeIntent
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeResult
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.mvi.HomeViewState
-import com.feragusper.smokeanalytics.features.home.presentation.presentation.process.HomeProcessHolder
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
