@@ -4,8 +4,8 @@
 ## Motivation and Context
 <!--- Why is this change required? What problem does it solve? -->
 
-Fixes # (issue)
-<!--- If it fixes an open issue, please link to the issue here. -->
+Issue #
+<!--- Please link to the issue here. -->
 
 ## Type of change
 
