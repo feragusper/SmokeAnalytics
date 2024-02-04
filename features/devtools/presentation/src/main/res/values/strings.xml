@@ -1,0 +1,8 @@
+<resources>
+    <string name="devtools_title">Dev Tools</string>
+    <string name="devtools_email">Email</string>
+    <string name="devtools_shortcut_label">Dev Tools</string>
+    <string name="devtools_shortcut_label_long">Open Dev Tools</string>
+    <string name="devtools_logged_out">Logged out</string>
+    <string name="devtools_id">Id</string>
+</resources>
