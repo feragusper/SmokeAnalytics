@@ -61,8 +61,9 @@ class SettingsProcessHolderTest {
             every { fetchSessionUseCase.invoke() } answers {
                 Session.LoggedIn(
                     Session.User(
-                        displayName = "Fer",
-                        email = email
+                        id = "123",
+                        email = email,
+                        displayName = "Fer"
                     )
                 )
             }
