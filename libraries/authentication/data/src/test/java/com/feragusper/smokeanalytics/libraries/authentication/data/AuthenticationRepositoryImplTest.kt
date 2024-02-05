@@ -26,17 +26,20 @@ class AuthenticationRepositoryImplTest {
         runTest {
             val displayName = "Fernando Perez"
             val email = "fernancho@gmail.com"
+            val id = "123"
             every { firebaseAuth.currentUser } returns mockk<FirebaseUser>().apply {
-                every { this@apply.displayName } returns displayName
+                every { this@apply.uid } returns id
                 every { this@apply.email } returns email
+                every { this@apply.displayName } returns displayName
             }
 
             assertEquals(
                 authenticationRepository.fetchSession(),
                 Session.LoggedIn(
                     Session.User(
-                        displayName = displayName,
-                        email = email
+                        id = id,
+                        email = email,
+                        displayName = displayName
                     )
                 ),
             )

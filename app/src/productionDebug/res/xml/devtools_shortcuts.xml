@@ -3,10 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/ic_debugger"
-        android:shortcutId="debugger"
-        android:shortcutLongLabel="@string/shortcut_debugger_long"
-        android:shortcutShortLabel="@string/shortcut_debugger"
+        android:icon="@drawable/ic_devtools"
+        android:shortcutId="devtools"
+        android:shortcutLongLabel="@string/devtools_shortcut_label_long"
+        android:shortcutShortLabel="@string/devtools_shortcut_label"
         tools:targetApi="n_mr1">
         <intent
             android:action="android.intent.action.VIEW"
