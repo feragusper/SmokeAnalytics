@@ -28,5 +28,6 @@ include(":features:home:presentation")
 include(":features:home:data")
 include(":features:home:domain")
 include(":features:stats:presentation")
+include(":features:devtools:presentation")
 
  
