@@ -4,7 +4,8 @@ sealed interface Session {
     object Anonymous : Session
     data class LoggedIn(val user: User) : Session
     data class User(
-        val displayName: String?,
-        val email: String?
+        val id: String,
+        val email: String?,
+        val displayName: String?
     )
 }

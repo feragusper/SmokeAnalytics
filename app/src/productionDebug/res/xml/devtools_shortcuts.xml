@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_devtools"
+        android:shortcutId="devtools"
+        android:shortcutLongLabel="@string/devtools_shortcut_label_long"
+        android:shortcutShortLabel="@string/devtools_shortcut_label"
+        tools:targetApi="n_mr1">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.feragusper.smokeanalytics.features.devtools.presentation.DevToolsActivity"
+            android:targetPackage="com.feragusper.smokeanalytics" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+</shortcuts>
