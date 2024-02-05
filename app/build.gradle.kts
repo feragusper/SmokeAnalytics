@@ -138,6 +138,7 @@ dependencies {
     implementation(project(":features:stats:presentation"))
     kapt(libs.hilt.compiler)
 
+    debugImplementation(project(":features:devtools:presentation"))
 }
 
 task("printVersionName") {
