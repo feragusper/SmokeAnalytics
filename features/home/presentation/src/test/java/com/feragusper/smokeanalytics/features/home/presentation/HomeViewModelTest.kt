@@ -20,6 +20,7 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.Date
 
 class HomeViewModelTest {
 
@@ -132,6 +133,60 @@ class HomeViewModelTest {
             intentResults.emit(HomeResult.AddSmokeSuccess)
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
+
+            intentResults.emit(
+                HomeResult.FetchSmokesSuccess(
+                    mockk<SmokeCountListResult>().apply {
+                        every { countByToday } returns smokesPerDay
+                        every { countByWeek } returns smokesPerWeek
+                        every { countByMonth } returns smokesPerMonth
+                        every { todaysSmokes } returns latestSmokes
+                        every { timeSinceLastCigarette } returns (hours to minutes)
+                    }
+                )
+            )
+            state = viewModel.states().first()
+
+            state.displayLoading shouldBeEqualTo false
+            state.error shouldBeEqualTo null
+            state.smokesPerDay shouldBeEqualTo smokesPerDay
+            state.smokesPerWeek shouldBeEqualTo smokesPerWeek
+            state.smokesPerMonth shouldBeEqualTo smokesPerMonth
+            state.latestSmokes shouldBeEqualTo latestSmokes
+            state.timeSinceLastCigarette shouldBeEqualTo (hours to minutes)
+        }
+
+    @Test
+    fun `GIVEN edit smoke success and fetch smokes success WHEN edit smoke is sent THEN it hides loading and shows success`() =
+        runTest {
+            val id = "123"
+            val date: Date = mockk()
+            every {
+                processHolder.processIntent(
+                    HomeIntent.EditSmoke(
+                        id = id,
+                        date = date
+                    )
+                )
+            } returns intentResults
+
+            val viewModel = HomeViewModel(processHolder)
+
+            val hours = 20L
+            val minutes = 10L
+            val smokesPerDay = 1
+            val smokesPerWeek = 2
+            val smokesPerMonth = 3
+            val latestSmokes: List<Smoke> = listOf(mockk())
+
+            intentResults.emit(HomeResult.EditSmokeSuccess)
+
+            viewModel.intents().trySend(
+                HomeIntent.EditSmoke(
+                    id = id,
+                    date = date
+                )
+            )
 
             intentResults.emit(
                 HomeResult.FetchSmokesSuccess(

@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
+import com.feragusper.smokeanalytics.features.home.domain.EditSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
@@ -15,6 +16,7 @@ import javax.inject.Inject
 
 class HomeProcessHolder @Inject constructor(
     private val addSmokeUseCase: AddSmokeUseCase,
+    private val editSmokeUseCase: EditSmokeUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
@@ -23,6 +25,15 @@ class HomeProcessHolder @Inject constructor(
         HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.FetchSmokes -> processFetchSmokes()
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
+        is HomeIntent.EditSmoke -> processEditSmoke(intent)
+    }
+
+    private fun processEditSmoke(intent: HomeIntent.EditSmoke) = flow {
+        emit(HomeResult.Loading)
+        editSmokeUseCase.invoke(intent.id, intent.date)
+        emit(HomeResult.EditSmokeSuccess)
+    }.catchAndLog {
+        emit(HomeResult.Error.Generic)
     }
 
     private fun processTickTimeSinceLastCigarette(intent: HomeIntent.TickTimeSinceLastCigarette) =

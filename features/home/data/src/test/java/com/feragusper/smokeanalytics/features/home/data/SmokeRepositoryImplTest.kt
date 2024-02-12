@@ -13,7 +13,9 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import io.mockk.Awaits
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
@@ -56,6 +58,8 @@ class SmokeRepositoryImplTest {
 
         @Test
         fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() {
+            val id1: String = "id1"
+            val id2: String = "id2"
             val date1: Date = mockk<Date>()
             val date2: Date = mockk<Date>()
             val timeAfterNothing: Pair<Long, Long> = mockk()
@@ -80,9 +84,11 @@ class SmokeRepositoryImplTest {
                                     every { documents } answers {
                                         listOf(
                                             mockk<DocumentSnapshot>().apply {
+                                                every { id } answers { id1 }
                                                 every { getDate(Smoke::date.name) } answers { date1 }
                                             },
                                             mockk<DocumentSnapshot>().apply {
+                                                every { id } answers { id2 }
                                                 every { getDate(Smoke::date.name) } answers { date2 }
                                             },
                                         )
@@ -98,10 +104,12 @@ class SmokeRepositoryImplTest {
                 assertEquals(
                     authenticationRepository.fetchSmokes(), listOf(
                         Smoke(
+                            id = id1,
                             date = date1,
                             timeElapsedSincePreviousSmoke = timeAfter2
                         ),
                         Smoke(
+                            id = id2,
                             date = date2,
                             timeElapsedSincePreviousSmoke = timeAfterNothing
                         )
@@ -129,6 +137,33 @@ class SmokeRepositoryImplTest {
             runTest {
                 authenticationRepository.addSmoke()
             }
+        }
+
+        @Test
+        fun `GIVEN user is logged in WHEN edit smoke is called THEN it should finish`() = runTest {
+
+            val id = "id"
+            val date: Date = mockk()
+
+            every {
+                firebaseFirestore
+                    .collection("$USERS/$uid/$SMOKES")
+                    .document(id)
+                    .set(SmokeEntity(date))
+            } answers {
+                mockk<Task<Void>>().apply {
+                    every { isComplete } answers { true }
+                    every { exception } answers { nothing }
+                    every { isCanceled } answers { false }
+                    every { isSuccessful } answers { true }
+                    every { result } answers { mockk() }
+                }
+            }
+
+            authenticationRepository.editSmoke(
+                id = id,
+                date = date
+            )
         }
     }
 

@@ -35,6 +35,15 @@ class SmokeRepositoryImpl @Inject constructor(
         smokes.add(SmokeEntity(Date())).await()
     }
 
+    override suspend fun editSmoke(id: String, date: Date) {
+        firebaseAuth.currentUser?.uid?.let {
+            firebaseFirestore.collection("$USERS/$it/$SMOKES")
+                .document(id)
+                .set(SmokeEntity(date))
+                .await()
+        }
+    }
+
     override suspend fun fetchSmokes(): List<Smoke> {
         val smokes = firebaseAuth.currentUser?.uid?.let {
             firebaseFirestore.collection("$USERS/$it/$SMOKES")
@@ -43,8 +52,10 @@ class SmokeRepositoryImpl @Inject constructor(
 
         return smokes.documents.mapIndexedNotNull { index, document ->
             Smoke(
-                document.getDate(),
-                document.getDate().timeAfter(smokes.documents.getOrNull(index + 1)?.getDate()),
+                id = document.id,
+                date = document.getDate(),
+                timeElapsedSincePreviousSmoke = document.getDate()
+                    .timeAfter(smokes.documents.getOrNull(index + 1)?.getDate()),
             )
         }
     }
