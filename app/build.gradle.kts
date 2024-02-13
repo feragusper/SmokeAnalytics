@@ -25,12 +25,12 @@ val majorMinorPatchVersionName = "0.2.0.$gitCode"
 
 android {
     namespace = "com.feragusper.smokeanalytics"
-    compileSdk = Android.compileSdk
+    compileSdk = Android.COMPILE_SDK
 
     defaultConfig {
         applicationId = "com.feragusper.smokeanalytics"
-        minSdk = Android.minSdk
-        targetSdk = Android.targetSdk
+        minSdk = Android.MIN_SDK
+        targetSdk = Android.TARGET_SDK
         versionCode = gitCode
         versionName = majorMinorPatchVersionName
     }

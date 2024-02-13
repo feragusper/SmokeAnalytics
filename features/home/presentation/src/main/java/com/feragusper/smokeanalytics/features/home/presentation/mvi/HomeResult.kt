@@ -8,6 +8,7 @@ sealed interface HomeResult : MVIResult {
     object NotLoggedIn : HomeResult
     object GoToLogin : HomeResult
     object AddSmokeSuccess : HomeResult
+    object EditSmokeSuccess : HomeResult
     sealed interface Error : HomeResult {
         object Generic :
             Error

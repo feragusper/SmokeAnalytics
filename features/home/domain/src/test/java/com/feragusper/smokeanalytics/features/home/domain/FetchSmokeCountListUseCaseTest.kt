@@ -45,12 +45,24 @@ class FetchSmokeCountListUseCaseTest {
         every { thisMonth.isThisMonth() } answers { true }
         every { thisMonth.timeAfter(null) } answers { mockk() }
 
-        val todaySmoke = Smoke(today, todayTimeAfter)
+        val todaySmoke = Smoke(
+            id = "1",
+            date = today,
+            timeElapsedSincePreviousSmoke = todayTimeAfter
+        )
         coEvery { repository.fetchSmokes() } answers {
             listOf(
                 todaySmoke,
-                Smoke(thisWeek, mockk()),
-                Smoke(thisMonth, mockk()),
+                Smoke(
+                    id = "2",
+                    date = thisWeek,
+                    timeElapsedSincePreviousSmoke = mockk()
+                ),
+                Smoke(
+                    id = "3",
+                    date = thisMonth,
+                    timeElapsedSincePreviousSmoke = mockk()
+                ),
             )
         }
 

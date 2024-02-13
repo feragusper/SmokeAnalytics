@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
+import com.feragusper.smokeanalytics.features.home.domain.EditSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
@@ -9,7 +10,9 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +37,7 @@ class HomeProcessHolderTest {
     private lateinit var processHolder: HomeProcessHolder
 
     private var addSmokeUseCase: AddSmokeUseCase = mockk()
+    private var editSmokeUseCase: EditSmokeUseCase = mockk()
     private var fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
     private var fetchSessionUseCase: FetchSessionUseCase = mockk()
 
@@ -43,6 +47,7 @@ class HomeProcessHolderTest {
         Dispatchers.setMain(Dispatchers.Unconfined)
         processHolder = HomeProcessHolder(
             addSmokeUseCase = addSmokeUseCase,
+            editSmokeUseCase = editSmokeUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
             fetchSessionUseCase = fetchSessionUseCase
         )
@@ -108,7 +113,7 @@ class HomeProcessHolderTest {
         @Test
         fun `AND add smoke is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
             runTest {
-                coEvery { addSmokeUseCase() } answers {}
+                coEvery { addSmokeUseCase() } just Runs
 
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
                 assertEquals(HomeResult.Loading, results.first())
@@ -122,6 +127,52 @@ class HomeProcessHolderTest {
                 coEvery { addSmokeUseCase() } throws (IllegalStateException("User not logged in"))
 
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
+                assertEquals(HomeResult.Loading, results.first())
+                assertEquals(HomeResult.Error.Generic, results.last())
+            }
+
+        @Test
+        fun `AND edit smoke is success WHEN edit smoke intent is processed THEN it should result with loading and success`() =
+            runTest {
+                val id = "id"
+                val date: Date = mockk()
+                coEvery {
+                    editSmokeUseCase(
+                        id = id,
+                        date = date
+                    )
+                } just Runs
+
+                results = processHolder.processIntent(
+                    HomeIntent.EditSmoke(
+                        id = id,
+                        date = date
+                    )
+                )
+                assertEquals(HomeResult.Loading, results.first())
+                assertEquals(HomeResult.EditSmokeSuccess, results.last())
+            }
+
+
+        @Test
+        fun `AND edit smoke throws exception WHEN edit smoke intent is processed THEN it should result with loading and error`() =
+            runTest {
+                val id = "id"
+                val date: Date = mockk()
+                coEvery {
+                    editSmokeUseCase(
+                        id = id,
+                        date = date
+                    )
+                } throws (IllegalStateException("Error"))
+
+                results = processHolder.processIntent(
+                    HomeIntent.EditSmoke(
+                        id = id,
+                        date = date
+                    )
+                )
+
                 assertEquals(HomeResult.Loading, results.first())
                 assertEquals(HomeResult.Error.Generic, results.last())
             }

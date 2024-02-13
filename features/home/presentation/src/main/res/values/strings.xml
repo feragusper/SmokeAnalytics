@@ -10,6 +10,9 @@
     <string name="home_since_your_last_cigarette">Since your last cigarette</string>
     <string name="home_smoked_after_minutes_short">%1$dm</string>
     <string name="home_smoked_after_hours_short">%1$dh</string>
+    <string name="home_date_time_picker_button_cancel">Cancel</string>
+    <string name="home_date_time_picker_button_ok">OK</string>
+    <string name="home_date_time_picker_title">Select time</string>
 
     <plurals name="home_smoked_after_minutes">
         <item quantity="one">%1$d minute</item>
