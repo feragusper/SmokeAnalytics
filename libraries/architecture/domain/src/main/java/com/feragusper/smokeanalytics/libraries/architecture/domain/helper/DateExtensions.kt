@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.libraries.architecture.domain.helper
 
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -78,3 +80,9 @@ fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
 } ?: (0L to 0L)
 
 fun Date.timeFormatted(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
+
+fun Date.utcMillis() = toInstant()
+    .atZone(ZoneId.systemDefault())
+    .toLocalDate()
+    .atStartOfDay()?.toEpochSecond(ZoneOffset.UTC)
+    ?.times(1000)

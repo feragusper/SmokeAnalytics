@@ -6,12 +6,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
@@ -48,9 +51,12 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
+import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.utcMillis
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
@@ -283,14 +289,25 @@ data class HomeViewState(
             }
 
             if (showDatePicker) {
+                val selectedDateTime by lazy {
+                    Calendar.getInstance().apply {
+                        time = date
+                    }
+                }
+
                 DateTimePickerDialog(
-                    date = date,
+                    initialDateTime = date,
                     onDismiss = {
                         showDatePicker = false
                     },
-                    onConfirm = { date ->
+                    onDateSelected = { date ->
+                        selectedDateTime.time = date
+                    },
+                    onTimeSelected = { hour, minutes ->
                         showDatePicker = false
-                        intent(HomeIntent.EditSmoke(id, date))
+                        selectedDateTime.set(Calendar.HOUR_OF_DAY, hour)
+                        selectedDateTime.set(Calendar.MINUTE, minutes)
+                        intent(HomeIntent.EditSmoke(id, selectedDateTime.time))
                     }
                 )
             }
@@ -298,72 +315,43 @@ data class HomeViewState(
 
     }
 
-    private enum class Dialog {
+    private enum class DateTimeDialogType {
         Date,
         Time
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun DateTimePickerDialog(
-        date: Date,
+        initialDateTime: Date,
         onDismiss: () -> Unit,
-        onConfirm: (Date) -> Unit,
+        onDateSelected: (Date) -> Unit,
+        onTimeSelected: (Int, Int) -> Unit,
     ) {
 
-        var dialog by remember {
-            mutableStateOf(Dialog.Date)
+        var dateTimeDialogType by remember {
+            mutableStateOf(DateTimeDialogType.Date)
         }
 
-        val selectedDateTime = Calendar.getInstance().apply {
-            time = date
-        }
-
-        when (dialog) {
-            Dialog.Date -> {
-                val datePickerState =
-                    rememberDatePickerState(selectableDates = object : SelectableDates {
-                        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                            return utcTimeMillis <= System.currentTimeMillis()
-                        }
-                    })
-                datePickerState.selectedDateMillis = date.time
-                DateTimePickerDialog(
+        when (dateTimeDialogType) {
+            DateTimeDialogType.Date -> {
+                DatePickerDialog(
+                    initialDate = initialDateTime,
                     onConfirm = {
-                        dialog = Dialog.Time
-                        datePickerState.selectedDateMillis?.let { Date(it) }
-                            ?.let {
-                                selectedDateTime.time = date
-                            }
+                        onDateSelected(it)
+                        dateTimeDialogType = DateTimeDialogType.Time
                     },
                     onDismiss = onDismiss,
-                ) {
-                    DatePicker(
-                        state = datePickerState
-                    )
-                }
+                )
             }
 
-            Dialog.Time -> {
-                val timePickerState = rememberTimePickerState(
-                    initialHour = selectedDateTime.get(Calendar.HOUR_OF_DAY),
-                    initialMinute = selectedDateTime.get(Calendar.MINUTE),
-                )
-                DateTimePickerDialog(
-                    onConfirm = {
-                        with(selectedDateTime) {
-                            set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                            set(Calendar.MINUTE, timePickerState.minute)
-                            onConfirm(time)
-                        }
-                        onDismiss()
+            DateTimeDialogType.Time -> {
+                TimePickerDialog(
+                    initialDate = initialDateTime,
+                    onConfirm = { hour, minute ->
+                        onTimeSelected(hour, minute)
                     },
                     onDismiss = onDismiss,
-                ) {
-                    TimePicker(
-                        state = timePickerState
-                    )
-                }
+                )
             }
         }
 
@@ -371,29 +359,110 @@ data class HomeViewState(
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun DateTimePickerDialog(
-        onConfirm: () -> Unit,
+    private fun DatePickerDialog(
+        initialDate: Date,
+        onConfirm: (Date) -> Unit,
         onDismiss: () -> Unit,
-        content: @Composable () -> Unit
     ) {
+        val datePickerState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = initialDate.utcMillis(),
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        return utcTimeMillis <= System.currentTimeMillis()
+                    }
+                })
+
         DatePickerDialog(
             onDismissRequest = { onDismiss() },
             confirmButton = {
                 Button(onClick = {
-                    onConfirm()
+                    datePickerState
+                        .selectedDateMillis
+                        ?.let { Date(it) }
+                        ?.let { onConfirm(it) }
                 }) {
-                    Text(text = "OK")
+                    Text(text = stringResource(id = R.string.home_date_time_picker_button_ok))
                 }
             },
             dismissButton = {
                 Button(onClick = {
                     onDismiss()
                 }) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(id = R.string.home_date_time_picker_button_cancel))
                 }
             }
         ) {
-            content()
+            DatePicker(
+                state = datePickerState
+            )
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun TimePickerDialog(
+        initialDate: Date,
+        onDismiss: () -> Unit,
+        onConfirm: (Int, Int) -> Unit,
+    ) {
+        val timePickerState = with(Calendar.getInstance().apply { time = initialDate }) {
+            rememberTimePickerState(
+                initialHour = get(Calendar.HOUR_OF_DAY),
+                initialMinute = get(Calendar.MINUTE),
+            )
+        }
+
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            ),
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.extraLarge,
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .width(IntrinsicSize.Min)
+                    .height(IntrinsicSize.Min)
+                    .background(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surface
+                    ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
+                        text = stringResource(id = R.string.home_date_time_picker_title),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    TimePicker(
+                        state = timePickerState
+                    )
+                    Row(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(onClick = {
+                            onDismiss()
+                        }) {
+                            Text(text = stringResource(id = R.string.home_date_time_picker_button_cancel))
+                        }
+                        Button(onClick = {
+                            onConfirm(timePickerState.hour, timePickerState.minute)
+                        }) {
+                            Text(text = stringResource(id = R.string.home_date_time_picker_button_ok))
+                        }
+                    }
+                }
+            }
         }
     }
 
