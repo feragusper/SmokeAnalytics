@@ -7,6 +7,7 @@ import java.util.Date
 sealed class HomeIntent : MVIIntent {
     data class TickTimeSinceLastCigarette(val lastCigarette: Smoke?) : HomeIntent()
     data class EditSmoke(val id: String, val date: Date) : HomeIntent()
+    data class DeleteSmoke(val id: String) : HomeIntent()
 
     object AddSmoke : HomeIntent()
     object FetchSmokes : HomeIntent()

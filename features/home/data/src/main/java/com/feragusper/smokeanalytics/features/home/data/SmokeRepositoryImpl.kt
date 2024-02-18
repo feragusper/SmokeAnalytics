@@ -28,27 +28,32 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addSmoke() {
-        val smokes = firebaseAuth.currentUser?.uid?.let {
-            firebaseFirestore.collection("$USERS/$it/$SMOKES")
-        } ?: throw IllegalStateException("User not logged in")
-
-        smokes.add(SmokeEntity(Date())).await()
+        smokes().add(SmokeEntity(Date())).await()
     }
 
+    private fun smokes() = firebaseAuth.currentUser?.uid?.let {
+        firebaseFirestore.collection("$USERS/$it/$SMOKES")
+    } ?: throw IllegalStateException("User not logged in")
+
     override suspend fun editSmoke(id: String, date: Date) {
-        firebaseAuth.currentUser?.uid?.let {
-            firebaseFirestore.collection("$USERS/$it/$SMOKES")
-                .document(id)
-                .set(SmokeEntity(date))
-                .await()
-        }
+        smokes()
+            .document(id)
+            .set(SmokeEntity(date))
+            .await()
+    }
+
+    override suspend fun deleteSmoke(id: String) {
+        smokes()
+            .document(id)
+            .delete()
+            .await()
     }
 
     override suspend fun fetchSmokes(): List<Smoke> {
-        val smokes = firebaseAuth.currentUser?.uid?.let {
-            firebaseFirestore.collection("$USERS/$it/$SMOKES")
-                .orderBy(Smoke::date.name, Direction.DESCENDING)
-        }?.get()?.await() ?: throw IllegalStateException("User not logged in")
+        val smokes = smokes()
+            .orderBy(Smoke::date.name, Direction.DESCENDING)
+            .get()
+            .await()
 
         return smokes.documents.mapIndexedNotNull { index, document ->
             Smoke(

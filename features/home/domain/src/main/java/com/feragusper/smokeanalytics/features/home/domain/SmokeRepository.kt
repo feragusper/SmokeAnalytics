@@ -6,4 +6,5 @@ interface SmokeRepository {
     suspend fun addSmoke()
     suspend fun fetchSmokes(): List<Smoke>
     suspend fun editSmoke(id: String, date: Date)
+    suspend fun deleteSmoke(id: String)
 }
