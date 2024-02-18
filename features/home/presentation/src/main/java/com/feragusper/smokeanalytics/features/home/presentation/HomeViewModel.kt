@@ -2,6 +2,16 @@ package com.feragusper.smokeanalytics.features.home.presentation
 
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.AddSmokeSuccess
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.DeleteSmokeSuccess
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.EditSmokeSuccess
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Error
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToLogin
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
@@ -28,12 +38,12 @@ class HomeViewModel @Inject constructor(
 
     override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
         when (result) {
-            HomeResult.Loading -> previous.copy(
+            Loading -> previous.copy(
                 displayLoading = true,
                 error = null,
             )
 
-            HomeResult.NotLoggedIn -> previous.copy(
+            NotLoggedIn -> previous.copy(
                 displayLoading = false,
                 error = null,
                 smokesPerDay = 0,
@@ -42,12 +52,12 @@ class HomeViewModel @Inject constructor(
                 timeSinceLastCigarette = 0L to 0L,
             )
 
-            HomeResult.GoToLogin -> {
+            GoToLogin -> {
                 navigator.navigateToSettings()
                 previous
             }
 
-            is HomeResult.FetchSmokesSuccess -> {
+            is FetchSmokesSuccess -> {
                 timer?.cancel()
                 timer = fixedRateTimer(
                     name = "timer",
@@ -67,25 +77,25 @@ class HomeViewModel @Inject constructor(
                 )
             }
 
-            is HomeResult.UpdateTimeSinceLastCigarette -> {
+            is UpdateTimeSinceLastCigarette -> {
                 previous.copy(
                     timeSinceLastCigarette = result.timeSinceLastCigarette
                 )
             }
 
-            HomeResult.EditSmokeSuccess, HomeResult.AddSmokeSuccess -> {
+            DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
                 intents().trySend(HomeIntent.FetchSmokes)
                 previous
             }
 
-            is HomeResult.Error -> previous.copy(
+            is Error -> previous.copy(
                 displayLoading = false,
                 error = result,
             )
 
-            HomeResult.FetchSmokesError -> previous.copy(
+            FetchSmokesError -> previous.copy(
                 displayLoading = false,
-                error = HomeResult.Error.Generic,
+                error = Error.Generic,
             )
         }
 }

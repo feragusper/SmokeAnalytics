@@ -9,6 +9,7 @@ sealed interface HomeResult : MVIResult {
     object GoToLogin : HomeResult
     object AddSmokeSuccess : HomeResult
     object EditSmokeSuccess : HomeResult
+    object DeleteSmokeSuccess : HomeResult
     sealed interface Error : HomeResult {
         object Generic :
             Error

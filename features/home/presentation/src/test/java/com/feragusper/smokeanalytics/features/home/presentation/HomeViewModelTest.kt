@@ -211,6 +211,47 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `GIVEN delete smoke success and fetch smokes success WHEN delete smoke is sent THEN it hides loading and shows success`() =
+        runTest {
+            val id = "123"
+            every { processHolder.processIntent(HomeIntent.DeleteSmoke(id)) } returns intentResults
+
+            val viewModel = HomeViewModel(processHolder)
+
+            val hours = 20L
+            val minutes = 10L
+            val smokesPerDay = 1
+            val smokesPerWeek = 2
+            val smokesPerMonth = 3
+            val latestSmokes: List<Smoke> = listOf(mockk())
+
+            intentResults.emit(HomeResult.EditSmokeSuccess)
+
+            viewModel.intents().trySend(HomeIntent.DeleteSmoke(id))
+
+            intentResults.emit(
+                HomeResult.FetchSmokesSuccess(
+                    mockk<SmokeCountListResult>().apply {
+                        every { countByToday } returns smokesPerDay
+                        every { countByWeek } returns smokesPerWeek
+                        every { countByMonth } returns smokesPerMonth
+                        every { todaysSmokes } returns latestSmokes
+                        every { timeSinceLastCigarette } returns (hours to minutes)
+                    }
+                )
+            )
+            state = viewModel.states().first()
+
+            state.displayLoading shouldBeEqualTo false
+            state.error shouldBeEqualTo null
+            state.smokesPerDay shouldBeEqualTo smokesPerDay
+            state.smokesPerWeek shouldBeEqualTo smokesPerWeek
+            state.smokesPerMonth shouldBeEqualTo smokesPerMonth
+            state.latestSmokes shouldBeEqualTo latestSmokes
+            state.timeSinceLastCigarette shouldBeEqualTo (hours to minutes)
+        }
+
+    @Test
     fun `GIVEN add smoke error result WHEN add smoke is sent THEN it hides loading and shows error`() =
         runTest {
             every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
@@ -220,6 +261,48 @@ class HomeViewModelTest {
             intentResults.emit(HomeResult.Error.Generic)
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
+            state = viewModel.states().first()
+
+            state.displayLoading shouldBeEqualTo false
+            state.error shouldBeEqualTo HomeResult.Error.Generic
+        }
+
+    @Test
+    fun `GIVEN edit smoke error result WHEN edit smoke is sent THEN it hides loading and shows error`() =
+        runTest {
+            val id = "123"
+            val date: Date = mockk()
+            every {
+                processHolder.processIntent(
+                    HomeIntent.EditSmoke(
+                        id = id,
+                        date = date
+                    )
+                )
+            } returns intentResults
+
+            val viewModel = HomeViewModel(processHolder)
+
+            intentResults.emit(HomeResult.Error.Generic)
+
+            viewModel.intents().trySend(HomeIntent.EditSmoke(id, date))
+            state = viewModel.states().first()
+
+            state.displayLoading shouldBeEqualTo false
+            state.error shouldBeEqualTo HomeResult.Error.Generic
+        }
+
+    @Test
+    fun `GIVEN delete smoke error result WHEN delete smoke is sent THEN it hides loading and shows error`() =
+        runTest {
+            val id = "123"
+            every { processHolder.processIntent(HomeIntent.DeleteSmoke(id)) } returns intentResults
+
+            val viewModel = HomeViewModel(processHolder)
+
+            intentResults.emit(HomeResult.Error.Generic)
+
+            viewModel.intents().trySend(HomeIntent.DeleteSmoke(id))
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false

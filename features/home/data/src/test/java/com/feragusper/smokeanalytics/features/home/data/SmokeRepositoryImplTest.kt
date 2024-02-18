@@ -13,9 +13,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
-import io.mockk.Awaits
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
@@ -30,7 +28,7 @@ class SmokeRepositoryImplTest {
 
     private val firebaseAuth: FirebaseAuth = mockk()
     private val firebaseFirestore: FirebaseFirestore = mockk()
-    private val authenticationRepository = SmokeRepositoryImpl(
+    private val smokeRepository = SmokeRepositoryImpl(
         firebaseAuth = firebaseAuth,
         firebaseFirestore = firebaseFirestore
     )
@@ -40,7 +38,7 @@ class SmokeRepositoryImplTest {
         every { firebaseAuth.currentUser } returns null
 
         runTest {
-            assertThrows<IllegalStateException> { authenticationRepository.addSmoke() }
+            assertThrows<IllegalStateException> { smokeRepository.addSmoke() }
         }
     }
 
@@ -58,8 +56,8 @@ class SmokeRepositoryImplTest {
 
         @Test
         fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() {
-            val id1: String = "id1"
-            val id2: String = "id2"
+            val id1 = "id1"
+            val id2 = "id2"
             val date1: Date = mockk<Date>()
             val date2: Date = mockk<Date>()
             val timeAfterNothing: Pair<Long, Long> = mockk()
@@ -102,7 +100,7 @@ class SmokeRepositoryImplTest {
 
             runTest {
                 assertEquals(
-                    authenticationRepository.fetchSmokes(), listOf(
+                    smokeRepository.fetchSmokes(), listOf(
                         Smoke(
                             id = id1,
                             date = date1,
@@ -135,7 +133,7 @@ class SmokeRepositoryImplTest {
             }
 
             runTest {
-                authenticationRepository.addSmoke()
+                smokeRepository.addSmoke()
             }
         }
 
@@ -160,11 +158,34 @@ class SmokeRepositoryImplTest {
                 }
             }
 
-            authenticationRepository.editSmoke(
+            smokeRepository.editSmoke(
                 id = id,
                 date = date
             )
         }
+
+        @Test
+        fun `GIVEN user is logged in WHEN delete smoke is called THEN it should finish`() =
+            runTest {
+                val id = "id"
+
+                every {
+                    firebaseFirestore
+                        .collection("$USERS/$uid/$SMOKES")
+                        .document(id)
+                        .delete()
+                } answers {
+                    mockk<Task<Void>>().apply {
+                        every { isComplete } answers { true }
+                        every { exception } answers { nothing }
+                        every { isCanceled } answers { false }
+                        every { isSuccessful } answers { true }
+                        every { result } answers { mockk() }
+                    }
+                }
+
+                smokeRepository.deleteSmoke(id)
+            }
     }
 
 }

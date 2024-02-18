@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
+import com.feragusper.smokeanalytics.features.home.domain.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.EditSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.Smoke
@@ -38,6 +39,7 @@ class HomeProcessHolderTest {
 
     private var addSmokeUseCase: AddSmokeUseCase = mockk()
     private var editSmokeUseCase: EditSmokeUseCase = mockk()
+    private var deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
     private var fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
     private var fetchSessionUseCase: FetchSessionUseCase = mockk()
 
@@ -48,6 +50,7 @@ class HomeProcessHolderTest {
         processHolder = HomeProcessHolder(
             addSmokeUseCase = addSmokeUseCase,
             editSmokeUseCase = editSmokeUseCase,
+            deleteSmokeUseCase = deleteSmokeUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
             fetchSessionUseCase = fetchSessionUseCase
         )
@@ -172,6 +175,31 @@ class HomeProcessHolderTest {
                         date = date
                     )
                 )
+
+                assertEquals(HomeResult.Loading, results.first())
+                assertEquals(HomeResult.Error.Generic, results.last())
+            }
+
+        @Test
+        fun `AND delete smoke is success WHEN delete smoke intent is processed THEN it should result with loading and success`() =
+            runTest {
+                val id = "id"
+                coEvery { deleteSmokeUseCase(id) } just Runs
+
+                results = processHolder.processIntent(HomeIntent.DeleteSmoke(id))
+
+                assertEquals(HomeResult.Loading, results.first())
+                assertEquals(HomeResult.DeleteSmokeSuccess, results.last())
+            }
+
+
+        @Test
+        fun `AND delete smoke throws exception WHEN delete smoke intent is processed THEN it should result with loading and error`() =
+            runTest {
+                val id = "id"
+                coEvery { deleteSmokeUseCase(id) } throws (IllegalStateException("Error"))
+
+                results = processHolder.processIntent(HomeIntent.DeleteSmoke(id))
 
                 assertEquals(HomeResult.Loading, results.first())
                 assertEquals(HomeResult.Error.Generic, results.last())
