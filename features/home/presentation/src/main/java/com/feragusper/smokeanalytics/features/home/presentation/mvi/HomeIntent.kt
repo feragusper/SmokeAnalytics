@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
-import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent
+import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import java.util.Date
 
 sealed class HomeIntent : MVIIntent {

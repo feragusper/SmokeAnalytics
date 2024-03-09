@@ -1,16 +1,16 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
-import com.feragusper.smokeanalytics.features.home.domain.AddSmokeUseCase
-import com.feragusper.smokeanalytics.features.home.domain.DeleteSmokeUseCase
-import com.feragusper.smokeanalytics.features.home.domain.EditSmokeUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
-import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.smokes.domain.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just

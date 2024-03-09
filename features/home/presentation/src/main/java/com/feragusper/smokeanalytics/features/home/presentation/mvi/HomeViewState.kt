@@ -82,13 +82,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.feragusper.smokeanalytics.features.home.domain.Smoke
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.utcMillis
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date

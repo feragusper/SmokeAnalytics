@@ -19,7 +19,8 @@ dependencies {
     implementation(project(":libraries:design"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":features:home:domain"))
-    implementation(project(":features:home:data"))
+    implementation(project(":libraries:smokes:data"))
+    implementation(project(":libraries:smokes:domain"))
 
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
