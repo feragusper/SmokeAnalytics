@@ -14,7 +14,7 @@ android {
         buildConfigField(
             "String",
             "GOOGLE_AUTH_SERVER_CLIENT_ID",
-            gradleLocalProperties(rootDir).getProperty("google.auth.server.client.id"),
+            gradleLocalProperties(rootDir, providers).getProperty("google.auth.server.client.id"),
         )
     }
 }
