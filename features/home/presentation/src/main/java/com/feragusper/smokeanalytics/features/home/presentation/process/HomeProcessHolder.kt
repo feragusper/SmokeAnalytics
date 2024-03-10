@@ -26,6 +26,7 @@ class HomeProcessHolder @Inject constructor(
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
         HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.FetchSmokes -> processFetchSmokes()
+        HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)

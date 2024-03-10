@@ -116,7 +116,7 @@ class HomeProcessHolderTest {
         @Test
         fun `AND add smoke is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
             runTest {
-                coEvery { addSmokeUseCase() } just Runs
+                coEvery { addSmokeUseCase.invoke(any()) } just Runs
 
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
                 assertEquals(HomeResult.Loading, results.first())

@@ -11,4 +11,5 @@ sealed class HomeIntent : MVIIntent {
 
     object AddSmoke : HomeIntent()
     object FetchSmokes : HomeIntent()
+    object OnClickHistory : HomeIntent()
 }

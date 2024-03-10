@@ -133,6 +133,7 @@ dependencies {
     implementation(libs.timber)
     implementation(project(":libraries:design"))
     implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":features:history:presentation"))
     implementation(project(":features:home:presentation"))
     implementation(project(":features:settings:presentation"))
     implementation(project(":features:stats:presentation"))

@@ -1,0 +1,7 @@
+<resources>
+    <string name="history_button_track">Track</string>
+    <string name="error_generic">An error has occurred</string>
+    <string name="error_not_logged_in">Please log in to access to this feature.</string>
+    <string name="history_smoked_today">Smokes</string>
+    <string name="history_smoked">Smokes</string>
+</resources>

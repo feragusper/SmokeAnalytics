@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
@@ -51,7 +53,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContainerScreen()
+                    MainContainerScreen {
+                        startActivity(Intent(this, HistoryActivity::class.java))
+                    }
                 }
             }
         }
@@ -59,7 +63,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainContainerScreen() {
+private fun MainContainerScreen(navigateToHistory: () -> Unit) {
     val navController = rememberNavController()
 
     val bottomNavigationItems = listOf(
@@ -74,8 +78,9 @@ private fun MainContainerScreen() {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         MainScreenNavigationConfigurations(
-            modifier = Modifier.padding(innerPadding),
             navController = navController,
+            modifier = Modifier.padding(innerPadding),
+            navigateToHistory = navigateToHistory
         )
     }
 }
@@ -120,6 +125,7 @@ private fun BottomNavigation(
 private fun MainScreenNavigationConfigurations(
     navController: NavHostController,
     modifier: Modifier,
+    navigateToHistory: () -> Unit,
 ) {
     NavHost(
         modifier = modifier,
@@ -127,7 +133,12 @@ private fun MainScreenNavigationConfigurations(
         startDestination = BottomNavigationScreens.Home.route
     ) {
         val settingsNavigator = SettingsNavigator(navController)
-        homeNavigationGraph(HomeNavigator(settingsNavigator.navigateToSettings))
+        homeNavigationGraph(
+            HomeNavigator(
+                navigateToSettings = settingsNavigator.navigateToSettings,
+                navigateToHistory = navigateToHistory
+            )
+        )
         statsNavigationGraph(StatsNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
@@ -168,6 +179,6 @@ private sealed class BottomNavigationScreens(
 @Composable
 private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
-        MainContainerScreen()
+        MainContainerScreen {}
     }
 }

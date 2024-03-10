@@ -27,8 +27,8 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addSmoke() {
-        smokes().add(SmokeEntity(Date())).await()
+    override suspend fun addSmoke(date: Date) {
+        smokes().add(SmokeEntity(date)).await()
     }
 
     private fun smokes() = firebaseAuth.currentUser?.uid?.let {

@@ -79,7 +79,18 @@ fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
     }
 } ?: (0L to 0L)
 
+fun Date.withoutTime(): Date {
+    val calendar = Calendar.getInstance()
+    calendar.time = this
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    return calendar.time
+}
+
 fun Date.timeFormatted(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
+fun Date.dateFormatted(): String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(this)
 
 fun Date.utcMillis() = toInstant()
     .atZone(ZoneId.systemDefault())

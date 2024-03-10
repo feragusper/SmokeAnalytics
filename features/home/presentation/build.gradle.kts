@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":features:home:domain"))
     implementation(project(":libraries:smokes:data"))
     implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:smokes:presentation"))
 
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))

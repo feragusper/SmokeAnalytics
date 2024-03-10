@@ -1,8 +1,10 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain
 
+import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class AddSmokeUseCaseTest {
@@ -11,11 +13,9 @@ class AddSmokeUseCaseTest {
     private val addSmokeUseCase = AddSmokeUseCase(smokeRepository)
 
     @Test
-    fun `GIVEN add smoke answers WHEN invoke is executed THEN it should finish`() {
-        coEvery { smokeRepository.addSmoke() } answers { }
+    fun `GIVEN add smoke answers WHEN invoke is executed THEN it should finish`() = runTest {
+        coEvery { smokeRepository.addSmoke(any()) } just Runs
 
-        runBlocking {
-            addSmokeUseCase.invoke()
-        }
+        addSmokeUseCase.invoke()
     }
 }

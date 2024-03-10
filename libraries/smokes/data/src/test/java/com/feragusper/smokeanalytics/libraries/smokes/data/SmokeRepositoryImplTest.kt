@@ -34,13 +34,12 @@ class SmokeRepositoryImplTest {
     )
 
     @Test
-    fun `GIVEN the user is null WHEN add smoke is called THEN it should throw an illegal state exception`() {
-        every { firebaseAuth.currentUser } returns null
-
+    fun `GIVEN the user is null WHEN add smoke is called THEN it should throw an illegal state exception`() =
         runTest {
-            assertThrows<IllegalStateException> { smokeRepository.addSmoke() }
+            every { firebaseAuth.currentUser } returns null
+
+            assertThrows<IllegalStateException> { smokeRepository.addSmoke(Date()) }
         }
-    }
 
     @Nested
     inner class UserLoggedIn {
@@ -55,50 +54,50 @@ class SmokeRepositoryImplTest {
         }
 
         @Test
-        fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() {
-            val id1 = "id1"
-            val id2 = "id2"
-            val date1: Date = mockk<Date>()
-            val date2: Date = mockk<Date>()
-            val timeAfterNothing: Pair<Long, Long> = mockk()
-            val timeAfter2: Pair<Long, Long> = mockk()
-            mockkStatic(Date::timeAfter).apply {
-                every { date2.timeAfter(null) } answers { timeAfterNothing }
-                every { date1.timeAfter(date2) } answers { timeAfter2 }
-            }
-            every {
-                firebaseFirestore.collection("$USERS/$uid/$SMOKES")
-                    .orderBy(Smoke::date.name, Query.Direction.DESCENDING)
-            } answers {
-                mockk<CollectionReference>().apply {
-                    every { get() } answers {
-                        mockk<Task<QuerySnapshot>>().apply {
-                            every { isComplete } answers { true }
-                            every { exception } answers { nothing }
-                            every { isCanceled } answers { false }
-                            every { isSuccessful } answers { true }
-                            every { result } answers {
-                                mockk<QuerySnapshot>().apply {
-                                    every { documents } answers {
-                                        listOf(
-                                            mockk<DocumentSnapshot>().apply {
-                                                every { id } answers { id1 }
-                                                every { getDate(Smoke::date.name) } answers { date1 }
-                                            },
-                                            mockk<DocumentSnapshot>().apply {
-                                                every { id } answers { id2 }
-                                                every { getDate(Smoke::date.name) } answers { date2 }
-                                            },
-                                        )
+        fun `GIVEN user is logged in WHEN fetch smokes is called THEN it should finish`() =
+            runTest {
+                val id1 = "id1"
+                val id2 = "id2"
+                val date1: Date = mockk<Date>()
+                val date2: Date = mockk<Date>()
+                val timeAfterNothing: Pair<Long, Long> = mockk()
+                val timeAfter2: Pair<Long, Long> = mockk()
+                mockkStatic(Date::timeAfter).apply {
+                    every { date2.timeAfter(null) } answers { timeAfterNothing }
+                    every { date1.timeAfter(date2) } answers { timeAfter2 }
+                }
+                every {
+                    firebaseFirestore.collection("$USERS/$uid/$SMOKES")
+                        .orderBy(Smoke::date.name, Query.Direction.DESCENDING)
+                } answers {
+                    mockk<CollectionReference>().apply {
+                        every { get() } answers {
+                            mockk<Task<QuerySnapshot>>().apply {
+                                every { isComplete } answers { true }
+                                every { exception } answers { nothing }
+                                every { isCanceled } answers { false }
+                                every { isSuccessful } answers { true }
+                                every { result } answers {
+                                    mockk<QuerySnapshot>().apply {
+                                        every { documents } answers {
+                                            listOf(
+                                                mockk<DocumentSnapshot>().apply {
+                                                    every { id } answers { id1 }
+                                                    every { getDate(Smoke::date.name) } answers { date1 }
+                                                },
+                                                mockk<DocumentSnapshot>().apply {
+                                                    every { id } answers { id2 }
+                                                    every { getDate(Smoke::date.name) } answers { date2 }
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            runTest {
                 assertEquals(
                     smokeRepository.fetchSmokes(), listOf(
                         Smoke(
@@ -114,10 +113,9 @@ class SmokeRepositoryImplTest {
                     )
                 )
             }
-        }
 
         @Test
-        fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() {
+        fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() = runTest {
             every { firebaseFirestore.collection("$USERS/$uid/$SMOKES") } answers {
                 mockk<CollectionReference>().apply {
                     every { add(any<Smoke>()) } answers {
@@ -132,9 +130,8 @@ class SmokeRepositoryImplTest {
                 }
             }
 
-            runTest {
-                smokeRepository.addSmoke()
-            }
+
+            smokeRepository.addSmoke(Date())
         }
 
         @Test
