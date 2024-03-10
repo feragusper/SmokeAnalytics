@@ -4,6 +4,8 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThis
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThisWeek
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
+import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

@@ -8,6 +8,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.E
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Error
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToLogin
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
@@ -51,6 +52,11 @@ class HomeViewModel @Inject constructor(
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
             )
+
+            GoToHistory -> {
+                navigator.navigateToHistory()
+                previous
+            }
 
             GoToLogin -> {
                 navigator.navigateToSettings()

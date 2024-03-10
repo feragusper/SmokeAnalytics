@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smokes_smoked_after">After</string>
+    <string name="smokes_date_time_picker_button_cancel">Cancel</string>
+    <string name="smokes_date_time_picker_button_ok">OK</string>
+    <string name="smokes_date_time_picker_title">Select time</string>
+
+    <plurals name="smokes_smoked_after_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+
+    <plurals name="smokes_smoked_after_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+</resources>

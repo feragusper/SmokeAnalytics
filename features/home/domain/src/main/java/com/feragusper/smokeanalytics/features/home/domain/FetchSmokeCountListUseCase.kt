@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.features.home.domain
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThisWeek
 import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isToday
+import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
 import javax.inject.Inject
 
 class FetchSmokeCountListUseCase @Inject constructor(private val smokeRepository: SmokeRepository) {

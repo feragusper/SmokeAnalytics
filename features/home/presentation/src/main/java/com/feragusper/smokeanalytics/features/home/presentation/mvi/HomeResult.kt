@@ -7,12 +7,14 @@ sealed interface HomeResult : MVIResult {
     object Loading : HomeResult
     object NotLoggedIn : HomeResult
     object GoToLogin : HomeResult
+    object GoToHistory : HomeResult
     object AddSmokeSuccess : HomeResult
     object EditSmokeSuccess : HomeResult
     object DeleteSmokeSuccess : HomeResult
     sealed interface Error : HomeResult {
         object Generic :
             Error
+
         object NotLoggedIn :
             Error
     }
