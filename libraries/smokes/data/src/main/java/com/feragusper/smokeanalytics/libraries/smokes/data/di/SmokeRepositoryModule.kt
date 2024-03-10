@@ -1,5 +1,6 @@
-package com.feragusper.smokeanalytics.libraries.smokes.data
+package com.feragusper.smokeanalytics.libraries.smokes.data.di
 
+import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
 import dagger.Binds
 import dagger.Module
