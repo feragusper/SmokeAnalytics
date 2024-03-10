@@ -13,7 +13,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.withoutTime
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.withTimeZeroed
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -51,7 +51,7 @@ class HistoryViewModel @Inject constructor(
                     displayLoading = false,
                     error = null,
                     smokes = buildMap {
-                        result.smokes.reversed().groupBy { it.date.withoutTime() }
+                        result.smokes.reversed().groupBy { it.date.withTimeZeroed() }
                             .forEach { (date, smokes) ->
                                 put(date, smokes)
                             }

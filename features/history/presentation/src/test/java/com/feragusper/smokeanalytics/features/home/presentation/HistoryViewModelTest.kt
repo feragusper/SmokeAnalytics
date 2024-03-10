@@ -6,8 +6,8 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.dateFormatted
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.withoutTime
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.withTimeZeroed
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import io.mockk.every
 import io.mockk.mockk
@@ -53,7 +53,7 @@ class HistoryViewModelTest {
             val dateWithoutTime: Date = mockk()
             val smoke = mockk<Smoke>().apply {
                 every { this@apply.date } returns mockk<Date>().apply {
-                    every { withoutTime() } returns dateWithoutTime
+                    every { withTimeZeroed() } returns dateWithoutTime
                 }
             }
             val smokeList: List<Smoke> = listOf(smoke)
@@ -111,7 +111,7 @@ class HistoryViewModelTest {
             mockkStatic(Date::dateFormatted)
             val smoke = mockk<Smoke>().apply {
                 every { this@apply.date } returns mockk<Date>().apply {
-                    every { withoutTime() } returns dateWithoutTime
+                    every { withTimeZeroed() } returns dateWithoutTime
                 }
             }
             val smokeList: List<Smoke> = listOf(smoke)
@@ -148,7 +148,7 @@ class HistoryViewModelTest {
             mockkStatic(Date::dateFormatted)
             val smoke = mockk<Smoke>().apply {
                 every { this@apply.date } returns mockk<Date>().apply {
-                    every { withoutTime() } returns dateWithoutTime
+                    every { withTimeZeroed() } returns dateWithoutTime
                 }
             }
             val smokeList: List<Smoke> = listOf(smoke)
@@ -182,7 +182,7 @@ class HistoryViewModelTest {
             val date: Date = mockk()
             val smoke = mockk<Smoke>().apply {
                 every { this@apply.date } returns mockk<Date>().apply {
-                    every { withoutTime() } returns date
+                    every { withTimeZeroed() } returns date
                 }
             }
             val smokeList: List<Smoke> = listOf(smoke)

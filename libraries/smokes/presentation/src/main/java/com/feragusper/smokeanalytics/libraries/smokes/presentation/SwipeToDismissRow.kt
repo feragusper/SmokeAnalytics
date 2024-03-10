@@ -67,8 +67,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeFormatted
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.utcMillis
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
@@ -266,8 +266,8 @@ private fun SmokeItem(
                 },
                 onTimeSelected = { hour, minutes ->
                     showDatePicker = false
-                    selectedDateTime.set(Calendar.HOUR_OF_DAY, hour)
-                    selectedDateTime.set(Calendar.MINUTE, minutes)
+                    selectedDateTime[Calendar.HOUR_OF_DAY] = hour
+                    selectedDateTime[Calendar.MINUTE] = minutes
                     onEdit(selectedDateTime.time)
                 }
             )

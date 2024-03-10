@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
