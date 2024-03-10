@@ -39,7 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.dateFormatted
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
@@ -246,10 +246,12 @@ private fun HomeViewSuccessPreview() {
                         Date(),
                         buildList {
                             repeat(4) {
-                                Smoke(
-                                    id = "123",
-                                    date = Date(),
-                                    timeElapsedSincePreviousSmoke = 1L to 30L
+                                add(
+                                    Smoke(
+                                        id = "123",
+                                        date = Date(),
+                                        timeElapsedSincePreviousSmoke = 1L to 30L
+                                    )
                                 )
                             }
                         }

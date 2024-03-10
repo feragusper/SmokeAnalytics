@@ -1,9 +1,9 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThisMonth
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isThisWeek
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.isToday
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeAfter
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisMonth
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisWeek
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isToday
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
 import io.mockk.coEvery

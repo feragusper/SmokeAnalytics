@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
-import com.feragusper.smokeanalytics.libraries.architecture.domain.helper.timeElapsedSinceNow
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 
 data class SmokeCountListResult(

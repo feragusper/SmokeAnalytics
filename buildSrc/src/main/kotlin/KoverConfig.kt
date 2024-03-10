@@ -20,6 +20,7 @@ class KoverConfig(
             "**/*Typography.kt",
             "**/compose/**",
             "**/di/**",
+            "**/extensions/**",
         )
     }
 
