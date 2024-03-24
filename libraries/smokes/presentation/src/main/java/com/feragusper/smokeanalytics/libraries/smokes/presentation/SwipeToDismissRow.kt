@@ -80,6 +80,7 @@ fun SwipeToDismissRow(
     date: Date,
     timeElapsedSincePreviousSmoke: Pair<Long, Long>,
     onDelete: () -> Unit,
+    fullDateTimeEdit: Boolean,
     onEdit: (Date) -> Unit,
 ) = BoxWithConstraints {
 
@@ -190,6 +191,7 @@ fun SwipeToDismissRow(
             SmokeItem(
                 date = date,
                 timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                fullDateTimeEdit = fullDateTimeEdit,
                 onEdit = onEdit
             )
         })
@@ -199,7 +201,8 @@ fun SwipeToDismissRow(
 private fun SmokeItem(
     date: Date,
     timeAfterPrevious: Pair<Long, Long>,
-    onEdit: (Date) -> Unit
+    fullDateTimeEdit: Boolean,
+    onEdit: (Date) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -256,21 +259,37 @@ private fun SmokeItem(
                 }
             }
 
-            DateTimePickerDialog(
-                initialDateTime = date,
-                onDismiss = {
-                    showDatePicker = false
-                },
-                onDateSelected = { date ->
-                    selectedDateTime.time = date
-                },
-                onTimeSelected = { hour, minutes ->
-                    showDatePicker = false
-                    selectedDateTime[Calendar.HOUR_OF_DAY] = hour
-                    selectedDateTime[Calendar.MINUTE] = minutes
-                    onEdit(selectedDateTime.time)
-                }
-            )
+            if (fullDateTimeEdit) {
+                DateTimePickerDialog(
+                    initialDateTime = date,
+                    onDismiss = {
+                        showDatePicker = false
+                    },
+                    onDateSelected = { date ->
+                        selectedDateTime.time = date
+                    },
+                    onTimeSelected = { hour, minutes ->
+                        showDatePicker = false
+                        selectedDateTime[Calendar.HOUR_OF_DAY] = hour
+                        selectedDateTime[Calendar.MINUTE] = minutes
+                        onEdit(selectedDateTime.time)
+                    }
+                )
+            } else {
+                TimePickerDialog(
+                    initialDate = date,
+                    onConfirm = { hour, minutes ->
+                        showDatePicker = false
+                        selectedDateTime[Calendar.HOUR_OF_DAY] = hour
+                        selectedDateTime[Calendar.MINUTE] = minutes
+                        onEdit(selectedDateTime.time)
+                    },
+                    onDismiss = {
+                        showDatePicker = false
+                    },
+                )
+            }
+
         }
     }
 

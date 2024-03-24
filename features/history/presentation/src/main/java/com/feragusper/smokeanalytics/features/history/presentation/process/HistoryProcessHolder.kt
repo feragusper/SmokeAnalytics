@@ -24,6 +24,7 @@ class HistoryProcessHolder @Inject constructor(
         is HistoryIntent.AddSmoke -> processAddSmoke(intent)
         is HistoryIntent.EditSmoke -> processEditSmoke(intent)
         is HistoryIntent.DeleteSmoke -> processDeleteSmoke(intent)
+        HistoryIntent.NavigateUp -> flow { emit(HistoryResult.NavigateUp) }
     }
 
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {

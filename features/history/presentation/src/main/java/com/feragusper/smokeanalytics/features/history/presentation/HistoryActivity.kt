@@ -38,7 +38,7 @@ class HistoryActivity : ComponentActivity() {
                             navController = navController,
                             startDestination = HistoryNavigator.ROUTE
                         ) {
-                            historyNavigationGraph(HistoryNavigator())
+                            historyNavigationGraph(HistoryNavigator { finish() })
                         }
                     }
                 }

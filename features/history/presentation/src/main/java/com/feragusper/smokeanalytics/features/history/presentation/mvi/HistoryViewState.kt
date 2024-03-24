@@ -1,6 +1,9 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,22 +21,31 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -55,7 +67,7 @@ data class HistoryViewState(
     internal val error: HistoryResult.Error? = null,
 ) : MVIViewState<HistoryIntent> {
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
     @Composable
     override fun Compose(intent: (HistoryIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -67,10 +79,32 @@ data class HistoryViewState(
                 }
             )
         }
+        val isFABVisible = rememberSaveable { mutableStateOf(true) }
+        val nestedScrollConnection = remember {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    // Hide FAB
+                    if (available.y < -1) {
+                        isFABVisible.value = false
+                    }
+
+                    // Show FAB
+                    if (available.y > 1) {
+                        isFABVisible.value = true
+                    }
+
+                    return Offset.Zero
+                }
+            }
+        }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
-                if (!displayLoading) {
+                AnimatedVisibility(
+                    visible = isFABVisible.value && !displayLoading,
+                    enter = slideInVertically(initialOffsetY = { it * 2 }),
+                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
+                ) {
                     FloatingActionButton(
                         onClick = {
                             requireNotNull(pagerState)
@@ -98,6 +132,24 @@ data class HistoryViewState(
                         }
                     }
                 }
+            },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.history_smoked),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { intent(HistoryIntent.NavigateUp) }) {
+                            Icon(
+                                painter = rememberVectorPainter(image = Icons.AutoMirrored.Default.ArrowBack),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                )
             }
         ) { contentPadding ->
             if (displayLoading) {
@@ -110,7 +162,7 @@ data class HistoryViewState(
             } else {
                 pagerState?.let { pagerState ->
                     requireNotNull(smokes)
-                    Column {
+                    Column(modifier = Modifier.padding(contentPadding)) {
                         val scope = rememberCoroutineScope()
                         PagerNavigationHeader(
                             onClickPrevious = {
@@ -127,9 +179,8 @@ data class HistoryViewState(
                             smokes.entries.elementAt(index).let { (_, smokes) ->
                                 LazyColumn(
                                     modifier = Modifier
-                                        .padding(contentPadding)
                                         .padding(horizontal = 16.dp)
-                                        .padding(top = 16.dp)
+                                        .nestedScroll(nestedScrollConnection)
                                         .fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
@@ -144,6 +195,7 @@ data class HistoryViewState(
                                             date = smoke.date,
                                             timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
                                             onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
+                                            fullDateTimeEdit = true,
                                             onEdit = { date ->
                                                 intent(
                                                     HistoryIntent.EditSmoke(

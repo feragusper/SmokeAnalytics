@@ -1,9 +1,13 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +25,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -30,10 +33,15 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -68,10 +76,32 @@ data class HomeViewState(
     @Composable
     override fun Compose(intent: (HomeIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
+        val isFABVisible = rememberSaveable { mutableStateOf(true) }
+        val nestedScrollConnection = remember {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    // Hide FAB
+                    if (available.y < -1) {
+                        isFABVisible.value = false
+                    }
+
+                    // Show FAB
+                    if (available.y > 1) {
+                        isFABVisible.value = true
+                    }
+
+                    return Offset.Zero
+                }
+            }
+        }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
-                if (!displayLoading) {
+                AnimatedVisibility(
+                    visible = isFABVisible.value && !displayLoading,
+                    enter = slideInVertically(initialOffsetY = { it * 2 }),
+                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
+                ) {
                     FloatingActionButton(
                         onClick = { intent(HomeIntent.AddSmoke) },
                     ) {
@@ -91,7 +121,7 @@ data class HomeViewState(
                         }
                     }
                 }
-            }
+            },
         ) { contentPadding ->
             if (displayLoading) {
                 Box(
@@ -112,9 +142,9 @@ data class HomeViewState(
                     LazyColumn(
                         modifier = Modifier
                             .padding(contentPadding)
-                            .padding()
                             .padding(horizontal = 16.dp)
                             .padding(top = 16.dp)
+                            .nestedScroll(nestedScrollConnection)
                             .fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -125,21 +155,33 @@ data class HomeViewState(
                                 ) {
                                     smokesPerDay?.let { smokesPerDay ->
                                         Stat(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    intent(HomeIntent.OnClickHistory)
+                                                },
                                             titleResourceId = R.string.home_label_per_day,
                                             count = smokesPerDay
                                         )
                                     }
                                     smokesPerWeek?.let { smokesPerWeek ->
                                         Stat(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    intent(HomeIntent.OnClickHistory)
+                                                },
                                             titleResourceId = R.string.home_label_per_week,
                                             count = smokesPerWeek
                                         )
                                     }
                                     smokesPerMonth?.let { smokesPerMonth ->
                                         Stat(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    intent(HomeIntent.OnClickHistory)
+                                                },
                                             titleResourceId = R.string.home_label_per_month,
                                             count = smokesPerMonth
                                         )
@@ -190,20 +232,8 @@ data class HomeViewState(
                                         )
                                     }
                                 }
-                                Box(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentAlignment = Alignment.CenterEnd,
-                                ) {
-                                    OutlinedButton(
-                                        modifier = Modifier.padding(top = 24.dp),
-                                        shape = MaterialTheme.shapes.small,
-                                        onClick = { intent(HomeIntent.OnClickHistory) },
-                                    ) {
-                                        Text(text = stringResource(id = R.string.home_button_history))
-                                    }
-                                }
                                 Text(
-                                    modifier = Modifier.padding(top = 12.dp),
+                                    modifier = Modifier.padding(vertical = 12.dp),
                                     text = stringResource(id = R.string.home_smoked_today),
                                     style = MaterialTheme.typography.titleSmall,
                                 )
@@ -215,6 +245,7 @@ data class HomeViewState(
                                     date = smoke.date,
                                     timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
                                     onDelete = { intent(HomeIntent.DeleteSmoke(smoke.id)) },
+                                    fullDateTimeEdit = false,
                                     onEdit = { date ->
                                         intent(
                                             HomeIntent.EditSmoke(

@@ -53,7 +53,7 @@ class HistoryViewModel @Inject constructor(
                     smokes = buildMap {
                         result.smokes.reversed().groupBy { it.date.withTimeZeroed() }
                             .forEach { (date, smokes) ->
-                                put(date, smokes)
+                                put(date, smokes.reversed())
                             }
                     },
                 )
@@ -73,5 +73,10 @@ class HistoryViewModel @Inject constructor(
                 displayLoading = false,
                 error = Error.Generic,
             )
+
+            HistoryResult.NavigateUp -> {
+                navigator.navigateUp()
+                previous
+            }
         }
 }

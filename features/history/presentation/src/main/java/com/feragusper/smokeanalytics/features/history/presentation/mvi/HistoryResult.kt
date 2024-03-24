@@ -19,4 +19,5 @@ sealed interface HistoryResult : MVIResult {
 
     data class FetchSmokesSuccess(val smokes: List<Smoke>) : HistoryResult
     object FetchSmokesError : HistoryResult
+    object NavigateUp : HistoryResult
 }

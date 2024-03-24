@@ -8,4 +8,5 @@ sealed class HistoryIntent : MVIIntent {
     data class DeleteSmoke(val id: String) : HistoryIntent()
     data class AddSmoke(val date: Date) : HistoryIntent()
     object FetchSmokes : HistoryIntent()
+    object NavigateUp : HistoryIntent()
 }
