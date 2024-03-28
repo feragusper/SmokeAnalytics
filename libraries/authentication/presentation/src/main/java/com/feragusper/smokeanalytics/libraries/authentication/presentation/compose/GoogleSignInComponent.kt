@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.authentication.presentation
+package com.feragusper.smokeanalytics.libraries.authentication.presentation.compose
 
 import android.app.Activity
 import android.util.Log
@@ -21,8 +21,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.BuildConfig
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.R
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient

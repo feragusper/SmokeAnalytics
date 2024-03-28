@@ -4,7 +4,7 @@ package com.feragusper.smokeanalytics.features.home.presentation
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryViewModel
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
-import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import io.mockk.every

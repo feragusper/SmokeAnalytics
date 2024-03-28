@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.design
+package com.feragusper.smokeanalytics.libraries.design.compose
 
 import android.content.res.Configuration
 import android.os.Build
