@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.historyNavigationGraph
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -38,7 +38,7 @@ class HistoryActivity : ComponentActivity() {
                             navController = navController,
                             startDestination = HistoryNavigator.ROUTE
                         ) {
-                            historyNavigationGraph(HistoryNavigator())
+                            historyNavigationGraph(HistoryNavigator { finish() })
                         }
                     }
                 }

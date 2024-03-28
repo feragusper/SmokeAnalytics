@@ -37,7 +37,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.navigation.S
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.settingsNavigationGraph
 import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.navigation.statsNavigationGraph
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

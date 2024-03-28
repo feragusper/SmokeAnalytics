@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.DevToolsNavigator
 import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.devToolsNavigationGraph
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.presentation
+package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

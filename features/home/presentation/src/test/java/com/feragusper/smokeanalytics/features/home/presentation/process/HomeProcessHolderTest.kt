@@ -30,7 +30,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class HomeProcessHolderTest {
 
@@ -85,12 +85,12 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN tick time since last cigarette intent is processed THEN it should result with loading and success`() =
             runTest {
-                val date: Date = mockk()
+                val date: LocalDateTime = mockk()
                 val lastSmoke: Smoke = mockk<Smoke>().apply {
                     coEvery { this@apply.date } answers { date }
                 }
                 val timeElapsedSinceNow: Pair<Long, Long> = mockk()
-                mockkStatic(Date::timeElapsedSinceNow).apply {
+                mockkStatic(LocalDateTime::timeElapsedSinceNow).apply {
                     coEvery { date.timeElapsedSinceNow() } answers { timeElapsedSinceNow }
                 }
 
@@ -138,7 +138,7 @@ class HomeProcessHolderTest {
         fun `AND edit smoke is success WHEN edit smoke intent is processed THEN it should result with loading and success`() =
             runTest {
                 val id = "id"
-                val date: Date = mockk()
+                val date: LocalDateTime = mockk()
                 coEvery {
                     editSmokeUseCase(
                         id = id,
@@ -161,7 +161,7 @@ class HomeProcessHolderTest {
         fun `AND edit smoke throws exception WHEN edit smoke intent is processed THEN it should result with loading and error`() =
             runTest {
                 val id = "id"
-                val date: Date = mockk()
+                val date: LocalDateTime = mockk()
                 coEvery {
                     editSmokeUseCase(
                         id = id,

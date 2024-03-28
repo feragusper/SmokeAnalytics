@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.presentation
+package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -29,19 +29,15 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -68,19 +64,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
 import kotlinx.coroutines.launch
-import java.util.Calendar
-import java.util.Date
+import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDismissRow(
-    date: Date,
+    date: LocalDateTime,
     timeElapsedSincePreviousSmoke: Pair<Long, Long>,
     onDelete: () -> Unit,
-    onEdit: (Date) -> Unit,
+    fullDateTimeEdit: Boolean,
+    onEdit: (LocalDateTime) -> Unit,
 ) = BoxWithConstraints {
 
     var willDismissDirection: SwipeToDismissBoxValue? by remember {
@@ -190,6 +186,7 @@ fun SwipeToDismissRow(
             SmokeItem(
                 date = date,
                 timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                fullDateTimeEdit = fullDateTimeEdit,
                 onEdit = onEdit
             )
         })
@@ -197,9 +194,10 @@ fun SwipeToDismissRow(
 
 @Composable
 private fun SmokeItem(
-    date: Date,
+    date: LocalDateTime,
     timeAfterPrevious: Pair<Long, Long>,
-    onEdit: (Date) -> Unit
+    fullDateTimeEdit: Boolean,
+    onEdit: (LocalDateTime) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -250,27 +248,35 @@ private fun SmokeItem(
         }
 
         if (showDatePicker) {
-            val selectedDateTime by lazy {
-                Calendar.getInstance().apply {
-                    time = date
-                }
+            var selectedDateTime = date
+
+            if (fullDateTimeEdit) {
+                DateTimePickerDialog(
+                    initialDateTime = date,
+                    onDismiss = {
+                        showDatePicker = false
+                    },
+                    onDateSelected = { date ->
+                        selectedDateTime = date
+                    },
+                    onTimeSelected = { hour, minutes ->
+                        showDatePicker = false
+                        onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                    }
+                )
+            } else {
+                TimePickerDialog(
+                    initialDate = date,
+                    onConfirm = { hour, minutes ->
+                        showDatePicker = false
+                        onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                    },
+                    onDismiss = {
+                        showDatePicker = false
+                    },
+                )
             }
 
-            DateTimePickerDialog(
-                initialDateTime = date,
-                onDismiss = {
-                    showDatePicker = false
-                },
-                onDateSelected = { date ->
-                    selectedDateTime.time = date
-                },
-                onTimeSelected = { hour, minutes ->
-                    showDatePicker = false
-                    selectedDateTime[Calendar.HOUR_OF_DAY] = hour
-                    selectedDateTime[Calendar.MINUTE] = minutes
-                    onEdit(selectedDateTime.time)
-                }
-            )
         }
     }
 
@@ -283,9 +289,9 @@ private enum class DateTimeDialogType {
 
 @Composable
 private fun DateTimePickerDialog(
-    initialDateTime: Date,
+    initialDateTime: LocalDateTime,
     onDismiss: () -> Unit,
-    onDateSelected: (Date) -> Unit,
+    onDateSelected: (LocalDateTime) -> Unit,
     onTimeSelected: (Int, Int) -> Unit,
 ) {
 
@@ -320,59 +326,15 @@ private fun DateTimePickerDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DatePickerDialog(
-    initialDate: Date,
-    onConfirm: (Date) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val datePickerState =
-        rememberDatePickerState(
-            initialSelectedDateMillis = initialDate.utcMillis(),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis <= System.currentTimeMillis()
-                }
-            })
-
-    DatePickerDialog(
-        onDismissRequest = { onDismiss() },
-        confirmButton = {
-            Button(onClick = {
-                datePickerState
-                    .selectedDateMillis
-                    ?.let { Date(it) }
-                    ?.let { onConfirm(it) }
-            }) {
-                Text(text = stringResource(id = R.string.smokes_date_time_picker_button_ok))
-            }
-        },
-        dismissButton = {
-            Button(onClick = {
-                onDismiss()
-            }) {
-                Text(text = stringResource(id = R.string.smokes_date_time_picker_button_cancel))
-            }
-        }
-    ) {
-        DatePicker(
-            state = datePickerState
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun TimePickerDialog(
-    initialDate: Date,
+    initialDate: LocalDateTime,
     onDismiss: () -> Unit,
     onConfirm: (Int, Int) -> Unit,
 ) {
-    val timePickerState = with(Calendar.getInstance().apply { time = initialDate }) {
-        rememberTimePickerState(
-            initialHour = get(Calendar.HOUR_OF_DAY),
-            initialMinute = get(Calendar.MINUTE),
-        )
-    }
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialDate.hour,
+        initialMinute = initialDate.minute,
+    )
 
     Dialog(
         onDismissRequest = onDismiss,

@@ -2,7 +2,7 @@ package com.feragusper.smokeanalytics.features.settings.presentation
 
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
-import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsViewState
+import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.SettingsViewState
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
 import io.mockk.every
 import io.mockk.mockk

@@ -13,7 +13,7 @@ import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class FetchSmokeCountListUseCaseTest {
 
@@ -22,14 +22,14 @@ class FetchSmokeCountListUseCaseTest {
 
     @Test
     fun `GIVEN fetch smokes answers WHEN invoke is executed THEN it return `() = runTest {
-        val today: Date = mockk()
-        val thisWeek: Date = mockk()
-        val thisMonth: Date = mockk()
+        val today: LocalDateTime = mockk()
+        val thisWeek: LocalDateTime = mockk()
+        val thisMonth: LocalDateTime = mockk()
 
-        mockkStatic(Date::isToday)
-        mockkStatic(Date::isThisWeek)
-        mockkStatic(Date::isThisMonth)
-        mockkStatic(Date::timeAfter)
+        mockkStatic(LocalDateTime::isToday)
+        mockkStatic(LocalDateTime::isThisWeek)
+        mockkStatic(LocalDateTime::isThisMonth)
+        mockkStatic(LocalDateTime::timeAfter)
 
         val todayTimeAfter: Pair<Long, Long> = mockk()
         every { today.isToday() } answers { true }

@@ -6,7 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
-import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsViewState
+import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.SettingsViewState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

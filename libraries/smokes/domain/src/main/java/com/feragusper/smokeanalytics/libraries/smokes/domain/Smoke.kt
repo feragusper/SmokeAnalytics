@@ -1,9 +1,9 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain
 
-import java.util.Date
+import java.time.LocalDateTime
 
 data class Smoke(
     val id: String,
-    val date: Date,
+    val date: LocalDateTime,
     val timeElapsedSincePreviousSmoke: Pair<Long, Long>
 )
