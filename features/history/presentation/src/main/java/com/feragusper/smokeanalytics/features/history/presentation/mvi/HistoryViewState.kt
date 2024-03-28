@@ -4,7 +4,8 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,12 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -34,10 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -56,29 +55,23 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.DatePickerDialog
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.SwipeToDismissRow
-import kotlinx.coroutines.launch
-import java.util.Date
+import java.time.LocalDateTime
 
 data class HistoryViewState(
     internal val displayLoading: Boolean = false,
-    internal val smokes: Map<Date, List<Smoke>>? = null,
+    internal val smokes: List<Smoke>? = null,
     internal val error: HistoryResult.Error? = null,
+    internal val selectedDate: LocalDateTime = LocalDateTime.now(),
 ) : MVIViewState<HistoryIntent> {
 
-    @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Compose(intent: (HistoryIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
-        val pagerState = smokes?.let {
-            rememberPagerState(
-                initialPage = it.keys.size - 1,
-                pageCount = {
-                    it.keys.size
-                }
-            )
-        }
         val isFABVisible = rememberSaveable { mutableStateOf(true) }
         val nestedScrollConnection = remember {
             object : NestedScrollConnection {
@@ -107,13 +100,8 @@ data class HistoryViewState(
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            requireNotNull(pagerState)
                             requireNotNull(smokes)
-                            intent(HistoryIntent.AddSmoke(pagerState.currentPage.let {
-                                smokes.keys.elementAt(
-                                    it
-                                )
-                            }))
+                            intent(HistoryIntent.AddSmoke(selectedDate))
                         },
                     ) {
                         Row(
@@ -160,117 +148,102 @@ data class HistoryViewState(
                     CircularProgressIndicator()
                 }
             } else {
-                pagerState?.let { pagerState ->
-                    requireNotNull(smokes)
-                    Column(modifier = Modifier.padding(contentPadding)) {
-                        val scope = rememberCoroutineScope()
-                        PagerNavigationHeader(
-                            onClickPrevious = {
-                                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-                            },
-                            onClickNext = {
-                                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                            },
-                            date = pagerState.currentPage.let { smokes.keys.elementAt(it) },
-                            nextEnabled = pagerState.currentPage < smokes.keys.size - 1,
-                            previousEnabled = pagerState.currentPage > 0
+                var showDatePicker by remember { mutableStateOf(false) }
+                if (showDatePicker) {
+                    DatePickerDialog(
+                        initialDate = selectedDate,
+                        onConfirm = { date ->
+                            intent(HistoryIntent.FetchSmokes(date))
+                        },
+                        onDismiss = { showDatePicker = false }
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .padding(horizontal = 16.dp)
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(onClick = {
+                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(-1)))
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = ""
+                            )
+                        }
+                        Text(
+                            modifier = Modifier.clickable { showDatePicker = true },
+                            text = selectedDate.dateFormatted()
                         )
-                        HorizontalPager(state = pagerState) { index ->
-                            smokes.entries.elementAt(index).let { (_, smokes) ->
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp)
-                                        .nestedScroll(nestedScrollConnection)
-                                        .fillMaxSize(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    stickyHeader {
-                                        Stat(
-                                            titleResourceId = R.string.history_smoked,
-                                            count = smokes.size
+                        IconButton(onClick = {
+                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1)))
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = ""
+                            )
+                        }
+                    }
+                    Stat(
+                        titleResourceId = R.string.history_smoked,
+                        count = smokes?.size ?: 0
+                    )
+
+                    smokes?.takeIf { it.isNotEmpty() }?.let {
+                        LazyColumn(
+                            modifier = Modifier
+                                .nestedScroll(nestedScrollConnection)
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(smokes) { smoke ->
+                                SwipeToDismissRow(
+                                    date = smoke.date,
+                                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                    onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
+                                    fullDateTimeEdit = true,
+                                    onEdit = { date ->
+                                        intent(
+                                            HistoryIntent.EditSmoke(
+                                                smoke.id,
+                                                date
+                                            )
                                         )
                                     }
-                                    items(smokes) { smoke ->
-                                        SwipeToDismissRow(
-                                            date = smoke.date,
-                                            timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                                            onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
-                                            fullDateTimeEdit = true,
-                                            onEdit = { date ->
-                                                intent(
-                                                    HistoryIntent.EditSmoke(
-                                                        smoke.id,
-                                                        date
-                                                    )
-                                                )
-                                            }
-                                        )
-                                        HorizontalDivider()
-                                    }
-                                }
+                                )
+                                HorizontalDivider()
                             }
+                        }
+                    } ?: run { EmptySmokes() }
+                }
+
+                val context = LocalContext.current
+                LaunchedEffect(error) {
+                    error?.let {
+                        when (it) {
+                            HistoryResult.Error.Generic -> snackbarHostState.showSnackbar(
+                                context.getString(
+                                    R.string.error_generic
+                                )
+                            )
+
+                            HistoryResult.Error.NotLoggedIn -> Toast.makeText(
+                                context,
+                                context.getString(R.string.error_not_logged_in),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
-            }
-        }
-
-        val context = LocalContext.current
-        LaunchedEffect(error) {
-            error?.let {
-                when (it) {
-                    HistoryResult.Error.Generic -> snackbarHostState.showSnackbar(
-                        context.getString(
-                            R.string.error_generic
-                        )
-                    )
-
-                    HistoryResult.Error.NotLoggedIn -> Toast.makeText(
-                        context,
-                        context.getString(R.string.error_not_logged_in),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun PagerNavigationHeader(
-        onClickPrevious: () -> Unit,
-        onClickNext: () -> Unit,
-        date: Date,
-        nextEnabled: Boolean,
-        previousEnabled: Boolean
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                enabled = previousEnabled,
-                onClick = onClickPrevious
-            ) {
-                Icon(
-                    painter = rememberVectorPainter(image = Icons.AutoMirrored.Filled.ArrowBack),
-                    contentDescription = null
-                )
-            }
-            Text(
-                text = date.dateFormatted(),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Button(
-                enabled = nextEnabled,
-                onClick = onClickNext
-            ) {
-                Icon(
-                    painter = rememberVectorPainter(image = Icons.AutoMirrored.Filled.ArrowForward),
-                    contentDescription = null
-                )
             }
         }
     }
@@ -292,25 +265,18 @@ private fun HomeViewLoadingPreview() {
 private fun HomeViewSuccessPreview() {
     SmokeAnalyticsTheme {
         HistoryViewState(
-            smokes = buildMap {
+            smokes =
+            buildList {
                 repeat(4) {
-                    put(
-                        Date(),
-                        buildList {
-                            repeat(4) {
-                                add(
-                                    Smoke(
-                                        id = "123",
-                                        date = Date(),
-                                        timeElapsedSincePreviousSmoke = 1L to 30L
-                                    )
-                                )
-                            }
-                        }
+                    add(
+                        Smoke(
+                            id = "123",
+                            date = LocalDateTime.now(),
+                            timeElapsedSincePreviousSmoke = 1L to 30L
+                        )
                     )
                 }
-            },
+            }
         ).Compose {}
     }
 }
-

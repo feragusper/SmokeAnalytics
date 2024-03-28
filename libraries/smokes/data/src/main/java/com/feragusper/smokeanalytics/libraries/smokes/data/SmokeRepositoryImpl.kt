@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
@@ -10,7 +12,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query.Direction
 import kotlinx.coroutines.tasks.await
-import java.util.Date
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,18 +29,18 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addSmoke(date: Date) {
-        smokes().add(SmokeEntity(date)).await()
+    override suspend fun addSmoke(date: LocalDateTime) {
+        smokes().add(SmokeEntity(date.toDate())).await()
     }
 
     private fun smokes() = firebaseAuth.currentUser?.uid?.let {
         firebaseFirestore.collection("$USERS/$it/$SMOKES")
     } ?: throw IllegalStateException("User not logged in")
 
-    override suspend fun editSmoke(id: String, date: Date) {
+    override suspend fun editSmoke(id: String, date: LocalDateTime) {
         smokes()
             .document(id)
-            .set(SmokeEntity(date))
+            .set(SmokeEntity(date.toDate()))
             .await()
     }
 
@@ -49,8 +51,12 @@ class SmokeRepositoryImpl @Inject constructor(
             .await()
     }
 
-    override suspend fun fetchSmokes(): List<Smoke> {
-        val smokes = smokes()
+    override suspend fun fetchSmokes(date: LocalDateTime?): List<Smoke> {
+        val smokes = (date?.let {
+            smokes()
+                .whereGreaterThanOrEqualTo(SmokeEntity::date.name, it.toLocalDate().toDate())
+                .whereLessThan(SmokeEntity::date.name, it.plusDays(1).toLocalDate().toDate())
+        } ?: smokes())
             .orderBy(Smoke::date.name, Direction.DESCENDING)
             .get()
             .await()
@@ -66,5 +72,6 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     private fun DocumentSnapshot.getDate() =
-        getDate(Smoke::date.name) ?: throw IllegalStateException("Date not found")
+        getDate(Smoke::date.name)?.toLocalDateTime()
+            ?: throw IllegalStateException("Date not found")
 }

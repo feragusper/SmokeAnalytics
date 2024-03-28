@@ -6,8 +6,6 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.withTimeZeroed
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import io.mockk.every
 import io.mockk.mockk
@@ -23,7 +21,7 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class HistoryViewModelTest {
 
@@ -35,7 +33,10 @@ class HistoryViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        every { processHolder.processIntent(HistoryIntent.FetchSmokes) } returns intentResults
+        val date: LocalDateTime = mockk()
+        mockkStatic(LocalDateTime::class)
+        every { LocalDateTime.now() } returns date
+        every { processHolder.processIntent(HistoryIntent.FetchSmokes(date)) } returns intentResults
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -49,29 +50,27 @@ class HistoryViewModelTest {
         runTest {
             val viewModel = HistoryViewModel(processHolder)
 
-            mockkStatic(Date::dateFormatted)
-            val dateWithoutTime: Date = mockk()
-            val smoke = mockk<Smoke>().apply {
-                every { this@apply.date } returns mockk<Date>().apply {
-                    every { withTimeZeroed() } returns dateWithoutTime
-                }
-            }
-            val smokeList: List<Smoke> = listOf(smoke)
+            val date: LocalDateTime = mockk()
+            val smokeList: List<Smoke> = listOf(mockk<Smoke>())
 
             intentResults.emit(
-                HistoryResult.FetchSmokesSuccess(smokeList)
+                HistoryResult.FetchSmokesSuccess(
+                    smokes = smokeList,
+                    selectedDate = date
+                )
             )
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
             state.error shouldBeEqualTo null
-            state.smokes shouldBeEqualTo mapOf(dateWithoutTime to smokeList)
+            state.smokes shouldBeEqualTo smokeList
+            state.selectedDate shouldBeEqualTo date
         }
 
     @Test
     fun `GIVEN fetch smokes error WHEN viewmodel is created THEN it shows fetch smokes error`() =
         runTest {
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every { processHolder.processIntent(HistoryIntent.AddSmoke(date)) } returns intentResults
 
             val viewModel = HistoryViewModel(processHolder)
@@ -86,7 +85,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `GIVEN loading result WHEN viewmodel is created THEN it hides loading`() = runTest {
-        val date: Date = mockk()
+        val date: LocalDateTime = mockk()
         every { processHolder.processIntent(HistoryIntent.AddSmoke(date)) } returns intentResults
 
         val viewModel = HistoryViewModel(processHolder)
@@ -102,37 +101,36 @@ class HistoryViewModelTest {
     @Test
     fun `GIVEN add smoke success and fetch smokes success WHEN add smoke is sent THEN it hides loading and shows success`() =
         runTest {
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every { processHolder.processIntent(HistoryIntent.AddSmoke(date)) } returns intentResults
 
             val viewModel = HistoryViewModel(processHolder)
 
-            val dateWithoutTime: Date = mockk()
-            mockkStatic(Date::dateFormatted)
-            val smoke = mockk<Smoke>().apply {
-                every { this@apply.date } returns mockk<Date>().apply {
-                    every { withTimeZeroed() } returns dateWithoutTime
-                }
-            }
-            val smokeList: List<Smoke> = listOf(smoke)
+            val smokeList: List<Smoke> = listOf(mockk<Smoke>())
 
             intentResults.emit(HistoryResult.AddSmokeSuccess)
 
             viewModel.intents().trySend(HistoryIntent.AddSmoke(date))
 
-            intentResults.emit(HistoryResult.FetchSmokesSuccess(smokeList))
+            intentResults.emit(
+                HistoryResult.FetchSmokesSuccess(
+                    smokes = smokeList,
+                    selectedDate = date
+                )
+            )
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
             state.error shouldBeEqualTo null
-            state.smokes shouldBeEqualTo mapOf(dateWithoutTime to smokeList)
+            state.smokes shouldBeEqualTo smokeList
+            state.selectedDate shouldBeEqualTo date
         }
 
     @Test
     fun `GIVEN edit smoke success and fetch smokes success WHEN edit smoke is sent THEN it hides loading and shows success`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HistoryIntent.EditSmoke(
@@ -144,14 +142,7 @@ class HistoryViewModelTest {
 
             val viewModel = HistoryViewModel(processHolder)
 
-            val dateWithoutTime: Date = mockk()
-            mockkStatic(Date::dateFormatted)
-            val smoke = mockk<Smoke>().apply {
-                every { this@apply.date } returns mockk<Date>().apply {
-                    every { withTimeZeroed() } returns dateWithoutTime
-                }
-            }
-            val smokeList: List<Smoke> = listOf(smoke)
+            val smokeList: List<Smoke> = listOf(mockk<Smoke>())
 
             intentResults.emit(HistoryResult.EditSmokeSuccess)
 
@@ -162,12 +153,18 @@ class HistoryViewModelTest {
                 )
             )
 
-            intentResults.emit(HistoryResult.FetchSmokesSuccess(smokeList))
+            intentResults.emit(
+                HistoryResult.FetchSmokesSuccess(
+                    smokes = smokeList,
+                    selectedDate = date
+                )
+            )
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
             state.error shouldBeEqualTo null
-            state.smokes shouldBeEqualTo mapOf(dateWithoutTime to smokeList)
+            state.smokes shouldBeEqualTo smokeList
+            state.selectedDate shouldBeEqualTo date
         }
 
     @Test
@@ -178,31 +175,31 @@ class HistoryViewModelTest {
 
             val viewModel = HistoryViewModel(processHolder)
 
-            mockkStatic(Date::dateFormatted)
-            val date: Date = mockk()
-            val smoke = mockk<Smoke>().apply {
-                every { this@apply.date } returns mockk<Date>().apply {
-                    every { withTimeZeroed() } returns date
-                }
-            }
-            val smokeList: List<Smoke> = listOf(smoke)
+            val date: LocalDateTime = mockk()
+            val smokeList: List<Smoke> = listOf(mockk<Smoke>())
 
             intentResults.emit(HistoryResult.DeleteSmokeSuccess)
 
             viewModel.intents().trySend(HistoryIntent.DeleteSmoke(id))
 
-            intentResults.emit(HistoryResult.FetchSmokesSuccess(smokeList))
+            intentResults.emit(
+                HistoryResult.FetchSmokesSuccess(
+                    smokes = smokeList,
+                    selectedDate = date
+                )
+            )
             state = viewModel.states().first()
 
             state.displayLoading shouldBeEqualTo false
             state.error shouldBeEqualTo null
-            state.smokes shouldBeEqualTo mapOf(date to smokeList)
+            state.smokes shouldBeEqualTo smokeList
+            state.selectedDate shouldBeEqualTo date
         }
 
     @Test
     fun `GIVEN add smoke error result WHEN add smoke is sent THEN it hides loading and shows error`() =
         runTest {
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every { processHolder.processIntent(HistoryIntent.AddSmoke(date)) } returns intentResults
 
             val viewModel = HistoryViewModel(processHolder)
@@ -220,7 +217,7 @@ class HistoryViewModelTest {
     fun `GIVEN edit smoke error result WHEN edit smoke is sent THEN it hides loading and shows error`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HistoryIntent.EditSmoke(

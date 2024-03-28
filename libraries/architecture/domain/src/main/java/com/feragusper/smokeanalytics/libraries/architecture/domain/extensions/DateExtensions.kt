@@ -1,84 +1,69 @@
 package com.feragusper.smokeanalytics.libraries.architecture.domain.extensions
 
-import java.text.SimpleDateFormat
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.Calendar
+import java.time.format.DateTimeFormatter
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-private fun firstInstantToday() = Calendar.getInstance().apply {
-    time = Date()
-}.withTimeZeroed()
+private fun firstInstantToday() = LocalDate.now().atStartOfDay()
 
-private fun lastInstantToday() = firstInstantToday().apply {
-    add(Calendar.DATE, 1)
+private fun lastInstantToday() = firstInstantToday().plusDays(1)
+
+private fun firstInstantThisWeek() = firstInstantToday().with(DayOfWeek.MONDAY)
+
+private fun lastInstantThisWeek() = firstInstantToday().with(DayOfWeek.SUNDAY).plusDays(1)
+
+private fun firstInstantThisMonth() = firstInstantToday().withDayOfMonth(1)
+
+private fun lastInstantThisMonth() = with(firstInstantToday()) {
+    withDayOfMonth(month.length(toLocalDate().isLeapYear))
 }
 
-private fun firstInstantThisWeek() = firstInstantToday().apply {
-    firstDayOfWeek = Calendar.MONDAY
-    this[Calendar.DAY_OF_WEEK] = Calendar.MONDAY
-}
+private fun isBetweenDates(date: LocalDateTime, after: LocalDateTime, before: LocalDateTime) =
+    date.isAfter(after) && date.isBefore(before)
 
-private fun lastInstantThisWeek() = firstInstantToday().apply {
-    firstDayOfWeek = Calendar.MONDAY
-    this[Calendar.DAY_OF_WEEK] = Calendar.SUNDAY
-    add(Calendar.DATE, 1)
-}
-
-private fun firstInstantThisMonth() = firstInstantToday().apply {
-    this[Calendar.DAY_OF_MONTH] = getActualMinimum(Calendar.DAY_OF_MONTH)
-}
-
-private fun lastInstantThisMonth() = firstInstantToday().apply {
-    this[Calendar.DAY_OF_MONTH] = getActualMaximum(Calendar.DAY_OF_MONTH)
-}
-
-private fun isBetweenDates(date: Date, after: Date, before: Date) =
-    date.after(after) && date.before(before)
-
-fun Date.isToday() = isBetweenDates(
+fun LocalDateTime.isToday() = isBetweenDates(
     this,
-    firstInstantToday().time,
-    lastInstantToday().time
+    firstInstantToday(),
+    lastInstantToday()
 )
 
-fun Date.isThisWeek() = isBetweenDates(
+fun LocalDateTime.isThisWeek() = isBetweenDates(
     this,
-    firstInstantThisWeek().time,
-    lastInstantThisWeek().time
+    firstInstantThisWeek(),
+    lastInstantThisWeek()
 )
 
-fun Date.isThisMonth() = isBetweenDates(
+fun LocalDateTime.isThisMonth() = isBetweenDates(
     this,
-    firstInstantThisMonth().time,
-    lastInstantThisMonth().time
+    firstInstantThisMonth(),
+    lastInstantThisMonth()
 )
 
-fun Date?.timeElapsedSinceNow(): Pair<Long, Long> = Date().timeAfter(this)
+fun LocalDateTime?.timeElapsedSinceNow(): Pair<Long, Long> = LocalDateTime.now().timeAfter(this)
 
-fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
-    (time - dateNotNull.time).let { diff ->
+fun LocalDateTime.timeAfter(date: LocalDateTime?): Pair<Long, Long> = date?.let { dateNotNull ->
+    dateNotNull.until(this, java.time.temporal.ChronoUnit.MILLIS).let { diff ->
         TimeUnit.MILLISECONDS.toHours(diff) % 24 to TimeUnit.MILLISECONDS.toMinutes(diff) % 60
     }
 } ?: (0L to 0L)
 
-fun Date.withTimeZeroed(): Date =
-    Calendar.getInstance().apply { time = this@withTimeZeroed }.withTimeZeroed().time
+fun LocalDateTime.timeFormatted(): String = DateTimeFormatter.ofPattern("HH:mm").format(this)
 
-private fun Calendar.withTimeZeroed() = apply {
-    this[Calendar.HOUR_OF_DAY] = 0
-    this[Calendar.MINUTE] = 0
-    this[Calendar.SECOND] = 0
-    this[Calendar.MILLISECOND] = 0
-}
+fun LocalDateTime.dateFormatted(): String =
+    DateTimeFormatter.ofPattern("EEEE, MMMM dd").format(this)
 
-fun Date.timeFormatted(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
-fun Date.dateFormatted(): String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(this)
+fun LocalDateTime.utcMillis() = this
+    .toEpochSecond(ZoneOffset.UTC)
+    .times(1000)
 
-fun Date.utcMillis() = toInstant()
-    .atZone(ZoneId.systemDefault())
-    .toLocalDate()
-    .atStartOfDay()?.toEpochSecond(ZoneOffset.UTC)
-    ?.times(1000)
+fun LocalDateTime.toDate(): Date = Date.from(this.atZone(ZoneId.systemDefault()).toInstant())
+
+fun LocalDate.toDate(): Date = Date.from(this.atStartOfDay(ZoneId.systemDefault()).toInstant())
+
+fun Date.toLocalDateTime(): LocalDateTime =
+    LocalDateTime.ofInstant(this.toInstant(), ZoneId.systemDefault())

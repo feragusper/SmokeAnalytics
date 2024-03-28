@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.features.history.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import java.time.LocalDateTime
 
 sealed interface HistoryResult : MVIResult {
     object Loading : HistoryResult
@@ -17,7 +18,11 @@ sealed interface HistoryResult : MVIResult {
             Error
     }
 
-    data class FetchSmokesSuccess(val smokes: List<Smoke>) : HistoryResult
+    data class FetchSmokesSuccess(
+        val selectedDate: LocalDateTime,
+        val smokes: List<Smoke>
+    ) : HistoryResult
+
     object FetchSmokesError : HistoryResult
     object NavigateUp : HistoryResult
 }

@@ -13,9 +13,9 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.withTimeZeroed
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,7 +26,7 @@ class HistoryViewModel @Inject constructor(
     override lateinit var navigator: HistoryNavigator
 
     init {
-        intents().trySend(HistoryIntent.FetchSmokes)
+        intents().trySend(HistoryIntent.FetchSmokes(LocalDateTime.now()))
     }
 
     override suspend fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
@@ -50,17 +50,13 @@ class HistoryViewModel @Inject constructor(
                 previous.copy(
                     displayLoading = false,
                     error = null,
-                    smokes = buildMap {
-                        result.smokes.reversed().groupBy { it.date.withTimeZeroed() }
-                            .forEach { (date, smokes) ->
-                                put(date, smokes.reversed())
-                            }
-                    },
+                    smokes = result.smokes,
+                    selectedDate = result.selectedDate,
                 )
             }
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
-                intents().trySend(HistoryIntent.FetchSmokes)
+                intents().trySend(HistoryIntent.FetchSmokes(previous.selectedDate))
                 previous
             }
 

@@ -53,9 +53,10 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.SwipeToDismissRow
-import java.util.Date
+import java.time.LocalDateTime
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -138,126 +139,132 @@ data class HomeViewState(
                     }
                 }
 
-                Box(Modifier.nestedScroll(state.nestedScrollConnection)) {
-                    LazyColumn(
+                Box(
+                    Modifier
+                        .padding(contentPadding)
+                        .nestedScroll(state.nestedScrollConnection)
+                ) {
+                    Column(
                         modifier = Modifier
-                            .padding(contentPadding)
                             .padding(horizontal = 16.dp)
                             .padding(top = 16.dp)
-                            .nestedScroll(nestedScrollConnection)
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        stickyHeader {
-                            Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.background)) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    smokesPerDay?.let { smokesPerDay ->
-                                        Stat(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clickable {
-                                                    intent(HomeIntent.OnClickHistory)
-                                                },
-                                            titleResourceId = R.string.home_label_per_day,
-                                            count = smokesPerDay
-                                        )
-                                    }
-                                    smokesPerWeek?.let { smokesPerWeek ->
-                                        Stat(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clickable {
-                                                    intent(HomeIntent.OnClickHistory)
-                                                },
-                                            titleResourceId = R.string.home_label_per_week,
-                                            count = smokesPerWeek
-                                        )
-                                    }
-                                    smokesPerMonth?.let { smokesPerMonth ->
-                                        Stat(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clickable {
-                                                    intent(HomeIntent.OnClickHistory)
-                                                },
-                                            titleResourceId = R.string.home_label_per_month,
-                                            count = smokesPerMonth
-                                        )
-                                    }
-                                }
-                                timeSinceLastCigarette?.let { timeSinceLastCigarette ->
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Box(
+                        Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.background)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                smokesPerDay?.let { smokesPerDay ->
+                                    Stat(
                                         modifier = Modifier
-                                            .background(
-                                                color = MaterialTheme.colorScheme.surface,
-                                                shape = MaterialTheme.shapes.medium
-                                            )
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        contentAlignment = Alignment.BottomEnd,
+                                            .weight(1f)
+                                            .clickable {
+                                                intent(HomeIntent.OnClickHistory)
+                                            },
+                                        titleResourceId = R.string.home_label_per_day,
+                                        count = smokesPerDay
+                                    )
+                                }
+                                smokesPerWeek?.let { smokesPerWeek ->
+                                    Stat(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                intent(HomeIntent.OnClickHistory)
+                                            },
+                                        titleResourceId = R.string.home_label_per_week,
+                                        count = smokesPerWeek
+                                    )
+                                }
+                                smokesPerMonth?.let { smokesPerMonth ->
+                                    Stat(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable {
+                                                intent(HomeIntent.OnClickHistory)
+                                            },
+                                        titleResourceId = R.string.home_label_per_month,
+                                        count = smokesPerMonth
+                                    )
+                                }
+                            }
+                            timeSinceLastCigarette?.let { timeSinceLastCigarette ->
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surface,
+                                            shape = MaterialTheme.shapes.medium
+                                        )
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.BottomEnd,
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            4.dp,
+                                            Alignment.CenterVertically
+                                        ),
                                     ) {
-                                        Column(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalArrangement = Arrangement.spacedBy(
-                                                4.dp,
-                                                Alignment.CenterVertically
-                                            ),
-                                        ) {
-                                            Text(
-                                                text = stringResource(id = R.string.home_since_your_last_cigarette),
-                                                style = MaterialTheme.typography.labelSmall
-                                            )
-                                            Text(
-                                                text = timeSinceLastCigarette.let { (hours, minutes) ->
-                                                    listOfNotNull(
-                                                        stringResource(
-                                                            id = R.string.home_smoked_after_hours_short,
-                                                            hours.toInt()
-                                                        ).takeIf { hours > 0 },
-                                                        stringResource(
-                                                            id = R.string.home_smoked_after_minutes_short,
-                                                            minutes.toInt()
-                                                        )
-                                                    ).joinToString(", ")
-                                                },
-                                                style = MaterialTheme.typography.titleLarge
+                                        Text(
+                                            text = stringResource(id = R.string.home_since_your_last_cigarette),
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                        Text(
+                                            text = timeSinceLastCigarette.let { (hours, minutes) ->
+                                                listOfNotNull(
+                                                    stringResource(
+                                                        id = R.string.home_smoked_after_hours_short,
+                                                        hours.toInt()
+                                                    ).takeIf { hours > 0 },
+                                                    stringResource(
+                                                        id = R.string.home_smoked_after_minutes_short,
+                                                        minutes.toInt()
+                                                    )
+                                                ).joinToString(", ")
+                                            },
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                    }
+                                    Image(
+                                        painter = painterResource(id = R.drawable.il_cigarette_background),
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                            Text(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                text = stringResource(id = R.string.home_smoked_today),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                        }
+                        latestSmokes?.takeIf { it.isNotEmpty() }?.let {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .padding(top = 16.dp)
+                                    .nestedScroll(nestedScrollConnection)
+                                    .fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(it) { smoke ->
+                                    SwipeToDismissRow(
+                                        date = smoke.date,
+                                        timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                        onDelete = { intent(HomeIntent.DeleteSmoke(smoke.id)) },
+                                        fullDateTimeEdit = false,
+                                        onEdit = { date ->
+                                            intent(
+                                                HomeIntent.EditSmoke(
+                                                    smoke.id,
+                                                    date
+                                                )
                                             )
                                         }
-                                        Image(
-                                            painter = painterResource(id = R.drawable.il_cigarette_background),
-                                            contentDescription = null
-                                        )
-                                    }
+                                    )
+                                    HorizontalDivider()
                                 }
-                                Text(
-                                    modifier = Modifier.padding(vertical = 12.dp),
-                                    text = stringResource(id = R.string.home_smoked_today),
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
                             }
-                        }
-                        latestSmokes.takeIf { !it.isNullOrEmpty() }?.let {
-                            items(it) { smoke ->
-                                SwipeToDismissRow(
-                                    date = smoke.date,
-                                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                                    onDelete = { intent(HomeIntent.DeleteSmoke(smoke.id)) },
-                                    fullDateTimeEdit = false,
-                                    onEdit = { date ->
-                                        intent(
-                                            HomeIntent.EditSmoke(
-                                                smoke.id,
-                                                date
-                                            )
-                                        )
-                                    }
-                                )
-                                HorizontalDivider()
-                            }
-                        }
+                        } ?: run { EmptySmokes() }
                     }
                     PullToRefreshContainer(
                         modifier = Modifier.align(Alignment.TopCenter),
@@ -313,7 +320,7 @@ private fun HomeViewSuccessPreview() {
                     add(
                         Smoke(
                             id = "123",
-                            date = Date(),
+                            date = LocalDateTime.now(),
                             timeElapsedSincePreviousSmoke = 1L to 30L
                         )
                     )
