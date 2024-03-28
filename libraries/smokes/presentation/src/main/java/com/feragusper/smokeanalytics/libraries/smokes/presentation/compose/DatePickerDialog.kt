@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.presentation
+package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -10,6 +10,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId

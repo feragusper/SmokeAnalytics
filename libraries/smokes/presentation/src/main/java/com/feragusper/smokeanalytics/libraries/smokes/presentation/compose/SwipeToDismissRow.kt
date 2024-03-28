@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.presentation
+package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt

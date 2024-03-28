@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.design.theme
+package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
 import android.os.Build

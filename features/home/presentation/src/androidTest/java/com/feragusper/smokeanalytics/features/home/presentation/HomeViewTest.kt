@@ -6,7 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

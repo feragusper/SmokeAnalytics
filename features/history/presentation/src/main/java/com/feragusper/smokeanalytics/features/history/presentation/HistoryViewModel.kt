@@ -10,7 +10,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesSuccess
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.Loading
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.NotLoggedIn
-import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
