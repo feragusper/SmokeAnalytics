@@ -20,7 +20,7 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class HomeViewModelTest {
 
@@ -160,7 +160,7 @@ class HomeViewModelTest {
     fun `GIVEN edit smoke success and fetch smokes success WHEN edit smoke is sent THEN it hides loading and shows success`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HomeIntent.EditSmoke(
@@ -271,7 +271,7 @@ class HomeViewModelTest {
     fun `GIVEN edit smoke error result WHEN edit smoke is sent THEN it hides loading and shows error`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HomeIntent.EditSmoke(
