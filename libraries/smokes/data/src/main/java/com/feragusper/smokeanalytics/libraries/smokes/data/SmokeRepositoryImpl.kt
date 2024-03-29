@@ -16,12 +16,22 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Implementation of [SmokeRepository] that interacts with Firebase Firestore to perform CRUD operations
+ * on smoke data for the authenticated user.
+ *
+ * @property firebaseFirestore The instance of [FirebaseFirestore] for database operations.
+ * @property firebaseAuth The instance of [FirebaseAuth] for authentication details.
+ */
 @Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
 ) : SmokeRepository {
 
+    /**
+     * Constants for Firestore collection paths.
+     */
     interface FirestoreCollection {
         companion object {
             const val USERS = "users"
@@ -32,10 +42,6 @@ class SmokeRepositoryImpl @Inject constructor(
     override suspend fun addSmoke(date: LocalDateTime) {
         smokes().add(SmokeEntity(date.toDate())).await()
     }
-
-    private fun smokes() = firebaseAuth.currentUser?.uid?.let {
-        firebaseFirestore.collection("$USERS/$it/$SMOKES")
-    } ?: throw IllegalStateException("User not logged in")
 
     override suspend fun editSmoke(id: String, date: LocalDateTime) {
         smokes()
@@ -71,6 +77,22 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Helper method to retrieve the Firestore collection reference for the current user's smokes.
+     *
+     * @throws IllegalStateException if the user is not logged in.
+     * @return The Firestore collection reference.
+     */
+    private fun smokes() = firebaseAuth.currentUser?.uid?.let {
+        firebaseFirestore.collection("$USERS/$it/$SMOKES")
+    } ?: throw IllegalStateException("User not logged in")
+
+    /**
+     * Extension function to convert a Firestore [DocumentSnapshot] to a [LocalDateTime].
+     *
+     * @throws IllegalStateException if the date is not found in the document.
+     * @return The [LocalDateTime] representation of the date.
+     */
     private fun DocumentSnapshot.getDate() =
         getDate(Smoke::date.name)?.toLocalDateTime()
             ?: throw IllegalStateException("Date not found")

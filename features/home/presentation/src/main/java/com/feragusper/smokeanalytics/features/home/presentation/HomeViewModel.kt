@@ -23,6 +23,12 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.fixedRateTimer
 
+/**
+ * ViewModel for the Home feature, responsible for processing user intents, interacting with the domain layer,
+ * and updating the UI state.
+ *
+ * @param processHolder Responsible for processing intents and invoking use cases.
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val processHolder: HomeProcessHolder,

@@ -15,6 +15,15 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
+/**
+ * Presents a date picker dialog to the user, allowing for the selection of a date from a calendar-style UI.
+ * It's built using Material 3 components and provides customization for initial date selection and date selection constraints.
+ *
+ * @param initialDate The initial date to be shown when the date picker is first displayed. This helps in providing
+ * a context or default selection for the user.
+ * @param onConfirm Callback function invoked with the selected [LocalDateTime] when the user confirms their choice.
+ * @param onDismiss Callback function invoked when the date picker dialog is dismissed without a date selection.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerDialog(
@@ -22,40 +31,39 @@ fun DatePickerDialog(
     onConfirm: (LocalDateTime) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val datePickerState =
-        rememberDatePickerState(
-            initialSelectedDateMillis = initialDate.utcMillis(),
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    return utcTimeMillis <= System.currentTimeMillis()
-                }
-            })
+    // Remembering the state of the DatePicker, initializing with the passed `initialDate`.
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate.utcMillis(), // Convert initialDate to milliseconds.
+        selectableDates = object : SelectableDates {
+            // Implementing a custom constraint to limit selectable dates to the current and past dates only.
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= System.currentTimeMillis()
+            }
+        })
 
+    // Building the DatePickerDialog with specified buttons and actions.
     DatePickerDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = onDismiss,
         confirmButton = {
             Button(onClick = {
-                datePickerState
-                    .selectedDateMillis
-                    ?.let {
-                        Instant.ofEpochMilli(it)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime()
-                    }?.let { onConfirm(it) }
+                // Handling date confirmation, converting the selected milliseconds back to LocalDateTime and invoking `onConfirm`.
+                datePickerState.selectedDateMillis?.let { millis ->
+                    Instant.ofEpochMilli(millis)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime()
+                }?.let(onConfirm)
             }) {
                 Text(text = stringResource(id = R.string.smokes_date_time_picker_button_ok))
             }
         },
         dismissButton = {
-            Button(onClick = {
-                onDismiss()
-            }) {
+            // Handling dialog dismissal.
+            Button(onClick = onDismiss) {
                 Text(text = stringResource(id = R.string.smokes_date_time_picker_button_cancel))
             }
         }
     ) {
-        DatePicker(
-            state = datePickerState
-        )
+        // The actual DatePicker composable with the remembered state.
+        DatePicker(state = datePickerState)
     }
 }

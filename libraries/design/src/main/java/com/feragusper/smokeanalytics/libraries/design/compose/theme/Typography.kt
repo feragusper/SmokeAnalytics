@@ -97,6 +97,10 @@ val Typography = Typography(
     ),
 )
 
+/**
+ * Previews the typography scale of the application, demonstrating the appearance of different text styles
+ * defined in the theme across various font scales and UI modes.
+ */
 @TypographiesPreview
 @Composable
 private fun TypographyPreview() {

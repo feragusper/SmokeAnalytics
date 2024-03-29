@@ -6,6 +6,10 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 
+/**
+ * Provides the binding for [AuthenticationRepository] to its implementation [AuthenticationRepositoryImpl],
+ * allowing Dagger-Hilt to inject the concrete implementation where an AuthenticationRepository is required.
+ */
 @Module
 @InstallIn(ViewModelComponent::class)
 abstract class AuthenticationRepositoryModule {

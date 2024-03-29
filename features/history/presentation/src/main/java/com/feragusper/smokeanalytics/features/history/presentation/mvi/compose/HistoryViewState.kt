@@ -54,6 +54,8 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
@@ -61,6 +63,14 @@ import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import java.time.LocalDateTime
 
+/**
+ * Describes the state of the history view, including loading indicators, smoke events, errors, and the currently selected date.
+ *
+ * @property displayLoading Indicates if the loading UI should be shown.
+ * @property smokes The list of [Smoke] events to display, or null if not available.
+ * @property error An optional error result affecting the current view state.
+ * @property selectedDate The currently selected date for displaying smoke events.
+ */
 data class HistoryViewState(
     internal val displayLoading: Boolean = false,
     internal val smokes: List<Smoke>? = null,
@@ -248,4 +258,35 @@ data class HistoryViewState(
         }
     }
 
+}
+
+@CombinedPreviews
+@Composable
+private fun HistoryViewLoadingPreview() {
+    SmokeAnalyticsTheme {
+        HistoryViewState(
+            displayLoading = true,
+        ).Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun HistoryViewSuccessPreview() {
+    SmokeAnalyticsTheme {
+        HistoryViewState(
+            smokes =
+            buildList {
+                repeat(4) {
+                    add(
+                        Smoke(
+                            id = "123",
+                            date = LocalDateTime.now(),
+                            timeElapsedSincePreviousSmoke = 1L to 30L
+                        )
+                    )
+                }
+            }
+        ).Compose {}
+    }
 }

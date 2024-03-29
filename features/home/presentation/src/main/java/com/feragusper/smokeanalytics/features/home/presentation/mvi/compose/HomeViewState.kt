@@ -52,11 +52,25 @@ import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
+import java.time.LocalDateTime
 
+/**
+ * Represents the state of the Home screen in the application, encapsulating all UI-related data.
+ *
+ * @property displayLoading Indicates whether a loading indicator should be shown.
+ * @property smokesPerDay The number of smokes recorded for the current day.
+ * @property smokesPerWeek The number of smokes recorded for the current week.
+ * @property smokesPerMonth The number of smokes recorded for the current month.
+ * @property timeSinceLastCigarette The duration since the last cigarette was smoked.
+ * @property latestSmokes A list of the latest smokes to display.
+ * @property error Possible error state to inform the user of any issues.
+ */
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
     internal val smokesPerDay: Int? = null,
@@ -293,4 +307,38 @@ data class HomeViewState(
         }
     }
 
+}
+
+@CombinedPreviews
+@Composable
+private fun HomeViewLoadingPreview() {
+    SmokeAnalyticsTheme {
+        HomeViewState(
+            displayLoading = true,
+        ).Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun HomeViewSuccessPreview() {
+    SmokeAnalyticsTheme {
+        HomeViewState(
+            smokesPerDay = 10,
+            smokesPerWeek = 20,
+            smokesPerMonth = 30,
+            timeSinceLastCigarette = 1L to 30L,
+            latestSmokes = buildList {
+                repeat(4) {
+                    add(
+                        Smoke(
+                            id = "123",
+                            date = LocalDateTime.now(),
+                            timeElapsedSincePreviousSmoke = 1L to 30L
+                        )
+                    )
+                }
+            },
+        ).Compose {}
+    }
 }

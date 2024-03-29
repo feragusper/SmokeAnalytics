@@ -1,11 +1,11 @@
-package com.feragusper.smokeanalytics.features.stats.navigation
+package com.feragusper.smokeanalytics.features.stats.presentation.navigation
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator.Companion.ROUTE
-import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator.Companion.START
+import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator.Companion.ROUTE
+import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator.Companion.START
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsView
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsViewModel
 

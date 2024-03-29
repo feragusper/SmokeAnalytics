@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.devtools.presentation.mvi
+package com.feragusper.smokeanalytics.features.devtools.presentation.mvi.compose
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +26,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.devtools.presentation.R
+import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 
+/**
+ * The state of the DevTools view, containing all necessary data for rendering the UI.
+ *
+ * @property displayLoading Indicates if a loading indicator should be displayed.
+ * @property currentUser The current user's information if logged in.
+ */
 data class DevToolsViewState(
     internal val displayLoading: Boolean = false,
     internal val currentUser: User? = null,

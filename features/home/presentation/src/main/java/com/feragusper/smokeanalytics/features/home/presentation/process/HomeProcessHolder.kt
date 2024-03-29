@@ -15,6 +15,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
+/**
+ * Processes intents from the Home feature, invoking the appropriate use cases and updating the result.
+ *
+ * @param addSmokeUseCase Use case for adding a new smoke entry.
+ * @param editSmokeUseCase Use case for editing an existing smoke entry.
+ * @param deleteSmokeUseCase Use case for deleting an existing smoke entry.
+ * @param fetchSmokeCountListUseCase Use case for fetching smoke counts and latest smokes.
+ * @param fetchSessionUseCase Use case for fetching the current session state.
+ */
 class HomeProcessHolder @Inject constructor(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val editSmokeUseCase: EditSmokeUseCase,

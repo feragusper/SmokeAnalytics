@@ -99,6 +99,11 @@ annotation class WallpaperPreview
 )
 annotation class BackgroundAndSystemUIPreview
 
+/**
+ * A collection of annotations for previewing Composables across different font scales, UI modes (light/dark),
+ * API levels, devices, locales, wallpapers, and with different background and system UI visibility settings.
+ * These annotations help in designing and testing UI components across a wide range of conditions.
+ */
 @FontScalePreview
 @ApiLevelPreview
 @UiModePreview

@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.stats.presentation
 
-import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator
+import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState

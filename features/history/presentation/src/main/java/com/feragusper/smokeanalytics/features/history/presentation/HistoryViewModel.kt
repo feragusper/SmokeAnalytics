@@ -18,6 +18,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
 import javax.inject.Inject
 
+/**
+ * ViewModel for the history feature, managing UI state based on user intents and processing results.
+ *
+ * @property processHolder Encapsulates business logic to process [HistoryIntent] into [HistoryResult].
+ */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val processHolder: HistoryProcessHolder,

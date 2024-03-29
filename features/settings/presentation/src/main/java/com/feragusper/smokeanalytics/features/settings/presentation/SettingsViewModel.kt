@@ -9,6 +9,12 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIView
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+/**
+ * ViewModel for the Settings feature, responsible for processing user intents, interacting
+ * with the domain layer, and updating the UI state.
+ *
+ * @param processHolder Responsible for processing intents and invoking the corresponding actions.
+ */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val processHolder: SettingsProcessHolder,

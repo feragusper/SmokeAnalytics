@@ -69,6 +69,16 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
+/**
+ * A row item for displaying smoke event details with swipe-to-dismiss functionality.
+ * It allows users to delete the event by swiping and edit the event's time by tapping.
+ *
+ * @param date The date and time of the smoke event.
+ * @param timeElapsedSincePreviousSmoke The time elapsed since the previous smoke event.
+ * @param onDelete Callback invoked when the item is swiped to dismiss, indicating deletion.
+ * @param fullDateTimeEdit Flag indicating if both date and time can be edited. If false, only time is editable.
+ * @param onEdit Callback invoked with a new LocalDateTime when the user edits the event's time (or date and time).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDismissRow(
@@ -287,6 +297,15 @@ private enum class DateTimeDialogType {
     Time
 }
 
+/**
+ * Displays a dialog allowing the user to select both a date and a time, with the selections made in two steps.
+ * First, the date is chosen, followed by the time.
+ *
+ * @param initialDateTime The initial date and time to display in the picker.
+ * @param onDismiss Callback invoked when the dialog is dismissed without a selection.
+ * @param onDateSelected Callback invoked when a date is selected, before the time selection step.
+ * @param onTimeSelected Callback invoked with the selected hour and minute after both date and time have been chosen.
+ */
 @Composable
 private fun DateTimePickerDialog(
     initialDateTime: LocalDateTime,
@@ -324,6 +343,13 @@ private fun DateTimePickerDialog(
 
 }
 
+/**
+ * Displays a dialog for time selection, providing an interface for choosing an hour and minute.
+ *
+ * @param initialDate The initial date and time to display in the picker.
+ * @param onDismiss Callback invoked when the dialog is dismissed without making a selection.
+ * @param onConfirm Callback invoked with the selected hour and minute upon confirmation.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(

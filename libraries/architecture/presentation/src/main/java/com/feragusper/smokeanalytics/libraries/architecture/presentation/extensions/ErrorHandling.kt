@@ -5,10 +5,16 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.catch
 import timber.log.Timber
 
+/**
+ * Catches exceptions that occur within the flow and logs them using Timber, allowing
+ * for custom handling via [action].
+ *
+ * @param action A suspend function that allows for handling of the caught [Throwable].
+ * @return The original flow with exception handling applied.
+ */
 fun <T> Flow<T>.catchAndLog(
     action: suspend FlowCollector<T>.(cause: Throwable) -> Unit,
 ) = this.catch {
     Timber.e("ErrorHandling", "Error caught", it)
     action(it)
 }
-

@@ -33,8 +33,16 @@ import com.feragusper.smokeanalytics.features.settings.presentation.mvi.Settings
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import kotlinx.coroutines.launch
 
+/**
+ * Represents the state of the Settings screen, encapsulating UI-related data.
+ *
+ * @property displayLoading Indicates if a loading indicator should be displayed.
+ * @property currentEmail The email of the currently logged-in user, if available.
+ */
 data class SettingsViewState(
     internal val displayLoading: Boolean = false,
     internal val currentEmail: String? = null,
@@ -134,5 +142,33 @@ data class SettingsViewState(
                 }
             }
         }
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun SettingsLoadingPreview() {
+    SmokeAnalyticsTheme {
+        SettingsViewState(
+            displayLoading = true
+        ).Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun SettingsLoggedOutViewPreview() {
+    SmokeAnalyticsTheme {
+        SettingsViewState().Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun SettingsLoggedInViewPreview() {
+    SmokeAnalyticsTheme {
+        SettingsViewState(
+            currentEmail = "fernancho@gmail.com"
+        ).Compose {}
     }
 }

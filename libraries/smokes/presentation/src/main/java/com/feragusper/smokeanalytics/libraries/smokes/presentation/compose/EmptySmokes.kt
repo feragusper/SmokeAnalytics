@@ -10,6 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
 
+/**
+ * Displays a message indicating there are no smoke records available.
+ * This is typically used in views where smoke records are expected but none exist.
+ */
 @Composable
 fun EmptySmokes() {
     Box(
