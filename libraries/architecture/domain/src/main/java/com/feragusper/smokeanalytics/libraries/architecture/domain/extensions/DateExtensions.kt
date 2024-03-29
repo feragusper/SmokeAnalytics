@@ -1,84 +1,133 @@
 package com.feragusper.smokeanalytics.libraries.architecture.domain.extensions
 
-import java.text.SimpleDateFormat
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.Calendar
+import java.time.format.DateTimeFormatter
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-private fun firstInstantToday() = Calendar.getInstance().apply {
-    time = Date()
-}.withTimeZeroed()
+/**
+ * Returns the start of the current day as a [LocalDateTime].
+ */
+private fun firstInstantToday() = LocalDate.now().atStartOfDay()
 
-private fun lastInstantToday() = firstInstantToday().apply {
-    add(Calendar.DATE, 1)
-}
+/**
+ * Returns the start of the next day as a [LocalDateTime].
+ */
+fun lastInstantToday(): LocalDateTime = firstInstantToday().plusDays(1)
 
-private fun firstInstantThisWeek() = firstInstantToday().apply {
-    firstDayOfWeek = Calendar.MONDAY
-    this[Calendar.DAY_OF_WEEK] = Calendar.MONDAY
-}
+/**
+ * Returns the first moment of the current month as a [LocalDateTime].
+ */
+fun firstInstantThisMonth(): LocalDateTime = firstInstantToday().withDayOfMonth(1)
 
-private fun lastInstantThisWeek() = firstInstantToday().apply {
-    firstDayOfWeek = Calendar.MONDAY
-    this[Calendar.DAY_OF_WEEK] = Calendar.SUNDAY
-    add(Calendar.DATE, 1)
-}
-
-private fun firstInstantThisMonth() = firstInstantToday().apply {
-    this[Calendar.DAY_OF_MONTH] = getActualMinimum(Calendar.DAY_OF_MONTH)
-}
-
-private fun lastInstantThisMonth() = firstInstantToday().apply {
-    this[Calendar.DAY_OF_MONTH] = getActualMaximum(Calendar.DAY_OF_MONTH)
-}
-
-private fun isBetweenDates(date: Date, after: Date, before: Date) =
-    date.after(after) && date.before(before)
-
-fun Date.isToday() = isBetweenDates(
+/**
+ * Checks if a [LocalDateTime] is within the current day.
+ */
+fun LocalDateTime.isToday() = isBetweenDates(
     this,
-    firstInstantToday().time,
-    lastInstantToday().time
+    firstInstantToday(),
+    lastInstantToday()
 )
 
-fun Date.isThisWeek() = isBetweenDates(
+/**
+ * Checks if a [LocalDateTime] is within the current week.
+ */
+fun LocalDateTime.isThisWeek() = isBetweenDates(
     this,
-    firstInstantThisWeek().time,
-    lastInstantThisWeek().time
+    firstInstantThisWeek(),
+    lastInstantThisWeek()
 )
 
-fun Date.isThisMonth() = isBetweenDates(
+/**
+ * Checks if a [LocalDateTime] is within the current month.
+ */
+fun LocalDateTime.isThisMonth() = isBetweenDates(
     this,
-    firstInstantThisMonth().time,
-    lastInstantThisMonth().time
+    firstInstantThisMonth(),
+    lastInstantThisMonth()
 )
 
-fun Date?.timeElapsedSinceNow(): Pair<Long, Long> = Date().timeAfter(this)
+/**
+ * Calculates the time elapsed since a given [LocalDateTime] until now.
+ *
+ * @return A pair of Long values representing hours and minutes elapsed.
+ */
+fun LocalDateTime?.timeElapsedSinceNow(): Pair<Long, Long> = LocalDateTime.now().timeAfter(this)
 
-fun Date.timeAfter(date: Date?): Pair<Long, Long> = date?.let { dateNotNull ->
-    (time - dateNotNull.time).let { diff ->
+/**
+ * Calculates the time after a given [LocalDateTime].
+ *
+ * @param date The date from which to calculate the time after.
+ * @return A pair of Long values representing hours and minutes.
+ */
+fun LocalDateTime.timeAfter(date: LocalDateTime?): Pair<Long, Long> = date?.let { dateNotNull ->
+    dateNotNull.until(this, java.time.temporal.ChronoUnit.MILLIS).let { diff ->
         TimeUnit.MILLISECONDS.toHours(diff) % 24 to TimeUnit.MILLISECONDS.toMinutes(diff) % 60
     }
 } ?: (0L to 0L)
 
-fun Date.withTimeZeroed(): Date =
-    Calendar.getInstance().apply { time = this@withTimeZeroed }.withTimeZeroed().time
+/**
+ * Formats a [LocalDateTime] to a string of format "HH:mm".
+ */
+fun LocalDateTime.timeFormatted(): String = DateTimeFormatter.ofPattern("HH:mm").format(this)
 
-private fun Calendar.withTimeZeroed() = apply {
-    this[Calendar.HOUR_OF_DAY] = 0
-    this[Calendar.MINUTE] = 0
-    this[Calendar.SECOND] = 0
-    this[Calendar.MILLISECOND] = 0
+/**
+ * Formats a [LocalDateTime] to a string representing a full date in the format "EEEE, MMMM dd".
+ */
+fun LocalDateTime.dateFormatted(): String =
+    DateTimeFormatter.ofPattern("EEEE, MMMM dd").format(this)
+
+/**
+ * Converts a [LocalDateTime] to milliseconds since the Unix epoch, assuming UTC timezone.
+ */
+fun LocalDateTime.utcMillis() = this
+    .toEpochSecond(ZoneOffset.UTC)
+    .times(1000)
+
+/**
+ * Converts a [LocalDateTime] to a [Date].
+ */
+fun LocalDateTime.toDate(): Date = Date.from(this.atZone(ZoneId.systemDefault()).toInstant())
+
+/**
+ * Converts a [LocalDate] to a [Date].
+ */
+fun LocalDate.toDate(): Date = Date.from(this.atStartOfDay(ZoneId.systemDefault()).toInstant())
+
+/**
+ * Converts a [Date] to a [LocalDateTime].
+ */
+fun Date.toLocalDateTime(): LocalDateTime =
+    LocalDateTime.ofInstant(this.toInstant(), ZoneId.systemDefault())
+
+/**
+ * Returns the start of the current week, adjusted to the first instance of Monday, as a [LocalDateTime].
+ */
+private fun firstInstantThisWeek() = firstInstantToday().with(DayOfWeek.MONDAY)
+
+/**
+ * Returns the end of the current week, adjusted to the first instance after Sunday, as a [LocalDateTime].
+ */
+private fun lastInstantThisWeek() = firstInstantToday().with(DayOfWeek.SUNDAY).plusDays(1)
+
+/**
+ * Returns the last moment of the current month as a [LocalDateTime].
+ */
+private fun lastInstantThisMonth() = with(firstInstantToday()) {
+    withDayOfMonth(month.length(toLocalDate().isLeapYear))
 }
 
-fun Date.timeFormatted(): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
-fun Date.dateFormatted(): String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(this)
-
-fun Date.utcMillis() = toInstant()
-    .atZone(ZoneId.systemDefault())
-    .toLocalDate()
-    .atStartOfDay()?.toEpochSecond(ZoneOffset.UTC)
-    ?.times(1000)
+/**
+ * Checks if a [LocalDateTime] is between two other [LocalDateTime] instances.
+ *
+ * @param date The date to check.
+ * @param after The start date for the range.
+ * @param before The end date for the range.
+ * @return True if [date] is after [after] and before [before].
+ */
+private fun isBetweenDates(date: LocalDateTime, after: LocalDateTime, before: LocalDateTime) =
+    date.isAfter(after) && date.isBefore(before)

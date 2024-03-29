@@ -10,6 +10,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
+/**
+ * Processes intents from the Settings feature, invoking the appropriate actions
+ * and updating the result based on the outcome of these actions.
+ *
+ * @param fetchSessionUseCase Use case for fetching the current user session.
+ * @param signOutUseCase Use case for signing out the current user.
+ */
 class SettingsProcessHolder @Inject constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val signOutUseCase: SignOutUseCase,

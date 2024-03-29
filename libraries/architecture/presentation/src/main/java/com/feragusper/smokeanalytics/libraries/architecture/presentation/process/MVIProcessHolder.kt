@@ -5,12 +5,12 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Keep intents processing in a single place
+ * Processes intents into results, maintaining a single source of truth for intent handling.
  */
 interface MVIProcessHolder<I : MVIIntent, R : MVIResult> {
 
     /**
-     * Transform an intent into a stream of results
+     * Transforms an [MVIIntent] into a stream of [MVIResult]s.
      */
     fun processIntent(intent: I): Flow<R>
 }

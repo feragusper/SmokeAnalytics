@@ -1,9 +1,9 @@
 package com.feragusper.smokeanalytics.features.stats.presentation
 
-import com.feragusper.smokeanalytics.features.stats.navigation.StatsNavigator
+import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
-import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsViewState
+import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
 import com.feragusper.smokeanalytics.features.stats.presentation.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel

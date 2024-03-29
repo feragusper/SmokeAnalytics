@@ -6,7 +6,7 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class EditSmokeUseCaseTest {
 
@@ -16,7 +16,7 @@ class EditSmokeUseCaseTest {
     @Test
     fun `GIVEN edit smoke just runs WHEN invoke is executed THEN it should finish`() {
         val id = "id"
-        val date: Date = mockk()
+        val date: LocalDateTime = mockk()
         coEvery { smokeRepository.editSmoke(id, date) } just Runs
 
         runBlocking {

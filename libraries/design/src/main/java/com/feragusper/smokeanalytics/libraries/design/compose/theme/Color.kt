@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.design.theme
+package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,9 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.feragusper.smokeanalytics.libraries.design.ColorsPreview
-import com.feragusper.smokeanalytics.libraries.design.UiModeThemePreview
+import com.feragusper.smokeanalytics.libraries.design.compose.ColorsPreview
+import com.feragusper.smokeanalytics.libraries.design.compose.UiModeThemePreview
 
+/**
+ * Defines the color palette for the application, encapsulating both primary and secondary color variations,
+ * as well as specific utility colors like error states and backgrounds.
+ */
 internal object PaletteTokens {
 
     val Black = Color(0xFF000000)
@@ -66,6 +70,9 @@ internal object PaletteTokens {
     val Red_90 = Color(0xFFFFDAD6)
 }
 
+/**
+ * Defines the light color scheme for the application, based on the defined [PaletteTokens].
+ */
 internal val lightColorScheme = lightColorScheme(
     primary = PaletteTokens.Green_40,
     onPrimary = PaletteTokens.White,
@@ -96,6 +103,10 @@ internal val lightColorScheme = lightColorScheme(
     outlineVariant = PaletteTokens.Gray_81,
 )
 
+/**
+ * Defines the dark color scheme for the application, complementing the light scheme and ensuring
+ * visual consistency across different user theme preferences.
+ */
 internal val darkColorScheme = darkColorScheme(
     primary = PaletteTokens.Green_80,
     onPrimary = PaletteTokens.Green_20,
@@ -144,6 +155,10 @@ private fun ColorsPreviewNonDynamic() {
     }
 }
 
+/**
+ * Previews the application's color scheme by displaying a list of colors defined in the theme.
+ * This includes dynamic and non-dynamic color previews, showcasing how the colors adapt to light and dark themes.
+ */
 @Composable
 private fun ColorList() {
     Column(

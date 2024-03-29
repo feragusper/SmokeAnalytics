@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.presentation
+package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
+/**
+ * Displays a statistic related to smoke events, encapsulating a title and a count within a stylized container.
+ *
+ * @param modifier A [Modifier] applied to the container for customization.
+ * @param titleResourceId The resource ID for the title of the statistic.
+ * @param count The numerical value of the statistic.
+ */
 @Composable
 fun Stat(
     modifier: Modifier = Modifier,

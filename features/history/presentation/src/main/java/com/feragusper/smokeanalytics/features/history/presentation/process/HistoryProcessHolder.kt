@@ -20,10 +20,11 @@ class HistoryProcessHolder @Inject constructor(
 ) : MVIProcessHolder<HistoryIntent, HistoryResult> {
 
     override fun processIntent(intent: HistoryIntent): Flow<HistoryResult> = when (intent) {
-        HistoryIntent.FetchSmokes -> processFetchSmokes()
+        is HistoryIntent.FetchSmokes -> processFetchSmokes(intent)
         is HistoryIntent.AddSmoke -> processAddSmoke(intent)
         is HistoryIntent.EditSmoke -> processEditSmoke(intent)
         is HistoryIntent.DeleteSmoke -> processDeleteSmoke(intent)
+        HistoryIntent.NavigateUp -> flow { emit(HistoryResult.NavigateUp) }
     }
 
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {
@@ -42,9 +43,14 @@ class HistoryProcessHolder @Inject constructor(
         emit(HistoryResult.Error.Generic)
     }
 
-    private fun processFetchSmokes() = flow {
+    private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
         emit(HistoryResult.Loading)
-        emit(HistoryResult.FetchSmokesSuccess(fetchSmokesUseCase.invoke()))
+        emit(
+            HistoryResult.FetchSmokesSuccess(
+                selectedDate = intent.date,
+                smokes = fetchSmokesUseCase.invoke(intent.date)
+            )
+        )
     }
 
     private fun processAddSmoke(intent: HistoryIntent.AddSmoke): Flow<HistoryResult> = flow {

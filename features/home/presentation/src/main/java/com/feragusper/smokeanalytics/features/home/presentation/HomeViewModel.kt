@@ -13,7 +13,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.G
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
@@ -23,6 +23,12 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.concurrent.fixedRateTimer
 
+/**
+ * ViewModel for the Home feature, responsible for processing user intents, interacting with the domain layer,
+ * and updating the UI state.
+ *
+ * @param processHolder Responsible for processing intents and invoking use cases.
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val processHolder: HomeProcessHolder,

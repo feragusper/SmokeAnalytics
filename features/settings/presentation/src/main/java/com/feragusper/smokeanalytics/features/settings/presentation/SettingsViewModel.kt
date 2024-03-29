@@ -3,12 +3,18 @@ package com.feragusper.smokeanalytics.features.settings.presentation
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
-import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsViewState
+import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.SettingsViewState
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+/**
+ * ViewModel for the Settings feature, responsible for processing user intents, interacting
+ * with the domain layer, and updating the UI state.
+ *
+ * @param processHolder Responsible for processing intents and invoking the corresponding actions.
+ */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val processHolder: SettingsProcessHolder,

@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.stats.presentation.mvi
+package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -19,10 +19,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.stats.presentation.R
+import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
-import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 
+/**
+ * Represents the state of the Stats screen, encapsulating all UI-related data.
+ * This class is a concrete implementation of [MVIViewState] for the Stats feature,
+ * responsible for composing the UI based on the current state.
+ */
 class StatsViewState : MVIViewState<StatsIntent> {
 
     @Composable

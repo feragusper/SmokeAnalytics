@@ -4,6 +4,7 @@
     <string name="smokes_date_time_picker_button_cancel">Cancel</string>
     <string name="smokes_date_time_picker_button_ok">OK</string>
     <string name="smokes_date_time_picker_title">Select time</string>
+    <string name="smokes_no_smokes">No smokes</string>
 
     <plurals name="smokes_smoked_after_minutes">
         <item quantity="one">%1$d minute</item>

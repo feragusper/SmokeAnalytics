@@ -1,8 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi
 
 /**
- * Intentions coming from the UI to change the application state
+ * Represents an intention from the user to perform an action that potentially changes the state of the application.
  */
 interface MVIIntent
-
-

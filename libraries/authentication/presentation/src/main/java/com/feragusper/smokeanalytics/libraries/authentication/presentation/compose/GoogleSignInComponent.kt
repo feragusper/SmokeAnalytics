@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.authentication.presentation
+package com.feragusper.smokeanalytics.libraries.authentication.presentation.compose
 
 import android.app.Activity
 import android.util.Log
@@ -21,8 +21,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.feragusper.smokeanalytics.libraries.design.CombinedPreviews
-import com.feragusper.smokeanalytics.libraries.design.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.BuildConfig
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.R
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -35,6 +37,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+/**
+ * A composable function that provides a UI component for Google Sign-In. It handles the sign-in process using Firebase Authentication
+ * and Google Identity Services.
+ *
+ * @param modifier The [Modifier] to be applied to the button component.
+ * @param onSignInSuccess A lambda to be invoked upon successful sign-in.
+ * @param onSignInError A lambda to be invoked upon sign-in failure.
+ */
 @Composable
 fun GoogleSignInComponent(
     modifier: Modifier = Modifier,
@@ -127,6 +137,15 @@ fun GoogleSignInComponent(
     }
 }
 
+/**
+ * Initiates the sign-in process by launching the Google Sign-In Intent. On success or failure, appropriate callbacks are invoked.
+ *
+ * @param coroutine The [CoroutineScope] to launch asynchronous tasks.
+ * @param launcher The [ManagedActivityResultLauncher] to handle the result of the sign-in intent.
+ * @param signInRequest The [BeginSignInRequest] configuration for the Google Sign-In.
+ * @param oneTapClient The [SignInClient] instance for managing sign-in requests.
+ * @param onSignInError A lambda to be invoked upon sign-in failure.
+ */
 private fun signIn(
     coroutine: CoroutineScope,
     launcher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult>,
@@ -154,7 +173,7 @@ private fun signIn(
 
 @CombinedPreviews
 @Composable
-private fun SettingsLoadingPreview() {
+private fun GoogleSignInComponentPreview() {
     SmokeAnalyticsTheme {
         GoogleSignInComponent(
             onSignInSuccess = { },

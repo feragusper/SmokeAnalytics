@@ -4,7 +4,7 @@ package com.feragusper.smokeanalytics.features.home.presentation
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import io.mockk.every
@@ -20,7 +20,7 @@ import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class HomeViewModelTest {
 
@@ -160,7 +160,7 @@ class HomeViewModelTest {
     fun `GIVEN edit smoke success and fetch smokes success WHEN edit smoke is sent THEN it hides loading and shows success`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HomeIntent.EditSmoke(
@@ -271,7 +271,7 @@ class HomeViewModelTest {
     fun `GIVEN edit smoke error result WHEN edit smoke is sent THEN it hides loading and shows error`() =
         runTest {
             val id = "123"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             every {
                 processHolder.processIntent(
                     HomeIntent.EditSmoke(

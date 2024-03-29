@@ -2,7 +2,7 @@ package com.feragusper.smokeanalytics.features.devtools.presentation
 
 import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsIntent
 import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsResult
-import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsViewState
+import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.compose.DevToolsViewState
 import com.feragusper.smokeanalytics.features.devtools.presentation.process.DevToolsProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import io.mockk.every

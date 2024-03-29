@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.design.theme
+package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,7 +17,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.feragusper.smokeanalytics.libraries.design.TypographiesPreview
+import com.feragusper.smokeanalytics.libraries.design.compose.TypographiesPreview
 
 val Typography = Typography(
     displayLarge = TextStyle(
@@ -97,6 +97,10 @@ val Typography = Typography(
     ),
 )
 
+/**
+ * Previews the typography scale of the application, demonstrating the appearance of different text styles
+ * defined in the theme across various font scales and UI modes.
+ */
 @TypographiesPreview
 @Composable
 private fun TypographyPreview() {

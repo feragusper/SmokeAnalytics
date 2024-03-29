@@ -10,14 +10,19 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesSuccess
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.Loading
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.NotLoggedIn
-import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryViewState
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.withTimeZeroed
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDateTime
 import javax.inject.Inject
 
+/**
+ * ViewModel for the history feature, managing UI state based on user intents and processing results.
+ *
+ * @property processHolder Encapsulates business logic to process [HistoryIntent] into [HistoryResult].
+ */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val processHolder: HistoryProcessHolder,
@@ -26,7 +31,7 @@ class HistoryViewModel @Inject constructor(
     override lateinit var navigator: HistoryNavigator
 
     init {
-        intents().trySend(HistoryIntent.FetchSmokes)
+        intents().trySend(HistoryIntent.FetchSmokes(LocalDateTime.now()))
     }
 
     override suspend fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
@@ -50,17 +55,13 @@ class HistoryViewModel @Inject constructor(
                 previous.copy(
                     displayLoading = false,
                     error = null,
-                    smokes = buildMap {
-                        result.smokes.reversed().groupBy { it.date.withTimeZeroed() }
-                            .forEach { (date, smokes) ->
-                                put(date, smokes)
-                            }
-                    },
+                    smokes = result.smokes,
+                    selectedDate = result.selectedDate,
                 )
             }
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
-                intents().trySend(HistoryIntent.FetchSmokes)
+                intents().trySend(HistoryIntent.FetchSmokes(previous.selectedDate))
                 previous
             }
 
@@ -73,5 +74,10 @@ class HistoryViewModel @Inject constructor(
                 displayLoading = false,
                 error = Error.Generic,
             )
+
+            HistoryResult.NavigateUp -> {
+                navigator.navigateUp()
+                previous
+            }
         }
 }

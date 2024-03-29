@@ -3,25 +3,23 @@ package com.feragusper.smokeanalytics.libraries.architecture.presentation.corout
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * Provide coroutine dispatchers by DI to improve testability
+ * Provides coroutine dispatchers to be injected for various asynchronous operations,
+ * improving testability by allowing for dispatcher swapping in tests.
  */
 interface DispatcherProvider {
 
     /**
-     * Expensive background tasks
-     * Level of parallelism equal to the number of CPU cores (is at least two)
+     * Returns a [CoroutineDispatcher] for CPU-intensive background tasks.
      */
     fun default(): CoroutineDispatcher
 
     /**
-     * IO tasks like network calls
-     * Maximum level of parallelism, limited by kotlinx.coroutines.io.parallelism property
+     * Returns a [CoroutineDispatcher] for IO-intensive tasks like network calls or disk operations.
      */
     fun io(): CoroutineDispatcher
 
     /**
-     * UI tasks
-     * Tasks confined to the Android main thread operating with UI objects
+     * Returns a [CoroutineDispatcher] for tasks that interact with the UI, confining them to the main thread.
      */
     fun main(): CoroutineDispatcher
 }

@@ -7,13 +7,18 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.navigation.MVINavigator
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
 
 /**
- * This component offers a publisher to receive intents from the view and a subscription
- * to emit immutable view states
+ * A ViewModel designed to handle MVI-based state management, providing a structured way to manage state
+ * changes and user intentions in a reactive manner.
  */
 abstract class MVIViewModel<I : MVIIntent, S : MVIViewState<I>, R : MVIResult, N : MVINavigator>(
     initialState: S,
@@ -23,7 +28,7 @@ abstract class MVIViewModel<I : MVIIntent, S : MVIViewState<I>, R : MVIResult, N
 
     private val intentChannel: Channel<I> = Channel(Channel.UNLIMITED)
 
-    @OptIn(FlowPreview::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val stateChannel: StateFlow<S> = intentChannel
         .receiveAsFlow()
         .flatMapMerge(transform = ::transformer)

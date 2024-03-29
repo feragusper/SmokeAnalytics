@@ -24,7 +24,7 @@ import org.amshove.kluent.internal.assertEquals
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.Date
+import java.time.LocalDateTime
 
 class HistoryProcessHolderTest {
 
@@ -58,18 +58,23 @@ class HistoryProcessHolderTest {
     fun `AND fetch smoke count list is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
         runTest {
             val smokeList: List<Smoke> = mockk()
+            val date: LocalDateTime = mockk()
+            coEvery { fetchSmokesUseCase(date) } answers { smokeList }
 
-            coEvery { fetchSmokesUseCase() } answers { smokeList }
-
-            results = processHolder.processIntent(HistoryIntent.FetchSmokes)
+            results = processHolder.processIntent(HistoryIntent.FetchSmokes(date))
             assertEquals(HistoryResult.Loading, results.first())
-            assertEquals(HistoryResult.FetchSmokesSuccess(smokeList), results.last())
+            assertEquals(
+                HistoryResult.FetchSmokesSuccess(
+                    selectedDate = date,
+                    smokes = smokeList
+                ), results.last()
+            )
         }
 
     @Test
     fun `AND add smoke is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
         runTest {
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             coEvery { addSmokeUseCase(date) } just Runs
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
@@ -81,7 +86,7 @@ class HistoryProcessHolderTest {
     fun `AND edit smoke is success WHEN edit smoke intent is processed THEN it should result with loading and success`() =
         runTest {
             val id = "id"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             coEvery {
                 editSmokeUseCase(
                     id = id,
@@ -104,7 +109,7 @@ class HistoryProcessHolderTest {
     fun `AND edit smoke throws exception WHEN edit smoke intent is processed THEN it should result with loading and error`() =
         runTest {
             val id = "id"
-            val date: Date = mockk()
+            val date: LocalDateTime = mockk()
             coEvery {
                 editSmokeUseCase(
                     id = id,

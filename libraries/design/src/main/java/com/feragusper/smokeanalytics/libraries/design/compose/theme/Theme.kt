@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.design.theme
+package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
 import android.os.Build
@@ -13,6 +13,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+/**
+ * A custom Compose theme wrapper that applies the application's design language, including color schemes and typography.
+ * Supports dynamic color theming on compatible Android versions.
+ *
+ * @param darkTheme Indicates if the dark theme should be applied.
+ * @param dynamicColor Indicates if dynamic color theming is enabled, available on Android 12+.
+ * @param content The composable content to which this theme will be applied.
+ */
 @Composable
 fun SmokeAnalyticsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

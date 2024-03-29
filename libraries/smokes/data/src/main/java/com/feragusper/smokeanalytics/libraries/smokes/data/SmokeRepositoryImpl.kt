@@ -1,6 +1,10 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.firstInstantThisMonth
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.lastInstantToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
@@ -10,16 +14,26 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query.Direction
 import kotlinx.coroutines.tasks.await
-import java.util.Date
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Implementation of [SmokeRepository] that interacts with Firebase Firestore to perform CRUD operations
+ * on smoke data for the authenticated user.
+ *
+ * @property firebaseFirestore The instance of [FirebaseFirestore] for database operations.
+ * @property firebaseAuth The instance of [FirebaseAuth] for authentication details.
+ */
 @Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
 ) : SmokeRepository {
 
+    /**
+     * Constants for Firestore collection paths.
+     */
     interface FirestoreCollection {
         companion object {
             const val USERS = "users"
@@ -27,30 +41,35 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addSmoke(date: Date) {
-        smokes().add(SmokeEntity(date)).await()
+    override suspend fun addSmoke(date: LocalDateTime) {
+        smokesQuery().add(SmokeEntity(date.toDate())).await()
     }
 
-    private fun smokes() = firebaseAuth.currentUser?.uid?.let {
-        firebaseFirestore.collection("$USERS/$it/$SMOKES")
-    } ?: throw IllegalStateException("User not logged in")
-
-    override suspend fun editSmoke(id: String, date: Date) {
-        smokes()
+    override suspend fun editSmoke(id: String, date: LocalDateTime) {
+        smokesQuery()
             .document(id)
-            .set(SmokeEntity(date))
+            .set(SmokeEntity(date.toDate()))
             .await()
     }
 
     override suspend fun deleteSmoke(id: String) {
-        smokes()
+        smokesQuery()
             .document(id)
             .delete()
             .await()
     }
 
-    override suspend fun fetchSmokes(): List<Smoke> {
-        val smokes = smokes()
+    override suspend fun fetchSmokes(date: LocalDateTime?): List<Smoke> {
+        val smokes = smokesQuery()
+            .whereGreaterThanOrEqualTo(
+                SmokeEntity::date.name,
+                (date?.toLocalDate()?.atStartOfDay() ?: firstInstantThisMonth()).toDate()
+            )
+            .whereLessThan(
+                SmokeEntity::date.name,
+                (date?.plusDays(1)?.toLocalDate()?.atStartOfDay() ?: lastInstantToday()).toDate()
+            )
+
             .orderBy(Smoke::date.name, Direction.DESCENDING)
             .get()
             .await()
@@ -65,6 +84,23 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Helper method to retrieve the Firestore collection reference for the current user's smokes.
+     *
+     * @throws IllegalStateException if the user is not logged in.
+     * @return The Firestore collection reference.
+     */
+    private fun smokesQuery() = firebaseAuth.currentUser?.uid?.let {
+        firebaseFirestore.collection("$USERS/$it/$SMOKES")
+    } ?: throw IllegalStateException("User not logged in")
+
+    /**
+     * Extension function to convert a Firestore [DocumentSnapshot] to a [LocalDateTime].
+     *
+     * @throws IllegalStateException if the date is not found in the document.
+     * @return The [LocalDateTime] representation of the date.
+     */
     private fun DocumentSnapshot.getDate() =
-        getDate(Smoke::date.name) ?: throw IllegalStateException("Date not found")
+        getDate(Smoke::date.name)?.toLocalDateTime()
+            ?: throw IllegalStateException("Date not found")
 }

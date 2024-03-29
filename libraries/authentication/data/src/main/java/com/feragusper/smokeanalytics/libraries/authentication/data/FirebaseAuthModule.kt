@@ -9,6 +9,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Provides a singleton instance of FirebaseAuth to be used application-wide.
+ * This is installed in the SingletonComponent to ensure it's available for injection throughout the app.
+ */
 @InstallIn(SingletonComponent::class)
 @Module
 internal object FirebaseAuthModule {
