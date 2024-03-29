@@ -17,40 +17,12 @@ private fun firstInstantToday() = LocalDate.now().atStartOfDay()
 /**
  * Returns the start of the next day as a [LocalDateTime].
  */
-private fun lastInstantToday() = firstInstantToday().plusDays(1)
-
-/**
- * Returns the start of the current week, adjusted to the first instance of Monday, as a [LocalDateTime].
- */
-private fun firstInstantThisWeek() = firstInstantToday().with(DayOfWeek.MONDAY)
-
-/**
- * Returns the end of the current week, adjusted to the first instance after Sunday, as a [LocalDateTime].
- */
-private fun lastInstantThisWeek() = firstInstantToday().with(DayOfWeek.SUNDAY).plusDays(1)
+fun lastInstantToday(): LocalDateTime = firstInstantToday().plusDays(1)
 
 /**
  * Returns the first moment of the current month as a [LocalDateTime].
  */
-private fun firstInstantThisMonth() = firstInstantToday().withDayOfMonth(1)
-
-/**
- * Returns the last moment of the current month as a [LocalDateTime].
- */
-private fun lastInstantThisMonth() = with(firstInstantToday()) {
-    withDayOfMonth(month.length(toLocalDate().isLeapYear))
-}
-
-/**
- * Checks if a [LocalDateTime] is between two other [LocalDateTime] instances.
- *
- * @param date The date to check.
- * @param after The start date for the range.
- * @param before The end date for the range.
- * @return True if [date] is after [after] and before [before].
- */
-private fun isBetweenDates(date: LocalDateTime, after: LocalDateTime, before: LocalDateTime) =
-    date.isAfter(after) && date.isBefore(before)
+fun firstInstantThisMonth(): LocalDateTime = firstInstantToday().withDayOfMonth(1)
 
 /**
  * Checks if a [LocalDateTime] is within the current day.
@@ -131,3 +103,31 @@ fun LocalDate.toDate(): Date = Date.from(this.atStartOfDay(ZoneId.systemDefault(
  */
 fun Date.toLocalDateTime(): LocalDateTime =
     LocalDateTime.ofInstant(this.toInstant(), ZoneId.systemDefault())
+
+/**
+ * Returns the start of the current week, adjusted to the first instance of Monday, as a [LocalDateTime].
+ */
+private fun firstInstantThisWeek() = firstInstantToday().with(DayOfWeek.MONDAY)
+
+/**
+ * Returns the end of the current week, adjusted to the first instance after Sunday, as a [LocalDateTime].
+ */
+private fun lastInstantThisWeek() = firstInstantToday().with(DayOfWeek.SUNDAY).plusDays(1)
+
+/**
+ * Returns the last moment of the current month as a [LocalDateTime].
+ */
+private fun lastInstantThisMonth() = with(firstInstantToday()) {
+    withDayOfMonth(month.length(toLocalDate().isLeapYear))
+}
+
+/**
+ * Checks if a [LocalDateTime] is between two other [LocalDateTime] instances.
+ *
+ * @param date The date to check.
+ * @param after The start date for the range.
+ * @param before The end date for the range.
+ * @return True if [date] is after [after] and before [before].
+ */
+private fun isBetweenDates(date: LocalDateTime, after: LocalDateTime, before: LocalDateTime) =
+    date.isAfter(after) && date.isBefore(before)

@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.firstInstantThisMonth
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.lastInstantToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
@@ -40,29 +42,34 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addSmoke(date: LocalDateTime) {
-        smokes().add(SmokeEntity(date.toDate())).await()
+        smokesQuery().add(SmokeEntity(date.toDate())).await()
     }
 
     override suspend fun editSmoke(id: String, date: LocalDateTime) {
-        smokes()
+        smokesQuery()
             .document(id)
             .set(SmokeEntity(date.toDate()))
             .await()
     }
 
     override suspend fun deleteSmoke(id: String) {
-        smokes()
+        smokesQuery()
             .document(id)
             .delete()
             .await()
     }
 
     override suspend fun fetchSmokes(date: LocalDateTime?): List<Smoke> {
-        val smokes = (date?.let {
-            smokes()
-                .whereGreaterThanOrEqualTo(SmokeEntity::date.name, it.toLocalDate().toDate())
-                .whereLessThan(SmokeEntity::date.name, it.plusDays(1).toLocalDate().toDate())
-        } ?: smokes())
+        val smokes = smokesQuery()
+            .whereGreaterThanOrEqualTo(
+                SmokeEntity::date.name,
+                (date?.toLocalDate()?.atStartOfDay() ?: firstInstantThisMonth()).toDate()
+            )
+            .whereLessThan(
+                SmokeEntity::date.name,
+                (date?.plusDays(1)?.toLocalDate()?.atStartOfDay() ?: lastInstantToday()).toDate()
+            )
+
             .orderBy(Smoke::date.name, Direction.DESCENDING)
             .get()
             .await()
@@ -83,7 +90,7 @@ class SmokeRepositoryImpl @Inject constructor(
      * @throws IllegalStateException if the user is not logged in.
      * @return The Firestore collection reference.
      */
-    private fun smokes() = firebaseAuth.currentUser?.uid?.let {
+    private fun smokesQuery() = firebaseAuth.currentUser?.uid?.let {
         firebaseFirestore.collection("$USERS/$it/$SMOKES")
     } ?: throw IllegalStateException("User not logged in")
 
