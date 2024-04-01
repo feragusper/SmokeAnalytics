@@ -13,7 +13,7 @@ sealed interface HomeResult : MVIResult {
      */
     object Loading : HomeResult
     object NotLoggedIn : HomeResult
-    object GoToLogin : HomeResult
+    object GoToAuthentication : HomeResult
     object GoToHistory : HomeResult
     object AddSmokeSuccess : HomeResult
     object EditSmokeSuccess : HomeResult

@@ -33,12 +33,24 @@ class HomeProcessHolder @Inject constructor(
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
 
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
-        HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.FetchSmokes -> processFetchSmokes()
+        HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
+    }
+
+    private fun processFetchSmokes() = flow {
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
+            is Session.LoggedIn -> {
+                emit(HomeResult.Loading)
+                emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
+            }
+        }
+    }.catchAndLog {
+        emit(HomeResult.FetchSmokesError)
     }
 
     private fun processDeleteSmoke(intent: HomeIntent.DeleteSmoke) = flow {
@@ -66,23 +78,11 @@ class HomeProcessHolder @Inject constructor(
             )
         }
 
-    private fun processFetchSmokes() = flow {
-        when (fetchSessionUseCase()) {
-            is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
-            is Session.LoggedIn -> {
-                emit(HomeResult.Loading)
-                emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
-            }
-        }
-    }.catchAndLog {
-        emit(HomeResult.FetchSmokesError)
-    }
-
     private fun processAddSmoke(): Flow<HomeResult> = flow {
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> {
                 emit(HomeResult.Error.NotLoggedIn)
-                emit(HomeResult.GoToLogin)
+                emit(HomeResult.GoToAuthentication)
             }
 
             is Session.LoggedIn -> {

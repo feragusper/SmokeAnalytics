@@ -1,6 +1,5 @@
-package com.feragusper.smokeanalytics.features.history.presentation
+package com.feragusper.smokeanalytics.features.authentication.presentation
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,14 +11,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
-import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
-import com.feragusper.smokeanalytics.features.history.presentation.navigation.historyNavigationGraph
+import com.feragusper.smokeanalytics.features.authentication.presentation.navigation.AuthenticationNavigator
+import com.feragusper.smokeanalytics.features.authentication.presentation.navigation.authenticationNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class HistoryActivity : ComponentActivity() {
+class AuthenticationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -38,19 +36,9 @@ class HistoryActivity : ComponentActivity() {
                         NavHost(
                             modifier = Modifier.padding(innerPadding),
                             navController = navController,
-                            startDestination = HistoryNavigator.ROUTE
+                            startDestination = AuthenticationNavigator.ROUTE
                         ) {
-                            historyNavigationGraph(HistoryNavigator(
-                                navigateToAuthentication = {
-                                    startActivity(
-                                        Intent(
-                                            this@HistoryActivity,
-                                            AuthenticationActivity::class.java
-                                        )
-                                    )
-                                },
-                                navigateUp = { navController.navigateUp() }
-                            ))
+                            authenticationNavigationGraph(AuthenticationNavigator { finish() })
                         }
                     }
                 }
