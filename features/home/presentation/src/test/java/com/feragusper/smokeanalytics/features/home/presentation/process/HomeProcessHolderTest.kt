@@ -219,7 +219,7 @@ class HomeProcessHolderTest {
             runTest {
                 results = processHolder.processIntent(HomeIntent.AddSmoke)
                 assertEquals(HomeResult.Error.NotLoggedIn, results.first())
-                assertEquals(HomeResult.GoToLogin, results.last())
+                assertEquals(HomeResult.GoToAuthentication, results.last())
             }
 
         @Test

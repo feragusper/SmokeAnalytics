@@ -110,7 +110,6 @@ data class HistoryViewState(
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            requireNotNull(smokes)
                             intent(HistoryIntent.AddSmoke(selectedDate))
                         },
                     ) {
@@ -163,6 +162,7 @@ data class HistoryViewState(
                     DatePickerDialog(
                         initialDate = selectedDate,
                         onConfirm = { date ->
+                            showDatePicker = false
                             intent(HistoryIntent.FetchSmokes(date))
                         },
                         onDismiss = { showDatePicker = false }

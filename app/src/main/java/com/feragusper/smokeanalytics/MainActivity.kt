@@ -39,6 +39,7 @@ import com.feragusper.smokeanalytics.BottomNavigationScreens.Settings.route
 import com.feragusper.smokeanalytics.BottomNavigationScreens.Stats.iconId
 import com.feragusper.smokeanalytics.BottomNavigationScreens.Stats.labelId
 import com.feragusper.smokeanalytics.BottomNavigationScreens.Stats.route
+import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
@@ -72,9 +73,14 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContainerScreen {
-                        startActivity(Intent(this, HistoryActivity::class.java))
-                    }
+                    MainContainerScreen(
+                        navigateToAuthentication = {
+                            startActivity(Intent(this, AuthenticationActivity::class.java))
+                        },
+                        navigateToHistory = {
+                            startActivity(Intent(this, HistoryActivity::class.java))
+                        }
+                    )
                 }
             }
         }
@@ -87,7 +93,10 @@ class MainActivity : ComponentActivity() {
  * @param navigateToHistory Lambda function to navigate to the HistoryActivity.
  */
 @Composable
-private fun MainContainerScreen(navigateToHistory: () -> Unit) {
+private fun MainContainerScreen(
+    navigateToAuthentication: () -> Unit,
+    navigateToHistory: () -> Unit
+) {
     val navController = rememberNavController()
 
     val bottomNavigationItems = listOf(
@@ -104,6 +113,7 @@ private fun MainContainerScreen(navigateToHistory: () -> Unit) {
         MainScreenNavigationConfigurations(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
+            navigateToAuthentication = navigateToAuthentication,
             navigateToHistory = navigateToHistory
         )
     }
@@ -162,6 +172,7 @@ private fun BottomNavigation(
 private fun MainScreenNavigationConfigurations(
     navController: NavHostController,
     modifier: Modifier,
+    navigateToAuthentication: () -> Unit,
     navigateToHistory: () -> Unit,
 ) {
     NavHost(
@@ -172,6 +183,7 @@ private fun MainScreenNavigationConfigurations(
         val settingsNavigator = SettingsNavigator(navController)
         homeNavigationGraph(
             HomeNavigator(
+                navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = settingsNavigator.navigateToSettings,
                 navigateToHistory = navigateToHistory
             )
@@ -248,6 +260,9 @@ private sealed class BottomNavigationScreens(
 @Composable
 private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
-        MainContainerScreen {}
+        MainContainerScreen(
+            navigateToAuthentication = {},
+            navigateToHistory = {}
+        )
     }
 }

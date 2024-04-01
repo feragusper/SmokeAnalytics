@@ -4,6 +4,8 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.smokes.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.EditSmokeUseCase
@@ -17,6 +19,7 @@ class HistoryProcessHolder @Inject constructor(
     private val editSmokeUseCase: EditSmokeUseCase,
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
+    private val fetchSessionUseCase: FetchSessionUseCase,
 ) : MVIProcessHolder<HistoryIntent, HistoryResult> {
 
     override fun processIntent(intent: HistoryIntent): Flow<HistoryResult> = when (intent) {
@@ -44,19 +47,37 @@ class HistoryProcessHolder @Inject constructor(
     }
 
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
-        emit(HistoryResult.Loading)
-        emit(
-            HistoryResult.FetchSmokesSuccess(
-                selectedDate = intent.date,
-                smokes = fetchSmokesUseCase.invoke(intent.date)
-            )
-        )
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(intent.date))
+            is Session.LoggedIn -> {
+                emit(HistoryResult.Loading)
+                emit(
+                    HistoryResult.FetchSmokesSuccess(
+                        selectedDate = intent.date,
+                        smokes = fetchSmokesUseCase.invoke(intent.date)
+                    )
+                )
+            }
+        }
+    }.catchAndLog {
+        emit(HistoryResult.FetchSmokesError)
     }
 
     private fun processAddSmoke(intent: HistoryIntent.AddSmoke): Flow<HistoryResult> = flow {
-        emit(HistoryResult.Loading)
-        addSmokeUseCase.invoke(intent.date)
-        emit(HistoryResult.AddSmokeSuccess)
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> {
+                emit(HistoryResult.Error.NotLoggedIn)
+                emit(HistoryResult.GoToAuthentication)
+            }
+
+            is Session.LoggedIn -> {
+                emit(HistoryResult.Loading)
+                addSmokeUseCase.invoke(intent.date)
+                emit(HistoryResult.AddSmokeSuccess)
+            }
+        }
+    }.catchAndLog {
+        emit(HistoryResult.Error.Generic)
     }
 
 }

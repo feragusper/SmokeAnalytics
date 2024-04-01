@@ -8,7 +8,9 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.Error
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesSuccess
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.GoToAuthentication
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.Loading
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.NavigateUp
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.NotLoggedIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
@@ -46,9 +48,10 @@ class HistoryViewModel @Inject constructor(
                 error = null,
             )
 
-            NotLoggedIn -> previous.copy(
+            is NotLoggedIn -> previous.copy(
                 displayLoading = false,
                 error = null,
+                selectedDate = result.selectedDate,
             )
 
             is FetchSmokesSuccess -> {
@@ -75,8 +78,13 @@ class HistoryViewModel @Inject constructor(
                 error = Error.Generic,
             )
 
-            HistoryResult.NavigateUp -> {
+            NavigateUp -> {
                 navigator.navigateUp()
+                previous
+            }
+
+            GoToAuthentication -> {
+                navigator.navigateToAuthentication()
                 previous
             }
         }

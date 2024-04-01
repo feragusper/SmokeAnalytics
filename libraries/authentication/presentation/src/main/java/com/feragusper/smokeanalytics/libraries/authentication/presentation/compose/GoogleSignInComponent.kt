@@ -1,7 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.authentication.presentation.compose
 
 import android.app.Activity
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
@@ -36,6 +35,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 
 /**
  * A composable function that provides a UI component for Google Sign-In. It handles the sign-in process using Firebase Authentication
@@ -81,29 +81,36 @@ fun GoogleSignInComponent(
                             if (task.isSuccessful) {
                                 onSignInSuccess()
                             } else {
-                                Log.w("TAG", "signInWithCredential:failure", task.exception)
+                                onSignInError()
+                                Timber.w("TAG", "signInWithCredential:failure", task.exception)
                             }
                         }
                 } else {
-                    Log.d("TAG", "Id is null.")
+                    Timber.d("TAG", "Id is null.")
                 }
             } catch (e: ApiException) {
                 when (e.statusCode) {
                     CommonStatusCodes.CANCELED -> {
-                        Log.d("TAG", "One-tap dialog was closed.")
+                        Timber.d("TAG", "One-tap dialog was closed.")
                         // Don't re-prompt the user.
 //                            showOneTapUI = false
                     }
 
-                    CommonStatusCodes.NETWORK_ERROR -> Log.d(
-                        "TAG",
-                        "One-tap encountered a network error.",
-                    )
+                    CommonStatusCodes.NETWORK_ERROR -> {
+                        onSignInError()
+                        Timber.d(
+                            "TAG",
+                            "One-tap encountered a network error.",
+                        )
+                    }
 
-                    else -> Log.d(
-                        "TAG",
-                        "Couldn't get credential from result." + e.localizedMessage,
-                    )
+                    else -> {
+                        onSignInError()
+                        Timber.d(
+                            "TAG",
+                            "Couldn't get credential from result." + e.localizedMessage,
+                        )
+                    }
                 }
             }
         },
@@ -165,7 +172,7 @@ private fun signIn(
         } catch (e: Exception) {
             // No saved credentials found. Launch the One Tap sign-up flow, or
             // do nothing and continue presenting the signed-out UI.
-            Log.d("LOG", e.message.toString())
+            Timber.d("LOG", e.message.toString())
             onSignInError()
         }
     }

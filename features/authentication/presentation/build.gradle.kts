@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.feragusper.smokeanalytics.features.history.presentation"
+    namespace = "com.feragusper.smokeanalytics.features.authentication.presentation"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -14,14 +14,11 @@ android {
 }
 
 dependencies {
-    implementation(project(":features:authentication:presentation"))
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":libraries:architecture:domain"))
+    implementation(project(":libraries:authentication:presentation"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:design"))
-    implementation(project(":libraries:smokes:data"))
-    implementation(project(":libraries:smokes:domain"))
-    implementation(project(":libraries:smokes:presentation"))
 
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
