@@ -33,7 +33,7 @@ class HomeProcessHolder @Inject constructor(
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
 
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
-        HomeIntent.FetchSmokes -> processFetchSmokes()
+        HomeIntent.FetchSmokes, HomeIntent.RefreshFetchSmokes -> processFetchSmokes(intent is HomeIntent.RefreshFetchSmokes)
         HomeIntent.AddSmoke -> processAddSmoke()
         HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
@@ -41,11 +41,11 @@ class HomeProcessHolder @Inject constructor(
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
     }
 
-    private fun processFetchSmokes() = flow {
+    private fun processFetchSmokes(isRefresh: Boolean) = flow {
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
             is Session.LoggedIn -> {
-                emit(HomeResult.Loading)
+                emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
                 emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
             }
         }

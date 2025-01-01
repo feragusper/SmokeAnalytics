@@ -8,8 +8,8 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.E
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Error
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToAuthentication
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
@@ -47,11 +47,19 @@ class HomeViewModel @Inject constructor(
         when (result) {
             Loading -> previous.copy(
                 displayLoading = true,
+                displayRefreshLoading = false,
+                error = null,
+            )
+
+            HomeResult.RefreshLoading -> previous.copy(
+                displayLoading = false,
+                displayRefreshLoading = false,
                 error = null,
             )
 
             NotLoggedIn -> previous.copy(
                 displayLoading = false,
+                displayRefreshLoading = false,
                 error = null,
                 smokesPerDay = 0,
                 smokesPerWeek = 0,
@@ -80,6 +88,7 @@ class HomeViewModel @Inject constructor(
 
                 previous.copy(
                     displayLoading = false,
+                    displayRefreshLoading = false,
                     error = null,
                     smokesPerDay = result.smokeCountListResult.countByToday,
                     smokesPerWeek = result.smokeCountListResult.countByWeek,
@@ -102,11 +111,13 @@ class HomeViewModel @Inject constructor(
 
             is Error -> previous.copy(
                 displayLoading = false,
+                displayRefreshLoading = false,
                 error = result,
             )
 
             FetchSmokesError -> previous.copy(
                 displayLoading = false,
+                displayRefreshLoading = false,
                 error = Error.Generic,
             )
         }

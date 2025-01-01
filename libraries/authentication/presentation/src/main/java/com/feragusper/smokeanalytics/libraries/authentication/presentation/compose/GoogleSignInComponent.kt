@@ -82,16 +82,16 @@ fun GoogleSignInComponent(
                                 onSignInSuccess()
                             } else {
                                 onSignInError()
-                                Timber.w("TAG", "signInWithCredential:failure", task.exception)
+                                Timber.w("signInWithCredential:failure", task.exception)
                             }
                         }
                 } else {
-                    Timber.d("TAG", "Id is null.")
+                    Timber.d("Id is null.")
                 }
             } catch (e: ApiException) {
                 when (e.statusCode) {
                     CommonStatusCodes.CANCELED -> {
-                        Timber.d("TAG", "One-tap dialog was closed.")
+                        Timber.d("One-tap dialog was closed.")
                         // Don't re-prompt the user.
 //                            showOneTapUI = false
                     }
@@ -99,7 +99,6 @@ fun GoogleSignInComponent(
                     CommonStatusCodes.NETWORK_ERROR -> {
                         onSignInError()
                         Timber.d(
-                            "TAG",
                             "One-tap encountered a network error.",
                         )
                     }
@@ -107,7 +106,6 @@ fun GoogleSignInComponent(
                     else -> {
                         onSignInError()
                         Timber.d(
-                            "TAG",
                             "Couldn't get credential from result." + e.localizedMessage,
                         )
                     }
@@ -172,7 +170,7 @@ private fun signIn(
         } catch (e: Exception) {
             // No saved credentials found. Launch the One Tap sign-up flow, or
             // do nothing and continue presenting the signed-out UI.
-            Timber.d("LOG", e.message.toString())
+            Timber.e(e.message.toString())
             onSignInError()
         }
     }

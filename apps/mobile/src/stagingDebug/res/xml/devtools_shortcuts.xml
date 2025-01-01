@@ -6,8 +6,7 @@
         android:icon="@drawable/ic_devtools"
         android:shortcutId="devtools"
         android:shortcutLongLabel="@string/devtools_shortcut_label_long"
-        android:shortcutShortLabel="@string/devtools_shortcut_label"
-        tools:targetApi="n_mr1">
+        android:shortcutShortLabel="@string/devtools_shortcut_label">
         <intent
             android:action="android.intent.action.VIEW"
             android:targetClass="com.feragusper.smokeanalytics.features.devtools.presentation.DevToolsActivity"

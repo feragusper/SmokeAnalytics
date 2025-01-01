@@ -9,7 +9,7 @@ plugins {
     id("kotlin-kapt")
     kotlin("android")
     id("dagger.hilt.android.plugin")
-    id("com.google.gms.google-services")
+    alias(libs.plugins.compose.compiler)
 }
 
 val gitCode: Int by lazy {
@@ -33,6 +33,7 @@ android {
         targetSdk = Android.TARGET_SDK
         versionCode = gitCode
         versionName = majorMinorPatchVersionName
+        wearAppUnbundled = false
     }
 
     signingConfigs {
@@ -124,23 +125,25 @@ fun properties(propertiesFileName: String): Properties {
 }
 
 dependencies {
+    implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:wear:data"))
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
-    implementation(libs.bundles.androidx.navigation)
     implementation(libs.hilt)
     implementation(libs.timber)
     implementation(project(":libraries:design"))
-    implementation(project(":libraries:architecture:presentation"))
-    implementation(project(":features:authentication:presentation"))
-    implementation(project(":features:history:presentation"))
-    implementation(project(":features:home:presentation"))
-    implementation(project(":features:settings:presentation"))
-    implementation(project(":features:stats:presentation"))
+    implementation(libs.androidx.tiles)
+    implementation(libs.horologist.composables)
+    implementation(libs.horologist.tiles)
+    implementation(libs.horologist.compose.tools)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.protolayout.material)
+    implementation(libs.androidx.protolayout.core)
     kapt(libs.hilt.compiler)
-
-    debugImplementation(project(":features:devtools:presentation"))
+    implementation(libs.play.services.wearable)
+    implementation(libs.androidx.tiles.material)
 }
 
 task("printVersionName") {

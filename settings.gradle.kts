@@ -16,7 +16,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SmokeAnalytics"
-include(":app")
+include(":apps:mobile")
+include(":apps:wear")
 include(":features:authentication:presentation")
 include(":features:devtools:presentation")
 include(":features:history:presentation")
@@ -33,5 +34,4 @@ include(":libraries:design")
 include(":libraries:smokes:data")
 include(":libraries:smokes:domain")
 include(":libraries:smokes:presentation")
-
- 
+include(":libraries:wear:data")

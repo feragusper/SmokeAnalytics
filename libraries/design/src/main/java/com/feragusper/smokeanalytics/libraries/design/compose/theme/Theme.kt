@@ -8,14 +8,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 /**
- * A custom Compose theme wrapper that applies the application's design language, including color schemes and typography.
- * Supports dynamic color theming on compatible Android versions.
+ * A custom Compose theme wrapper that applies the application's design language,
+ * including color schemes and typography. Supports dynamic color theming on compatible Android versions.
  *
  * @param darkTheme Indicates if the dark theme should be applied.
  * @param dynamicColor Indicates if dynamic color theming is enabled, available on Android 12+.
@@ -24,7 +23,6 @@ import androidx.core.view.WindowCompat
 @Composable
 fun SmokeAnalyticsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -37,12 +35,21 @@ fun SmokeAnalyticsTheme(
         darkTheme -> darkColorScheme
         else -> lightColorScheme
     }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
+        val activity = view.context as Activity
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            val window = activity.window
+            WindowCompat.setDecorFitsSystemWindows(window, false) // Allows content to extend into system bars
+            val insetsController = WindowCompat.getInsetsController(window, view)
+
+            // Set the appearance of system bars based on theme
+            insetsController.isAppearanceLightStatusBars = !darkTheme
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
+
+            // Use transparent system bars
+            window.setBackgroundDrawable(null) // Transparent background for the window
         }
     }
 

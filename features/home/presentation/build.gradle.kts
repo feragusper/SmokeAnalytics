@@ -3,6 +3,7 @@ plugins {
     `android-lib`
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -29,6 +30,7 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.hilt)
     implementation(libs.bundles.androidx.navigation)
+    implementation(libs.accompanist.swiperefresh)
 
     kapt(libs.hilt.compiler)
 

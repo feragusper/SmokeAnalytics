@@ -3,6 +3,7 @@ plugins {
     `android-lib`
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -12,6 +13,7 @@ android {
 dependencies {
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":libraries:architecture:domain"))
+    implementation(project(":libraries:wear:data"))
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
 

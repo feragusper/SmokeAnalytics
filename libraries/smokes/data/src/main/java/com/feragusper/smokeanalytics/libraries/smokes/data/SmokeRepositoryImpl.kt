@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.F
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,6 +30,7 @@ import javax.inject.Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
+    private val wearSyncManager: WearSyncManager
 ) : SmokeRepository {
 
     /**
@@ -43,6 +45,8 @@ class SmokeRepositoryImpl @Inject constructor(
 
     override suspend fun addSmoke(date: LocalDateTime) {
         smokesQuery().add(SmokeEntity(date.toDate())).await()
+
+        syncWithWear()
     }
 
     override suspend fun editSmoke(id: String, date: LocalDateTime) {
@@ -50,6 +54,8 @@ class SmokeRepositoryImpl @Inject constructor(
             .document(id)
             .set(SmokeEntity(date.toDate()))
             .await()
+
+        syncWithWear()
     }
 
     override suspend fun deleteSmoke(id: String) {
@@ -57,6 +63,8 @@ class SmokeRepositoryImpl @Inject constructor(
             .document(id)
             .delete()
             .await()
+
+        syncWithWear()
     }
 
     override suspend fun fetchSmokes(date: LocalDateTime?): List<Smoke> {
@@ -103,4 +111,9 @@ class SmokeRepositoryImpl @Inject constructor(
     private fun DocumentSnapshot.getDate() =
         getDate(Smoke::date.name)?.toLocalDateTime()
             ?: throw IllegalStateException("Date not found")
+
+    private suspend fun syncWithWear() {
+        val smokeCount = fetchSmokes().size
+        wearSyncManager.sendSmokeData(smokeCount)
+    }
 }
