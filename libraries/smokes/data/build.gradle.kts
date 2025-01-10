@@ -23,6 +23,10 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.androidx.compose.runtime)
 
+    implementation(libs.play.services.wearable)
+
+    implementation(libs.timber)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)
 }

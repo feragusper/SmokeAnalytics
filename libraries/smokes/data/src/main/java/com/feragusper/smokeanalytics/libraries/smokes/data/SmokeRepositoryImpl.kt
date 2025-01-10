@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.lastInstantToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
@@ -9,12 +10,23 @@ import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.F
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
-import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManager
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT
+import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query.Direction
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,8 +42,11 @@ import javax.inject.Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
-    private val wearSyncManager: WearSyncManager
-) : SmokeRepository {
+    @ApplicationContext private val context: Context,
+) : SmokeRepository, OnMessageReceivedListener, CoroutineScope {
+
+    private val job = SupervisorJob()
+    override val coroutineContext = Dispatchers.IO + job
 
     /**
      * Constants for Firestore collection paths.
@@ -113,7 +128,22 @@ class SmokeRepositoryImpl @Inject constructor(
             ?: throw IllegalStateException("Date not found")
 
     private suspend fun syncWithWear() {
-        val smokeCount = fetchSmokes().size
-        wearSyncManager.sendSmokeData(smokeCount)
+        respondToWearWithSmokeCount(fetchSmokes().size)
+    }
+
+    override fun onMessageReceived(messageEvent: MessageEvent) {
+        Timber.d("onMessageReceived: ${messageEvent.path}")
+        if (messageEvent.path == WearPaths.REQUEST_SMOKES) {
+            launch { syncWithWear() }
+        }
+    }
+
+    private fun respondToWearWithSmokeCount(smokeCount: Int) {
+        Timber.d("respondToWearWithSmokeCount: $smokeCount")
+        val putDataMapRequest = PutDataMapRequest.create(WearPaths.SMOKE_DATA).apply {
+            dataMap.putInt(SMOKE_COUNT, smokeCount)
+        }
+        val putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent()
+        Wearable.getDataClient(context).putDataItem(putDataRequest)
     }
 }

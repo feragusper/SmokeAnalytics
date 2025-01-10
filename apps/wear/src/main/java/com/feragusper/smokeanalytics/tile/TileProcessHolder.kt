@@ -15,35 +15,40 @@ class TileProcessHolder @Inject constructor(
 ) : MVIProcessHolder<TileIntent, TileResult> {
 
     override fun processIntent(intent: TileIntent): Flow<TileResult> = when (intent) {
-        TileIntent.FetchSmokes -> {
+        TileIntent.FetchSmokes ->
             listenForSmokeUpdates()
                 .onEach { newSmokeCount ->
-                    Timber.d("TileProcessHolder", "Received new smoke count: $newSmokeCount")
+                    Timber.d("Received new smoke count: $newSmokeCount")
                 }
                 .catchAndLog {
+                    Timber.e(it, "Error fetching smoke count.")
                     emit(TileResult.Error)
                 }
-        }
     }
 
     /**
      * Creates a Flow to listen for data updates via WearSyncManager.
      */
     private fun listenForSmokeUpdates(): Flow<TileResult> = callbackFlow {
-        // Emit the initial value from getSmokeCount()
-        try {
-            val initialSmokeCount = wearSyncManager.getSmokeCount()
-            trySend(TileResult.FetchSmokesSuccess(initialSmokeCount))
-        } catch (e: Exception) {
-            trySend(TileResult.Error)
-        }
+//        try {
+//            Timber.d( "Listening for data updates.")
+//            val initialSmokeCount = wearSyncManager.getSmokeCount()
+//            trySend(TileResult.FetchSmokesSuccess(initialSmokeCount))
+//        } catch (e: Exception) {
+//            trySend(TileResult.Error)
+//        }
+
+        Timber.d("Fetching smoke count.")
+        Timber.d("Sending request to mobile.")
+        wearSyncManager.sendRequestToMobile()
 
         // Listen for updates and emit each new value
         wearSyncManager.listenForDataUpdates { newSmokeCount ->
+            Timber.d("Received new smoke count: $newSmokeCount")
             trySend(TileResult.FetchSmokesSuccess(newSmokeCount))
         }
 
         // Close the callbackFlow when cancelled
-        awaitClose { Timber.d("TileProcessHolder", "Stopped listening for data updates.") }
+        awaitClose { Timber.d("Stopped listening for data updates.") }
     }
 }

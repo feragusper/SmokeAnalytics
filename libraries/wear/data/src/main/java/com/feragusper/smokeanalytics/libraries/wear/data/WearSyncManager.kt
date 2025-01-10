@@ -2,6 +2,8 @@ package com.feragusper.smokeanalytics.libraries.wear.data
 
 import android.content.Context
 import android.net.Uri
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_DATA
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMapItem
@@ -20,15 +22,72 @@ class WearSyncManager(private val context: Context) {
     private val dataClient: DataClient by lazy {
         Wearable.getDataClient(context)
     }
-    private val messageClient: MessageClient = Wearable.getMessageClient(context)
+    private val messageClient: MessageClient by lazy {
+        Wearable.getMessageClient(context)
+    }
+
+    suspend fun sendRequestToMobile() {
+        Timber.d( "sendRequestToMobile")
+        val nodes = getConnectedNodes()
+        nodes.forEach { nodeId ->
+            Timber.d( "sendRequestToMobile: sending request to node $nodeId")
+            sendMessageToNode(nodeId, WearPaths.REQUEST_SMOKES)
+        }
+    }
+
+    fun listenForDataUpdates(onDataReceived: (Int) -> Unit) {
+        Timber.d( "listenForDataUpdates")
+        val dataChangedListener = DataClient.OnDataChangedListener { dataEvents ->
+            for (event in dataEvents) {
+                if (event.type == DataEvent.TYPE_CHANGED) {
+                    val dataItem = event.dataItem
+                    if (dataItem.uri.path == SMOKE_DATA) {
+                        val smokeCount = DataMapItem.fromDataItem(dataItem)
+                            .dataMap
+                            .getInt(SMOKE_COUNT)
+                        onDataReceived(smokeCount)
+                    }
+                }
+            }
+        }
+        dataClient.addListener(dataChangedListener)
+    }
+
+    private suspend fun getConnectedNodes(): List<String> = withContext(Dispatchers.IO) {
+        Timber.d( "getConnectedNodes")
+        suspendCancellableCoroutine { continuation ->
+            Wearable.getNodeClient(context).connectedNodes
+                .addOnSuccessListener { nodes ->
+                    continuation.resume(nodes.map { it.id })
+                }
+                .addOnFailureListener { e ->
+                    continuation.resumeWithException(e)
+                }
+        }
+    }
+
+    private suspend fun sendMessageToNode(nodeId: String, path: String) = withContext(Dispatchers.IO) {
+        Timber.d( "sendMessageToNode")
+        suspendCancellableCoroutine { continuation ->
+            messageClient.sendMessage(nodeId, path, null)
+                .addOnSuccessListener {
+                    Timber.d( "sendMessageToNode: message sent successfully")
+                    continuation.resume(Unit)
+                }
+                .addOnFailureListener { e ->
+                    Timber.d( "sendMessageToNode: error", e)
+                    continuation.resumeWithException(e)
+                }
+        }
+    }
 
     /**
      * Sends smoke count data to the wearable app.
      */
     fun sendSmokeData(smokeCount: Int) {
-        val path = "/smoke_data"
-        val putDataMapRequest = PutDataMapRequest.create(path).apply {
-            dataMap.putInt("smoke_count", smokeCount)
+        Timber.d( "sendSmokeData")
+        val putDataMapRequest = PutDataMapRequest.create(SMOKE_DATA).apply {
+            dataMap.putInt(SMOKE_COUNT, smokeCount)
         }
 
         val putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent()
@@ -43,54 +102,30 @@ class WearSyncManager(private val context: Context) {
     }
 
     /**
-     * Listens for data updates coming from the wearable app.
-     */
-    fun listenForDataUpdates(onDataReceived: (Int) -> Unit) {
-        val dataChangedListener = DataClient.OnDataChangedListener { dataEvents ->
-            println("Data changed on Wear!")
-            for (event in dataEvents) {
-                println("Data event: $event")
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    println("Data event type changed")
-                    val dataItem = event.dataItem
-                    if (dataItem.uri.path == "/smoke_data") {
-                        println("Data event path matches")
-                        val smokeCount = DataMapItem.fromDataItem(dataItem)
-                            .dataMap
-                            .getInt("smoke_count")
-                        onDataReceived(smokeCount)
-                    }
-                }
-            }
-        }
-        dataClient.addListener(dataChangedListener)
-    }
-
-    /**
      * Retrieves the latest smoke count synchronously.
      */
     suspend fun getSmokeCount(): Int = withContext(Dispatchers.IO) {
-        Timber.d("WearSyncManager", "getSmokeCount")
+        Timber.d( "getSmokeCount")
         suspendCancellableCoroutine { continuation ->
-            val uri = Uri.parse("wear://*/smoke_data") // Usar una URI válida
+            val uri = Uri.parse("wear://*/$SMOKE_DATA")
             dataClient.getDataItems(uri).addOnSuccessListener { dataItemBuffer ->
-                Timber.d("WearSyncManager", "getSmokeCount: dataItemBuffer count: ${dataItemBuffer.count}")
+                Timber.d( "getSmokeCount: dataItemBuffer count: ${dataItemBuffer.count}")
                 var smokeCount = 0
                 for (dataItem in dataItemBuffer) {
-                    Timber.d("WearSyncManager", "getSmokeCount: dataItem.uri.path: ${dataItem.uri.path}")
-                    if (dataItem.uri.path == "/smoke_data") {
+                    Timber.d( "getSmokeCount: dataItem.uri.path: ${dataItem.uri.path}")
+                    if (dataItem.uri.path == SMOKE_DATA) {
                         val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
                         smokeCount = dataMap.getInt("smoke_count", 0)
-                        Timber.d("WearSyncManager", "getSmokeCount: smoke_count = $smokeCount")
+                        Timber.d( "getSmokeCount: smoke_count = $smokeCount")
                     } else {
-                        Timber.d("WearSyncManager", "getSmokeCount: path does not match")
+                        Timber.d( "getSmokeCount: path does not match")
                     }
                 }
-                Timber.d("WearSyncManager", "getSmokeCount: final smoke count = $smokeCount")
+                Timber.d( "getSmokeCount: final smoke count = $smokeCount")
                 dataItemBuffer.release()
                 continuation.resume(smokeCount)
             }.addOnFailureListener { e ->
-                Timber.d("WearSyncManager", "getSmokeCount: error", e)
+                Timber.d( "getSmokeCount: error", e)
                 continuation.resumeWithException(e)
             }
         }
@@ -111,19 +146,4 @@ class WearSyncManager(private val context: Context) {
             }
     }
 
-    /**
-     * Retrieves connected nodes (Wear devices) for sending messages.
-     */
-    @Suppress("unused")
-    suspend fun getConnectedNodes(): List<String> = withContext(Dispatchers.IO) {
-        suspendCancellableCoroutine { continuation ->
-            Wearable.getNodeClient(context).connectedNodes
-                .addOnSuccessListener { nodes ->
-                    continuation.resume(nodes.map { it.id })
-                }
-                .addOnFailureListener { e ->
-                    continuation.resumeWithException(e)
-                }
-        }
-    }
 }
