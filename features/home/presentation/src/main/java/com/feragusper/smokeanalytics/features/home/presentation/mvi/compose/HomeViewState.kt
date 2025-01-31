@@ -2,9 +2,12 @@ package com.feragusper.smokeanalytics.features.home.presentation.mvi.compose
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,8 +32,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +77,7 @@ import java.time.LocalDateTime
  */
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
+    internal val displayRefreshLoading: Boolean = false,
     internal val smokesPerDay: Int? = null,
     internal val smokesPerWeek: Int? = null,
     internal val smokesPerMonth: Int? = null,
@@ -86,7 +91,7 @@ data class HomeViewState(
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Compose(intent: (HomeIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -108,6 +113,25 @@ data class HomeViewState(
                 }
             }
         }
+
+        val pullToRefreshState = remember {
+            object : PullToRefreshState {
+                private val anim = Animatable(0f, Float.VectorConverter)
+                override val distanceFraction get() = anim.value
+                override suspend fun animateToThreshold() {
+                    anim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy))
+                }
+
+                override suspend fun animateToHidden() {
+                    anim.animateTo(0f)
+                }
+
+                override suspend fun snapTo(targetValue: Float) {
+                    anim.snapTo(targetValue)
+                }
+            }
+        }
+
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
@@ -137,28 +161,32 @@ data class HomeViewState(
                 }
             },
         ) { contentPadding ->
-            if (displayLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
+            PullToRefreshBox(
+                isRefreshing = displayRefreshLoading,
+                onRefresh = {
+                    intent(HomeIntent.FetchSmokes)
+                },
+                state = pullToRefreshState,
+                modifier = Modifier.padding(contentPadding),
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = pullToRefreshState,
+                        isRefreshing = displayRefreshLoading,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                    )
                 }
-            } else {
-                val state = rememberPullToRefreshState()
-                if (state.isRefreshing) {
-                    LaunchedEffect(true) {
-                        intent(HomeIntent.FetchSmokes)
+            ) {
+                if (displayLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
-                }
-
-                Box(
-                    Modifier
-                        .padding(contentPadding)
-                        .nestedScroll(state.nestedScrollConnection)
-                ) {
+                } else {
                     Column(
                         modifier = Modifier
+                            .nestedScroll(nestedScrollConnection)
                             .padding(horizontal = 16.dp)
                             .padding(top = 16.dp)
                     ) {
@@ -279,34 +307,28 @@ data class HomeViewState(
                             }
                         } ?: run { EmptySmokes() }
                     }
-                    PullToRefreshContainer(
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        state = state,
-                    )
+
+                    val context = LocalContext.current
+                    LaunchedEffect(error) {
+                        error?.let {
+                            when (it) {
+                                HomeResult.Error.Generic -> snackbarHostState.showSnackbar(
+                                    context.getString(R.string.error_generic)
+                                )
+
+                                HomeResult.Error.NotLoggedIn -> Toast.makeText(
+                                    context,
+                                    context.getString(R.string.error_not_logged_in),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        val context = LocalContext.current
-        LaunchedEffect(error) {
-            error?.let {
-                when (it) {
-                    HomeResult.Error.Generic -> snackbarHostState.showSnackbar(
-                        context.getString(
-                            R.string.error_generic
-                        )
-                    )
-
-                    HomeResult.Error.NotLoggedIn -> Toast.makeText(
-                        context,
-                        context.getString(R.string.error_not_logged_in),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
     }
-
 }
 
 @CombinedPreviews

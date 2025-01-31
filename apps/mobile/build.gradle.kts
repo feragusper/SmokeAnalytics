@@ -10,6 +10,7 @@ plugins {
     kotlin("android")
     id("dagger.hilt.android.plugin")
     id("com.google.gms.google-services")
+    alias(libs.plugins.compose.compiler)
 }
 
 val gitCode: Int by lazy {
@@ -139,6 +140,7 @@ dependencies {
     implementation(project(":features:settings:presentation"))
     implementation(project(":features:stats:presentation"))
     kapt(libs.hilt.compiler)
+    wearApp(project(":apps:wear"))
 
     debugImplementation(project(":features:devtools:presentation"))
 }

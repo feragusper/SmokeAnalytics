@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.smokes.domain.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.FetchSmokeCountUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.FetchSmokesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

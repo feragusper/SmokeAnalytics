@@ -12,6 +12,7 @@ sealed interface HomeResult : MVIResult {
      * Indicates that the application is currently loading or processing data.
      */
     object Loading : HomeResult
+    object RefreshLoading : HomeResult
     object NotLoggedIn : HomeResult
     object GoToAuthentication : HomeResult
     object GoToHistory : HomeResult

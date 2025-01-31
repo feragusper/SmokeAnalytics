@@ -22,6 +22,8 @@ sealed class HomeIntent : MVIIntent {
      */
     object FetchSmokes : HomeIntent()
 
+    object RefreshFetchSmokes : HomeIntent()
+
     /**
      * Represents an intent to navigate to the smoke history screen.
      */
