@@ -23,7 +23,7 @@ jobs:
           echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
           mkdir ./apps/mobile/src/production/
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/production/google-services.json
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
