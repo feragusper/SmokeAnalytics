@@ -4,4 +4,5 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 
 sealed class TileIntent : MVIIntent {
     data object FetchSmokes : TileIntent()
+    data object AddSmoke : TileIntent()
 }

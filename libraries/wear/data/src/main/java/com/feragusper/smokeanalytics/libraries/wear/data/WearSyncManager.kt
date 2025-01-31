@@ -1,8 +1,11 @@
 package com.feragusper.smokeanalytics.libraries.wear.data
 
 import android.content.Context
-import android.net.Uri
-import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT
+import androidx.core.net.toUri
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.LAST_SMOKE_TIMESTAMP
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT_MONTH
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT_TODAY
+import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT_WEEK
 import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_DATA
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
@@ -26,26 +29,41 @@ class WearSyncManager(private val context: Context) {
         Wearable.getMessageClient(context)
     }
 
-    suspend fun sendRequestToMobile() {
-        Timber.d( "sendRequestToMobile")
+    suspend fun sendRequestToMobile(path: String) {
+        Timber.d("sendRequestToMobile")
         val nodes = getConnectedNodes()
         nodes.forEach { nodeId ->
-            Timber.d( "sendRequestToMobile: sending request to node $nodeId")
-            sendMessageToNode(nodeId, WearPaths.REQUEST_SMOKES)
+            Timber.d("sendRequestToMobile: sending request to node $nodeId")
+            sendMessageToNode(nodeId, path)
         }
     }
 
-    fun listenForDataUpdates(onDataReceived: (Int) -> Unit) {
-        Timber.d( "listenForDataUpdates")
+    fun listenForDataUpdates(onDataReceived: (smokesToday: Int, smokesPerWeek: Int, smokesPerMonth: Int, lastSmokeTimestamp: Long?) -> Unit) {
+        Timber.d("listenForDataUpdates")
         val dataChangedListener = DataClient.OnDataChangedListener { dataEvents ->
             for (event in dataEvents) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val dataItem = event.dataItem
                     if (dataItem.uri.path == SMOKE_DATA) {
-                        val smokeCount = DataMapItem.fromDataItem(dataItem)
+                        val smokesToday = DataMapItem.fromDataItem(dataItem)
                             .dataMap
-                            .getInt(SMOKE_COUNT)
-                        onDataReceived(smokeCount)
+                            .getInt(SMOKE_COUNT_TODAY)
+                        val smokesPerWeek = DataMapItem.fromDataItem(dataItem)
+                            .dataMap
+                            .getInt(SMOKE_COUNT_WEEK)
+                        val smokesPerMonth = DataMapItem.fromDataItem(dataItem)
+                            .dataMap
+                            .getInt(SMOKE_COUNT_MONTH)
+                        val lastSmokeTimestamp = DataMapItem.fromDataItem(dataItem)
+                            .dataMap
+                            .getLong(LAST_SMOKE_TIMESTAMP)
+
+                        onDataReceived(
+                            smokesToday,
+                            smokesPerWeek,
+                            smokesPerMonth,
+                            lastSmokeTimestamp
+                        )
                     }
                 }
             }
@@ -54,7 +72,7 @@ class WearSyncManager(private val context: Context) {
     }
 
     private suspend fun getConnectedNodes(): List<String> = withContext(Dispatchers.IO) {
-        Timber.d( "getConnectedNodes")
+        Timber.d("getConnectedNodes")
         suspendCancellableCoroutine { continuation ->
             Wearable.getNodeClient(context).connectedNodes
                 .addOnSuccessListener { nodes ->
@@ -66,28 +84,29 @@ class WearSyncManager(private val context: Context) {
         }
     }
 
-    private suspend fun sendMessageToNode(nodeId: String, path: String) = withContext(Dispatchers.IO) {
-        Timber.d( "sendMessageToNode")
-        suspendCancellableCoroutine { continuation ->
-            messageClient.sendMessage(nodeId, path, null)
-                .addOnSuccessListener {
-                    Timber.d( "sendMessageToNode: message sent successfully")
-                    continuation.resume(Unit)
-                }
-                .addOnFailureListener { e ->
-                    Timber.d( "sendMessageToNode: error", e)
-                    continuation.resumeWithException(e)
-                }
+    private suspend fun sendMessageToNode(nodeId: String, path: String) =
+        withContext(Dispatchers.IO) {
+            Timber.d("sendMessageToNode")
+            suspendCancellableCoroutine { continuation ->
+                messageClient.sendMessage(nodeId, path, null)
+                    .addOnSuccessListener {
+                        Timber.d("sendMessageToNode: message sent successfully")
+                        continuation.resume(Unit)
+                    }
+                    .addOnFailureListener { e ->
+                        Timber.d("sendMessageToNode: error", e)
+                        continuation.resumeWithException(e)
+                    }
+            }
         }
-    }
 
     /**
      * Sends smoke count data to the wearable app.
      */
     fun sendSmokeData(smokeCount: Int) {
-        Timber.d( "sendSmokeData")
+        Timber.d("sendSmokeData")
         val putDataMapRequest = PutDataMapRequest.create(SMOKE_DATA).apply {
-            dataMap.putInt(SMOKE_COUNT, smokeCount)
+            dataMap.putInt(SMOKE_COUNT_TODAY, smokeCount)
         }
 
         val putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent()
@@ -105,27 +124,27 @@ class WearSyncManager(private val context: Context) {
      * Retrieves the latest smoke count synchronously.
      */
     suspend fun getSmokeCount(): Int = withContext(Dispatchers.IO) {
-        Timber.d( "getSmokeCount")
+        Timber.d("getSmokeCount")
         suspendCancellableCoroutine { continuation ->
-            val uri = Uri.parse("wear://*/$SMOKE_DATA")
+            val uri = "wear://*/$SMOKE_DATA".toUri()
             dataClient.getDataItems(uri).addOnSuccessListener { dataItemBuffer ->
-                Timber.d( "getSmokeCount: dataItemBuffer count: ${dataItemBuffer.count}")
+                Timber.d("getSmokeCount: dataItemBuffer count: ${dataItemBuffer.count}")
                 var smokeCount = 0
                 for (dataItem in dataItemBuffer) {
-                    Timber.d( "getSmokeCount: dataItem.uri.path: ${dataItem.uri.path}")
+                    Timber.d("getSmokeCount: dataItem.uri.path: ${dataItem.uri.path}")
                     if (dataItem.uri.path == SMOKE_DATA) {
                         val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
                         smokeCount = dataMap.getInt("smoke_count", 0)
-                        Timber.d( "getSmokeCount: smoke_count = $smokeCount")
+                        Timber.d("getSmokeCount: smoke_count = $smokeCount")
                     } else {
-                        Timber.d( "getSmokeCount: path does not match")
+                        Timber.d("getSmokeCount: path does not match")
                     }
                 }
-                Timber.d( "getSmokeCount: final smoke count = $smokeCount")
+                Timber.d("getSmokeCount: final smoke count = $smokeCount")
                 dataItemBuffer.release()
                 continuation.resume(smokeCount)
             }.addOnFailureListener { e ->
-                Timber.d( "getSmokeCount: error", e)
+                Timber.d("getSmokeCount: error", e)
                 continuation.resumeWithException(e)
             }
         }

@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.is
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
 import io.mockk.coEvery
 import io.mockk.every
@@ -24,7 +25,6 @@ class FetchSmokeCountListUseCaseTest {
     fun `GIVEN fetch smokes answers WHEN invoke is executed THEN it return `() = runTest {
         val today: LocalDateTime = mockk()
         val thisWeek: LocalDateTime = mockk()
-        val thisMonth: LocalDateTime = mockk()
 
         mockkStatic(LocalDateTime::isToday)
         mockkStatic(LocalDateTime::isThisWeek)
@@ -37,34 +37,17 @@ class FetchSmokeCountListUseCaseTest {
         every { today.isThisMonth() } answers { true }
         every { today.timeAfter(thisWeek) } answers { todayTimeAfter }
 
-        every { thisWeek.isToday() } answers { false }
-        every { thisWeek.isThisWeek() } answers { true }
-        every { thisWeek.isThisMonth() } answers { true }
-        every { thisWeek.timeAfter(thisMonth) } answers { mockk() }
-
-        every { thisMonth.isToday() } answers { false }
-        every { thisMonth.isThisWeek() } answers { false }
-        every { thisMonth.isThisMonth() } answers { true }
-        every { thisMonth.timeAfter(null) } answers { mockk() }
-
         val todaySmoke = Smoke(
             id = "1",
             date = today,
             timeElapsedSincePreviousSmoke = todayTimeAfter
         )
-        coEvery { repository.fetchSmokes() } answers {
-            listOf(
-                todaySmoke,
-                Smoke(
-                    id = "2",
-                    date = thisWeek,
-                    timeElapsedSincePreviousSmoke = mockk()
-                ),
-                Smoke(
-                    id = "3",
-                    date = thisMonth,
-                    timeElapsedSincePreviousSmoke = mockk()
-                ),
+        coEvery { repository.fetchSmokeCount() } answers {
+            SmokeCount(
+                week = 2,
+                month = 3,
+                today = listOf(todaySmoke),
+                lastSmoke = todaySmoke,
             )
         }
 

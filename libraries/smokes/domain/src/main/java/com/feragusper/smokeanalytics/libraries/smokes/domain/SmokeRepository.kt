@@ -15,12 +15,19 @@ interface SmokeRepository {
     suspend fun addSmoke(date: LocalDateTime)
 
     /**
-     * Fetches a list of smoke events, optionally starting from a specified date.
+     * Fetches smoke events for a given date range.
      *
-     * @param date The optional [LocalDateTime] to filter smoke events from. If null, fetches all smoke events.
-     * @return A list of [Smoke] events.
+     * @param date The [LocalDateTime] for the start of the date range.
+     * @return A list of [Smoke] objects representing the fetched smoke events.
      */
     suspend fun fetchSmokes(date: LocalDateTime? = null): List<Smoke>
+
+    /**
+     * Fetches smoke events for a given date range.
+     *
+     * @return A [SmokeCount] object containing the aggregated smoke event data.
+     */
+    suspend fun fetchSmokeCount(): SmokeCount
 
     /**
      * Edits an existing smoke event with a new date and time.

@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.tile
 
+import android.annotation.SuppressLint
+import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.navigation.MVINavigator
 import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManager
@@ -9,10 +11,19 @@ import timber.log.Timber
 object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINavigator>(
     initialState = TileViewState()
 ) {
-    private val processHolder: TileProcessHolder =
-        TileProcessHolder(WearSyncManager(SmokeAnalyticsApplication.instance))
+
+    @SuppressLint("StaticFieldLeak")
+    private lateinit var wearSyncManager: WearSyncManager
+
+    private val processHolder: TileProcessHolder by lazy {
+        TileProcessHolder(wearSyncManager)
+    }
 
     override lateinit var navigator: MVINavigator
+
+    fun initialize(context: Context) {
+        wearSyncManager = WearSyncManager(context.applicationContext)
+    }
 
     init {
         Timber.d("init")
@@ -26,12 +37,13 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
         previous: TileViewState,
         result: TileResult
     ): TileViewState = when (result) {
-        is TileResult.FetchSmokesSuccess -> previous.copy(smokesPerDay = result.smokesPerDay).also {
-            Timber.d("Reducer: $it")
-        }
+        is TileResult.FetchSmokesSuccess -> previous.copy(
+            smokesPerDay = result.smokesPerDay,
+            smokesPerWeek = result.smokesPerWeek,
+            smokesPerMonth = result.smokesPerMonth,
+            lastSmokeTimestamp = result.lastSmokeTimestamp
+        )
 
-        is TileResult.Error -> previous.copy(error = result).also {
-            Timber.d("Reducer: $it")
-        }
+        is TileResult.Error -> previous.copy(error = result)
     }
 }
