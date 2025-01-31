@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -24,15 +24,15 @@ jobs:
       - name: Config keys
         run: |
           echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
-          mkdir ./apps/mobile/staging/
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/staging/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/staging/google-services.json.asc > ./apps/mobile/staging/google-services.json
+          mkdir ./apps/mobile/src/staging/
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
+          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
 
       - name: Build debug APK
         run: bash ./gradlew assembleStagingDebug --stacktrace
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: app
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: mobile
+          path: /apps/mobile/build/outputs/apk/debug/app-debug.apk
