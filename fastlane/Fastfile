@@ -9,7 +9,7 @@ platform :android do
             timeout: 600,
             json_key: "playstore.credentials.json",
             package_name: "com.feragusper.smokeanalytics",
-            aab: "app/build/outputs/bundle/productionRelease/app-production-release.aab"
+            aab: "apps/mobile/build/outputs/bundle/productionRelease/app-production-release.aab"
         )
     end
 end
