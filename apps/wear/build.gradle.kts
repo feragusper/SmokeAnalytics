@@ -1,12 +1,58 @@
 plugins {
-    `android-lib`
+    id("com.android.application")
     id("kotlin-kapt")
+    kotlin("android")
     id("dagger.hilt.android.plugin")
     alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "com.feragusper.smokeanalytics.wear"
+    namespace = "com.feragusper.smokeanalytics"
+    compileSdk = Android.COMPILE_SDK
+
+    defaultConfig {
+        applicationId = "com.feragusper.smokeanalytics"
+        minSdk = Android.MIN_SDK
+        targetSdk = Android.TARGET_SDK
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = Java.jvmTarget
+        freeCompilerArgs = listOf(
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "-opt-in=kotlin.RequiresOptIn",
+        )
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Java.kotlinCompilerExtensionVersion
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        val applicationName = "Smoke Analytics"
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            isDefault = true
+            resValue("string", "app_name", "$applicationName (Staging)")
+        }
+        create("production") {
+            resValue("string", "app_name", applicationName)
+            dimension = "environment"
+        }
+    }
 }
 
 dependencies {

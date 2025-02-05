@@ -22,7 +22,7 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
     override lateinit var navigator: MVINavigator
 
     fun initialize(context: Context) {
-        wearSyncManager = WearSyncManager(context.applicationContext)
+        wearSyncManager = WearSyncManager(context)
     }
 
     init {
