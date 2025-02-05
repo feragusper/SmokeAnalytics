@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-kapt")
@@ -5,6 +7,17 @@ plugins {
     id("dagger.hilt.android.plugin")
     alias(libs.plugins.compose.compiler)
 }
+
+val gitCode: Int by lazy {
+    val stdout = ByteArrayOutputStream()
+    rootProject.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        standardOutput = stdout
+    }
+    stdout.toString().trim().toInt()
+}
+
+val majorMinorPatchVersionName = "0.2.1.$gitCode"
 
 android {
     namespace = "com.feragusper.smokeanalytics"
@@ -14,6 +27,8 @@ android {
         applicationId = "com.feragusper.smokeanalytics"
         minSdk = Android.MIN_SDK
         targetSdk = Android.TARGET_SDK
+        versionCode = gitCode
+        versionName = majorMinorPatchVersionName
     }
 
     compileOptions {
