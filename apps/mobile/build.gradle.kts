@@ -19,10 +19,10 @@ val gitCode: Int by lazy {
         commandLine("git", "rev-list", "--count", "HEAD")
         standardOutput = stdout
     }
-    stdout.toString().trim().toInt()
+    stdout.toString().trim().toInt() + 5
 }
 
-val majorMinorPatchVersionName = "0.3.1.$gitCode"
+val majorMinorPatchVersionName = "0.3.0.$gitCode"
 
 android {
     namespace = "com.feragusper.smokeanalytics"
