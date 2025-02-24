@@ -22,7 +22,7 @@ val gitCode: Int by lazy {
     stdout.toString().trim().toInt()
 }
 
-val majorMinorPatchVersionName = "0.2.1.$gitCode"
+val majorMinorPatchVersionName = "0.3.1.$gitCode"
 
 android {
     namespace = "com.feragusper.smokeanalytics"

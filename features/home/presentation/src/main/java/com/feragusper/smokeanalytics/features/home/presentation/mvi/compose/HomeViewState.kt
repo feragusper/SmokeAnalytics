@@ -58,7 +58,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow

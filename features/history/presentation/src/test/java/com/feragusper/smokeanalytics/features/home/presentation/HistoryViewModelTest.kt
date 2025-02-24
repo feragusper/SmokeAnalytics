@@ -6,7 +6,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.HistoryViewState
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic

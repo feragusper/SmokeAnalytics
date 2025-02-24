@@ -6,11 +6,10 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensi
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
-import com.feragusper.smokeanalytics.libraries.smokes.domain.AddSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.DeleteSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.EditSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.FetchSmokeCountUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject

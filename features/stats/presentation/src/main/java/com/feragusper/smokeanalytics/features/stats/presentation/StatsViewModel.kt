@@ -1,9 +1,9 @@
 package com.feragusper.smokeanalytics.features.stats.presentation
 
-import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
+import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,5 +21,9 @@ class StatsViewModel @Inject constructor(
     override suspend fun reducer(
         previous: StatsViewState,
         result: StatsResult,
-    ): StatsViewState = previous
+    ): StatsViewState = when (result) {
+        is StatsResult.Loading -> previous.copy(stats = null)
+        is StatsResult.Success -> previous.copy(stats = result.stats)
+        is StatsResult.Error -> previous.copy(stats = null)
+    }
 }

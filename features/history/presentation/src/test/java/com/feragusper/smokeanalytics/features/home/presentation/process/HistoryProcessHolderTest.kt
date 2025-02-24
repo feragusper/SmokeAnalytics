@@ -5,11 +5,11 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
-import com.feragusper.smokeanalytics.libraries.smokes.domain.AddSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.DeleteSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.EditSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.FetchSmokesUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just

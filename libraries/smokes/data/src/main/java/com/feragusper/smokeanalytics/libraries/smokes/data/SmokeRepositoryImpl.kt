@@ -1,20 +1,18 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
 import android.content.Context
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisWeek
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isToday
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.lastInstantToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
-import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeCount
-import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths
 import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT_TODAY
 import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
@@ -24,6 +22,7 @@ import com.google.android.gms.wearable.Wearable
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -91,27 +90,29 @@ class SmokeRepositoryImpl @Inject constructor(
         syncWithWear()
     }
 
-    override suspend fun fetchSmokes(date: LocalDateTime?): List<Smoke> {
-        val smokes = smokesQuery()
-            .whereGreaterThanOrEqualTo(
-                SmokeEntity::date.name,
-                (date?.toLocalDate()?.atStartOfDay() ?: firstInstantThisMonth()).toDate()
-            )
-            .whereLessThan(
-                SmokeEntity::date.name,
-                (date?.plusDays(1)?.toLocalDate()?.atStartOfDay() ?: lastInstantToday()).toDate()
-            )
+    override suspend fun fetchSmokes(
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?
+    ): List<Smoke> {
+        val baseQuery = smokesQuery() // Esta es la CollectionReference
 
-            .orderBy(Smoke::date.name, Direction.DESCENDING)
-            .get()
-            .await()
+        var query: Query = baseQuery.orderBy(SmokeEntity::date.name, Direction.DESCENDING)
 
-        return smokes.documents.mapIndexedNotNull { index, document ->
+        startDate?.let {
+            query = query.whereGreaterThanOrEqualTo(SmokeEntity::date.name, it.toDate())
+        }
+        endDate?.let {
+            query = query.whereLessThan(SmokeEntity::date.name, it.toDate())
+        }
+
+        val result = query.get().await()
+
+        return result.documents.mapIndexedNotNull { index, document ->
             Smoke(
                 id = document.id,
                 date = document.getDate(),
                 timeElapsedSincePreviousSmoke = document.getDate()
-                    .timeAfter(smokes.documents.getOrNull(index + 1)?.getDate()),
+                    .timeAfter(result.documents.getOrNull(index + 1)?.getDate()),
             )
         }
     }

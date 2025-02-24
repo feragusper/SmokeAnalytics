@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain
 
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just

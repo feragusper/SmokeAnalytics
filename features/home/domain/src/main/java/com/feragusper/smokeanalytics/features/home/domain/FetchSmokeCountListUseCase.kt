@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
-import com.feragusper.smokeanalytics.libraries.smokes.domain.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import javax.inject.Inject
 
 /**

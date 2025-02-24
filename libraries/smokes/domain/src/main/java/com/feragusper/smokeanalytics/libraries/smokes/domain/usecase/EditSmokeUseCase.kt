@@ -1,5 +1,6 @@
-package com.feragusper.smokeanalytics.libraries.smokes.domain
+package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import java.time.LocalDateTime
 import javax.inject.Inject
 

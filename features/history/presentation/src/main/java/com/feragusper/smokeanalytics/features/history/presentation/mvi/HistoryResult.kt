@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import java.time.LocalDateTime
 
 /**
