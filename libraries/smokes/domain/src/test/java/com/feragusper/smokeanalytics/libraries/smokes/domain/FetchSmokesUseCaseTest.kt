@@ -1,5 +1,8 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain
 
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeCountUseCase
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

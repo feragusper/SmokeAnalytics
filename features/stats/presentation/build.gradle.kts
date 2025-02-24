@@ -17,6 +17,8 @@ android {
 dependencies {
     implementation(project(":libraries:architecture:presentation"))
     implementation(project(":libraries:design"))
+    implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:chart"))
 
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))

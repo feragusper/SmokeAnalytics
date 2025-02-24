@@ -1,33 +1,5 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
-import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
-import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
-import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import kotlinx.coroutines.test.runTest
-import org.amshove.kluent.internal.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.time.LocalDateTime
-import java.util.Date
-
 class SmokeRepositoryImplTest {
 
 //    private val firebaseAuth: FirebaseAuth = mockk()

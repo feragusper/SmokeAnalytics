@@ -1,5 +1,6 @@
-package com.feragusper.smokeanalytics.libraries.smokes.domain
+package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -15,7 +16,7 @@ data class FetchSmokesUseCase @Inject constructor(private val smokeRepository: S
      * Invokes the use case to fetch smoke events, optionally starting from a specific date.
      *
      * @param date The optional [LocalDateTime] to filter smoke events from. If null, all smoke events are fetched.
-     * @return A list of [Smoke] events.
+     * @return A list of [com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke] events.
      */
     suspend operator fun invoke(date: LocalDateTime? = null) = smokeRepository.fetchSmokes(date)
 }

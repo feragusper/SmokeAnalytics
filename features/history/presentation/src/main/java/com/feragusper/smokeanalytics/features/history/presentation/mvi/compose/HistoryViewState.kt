@@ -56,7 +56,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.da
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat

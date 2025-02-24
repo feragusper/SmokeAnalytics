@@ -1,6 +1,6 @@
-package com.feragusper.smokeanalytics.libraries.smokes.domain
+package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
-import java.time.LocalDateTime
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import javax.inject.Inject
 
 /**
@@ -14,7 +14,7 @@ data class FetchSmokeCountUseCase @Inject constructor(private val smokeRepositor
     /**
      * Invokes the use case to fetch smoke events, optionally starting from a specific date.
      *
-     * @return A [SmokeCount] object containing the aggregated smoke event data.
+     * @return A [com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount] object containing the aggregated smoke event data.
      */
     suspend operator fun invoke() = smokeRepository.fetchSmokeCount()
 }

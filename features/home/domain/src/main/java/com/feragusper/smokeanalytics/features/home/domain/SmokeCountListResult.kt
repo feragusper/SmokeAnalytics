@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeElapsedSinceNow
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
  * Represents the result of aggregating smoke event counts over different time periods.

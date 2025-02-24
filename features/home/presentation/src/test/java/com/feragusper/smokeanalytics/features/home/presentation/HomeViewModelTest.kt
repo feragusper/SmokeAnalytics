@@ -6,7 +6,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
-import com.feragusper.smokeanalytics.libraries.smokes.domain.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers

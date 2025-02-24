@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.libraries.smokes.domain
+package com.feragusper.smokeanalytics.libraries.smokes.domain.model
 
 import java.time.LocalDateTime
 
