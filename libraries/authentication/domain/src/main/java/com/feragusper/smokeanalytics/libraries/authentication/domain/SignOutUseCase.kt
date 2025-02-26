@@ -8,7 +8,9 @@ import javax.inject.Inject
  *
  * @property authenticationRepository The repository responsible for authentication operations.
  */
-class SignOutUseCase @Inject constructor(private val authenticationRepository: AuthenticationRepository) {
+class SignOutUseCase @Inject constructor(
+    private val authenticationRepository: AuthenticationRepository
+) {
 
     /**
      * Invokes the use case to perform the sign-out operation.

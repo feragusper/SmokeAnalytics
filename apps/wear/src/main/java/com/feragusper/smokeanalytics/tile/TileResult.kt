@@ -10,5 +10,7 @@ sealed class TileResult : MVIResult {
         val lastSmokeTimestamp: Long?
     ) : TileResult()
 
+    data object AddSmokeSuccess : TileResult()
+
     data object Error : TileResult()
 }

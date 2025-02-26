@@ -8,7 +8,9 @@ import javax.inject.Inject
  *
  * @property authenticationRepository The repository responsible for authentication operations.
  */
-class FetchSessionUseCase @Inject constructor(private val authenticationRepository: AuthenticationRepository) {
+class FetchSessionUseCase @Inject constructor(
+    private val authenticationRepository: AuthenticationRepository
+) {
 
     /**
      * Invokes the use case to retrieve the current session state.

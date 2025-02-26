@@ -94,11 +94,6 @@ fun LocalDateTime.utcMillis() = this
 fun LocalDateTime.toDate(): Date = Date.from(this.atZone(ZoneId.systemDefault()).toInstant())
 
 /**
- * Converts a [LocalDate] to a [Date].
- */
-fun LocalDate.toDate(): Date = Date.from(this.atStartOfDay(ZoneId.systemDefault()).toInstant())
-
-/**
  * Converts a [Date] to a [LocalDateTime].
  */
 fun Date.toLocalDateTime(): LocalDateTime =

@@ -10,13 +10,16 @@ import javax.inject.Inject
  *
  * @property smokeRepository The [SmokeRepository] used for adding the smoke event.
  */
-class AddSmokeUseCase @Inject constructor(private val smokeRepository: SmokeRepository) {
+class AddSmokeUseCase @Inject constructor(
+    private val smokeRepository: SmokeRepository
+) {
 
     /**
      * Invokes the use case to add a new smoke event.
      *
      * @param date The [LocalDateTime] when the smoke event occurred, defaults to the current time.
      */
-    suspend operator fun invoke(date: LocalDateTime = LocalDateTime.now()) =
+    suspend operator fun invoke(date: LocalDateTime = LocalDateTime.now()) {
         smokeRepository.addSmoke(date)
+    }
 }

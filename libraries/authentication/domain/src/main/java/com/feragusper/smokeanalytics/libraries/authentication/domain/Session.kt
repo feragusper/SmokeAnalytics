@@ -5,6 +5,7 @@ package com.feragusper.smokeanalytics.libraries.authentication.domain
  * and anonymous sessions, providing a type-safe way to handle session states.
  */
 sealed interface Session {
+
     /**
      * Represents an anonymous session, where no user is currently signed in.
      */

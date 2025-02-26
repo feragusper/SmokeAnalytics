@@ -9,10 +9,9 @@ import timber.log.Timber
  *
  * @return The version name of the application or null if not found.
  */
-fun Context.versionName() = try {
+fun Context.versionName(): String? = try {
     packageManager.getPackageInfo(packageName, 0).versionName
 } catch (e: PackageManager.NameNotFoundException) {
-    Timber.e("Unable to find the name: $e")
+    Timber.e("Unable to find the version name: $e")
     null
 }
-

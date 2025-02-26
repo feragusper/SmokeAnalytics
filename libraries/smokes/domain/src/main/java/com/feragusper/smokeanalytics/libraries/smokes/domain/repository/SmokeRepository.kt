@@ -9,25 +9,30 @@ import java.time.LocalDateTime
  * smoke events, allowing for flexibility in the data source implementation.
  */
 interface SmokeRepository {
+
     /**
      * Adds a new smoke event at the specified date and time.
      *
-     * @param date The [java.time.LocalDateTime] when the smoke event occurred.
+     * @param date The [LocalDateTime] when the smoke event occurred.
      */
     suspend fun addSmoke(date: LocalDateTime)
 
     /**
      * Fetches smoke events for a given date range.
      *
-     * @param date The [LocalDateTime] for the start of the date range.
-     * @return A list of [com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke] objects representing the fetched smoke events.
+     * @param startDate The [LocalDateTime] for the start of the date range (optional).
+     * @param endDate The [LocalDateTime] for the end of the date range (optional).
+     * @return A list of [Smoke] objects representing the fetched smoke events.
      */
-    suspend fun fetchSmokes(startDate: LocalDateTime? = null, endDate: LocalDateTime? = null): List<Smoke>
+    suspend fun fetchSmokes(
+        startDate: LocalDateTime? = null,
+        endDate: LocalDateTime? = null
+    ): List<Smoke>
 
     /**
-     * Fetches smoke events for a given date range.
+     * Fetches the count of smoke events, categorized by day, week, and month.
      *
-     * @return A [com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount] object containing the aggregated smoke event data.
+     * @return A [SmokeCount] object containing the aggregated smoke event data.
      */
     suspend fun fetchSmokeCount(): SmokeCount
 
@@ -45,5 +50,4 @@ interface SmokeRepository {
      * @param id The unique identifier of the smoke event to be deleted.
      */
     suspend fun deleteSmoke(id: String)
-
 }

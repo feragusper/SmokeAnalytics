@@ -16,29 +16,43 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.naviga
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Entry point for the Authentication feature.
+ * This activity hosts the navigation graph for authentication-related screens.
+ */
 @AndroidEntryPoint
 class AuthenticationActivity : ComponentActivity() {
+
+    /**
+     * Called when the activity is starting.
+     * This is where the UI is set up and the navigation graph is initialized.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // Apply the custom SmokeAnalyticsTheme for consistent theming.
             SmokeAnalyticsTheme(
                 dynamicColor = false,
             ) {
-                // A surface container using the 'background' color from the theme
+                // A surface container using the 'background' color from the theme.
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Scaffold { innerPadding ->
 
+                        // Remember the NavController for managing navigation within this feature.
                         val navController = rememberNavController()
 
+                        // Host the authentication navigation graph.
                         NavHost(
                             modifier = Modifier.padding(innerPadding),
                             navController = navController,
                             startDestination = AuthenticationNavigator.ROUTE
                         ) {
-                            authenticationNavigationGraph(AuthenticationNavigator { finish() })
+                            authenticationNavigationGraph(
+                                AuthenticationNavigator { finish() }
+                            )
                         }
                     }
                 }

@@ -19,8 +19,7 @@ import java.time.ZoneId
  * Presents a date picker dialog to the user, allowing for the selection of a date from a calendar-style UI.
  * It's built using Material 3 components and provides customization for initial date selection and date selection constraints.
  *
- * @param initialDate The initial date to be shown when the date picker is first displayed. This helps in providing
- * a context or default selection for the user.
+ * @param initialDate The initial date to be shown when the date picker is first displayed.
  * @param onConfirm Callback function invoked with the selected [LocalDateTime] when the user confirms their choice.
  * @param onDismiss Callback function invoked when the date picker dialog is dismissed without a date selection.
  */
@@ -35,11 +34,12 @@ fun DatePickerDialog(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate.utcMillis(), // Convert initialDate to milliseconds.
         selectableDates = object : SelectableDates {
-            // Implementing a custom constraint to limit selectable dates to the current and past dates only.
+            // Custom constraint to limit selectable dates to the current and past dates only.
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 return utcTimeMillis <= System.currentTimeMillis()
             }
-        })
+        }
+    )
 
     // Building the DatePickerDialog with specified buttons and actions.
     DatePickerDialog(

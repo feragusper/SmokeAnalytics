@@ -1,82 +1,107 @@
+# Workflow to deploy the Android release to the Play Store
 name: Deploy to Play Store
 
+# This workflow is triggered manually via the GitHub Actions interface.
 on:
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Step 1: Checkout the repository with full history
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 11
+      # Step 2: Set up JDK 17 using Zulu distribution
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Config keys
+      # Step 3: Configure keys and decrypt the production google-services.json file
+      - name: Configure keys for production
         run: |
-          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}\" > ./local.properties
-          mkdir ./apps/mobile/src/production/
+          # Save the Google Auth Server Client ID into local.properties
+          echo google.auth.server.client.id="${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}" > ./local.properties
+          # Create production directory (using -p to avoid error if it already exists)
+          mkdir -p ./apps/mobile/src/production/
+          # Save the encrypted google-services.json file and decrypt it using GPG
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
 
+      # Step 4: Set up Ruby environment needed for Fastlane
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '2.7'
 
-      - name: Install bundler
+      # Step 5: Install Bundler and project Ruby dependencies
+      - name: Install bundler and dependencies
         run: |
           gem install bundler:2.2.27
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
 
-      - name: Config keystore
+      # Step 6: Configure keystore and Play Store credentials by decrypting the secured files
+      - name: Configure keystore and Play Store credentials
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
         shell: bash
         run: |
+          # Decrypt the keystore properties
           echo "${{ secrets.RELEASE_KEYSTORE_PROPERTIES }}" > ./release.keystore.properties.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.properties.asc > ./release.keystore.properties
+          
+          # Decrypt the keystore file
           echo "${{ secrets.RELEASE_KEYSTORE }}" > ./release.keystore.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.asc > ./release.keystore
+          
+          # Decrypt the Play Store credentials file
           echo "${{ secrets.PLAYSTORE_CREDENTIALS }}" > ./playstore.credentials.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
-      - name: Build bundle
-        run: bash ./gradlew bundleProductionRelease --stacktrace
+      # Step 7: Build the Android App Bundle for production release with a stacktrace for debugging
+      - name: Build Android App Bundle
+        run: ./gradlew bundleProductionRelease --stacktrace
 
-      - name: Build & deploy Android release
+      # Step 8: Deploy the Android release to the Play Store using Fastlane
+      - name: Build & deploy Android release to Play Store
         run: bundler exec fastlane android deploy_playstore
 
+      # Step 9: Retrieve the version name of the build
       - name: Retrieve Version
-        run: |
-          echo "::set-output name=VERSION_NAME::$(${{github.workspace}}/gradlew -q printVersionName)"
         id: android_version
-
-      - name: Get version
         run: |
-          echo "version_name=${{steps.android_version.outputs.VERSION_NAME}}" >> $GITHUB_ENV
+          # The following command sets the version name as an output variable.
+          # Note: The use of ::set-output is deprecated. In a real project, consider using GITHUB_OUTPUT.
+          echo "::set-output name=VERSION_NAME::$(${{ github.workspace }}/gradlew -q printVersionName)"
 
+      # Step 10: Set the version name into the GitHub environment variable for later steps
+      - name: Set version environment variable
+        run: |
+          echo "version_name=${{ steps.android_version.outputs.VERSION_NAME }}" >> $GITHUB_ENV
+
+      # Step 11: Push a Git tag corresponding to the version name
       - name: Push Git Tag
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git tag ${{env.version_name}}
-          git push origin ${{env.version_name}}
+          git tag "${{ env.version_name }}"
+          git push origin "${{ env.version_name }}"
 
+      # Step 12: Create a GitHub Release based on the new tag
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{env.version_name}}
-          release_name: Release ${{env.version_name}}
+          tag_name: ${{ env.version_name }}
+          release_name: "Release ${{ env.version_name }}"
           draft: false
           prerelease: false

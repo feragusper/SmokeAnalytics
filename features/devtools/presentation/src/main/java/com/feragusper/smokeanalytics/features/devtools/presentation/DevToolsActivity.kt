@@ -16,21 +16,34 @@ import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.d
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Activity for the Developer Tools feature.
+ * This activity hosts the navigation graph for debugging and development utilities.
+ */
 @AndroidEntryPoint
 class DevToolsActivity : ComponentActivity() {
+
+    /**
+     * Called when the activity is starting.
+     * This is where the UI is set up and the navigation graph is initialized.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            // Apply the custom SmokeAnalyticsTheme for consistent theming.
             SmokeAnalyticsTheme(
                 dynamicColor = false,
             ) {
-                // A surface container using the 'background' color from the theme
+                // A surface container using the 'background' color from the theme.
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // Remember the NavController for managing navigation within this feature.
                     val navController = rememberNavController()
+
                     Scaffold { innerPadding ->
+                        // Host the dev tools navigation graph.
                         NavHost(
                             modifier = Modifier.padding(innerPadding),
                             navController = navController,

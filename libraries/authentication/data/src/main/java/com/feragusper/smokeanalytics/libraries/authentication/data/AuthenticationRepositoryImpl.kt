@@ -15,8 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class AuthenticationRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
-) :
-    AuthenticationRepository {
+) : AuthenticationRepository {
 
     /**
      * Signs out the current user from Firebase Authentication.
@@ -36,7 +35,7 @@ class AuthenticationRepositoryImpl @Inject constructor(
  *
  * @return The session state as a [Session].
  */
-private fun FirebaseAuth.toSession() = when (currentUser) {
+private fun FirebaseAuth.toSession(): Session = when (currentUser) {
     null -> Session.Anonymous
     else -> Session.LoggedIn(currentUser?.toUser() ?: throw IllegalStateException("User is null"))
 }
@@ -46,10 +45,8 @@ private fun FirebaseAuth.toSession() = when (currentUser) {
  *
  * @return The FirebaseUser as a [Session.User].
  */
-private fun FirebaseUser.toUser(): Session.User {
-    return Session.User(
-        id = this.uid,
-        email = this.email,
-        displayName = this.displayName,
-    )
-}
+private fun FirebaseUser.toUser(): Session.User = Session.User(
+    id = this.uid,
+    email = this.email,
+    displayName = this.displayName
+)

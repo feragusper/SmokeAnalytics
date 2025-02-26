@@ -1,5 +1,7 @@
+# Workflow to build the Android Debug APK and upload the generated artifact
 name: Deploy Artifact
 
+# Trigger the workflow when a push is made to the master branch
 on:
   push:
     branches:
@@ -7,32 +9,45 @@ on:
 
 jobs:
   build:
-    name: Build Android Debug APK and Upload artifact
+    name: Build Android Debug APK and Upload Artifact
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Step 1: Checkout the repository with full history
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 11
+      # Step 2: Set up JDK 17 using the Zulu distribution
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Config keys
+      # Step 3: Configure keys and decrypt the google-services.json file
+      - name: Configure keys and decrypt google-services.json
         run: |
-          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
-          mkdir ./apps/mobile/src/staging/
+          # Save the Google Auth Server Client ID in local.properties if required
+          echo google.auth.server.client.id="${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}" > ./local.properties
+
+          # Create the staging directory for the mobile app
+          mkdir -p ./apps/mobile/src/staging/
+
+          # Save the encrypted google-services.json file to staging directory
           echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
+
+          # Decrypt the google-services.json file using GPG
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
 
-      - name: Build debug APK
-        run: bash ./gradlew assembleStagingDebug --stacktrace
+      # Step 4: Build the Staging Debug APK with detailed error stack trace enabled
+      - name: Build Staging Debug APK
+        run: ./gradlew assembleStagingDebug --stacktrace
 
-      - name: Upload APK
+      # Step 5: Upload the generated APK as an artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: mobile
-          path: /apps/mobile/build/outputs/apk/debug/app-debug.apk
+          path: ./apps/mobile/build/outputs/apk/debug/app-debug.apk

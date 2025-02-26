@@ -82,7 +82,7 @@ data class StatsViewState(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TabRow(selectedTabIndex = currentPeriod.ordinal) {
-                    StatsViewState.StatsPeriod.entries.forEach { period ->
+                    StatsPeriod.entries.forEach { period ->
                         Tab(
                             selected = currentPeriod == period,
                             onClick = {
@@ -264,6 +264,7 @@ private fun LineChart(stats: Map<String, Int>) {
         )
     }
 }
+
 
 fun StatsViewState.StatsPeriod.toDomainPeriodType(): PeriodType {
     return when (this) {

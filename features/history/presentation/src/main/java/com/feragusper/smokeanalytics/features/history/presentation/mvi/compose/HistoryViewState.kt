@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi.compose
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -31,7 +30,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +43,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
@@ -54,8 +51,6 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
-import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
-import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
@@ -78,28 +73,28 @@ data class HistoryViewState(
     internal val selectedDate: LocalDateTime = LocalDateTime.now(),
 ) : MVIViewState<HistoryIntent> {
 
+    /**
+     * Composable function that renders the history UI based on the current state.
+     *
+     * @param intent Lambda function to send user intentions to the ViewModel.
+     */
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Compose(intent: (HistoryIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         val isFABVisible = rememberSaveable { mutableStateOf(true) }
+
+        // Handle nested scrolling to hide/show FAB
         val nestedScrollConnection = remember {
             object : NestedScrollConnection {
                 override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    // Hide FAB
-                    if (available.y < -1) {
-                        isFABVisible.value = false
-                    }
-
-                    // Show FAB
-                    if (available.y > 1) {
-                        isFABVisible.value = true
-                    }
-
+                    if (available.y < -1) isFABVisible.value = false
+                    if (available.y > 1) isFABVisible.value = true
                     return Offset.Zero
                 }
             }
         }
+
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
@@ -177,6 +172,7 @@ data class HistoryViewState(
                         .background(MaterialTheme.colorScheme.background),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    // Date Picker and Navigation
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -203,6 +199,7 @@ data class HistoryViewState(
                             )
                         }
                     }
+
                     Stat(
                         titleResourceId = R.string.history_smoked,
                         count = smokes?.size ?: 0
@@ -222,12 +219,7 @@ data class HistoryViewState(
                                     onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
                                     fullDateTimeEdit = true,
                                     onEdit = { date ->
-                                        intent(
-                                            HistoryIntent.EditSmoke(
-                                                smoke.id,
-                                                date
-                                            )
-                                        )
+                                        intent(HistoryIntent.EditSmoke(smoke.id, date))
                                     }
                                 )
                                 HorizontalDivider()
@@ -235,58 +227,7 @@ data class HistoryViewState(
                         }
                     } ?: run { EmptySmokes() }
                 }
-
-                val context = LocalContext.current
-                LaunchedEffect(error) {
-                    error?.let {
-                        when (it) {
-                            HistoryResult.Error.Generic -> snackbarHostState.showSnackbar(
-                                context.getString(
-                                    R.string.error_generic
-                                )
-                            )
-
-                            HistoryResult.Error.NotLoggedIn -> Toast.makeText(
-                                context,
-                                context.getString(R.string.error_not_logged_in),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                }
             }
         }
-    }
-
-}
-
-@CombinedPreviews
-@Composable
-private fun HistoryViewLoadingPreview() {
-    SmokeAnalyticsTheme {
-        HistoryViewState(
-            displayLoading = true,
-        ).Compose {}
-    }
-}
-
-@CombinedPreviews
-@Composable
-private fun HistoryViewSuccessPreview() {
-    SmokeAnalyticsTheme {
-        HistoryViewState(
-            smokes =
-            buildList {
-                repeat(4) {
-                    add(
-                        Smoke(
-                            id = "123",
-                            date = LocalDateTime.now(),
-                            timeElapsedSincePreviousSmoke = 1L to 30L
-                        )
-                    )
-                }
-            }
-        ).Compose {}
     }
 }

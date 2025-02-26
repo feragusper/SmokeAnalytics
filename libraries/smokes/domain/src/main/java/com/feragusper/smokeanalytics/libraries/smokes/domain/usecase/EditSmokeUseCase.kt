@@ -10,7 +10,9 @@ import javax.inject.Inject
  *
  * @property smokeRepository The [SmokeRepository] used for editing the smoke event.
  */
-class EditSmokeUseCase @Inject constructor(private val smokeRepository: SmokeRepository) {
+class EditSmokeUseCase @Inject constructor(
+    private val smokeRepository: SmokeRepository
+) {
 
     /**
      * Invokes the use case to edit a smoke event's date and time.
@@ -18,6 +20,7 @@ class EditSmokeUseCase @Inject constructor(private val smokeRepository: SmokeRep
      * @param id The unique identifier of the smoke event to be edited.
      * @param date The new [LocalDateTime] for the smoke event.
      */
-    suspend operator fun invoke(id: String, date: LocalDateTime) =
+    suspend operator fun invoke(id: String, date: LocalDateTime) {
         smokeRepository.editSmoke(id, date)
+    }
 }

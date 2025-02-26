@@ -14,6 +14,7 @@ import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileUpdateRequester
+import com.feragusper.smokeanalytics.R
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.BuildConfig
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
@@ -22,28 +23,32 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-private const val RESOURCES_VERSION = "1"
-
+// The main Tile service for the wearable device
 @OptIn(ExperimentalHorologistApi::class)
 class MainTileService : SuspendingTileService() {
 
+    // ViewModel for the tile UI state management
     private val viewModel = TileViewModel.apply {
         initialize(this@MainTileService)
     }
 
+    // Tile update requester to request updates
     private val tileUpdateRequester: TileUpdateRequester by lazy {
         getUpdater(this)
     }
 
+    // Called when the service is created
     override fun onCreate() {
         super.onCreate()
 
+        // Debugging setup for Timber logging in debug mode
         if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
             Timber.plant(Timber.DebugTree())
         }
 
         Timber.d("onCreate")
 
+        // Observe the state changes and request a tile update on state changes
         lifecycleScope.launch {
             viewModel.states()
                 .distinctUntilChanged { old, new -> old.smokesPerDay == new.smokesPerDay }
@@ -54,17 +59,21 @@ class MainTileService : SuspendingTileService() {
         }
     }
 
+    // Handles tile request to render the tile UI based on current state
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
         val state = viewModel.states().value
 
-        if (requestParams.currentState.lastClickableId == "add_smoke_action") {
+        // Handle action when "add_smoke_action" is clicked
+        if (requestParams.currentState.lastClickableId == ADD_SMOKE_ACTION_ID) {
             Timber.d("Add Smoke clicked! Updating ViewModel...")
             viewModel.intents().trySend(TileIntent.AddSmoke)
         }
 
+        // Return the tile based on the state
         return createTile(state)
     }
 
+    // Handles resource requests to load the resources used in the tile UI
     override suspend fun resourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ResourceBuilders.Resources {
         Timber.d("resourcesRequest")
 
@@ -82,6 +91,7 @@ class MainTileService : SuspendingTileService() {
             .build()
     }
 
+    // Creates the tile using the current state
     private fun createTile(state: TileViewState): TileBuilders.Tile {
         val layout = createTileLayout(state)
         return TileBuilders.Tile.Builder()
@@ -96,15 +106,18 @@ class MainTileService : SuspendingTileService() {
             ).build()
     }
 
+    // Creates the layout of the tile with the current state
     private fun createTileLayout(state: TileViewState): LayoutElementBuilders.Layout {
         val deviceParameters = DeviceParametersBuilders.DeviceParameters.Builder()
             .setScreenWidthDp(resources.configuration.screenWidthDp)
             .setScreenHeightDp(resources.configuration.screenHeightDp)
             .build()
 
+        // Format last smoke time
         val lastSmokeText = formatLastSmokeTime(state.lastSmokeTimestamp)
 
-        val statsText = Text.Builder(this, "Today: ${state.smokesPerDay ?: 0}")
+        // Create text elements for displaying statistics and last smoke time
+        val statsText = Text.Builder(this, getString(R.string.stats_today, state.smokesPerDay ?: 0))
             .setTypography(Typography.TYPOGRAPHY_TITLE3)
             .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
             .setMaxLines(1)
@@ -116,10 +129,11 @@ class MainTileService : SuspendingTileService() {
             .setMaxLines(1)
             .build()
 
+        // Create the "Add Smoke" chip button
         val addSmokeChip = CompactChip.Builder(
             this,
             androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
-                .setId("add_smoke_action")
+                .setId(ADD_SMOKE_ACTION_ID)
                 .setOnClick(ActionBuilders.LoadAction.Builder().build())
                 .build(),
             deviceParameters
@@ -128,6 +142,7 @@ class MainTileService : SuspendingTileService() {
             .setChipColors(ChipDefaults.PRIMARY_COLORS)
             .build()
 
+        // Build the layout using the created elements
         return LayoutElementBuilders.Layout.Builder()
             .setRoot(
                 PrimaryLayout.Builder(deviceParameters)
@@ -140,18 +155,32 @@ class MainTileService : SuspendingTileService() {
             .build()
     }
 
+    // Formats the last smoke time into a human-readable format
     private fun formatLastSmokeTime(timestamp: Long?): String {
-        if (timestamp == null || timestamp == 0L) return "Last Smoke: N/A"
+        if (timestamp == null || timestamp == 0L) return getString(R.string.last_smoke_na)
 
         val now = System.currentTimeMillis()
         val diff = now - timestamp
 
         return when {
-            diff < TimeUnit.MINUTES.toMillis(1) -> "Last Smoke: Just now"
-            diff < TimeUnit.HOURS.toMillis(1) -> "Last Smoke: ${TimeUnit.MILLISECONDS.toMinutes(diff)} min ago"
-            diff < TimeUnit.DAYS.toMillis(1) -> "Last Smoke: ${TimeUnit.MILLISECONDS.toHours(diff)}h ago"
-            else -> "Last Smoke: ${TimeUnit.MILLISECONDS.toDays(diff)}d ago"
+            diff < TimeUnit.MINUTES.toMillis(1) -> getString(R.string.last_smoke_just_now)
+            diff < TimeUnit.HOURS.toMillis(1) -> getString(
+                R.string.last_smoke_minutes_ago,
+                TimeUnit.MILLISECONDS.toMinutes(diff)
+            )
+
+            diff < TimeUnit.DAYS.toMillis(1) -> getString(
+                R.string.last_smoke_hours_ago,
+                TimeUnit.MILLISECONDS.toHours(diff)
+            )
+
+            else -> getString(R.string.last_smoke_days_ago, TimeUnit.MILLISECONDS.toDays(diff))
         }
+    }
+
+    companion object {
+        private const val ADD_SMOKE_ACTION_ID = "add_smoke_action"
+        private const val RESOURCES_VERSION = "1"
     }
 
 }

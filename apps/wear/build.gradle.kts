@@ -10,11 +10,21 @@ plugins {
 
 val gitCode: Int by lazy {
     val stdout = ByteArrayOutputStream()
-    rootProject.exec {
-        commandLine("git", "rev-list", "--count", "HEAD")
-        standardOutput = stdout
+    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+
+    process.inputStream.use { inputStream ->
+        inputStream.copyTo(stdout)
     }
-    stdout.toString().trim().toInt() + 5
+
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        throw IllegalStateException("Git command failed with exit code $exitCode")
+    }
+
+    stdout.toString().trim().toInt()
 }
 
 val majorMinorPatchVersionName = "0.3.0.$gitCode"
@@ -36,7 +46,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = Java.jvmTarget
+        jvmTarget = Java.JVM_TARGET
         freeCompilerArgs = listOf(
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
             "-opt-in=kotlin.RequiresOptIn",
@@ -49,7 +59,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Java.kotlinCompilerExtensionVersion
+        kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
     }
 
     flavorDimensions += "environment"

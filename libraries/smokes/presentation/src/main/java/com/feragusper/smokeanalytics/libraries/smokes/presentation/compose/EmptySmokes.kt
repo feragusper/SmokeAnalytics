@@ -22,7 +22,8 @@ fun EmptySmokes() {
     ) {
         Text(
             text = stringResource(R.string.smokes_no_smokes),
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

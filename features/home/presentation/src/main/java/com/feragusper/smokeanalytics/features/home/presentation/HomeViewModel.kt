@@ -27,22 +27,50 @@ import kotlin.concurrent.fixedRateTimer
  * ViewModel for the Home feature, responsible for processing user intents, interacting with the domain layer,
  * and updating the UI state.
  *
- * @param processHolder Responsible for processing intents and invoking use cases.
+ * It extends [MVIViewModel] to implement the Model-View-Intent (MVI) architecture pattern.
+ * This ViewModel handles home screen-related logic and updates the UI state accordingly.
+ *
+ * @property processHolder Responsible for processing intents and invoking use cases.
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val processHolder: HomeProcessHolder,
-) : MVIViewModel<HomeIntent, HomeViewState, HomeResult, HomeNavigator>(initialState = HomeViewState()) {
+) : MVIViewModel<HomeIntent, HomeViewState, HomeResult, HomeNavigator>(
+    initialState = HomeViewState()
+) {
 
+    /**
+     * Timer for updating the time since the last cigarette.
+     */
     private var timer: Timer? = null
+
+    /**
+     * Navigator instance for handling navigation actions.
+     */
     override lateinit var navigator: HomeNavigator
 
     init {
+        // Trigger initial intent to fetch smoke events.
         intents().trySend(HomeIntent.FetchSmokes)
     }
 
+    /**
+     * Transforms [HomeIntent] into a stream of [HomeResult]s.
+     *
+     * @param intent The user intent to be processed.
+     * @return A Flow of [HomeResult] representing the result of processing the intent.
+     */
     override suspend fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
 
+    /**
+     * Reduces the previous [HomeViewState] and a new [HomeResult] to a new state.
+     *
+     * This function is responsible for creating the new state based on the current state and the result.
+     *
+     * @param previous The previous state of the UI.
+     * @param result The result of processing the intent.
+     * @return The new state of the UI.
+     */
     override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
         when (result) {
             Loading -> previous.copy(
@@ -78,6 +106,7 @@ class HomeViewModel @Inject constructor(
             }
 
             is FetchSmokesSuccess -> {
+                // Cancel existing timer and create a new one to update the time since the last cigarette
                 timer?.cancel()
                 timer = fixedRateTimer(
                     name = "timer",
@@ -105,6 +134,7 @@ class HomeViewModel @Inject constructor(
             }
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
+                // Re-fetch smokes when adding, editing, or deleting a smoke.
                 intents().trySend(HomeIntent.FetchSmokes)
                 previous
             }

@@ -9,12 +9,16 @@ import javax.inject.Inject
  *
  * @property smokeRepository The [SmokeRepository] used for deleting the smoke event.
  */
-class DeleteSmokeUseCase @Inject constructor(private val smokeRepository: SmokeRepository) {
+class DeleteSmokeUseCase @Inject constructor(
+    private val smokeRepository: SmokeRepository
+) {
 
     /**
      * Invokes the use case to delete a smoke event by its ID.
      *
      * @param id The unique identifier of the smoke event to be deleted.
      */
-    suspend operator fun invoke(id: String) = smokeRepository.deleteSmoke(id)
+    suspend operator fun invoke(id: String) {
+        smokeRepository.deleteSmoke(id)
+    }
 }

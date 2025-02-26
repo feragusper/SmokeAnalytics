@@ -23,21 +23,45 @@ import javax.inject.Inject
 /**
  * ViewModel for the history feature, managing UI state based on user intents and processing results.
  *
+ * It extends [MVIViewModel] to implement the Model-View-Intent (MVI) architecture pattern.
+ * This ViewModel handles smoke history-related logic and updates the UI state accordingly.
+ *
  * @property processHolder Encapsulates business logic to process [HistoryIntent] into [HistoryResult].
  */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val processHolder: HistoryProcessHolder,
-) : MVIViewModel<HistoryIntent, HistoryViewState, HistoryResult, HistoryNavigator>(initialState = HistoryViewState()) {
+) : MVIViewModel<HistoryIntent, HistoryViewState, HistoryResult, HistoryNavigator>(
+    initialState = HistoryViewState()
+) {
 
+    /**
+     * Navigator instance for handling navigation actions.
+     */
     override lateinit var navigator: HistoryNavigator
 
     init {
+        // Trigger initial intent to fetch smokes for the current date.
         intents().trySend(HistoryIntent.FetchSmokes(LocalDateTime.now()))
     }
 
+    /**
+     * Transforms [HistoryIntent] into a stream of [HistoryResult]s.
+     *
+     * @param intent The user intent to be processed.
+     * @return A Flow of [HistoryResult] representing the result of processing the intent.
+     */
     override suspend fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
 
+    /**
+     * Reduces the previous [HistoryViewState] and a new [HistoryResult] to a new state.
+     *
+     * This function is responsible for creating the new state based on the current state and the result.
+     *
+     * @param previous The previous state of the UI.
+     * @param result The result of processing the intent.
+     * @return The new state of the UI.
+     */
     override suspend fun reducer(
         previous: HistoryViewState,
         result: HistoryResult
@@ -64,6 +88,7 @@ class HistoryViewModel @Inject constructor(
             }
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
+                // Re-fetch smokes when adding, editing, or deleting a smoke.
                 intents().trySend(HistoryIntent.FetchSmokes(previous.selectedDate))
                 previous
             }

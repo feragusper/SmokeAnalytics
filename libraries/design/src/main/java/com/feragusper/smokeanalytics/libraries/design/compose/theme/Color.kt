@@ -40,25 +40,10 @@ internal object PaletteTokens {
     val Gray_1 = Color(0xFF0E1514)
     val Gray_2 = Color(0xFF051F1F)
     val Gray_10 = Color(0xFF2B3231)
-    val Gray_11 = Color(0xFF1B3534)
     val Gray_20 = Color(0xFF3F4948)
-    val Gray_21 = Color(0xFF324B4B)
     val Gray_50 = Color(0xFF4A6363)
-    val Gray_60 = Color(0xFF6F7979)
-    val Gray_70 = Color(0xFF889392)
     val Gray_80 = Color(0xFFB0CCCB)
-    val Gray_81 = Color(0xFFBEC9C8)
-    val Gray_82 = Color(0xFFCCE8E7)
-    val Gray_85 = Color(0xFFECF2F1)
-    val Gray_88 = Color(0xFFF4FBFA)
     val Gray_90 = Color(0xFFDDE4E3)
-
-    val Purple_10 = Color(0xFF041C35)
-    val Purple_20 = Color(0xFF1C314B)
-    val Purple_40 = Color(0xFF334863)
-    val Purple_50 = Color(0xFF4B607C)
-    val Purple_70 = Color(0xFFB3C8E8)
-    val Purple_90 = Color(0xFFD3E4FF)
 
     val White = Color(0xFFFFFFFF)
 
@@ -81,26 +66,16 @@ internal val lightColorScheme = lightColorScheme(
     inversePrimary = PaletteTokens.Green_80,
     secondary = PaletteTokens.Gray_50,
     onSecondary = PaletteTokens.White,
-    secondaryContainer = PaletteTokens.Gray_82,
+    secondaryContainer = PaletteTokens.Gray_80,
     onSecondaryContainer = PaletteTokens.Gray_2,
-    tertiary = PaletteTokens.Purple_50,
-    onTertiary = PaletteTokens.White,
-    tertiaryContainer = PaletteTokens.Purple_90,
-    onTertiaryContainer = PaletteTokens.Purple_10,
     background = PaletteTokens.White,
     onBackground = PaletteTokens.Black,
-    surface = PaletteTokens.Gray_88,
+    surface = PaletteTokens.Gray_90,
     onSurface = PaletteTokens.Green_05,
-    surfaceVariant = PaletteTokens.Gray_88,
-    onSurfaceVariant = PaletteTokens.Gray_20,
-    inverseSurface = PaletteTokens.Gray_10,
-    inverseOnSurface = PaletteTokens.Gray_85,
     error = PaletteTokens.Red_50,
     onError = PaletteTokens.White,
     errorContainer = PaletteTokens.Red_90,
     onErrorContainer = PaletteTokens.Red_10,
-    outline = PaletteTokens.Gray_60,
-    outlineVariant = PaletteTokens.Gray_81,
 )
 
 /**
@@ -114,27 +89,17 @@ internal val darkColorScheme = darkColorScheme(
     onPrimaryContainer = PaletteTokens.Green_90,
     inversePrimary = PaletteTokens.Green_40,
     secondary = PaletteTokens.Gray_80,
-    onSecondary = PaletteTokens.Gray_11,
-    secondaryContainer = PaletteTokens.Gray_21,
-    onSecondaryContainer = PaletteTokens.Gray_82,
-    tertiary = PaletteTokens.Purple_70,
-    onTertiary = PaletteTokens.Purple_20,
-    tertiaryContainer = PaletteTokens.Purple_40,
-    onTertiaryContainer = PaletteTokens.Purple_90,
+    onSecondary = PaletteTokens.Gray_10,
+    secondaryContainer = PaletteTokens.Gray_20,
+    onSecondaryContainer = PaletteTokens.Gray_90,
     background = PaletteTokens.Black,
     onBackground = PaletteTokens.White,
     surface = PaletteTokens.Gray_1,
-    onSurface = PaletteTokens.Gray_81,
-    surfaceVariant = PaletteTokens.Gray_1,
-    onSurfaceVariant = PaletteTokens.Gray_81,
-    inverseSurface = PaletteTokens.Gray_90,
-    inverseOnSurface = PaletteTokens.Gray_10,
+    onSurface = PaletteTokens.Gray_80,
     error = PaletteTokens.Red_80,
     onError = PaletteTokens.Red_20,
     errorContainer = PaletteTokens.Red_40,
     onErrorContainer = PaletteTokens.Red_90,
-    outline = PaletteTokens.Gray_70,
-    outlineVariant = PaletteTokens.Gray_20,
 )
 
 @ColorsPreview
@@ -173,17 +138,11 @@ private fun ColorList() {
             "Inverse Primary" to MaterialTheme.colorScheme.inversePrimary,
             "Secondary" to MaterialTheme.colorScheme.secondary,
             "Secondary Container" to MaterialTheme.colorScheme.secondaryContainer,
-            "Tertiary" to MaterialTheme.colorScheme.tertiary,
-            "Tertiary Container" to MaterialTheme.colorScheme.tertiaryContainer,
             "Background" to MaterialTheme.colorScheme.background,
             "Surface" to MaterialTheme.colorScheme.surface,
-            "Surface Variant" to MaterialTheme.colorScheme.surfaceVariant,
-            "Surface Tint" to MaterialTheme.colorScheme.surfaceTint,
-            "Inverse Surface" to MaterialTheme.colorScheme.inverseSurface,
             "Error" to MaterialTheme.colorScheme.error,
             "Error Container" to MaterialTheme.colorScheme.errorContainer,
             "Outline" to MaterialTheme.colorScheme.outline,
-            "Outline Variant" to MaterialTheme.colorScheme.outlineVariant,
         ).forEach { (name, color) ->
             Box(
                 modifier = Modifier

@@ -27,5 +27,4 @@ internal object ThreadingModule {
 
         override fun main(): CoroutineDispatcher = Dispatchers.Main
     }
-
 }

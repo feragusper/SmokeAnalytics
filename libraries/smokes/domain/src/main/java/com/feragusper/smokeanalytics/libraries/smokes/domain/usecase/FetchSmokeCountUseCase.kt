@@ -9,7 +9,9 @@ import javax.inject.Inject
  *
  * @property smokeRepository The [SmokeRepository] used for fetching the smoke events.
  */
-data class FetchSmokeCountUseCase @Inject constructor(private val smokeRepository: SmokeRepository) {
+class FetchSmokeCountUseCase @Inject constructor(
+    private val smokeRepository: SmokeRepository
+) {
 
     /**
      * Invokes the use case to fetch smoke events, optionally starting from a specific date.

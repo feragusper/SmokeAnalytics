@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:enabled="true"
         android:icon="@drawable/ic_devtools"
@@ -10,7 +9,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:targetClass="com.feragusper.smokeanalytics.features.devtools.presentation.DevToolsActivity"
-            android:targetPackage="com.feragusper.smokeanalytics.staging" />
+            android:targetPackage="com.feragusper.smokeanalytics" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 </shortcuts>

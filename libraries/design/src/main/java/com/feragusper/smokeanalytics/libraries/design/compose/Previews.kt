@@ -6,6 +6,10 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.Wallpapers
 
+/**
+ * Font Scale Previews:
+ * Shows how the UI looks with different font scaling options.
+ */
 @Preview(
     name = "Small Font",
     group = "Font Scale",
@@ -18,6 +22,10 @@ import androidx.compose.ui.tooling.preview.Wallpapers
 )
 annotation class FontScalePreview
 
+/**
+ * API Level Previews:
+ * Displays the UI in different API levels to ensure compatibility.
+ */
 @Preview(
     name = "33 (Tiramisu)",
     group = "API Level",
@@ -30,6 +38,10 @@ annotation class FontScalePreview
 )
 annotation class ApiLevelPreview
 
+/**
+ * UI Mode Previews:
+ * Shows how the UI adapts to light and dark modes.
+ */
 @Preview(
     name = "Light",
     group = "UI Mode",
@@ -42,6 +54,10 @@ annotation class ApiLevelPreview
 )
 annotation class UiModePreview
 
+/**
+ * Device Previews:
+ * Renders the UI on different device configurations to check responsiveness.
+ */
 @Preview(
     name = "Pixel C",
     group = "Device",
@@ -59,6 +75,10 @@ annotation class UiModePreview
 )
 annotation class DevicePreview
 
+/**
+ * Locale Previews:
+ * Displays the UI in different locales to ensure proper localization.
+ */
 @Preview(
     name = "Spanish",
     group = "Locale",
@@ -66,6 +86,10 @@ annotation class DevicePreview
 )
 annotation class LocalePreview
 
+/**
+ * Wallpaper Previews:
+ * Shows how the UI appears against different wallpapers.
+ */
 @Preview(
     name = "Wallpaper Blue",
     group = "Wallpaper",
@@ -93,6 +117,10 @@ annotation class LocalePreview
 )
 annotation class WallpaperPreview
 
+/**
+ * Background and System UI Previews:
+ * Displays the UI with system UI (status and navigation bars) and background visibility.
+ */
 @Preview(
     showBackground = true,
     showSystemUi = true,
@@ -100,6 +128,7 @@ annotation class WallpaperPreview
 annotation class BackgroundAndSystemUIPreview
 
 /**
+ * Combined Previews:
  * A collection of annotations for previewing Composables across different font scales, UI modes (light/dark),
  * API levels, devices, locales, wallpapers, and with different background and system UI visibility settings.
  * These annotations help in designing and testing UI components across a wide range of conditions.
@@ -112,5 +141,3 @@ annotation class BackgroundAndSystemUIPreview
 @WallpaperPreview
 @BackgroundAndSystemUIPreview
 annotation class CombinedPreviews
-
-

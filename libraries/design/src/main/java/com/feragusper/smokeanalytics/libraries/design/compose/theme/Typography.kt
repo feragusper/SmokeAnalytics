@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.feragusper.smokeanalytics.libraries.design.compose.TypographiesPreview
 
+/**
+ * Defines the typography styles for the Smoke Analytics application using Material3's [Typography].
+ * Each style is configured with specific font weight, size, and line height to ensure consistency.
+ */
 val Typography = Typography(
     displayLarge = TextStyle(
         fontWeight = FontWeight.Normal,

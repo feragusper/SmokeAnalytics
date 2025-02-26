@@ -4,4 +4,11 @@
     values-round/strings.xml for round devices.
     -->
     <string name="tile_label">Smoke Analytics</string>
+    <string name="last_smoke_na">Last Smoke: N/A</string>
+    <string name="last_smoke_just_now">Last Smoke: Just now</string>
+    <string name="last_smoke_minutes_ago">Last Smoke: %1$d min ago</string>
+    <string name="last_smoke_hours_ago">Last Smoke: %1$d h ago</string>
+    <string name="last_smoke_days_ago">Last Smoke: %1$d d ago</string>
+    <string name="stats_today">Today: %1$d</string>
+
 </resources>
