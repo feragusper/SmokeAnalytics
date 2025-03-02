@@ -46,6 +46,7 @@ include(":features:settings:presentation")
 include(":features:stats:presentation")
 
 // Include library modules
+include(":libraries:architecture:common")
 include(":libraries:architecture:domain")
 include(":libraries:architecture:presentation")
 include(":libraries:authentication:data")
@@ -56,4 +57,5 @@ include(":libraries:smokes:data")
 include(":libraries:smokes:domain")
 include(":libraries:smokes:presentation")
 include(":libraries:wear:data")
+include(":libraries:wear:domain")
 include(":libraries:chart")

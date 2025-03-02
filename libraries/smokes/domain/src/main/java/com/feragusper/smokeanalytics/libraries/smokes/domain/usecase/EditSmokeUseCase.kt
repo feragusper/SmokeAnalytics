@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -9,9 +10,11 @@ import javax.inject.Inject
  * of a smoke event post-creation.
  *
  * @property smokeRepository The [SmokeRepository] used for editing the smoke event.
+ * @property wearSyncManager The [WearSyncManager] used for synchronizing data with the wear device.
  */
 class EditSmokeUseCase @Inject constructor(
-    private val smokeRepository: SmokeRepository
+    private val smokeRepository: SmokeRepository,
+    private val wearSyncManager: WearSyncManager.Mobile
 ) {
 
     /**
@@ -22,5 +25,6 @@ class EditSmokeUseCase @Inject constructor(
      */
     suspend operator fun invoke(id: String, date: LocalDateTime) {
         smokeRepository.editSmoke(id, date)
+        wearSyncManager.syncWithWear()
     }
 }

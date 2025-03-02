@@ -37,20 +37,20 @@ sealed class HomeIntent : MVIIntent {
     /**
      * Represents an intent to add a new smoke entry.
      */
-    object AddSmoke : HomeIntent()
+    data object AddSmoke : HomeIntent()
 
     /**
      * Represents an intent to fetch smoke data and update the UI.
      */
-    object FetchSmokes : HomeIntent()
+    data object FetchSmokes : HomeIntent()
 
     /**
      * Represents an intent to refresh the smoke data and update the UI.
      */
-    object RefreshFetchSmokes : HomeIntent()
+    data object RefreshFetchSmokes : HomeIntent()
 
     /**
      * Represents an intent to navigate to the smoke history screen.
      */
-    object OnClickHistory : HomeIntent()
+    data object OnClickHistory : HomeIntent()
 }

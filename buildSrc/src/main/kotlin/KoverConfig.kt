@@ -15,7 +15,7 @@ class KoverConfig(
             "**/*Activity.*",
             "**/*Navigator.*",
             "**/*NavigationGraph.*",
-            "**/*ViewState.*",
+            "**/*View.*",
             "**/*Color.kt",
             "**/*Typography.kt",
             "**/compose/**",

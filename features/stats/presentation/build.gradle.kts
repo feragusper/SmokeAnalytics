@@ -20,6 +20,11 @@ android {
         // Specify the test instrumentation runner for Android tests.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    buildFeatures {
+        // Enable Jetpack Compose support.
+        compose = true
+    }
 }
 
 dependencies {
@@ -45,4 +50,7 @@ dependencies {
     // Dependency injection with Hilt
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
+
+    // Unit testing dependencies
+    testImplementation(libs.bundles.test)
 }

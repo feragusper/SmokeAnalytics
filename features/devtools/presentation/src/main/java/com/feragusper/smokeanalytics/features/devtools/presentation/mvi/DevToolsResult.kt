@@ -15,7 +15,7 @@ sealed class DevToolsResult : MVIResult {
      * Indicates that the operation is in progress.
      * This is typically used to show a loading indicator.
      */
-    object Loading : DevToolsResult()
+    data object Loading : DevToolsResult()
 
     /**
      * Represents a state where the user is logged in.
@@ -27,5 +27,5 @@ sealed class DevToolsResult : MVIResult {
     /**
      * Indicates that the user is logged out or not currently authenticated.
      */
-    object UserLoggedOut : DevToolsResult()
+    data object UserLoggedOut : DevToolsResult()
 }

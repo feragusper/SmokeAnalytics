@@ -15,7 +15,7 @@ sealed interface HistoryResult : MVIResult {
     /**
      * Indicates that a loading state is in progress.
      */
-    object Loading : HistoryResult
+    data object Loading : HistoryResult
 
     /**
      * Indicates that the user is not logged in and the selected date is preserved.
@@ -27,22 +27,22 @@ sealed interface HistoryResult : MVIResult {
     /**
      * Indicates that a smoke event was successfully added.
      */
-    object AddSmokeSuccess : HistoryResult
+    data object AddSmokeSuccess : HistoryResult
 
     /**
      * Indicates that a smoke event was successfully edited.
      */
-    object EditSmokeSuccess : HistoryResult
+    data object EditSmokeSuccess : HistoryResult
 
     /**
      * Indicates that a smoke event was successfully deleted.
      */
-    object DeleteSmokeSuccess : HistoryResult
+    data object DeleteSmokeSuccess : HistoryResult
 
     /**
      * Indicates that navigation to the authentication screen is required.
      */
-    object GoToAuthentication : HistoryResult
+    data object GoToAuthentication : HistoryResult
 
     /**
      * Represents errors that might occur during the processing of history intents.
@@ -51,12 +51,12 @@ sealed interface HistoryResult : MVIResult {
         /**
          * A generic error result.
          */
-        object Generic : Error
+        data object Generic : Error
 
         /**
          * Error indicating that the user is not logged in.
          */
-        object NotLoggedIn : Error
+        data object NotLoggedIn : Error
     }
 
     /**
@@ -73,10 +73,10 @@ sealed interface HistoryResult : MVIResult {
     /**
      * Indicates an error occurred while fetching smoke events.
      */
-    object FetchSmokesError : HistoryResult
+    data object FetchSmokesError : HistoryResult
 
     /**
      * Triggers navigation to the previous screen.
      */
-    object NavigateUp : HistoryResult
+    data object NavigateUp : HistoryResult
 }

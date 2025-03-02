@@ -10,12 +10,12 @@ sealed interface AuthenticationResult : MVIResult {
     /**
      * Indicates that a loading state is in progress.
      */
-    object Loading : AuthenticationResult
+    data object Loading : AuthenticationResult
 
     /**
      * Indicates that the user has successfully logged in.
      */
-    object UserLoggedIn : AuthenticationResult
+    data object UserLoggedIn : AuthenticationResult
 
     /**
      * Represents errors that might occur during the processing of authentication intents.
@@ -24,11 +24,11 @@ sealed interface AuthenticationResult : MVIResult {
         /**
          * A generic error result.
          */
-        object Generic : Error
+        data object Generic : Error
     }
 
     /**
      * Triggers navigation to the previous screen.
      */
-    object NavigateUp : AuthenticationResult
+    data object NavigateUp : AuthenticationResult
 }

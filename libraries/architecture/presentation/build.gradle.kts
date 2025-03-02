@@ -12,6 +12,11 @@ plugins {
 android {
     // Set the namespace for the Android library
     namespace = "com.feragusper.smokeanalytics.libraries.architecture.presentation"
+
+    buildFeatures {
+        // Enable Jetpack Compose support.
+        compose = true
+    }
 }
 
 dependencies {

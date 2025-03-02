@@ -13,11 +13,11 @@ sealed class TileIntent : MVIIntent {
      * Represents the intent to fetch smoke data.
      * This intent can be triggered when the tile needs to update its displayed data.
      */
-    object FetchSmokes : TileIntent()
+    data object FetchSmokes : TileIntent()
 
     /**
      * Represents the intent to add a new smoke entry.
      * This is triggered when the user performs the "Add Smoke" action on the tile.
      */
-    object AddSmoke : TileIntent()
+    data object AddSmoke : TileIntent()
 }

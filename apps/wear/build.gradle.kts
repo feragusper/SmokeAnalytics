@@ -82,7 +82,10 @@ android {
 
 dependencies {
     implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:architecture:common"))
+    implementation(project(":libraries:wear:domain"))
     implementation(project(":libraries:wear:data"))
+    implementation(project(":libraries:smokes:data"))
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)

@@ -15,42 +15,42 @@ sealed interface HomeResult : MVIResult {
      * Indicates that the application is currently loading or processing data.
      * This is typically used to show a loading indicator.
      */
-    object Loading : HomeResult
+    data object Loading : HomeResult
 
     /**
      * Indicates that a refresh operation is in progress.
      */
-    object RefreshLoading : HomeResult
+    data object RefreshLoading : HomeResult
 
     /**
      * Indicates that the user is not logged in.
      */
-    object NotLoggedIn : HomeResult
+    data object NotLoggedIn : HomeResult
 
     /**
      * Triggers navigation to the authentication screen.
      */
-    object GoToAuthentication : HomeResult
+    data object GoToAuthentication : HomeResult
 
     /**
      * Triggers navigation to the smoke history screen.
      */
-    object GoToHistory : HomeResult
+    data object GoToHistory : HomeResult
 
     /**
      * Indicates that a smoke event was successfully added.
      */
-    object AddSmokeSuccess : HomeResult
+    data object AddSmokeSuccess : HomeResult
 
     /**
      * Indicates that a smoke event was successfully edited.
      */
-    object EditSmokeSuccess : HomeResult
+    data object EditSmokeSuccess : HomeResult
 
     /**
      * Indicates that a smoke event was successfully deleted.
      */
-    object DeleteSmokeSuccess : HomeResult
+    data object DeleteSmokeSuccess : HomeResult
 
     /**
      * Represents errors that might occur during the processing of home intents.
@@ -59,12 +59,12 @@ sealed interface HomeResult : MVIResult {
         /**
          * A generic error result.
          */
-        object Generic : Error
+        data object Generic : Error
 
         /**
          * Error indicating that the user is not logged in.
          */
-        object NotLoggedIn : Error
+        data object NotLoggedIn : Error
     }
 
     /**
@@ -79,7 +79,7 @@ sealed interface HomeResult : MVIResult {
     /**
      * Indicates an error occurred while fetching smoke data.
      */
-    object FetchSmokesError : HomeResult
+    data object FetchSmokesError : HomeResult
 
     /**
      * Updates the time elapsed since the last cigarette.

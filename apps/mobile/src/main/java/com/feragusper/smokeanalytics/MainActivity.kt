@@ -207,7 +207,7 @@ private sealed class BottomNavigationScreens(
     /**
      * The Home screen, representing the main view of the app.
      */
-    object Home : BottomNavigationScreens(
+    data object Home : BottomNavigationScreens(
         HomeNavigator.ROUTE,
         R.string.bottom_navigation_item_home_title,
         R.drawable.ic_home
@@ -216,7 +216,7 @@ private sealed class BottomNavigationScreens(
     /**
      * The Stats screen, showing statistics and analytics related to user activity.
      */
-    object Stats : BottomNavigationScreens(
+    data object Stats : BottomNavigationScreens(
         StatsNavigator.ROUTE,
         R.string.bottom_navigation_item_stats_title,
         R.drawable.ic_stats
@@ -225,7 +225,7 @@ private sealed class BottomNavigationScreens(
     /**
      * The Settings screen, allowing users to configure app settings and preferences.
      */
-    object Settings : BottomNavigationScreens(
+    data object Settings : BottomNavigationScreens(
         SettingsNavigator.ROUTE,
         R.string.bottom_navigation_item_settings_title,
         R.drawable.ic_settings

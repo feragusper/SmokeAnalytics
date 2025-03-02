@@ -1,86 +1,89 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.process
 
+import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
-import io.mockk.every
+import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.amshove.kluent.internal.assertEquals
-import org.junit.jupiter.api.AfterEach
+import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsProcessHolderTest {
 
-    private lateinit var results: Flow<SettingsResult>
-    private lateinit var settingsProcessHolder: SettingsProcessHolder
+    private lateinit var processHolder: SettingsProcessHolder
 
-    private var fetchSessionUseCase: FetchSessionUseCase = mockk()
-    private var signOutUseCase: SignOutUseCase = mockk()
+    private val fetchSessionUseCase: FetchSessionUseCase = mockk()
+    private val signOutUseCase: SignOutUseCase = mockk()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    /**
+     * Sets up the test environment by initializing the process holder and configuring mock behaviors.
+     */
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        settingsProcessHolder = SettingsProcessHolder(fetchSessionUseCase, signOutUseCase)
+        processHolder = SettingsProcessHolder(fetchSessionUseCase, signOutUseCase)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @AfterEach
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
+    /**
+     * Ensures that when the session is anonymous, fetching the user results in a logged-out state.
+     */
     @Test
-    fun `GIVEN the session is anonymous WHEN fetchuser intent is processed THEN it should result with loading and user logged out`() {
-        every { fetchSessionUseCase() } answers { Session.Anonymous }
+    fun `GIVEN session is anonymous WHEN FetchUser intent is processed THEN emit loading and UserLoggedOut`() =
+        runTest {
+            coEvery { fetchSessionUseCase() } returns Session.Anonymous
 
-        runBlocking {
-            results = settingsProcessHolder.processIntent(SettingsIntent.FetchUser)
-            assertEquals(SettingsResult.Loading, results.first())
-            assertEquals(SettingsResult.UserLoggedOut, results.last())
+            processHolder.processIntent(SettingsIntent.FetchUser).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedOut
+                awaitComplete()
+            }
         }
-    }
 
+    /**
+     * Ensures that when the session is logged in, fetching the user results in a logged-in state.
+     */
     @Test
-    fun `GIVEN the session is logged in WHEN fetchuser intent is processed THEN it should result with loading and user logged in`() =
+    fun `GIVEN session is logged in WHEN FetchUser intent is processed THEN emit loading and UserLoggedIn`() =
         runTest {
             val email = "fernancho@gmail.com"
+            coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
+                Session.User(id = "123", email = email, displayName = "Fer")
+            )
 
-            every { fetchSessionUseCase.invoke() } answers {
-                Session.LoggedIn(
-                    Session.User(
-                        id = "123",
-                        email = email,
-                        displayName = "Fer"
-                    )
-                )
+            processHolder.processIntent(SettingsIntent.FetchUser).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedIn(email)
+                awaitComplete()
+            }
+        }
+
+    /**
+     * Ensures that when the sign-out intent is processed, it results in a logged-out state.
+     */
+    @Test
+    fun `WHEN SignOut intent is processed THEN emit loading and UserLoggedOut`() =
+        runTest {
+            coEvery { signOutUseCase() } just Runs
+
+            processHolder.processIntent(SettingsIntent.SignOut).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedOut
+                awaitComplete()
             }
 
-            results = settingsProcessHolder.processIntent(SettingsIntent.FetchUser)
-            assertEquals(SettingsResult.Loading, results.first())
-            assertEquals(SettingsResult.UserLoggedIn(email = email), results.last())
+            // Verify that signOutUseCase() was actually called
+            coVerify(exactly = 1) { signOutUseCase() }
         }
-
-    @Test
-    fun `WHEN the signout intent is processed THEN it should result with loading and user logged out`() {
-        every { signOutUseCase.invoke() } answers { }
-
-        runBlocking {
-            results = settingsProcessHolder.processIntent(SettingsIntent.SignOut)
-            assertEquals(SettingsResult.Loading, results.first())
-            assertEquals(SettingsResult.UserLoggedOut, results.last())
-        }
-    }
 }

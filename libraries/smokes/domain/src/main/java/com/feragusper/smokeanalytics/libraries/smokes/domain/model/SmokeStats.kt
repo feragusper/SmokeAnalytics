@@ -34,15 +34,6 @@ data class SmokeStats(
     val dailyAverage: Float
 ) {
     companion object {
-        /**
-         * Factory method to create a `SmokeStats` object from a list of smoke events.
-         *
-         * @param smokes The list of [Smoke] events to calculate statistics for.
-         * @param year The year to calculate statistics for.
-         * @param month The month to calculate statistics for.
-         * @param day (Optional) The specific day to calculate hourly statistics for.
-         * @return A [SmokeStats] object containing the calculated statistics.
-         */
         fun from(smokes: List<Smoke>, year: Int, month: Int, day: Int?): SmokeStats {
             val yearMonth = YearMonth.of(year, month)
             val totalDaysInMonth = yearMonth.lengthOfMonth()
@@ -58,19 +49,24 @@ data class SmokeStats(
                 .mapValues { it.value.size }
                 .forEach { (day, count) -> dailyStats[day] = count }
 
-            // Weekly Statistics
+            // Weekly Statistics (adjust week calculation)
             val weeklyStats = DayOfWeek.entries
                 .associate { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) to 0 }
                 .toMutableMap()
+
             filteredSmokes.groupBy {
-                it.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                val weekOfMonth = (it.date.dayOfMonth - 1) / 7 + 1
+                "W$weekOfMonth"
             }
                 .mapValues { it.value.size }
-                .forEach { (day, count) -> weeklyStats[day] = count }
+                .forEach { (week, count) -> weeklyStats[week] = count }
 
             // Monthly Statistics (Week of the Month)
             val weeksInMonth = (1..5).associate { "W$it" to 0 }.toMutableMap()
-            filteredSmokes.groupBy { "W${((it.date.dayOfMonth - 1) / 7) + 1}" }
+            filteredSmokes.groupBy {
+                // Week number calculation adjusted for actual days in month
+                "W${((it.date.dayOfMonth - 1) / 7) + 1}"
+            }
                 .mapValues { it.value.size }
                 .forEach { (week, count) -> weeksInMonth[week] = count }
 
@@ -120,4 +116,5 @@ data class SmokeStats(
             )
         }
     }
+
 }

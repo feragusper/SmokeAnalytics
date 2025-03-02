@@ -23,6 +23,11 @@ android {
             gradleLocalProperties(rootDir, providers).getProperty("google.auth.server.client.id"),
         )
     }
+
+    buildFeatures {
+        // Enable Jetpack Compose support.
+        compose = true
+    }
 }
 
 dependencies {

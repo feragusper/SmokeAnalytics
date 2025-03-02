@@ -6,8 +6,12 @@ plugins {
 }
 
 android {
-    namespace =
-        "com.feragusper.smokeanalytics.libraries.chart" // Define the namespace for the library
+    namespace = "com.feragusper.smokeanalytics.libraries.chart" // Define the namespace for the library
+
+    buildFeatures {
+        // Enable Jetpack Compose support.
+        compose = true
+    }
 }
 
 dependencies {

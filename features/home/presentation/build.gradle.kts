@@ -17,6 +17,11 @@ android {
         // Specify the test instrumentation runner for Android tests.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    buildFeatures {
+        // Enable Jetpack Compose support.
+        compose = true
+    }
 }
 
 dependencies {

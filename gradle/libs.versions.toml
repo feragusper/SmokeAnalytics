@@ -8,7 +8,7 @@ androidxCompose = "1.7.8"  # Jetpack Compose library version
 coroutinesTest = "1.9.0"  # Coroutines Test library version
 espressoCore = "3.6.1"  # Espresso Core library version for UI testing
 firebaseBOM = "33.9.0"  # Firebase BOM version
-gradle = "8.8.1"  # Gradle version
+gradle = "8.8.2"  # Gradle version
 hilt = "2.54"  # Dagger Hilt version for Dependency Injection
 hiltNavigationCompose = "1.2.0"  # Hilt Navigation Compose version
 horologistComposables = "0.5.2"  # Horologist Composables library version
@@ -31,6 +31,7 @@ sonarqubeGradlePlugin = "4.0.0.2929"  # SonarQube Gradle plugin version
 kotlin = "2.0.21"  # Kotlin language version
 tiles = "1.4.1"  # Tiles library version for Wear OS
 tilesMaterial = "1.4.1"  # Material design components for Tiles library
+turbine = "1.1.0"
 horologistTiles = "0.6.17"  # Horologist Tiles library version
 accompanist = "0.30.0"  # Accompanist library version
 credentials = "1.0.0"  # Credentials library version for user authentication
@@ -57,6 +58,7 @@ androidx-navigation-testing = { module = "androidx.navigation:navigation-testing
 androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navVersion" }
 androidx-protolayout-core = { module = "androidx.wear.protolayout:protolayout", version.ref = "protolayoutCore" }
 androidx-protolayout-material = { module = "androidx.wear.protolayout:protolayout-material", version.ref = "protolayoutMaterial" }
+app-cash-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
@@ -120,6 +122,7 @@ test = [
     "junit-vintage-engine",
     "coroutines-test",
     "kluent",
+    "app-cash-turbine"
 ]
 compose-test = [
     "mockkAndroid",

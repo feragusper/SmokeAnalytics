@@ -3,7 +3,8 @@ package com.feragusper.smokeanalytics.tile
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths
-import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManager
+import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManagerImpl
+import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,7 +19,7 @@ import javax.inject.Inject
  * with the mobile app via the WearSyncManager.
  */
 class TileProcessHolder @Inject constructor(
-    private val wearSyncManager: WearSyncManager
+    private val wearSyncManager: WearSyncManager.Wear
 ) : MVIProcessHolder<TileIntent, TileResult> {
 
     /**
@@ -55,7 +56,7 @@ class TileProcessHolder @Inject constructor(
     }
 
     /**
-     * Creates a Flow to listen for updates from the mobile app via [WearSyncManager].
+     * Creates a Flow to listen for updates from the mobile app via [WearSyncManagerImpl].
      * This will be used to fetch the latest smoke counts and other related data.
      */
     private fun listenForSmokeUpdates(): Flow<TileResult> = callbackFlow {

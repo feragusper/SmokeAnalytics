@@ -2,9 +2,11 @@ package com.feragusper.smokeanalytics.tile
 
 import android.annotation.SuppressLint
 import android.content.Context
+import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProviderImpl
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.navigation.MVINavigator
-import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManager
+import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManagerImpl
+import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
@@ -15,7 +17,7 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
 
     // Lazy initialization for the WearSyncManager
     @SuppressLint("StaticFieldLeak")
-    private lateinit var wearSyncManager: WearSyncManager
+    private lateinit var wearSyncManager: WearSyncManager.Wear
 
     // The TileProcessHolder is responsible for handling the intents for the tile
     private val processHolder: TileProcessHolder by lazy {
@@ -27,7 +29,10 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
 
     // Initialize the WearSyncManager with the given context
     fun initialize(context: Context) {
-        wearSyncManager = WearSyncManager(context)
+        wearSyncManager = WearSyncManagerImpl(
+            context = context,
+            dispatcherProvider = DispatcherProviderImpl()
+        ).Wear()
     }
 
     init {

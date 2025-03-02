@@ -13,5 +13,5 @@ sealed class DevToolsIntent : MVIIntent {
     /**
      * Intent to fetch the current user's session information.
      */
-    object FetchUser : DevToolsIntent()
+    data object FetchUser : DevToolsIntent()
 }

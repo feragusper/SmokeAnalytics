@@ -10,10 +10,10 @@ sealed class AuthenticationIntent : MVIIntent {
     /**
      * Represents an intent to fetch the current user's information.
      */
-    object FetchUser : AuthenticationIntent()
+    data object FetchUser : AuthenticationIntent()
 
     /**
      * Indicates a request to navigate up in the navigation stack.
      */
-    object NavigateUp : AuthenticationIntent()
+    data object NavigateUp : AuthenticationIntent()
 }

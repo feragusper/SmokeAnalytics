@@ -8,6 +8,7 @@ plugins {
 dependencies {
     // Include the architecture domain module for shared domain logic.
     implementation(project(":libraries:architecture:domain"))
+    implementation(project(":libraries:wear:domain"))
     // Use javax.inject for dependency injection annotations.
     implementation(libs.javax.inject)
 

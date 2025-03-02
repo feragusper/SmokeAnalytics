@@ -43,5 +43,5 @@ sealed class HistoryIntent : MVIIntent {
     /**
      * Indicates a request to navigate up in the navigation stack.
      */
-    object NavigateUp : HistoryIntent()
+    data object NavigateUp : HistoryIntent()
 }

@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
  *
  * @param I The type of [MVIIntent] that this state responds to.
  */
-interface MVIViewState<I : MVIIntent> {
+fun interface MVIViewState<I : MVIIntent> {
 
     /**
      * Defines how the UI should be rendered based on the current state and allows for intentions to be emitted based on user actions.
