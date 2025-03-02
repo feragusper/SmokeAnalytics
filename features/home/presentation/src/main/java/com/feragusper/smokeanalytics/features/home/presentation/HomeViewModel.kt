@@ -60,7 +60,7 @@ class HomeViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [HomeResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
+    override fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
 
     /**
      * Reduces the previous [HomeViewState] and a new [HomeResult] to a new state.

@@ -28,7 +28,7 @@ subprojects {
                 // Exclude specific classes from coverage reports using KoverConfig settings.
                 property(
                     "sonar.exclusions",
-                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                    "libraries/chart/**"
                 )
                 // Specify the coverage plugin.
                 property("sonar.java.coveragePlugin", "jacoco")

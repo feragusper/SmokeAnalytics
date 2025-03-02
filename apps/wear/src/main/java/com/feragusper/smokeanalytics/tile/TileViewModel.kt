@@ -42,7 +42,7 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
     }
 
     // Transformer function to process the TileIntent and return the corresponding TileResult
-    override suspend fun transformer(intent: TileIntent): Flow<TileResult> =
+    override fun transformer(intent: TileIntent): Flow<TileResult> =
         processHolder.processIntent(intent)
 
     // Reducer function to update the state based on the TileResult

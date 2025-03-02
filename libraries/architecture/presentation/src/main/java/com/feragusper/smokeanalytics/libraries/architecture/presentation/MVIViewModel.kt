@@ -69,7 +69,7 @@ abstract class MVIViewModel<I : MVIIntent, S : MVIViewState<I>, R : MVIResult, N
      * @param intent The intent to process.
      * @return A [Flow] emitting [MVIResult]s based on the intent.
      */
-    protected abstract suspend fun transformer(intent: I): Flow<R>
+    protected abstract fun transformer(intent: I): Flow<R>
 
     /**
      * Produces a new state from the previous state and a result.

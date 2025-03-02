@@ -37,7 +37,7 @@ class AuthenticationViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [AuthenticationResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: AuthenticationIntent) =
+    override fun transformer(intent: AuthenticationIntent) =
         processHolder.processIntent(intent)
 
     /**
@@ -64,11 +64,7 @@ class AuthenticationViewModel @Inject constructor(
                 error = result,
             )
 
-            AuthenticationResult.NavigateUp -> {
-                navigator.navigateUp()
-                previous
-            }
-
+            AuthenticationResult.NavigateUp,
             AuthenticationResult.UserLoggedIn -> {
                 navigator.navigateUp()
                 previous

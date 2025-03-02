@@ -40,7 +40,7 @@ class DevToolsViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [DevToolsResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: DevToolsIntent) = processHolder.processIntent(intent)
+    override fun transformer(intent: DevToolsIntent) = processHolder.processIntent(intent)
 
     /**
      * Reduces the previous [DevToolsViewState] and a new [DevToolsResult] to a new state.

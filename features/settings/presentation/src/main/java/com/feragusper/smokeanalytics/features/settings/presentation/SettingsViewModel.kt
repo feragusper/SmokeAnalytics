@@ -41,7 +41,7 @@ class SettingsViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [SettingsResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: SettingsIntent) = processHolder.processIntent(intent)
+    override fun transformer(intent: SettingsIntent) = processHolder.processIntent(intent)
 
     /**
      * Reduces the previous [SettingsViewState] and a new [SettingsResult] to a new state.

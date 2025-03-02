@@ -36,7 +36,7 @@ class KoverConfig(
                 // Exclude classes by fully-qualified name (wildcards '*' and '?' are supported).
                 classes(koverReportExclusionsClasses)
                 // Exclude all classes in the specified package and its subpackages.
-                packages("com.another.subpackage")
+                packages("com.feragusper.smokeanalytics.libraries.chart.**")
                 // Exclude all classes and functions annotated with matching annotations.
                 annotatedBy("*Generated*")
             }
