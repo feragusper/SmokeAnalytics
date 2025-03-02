@@ -51,7 +51,7 @@ class HistoryViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [HistoryResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
+    override fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
 
     /**
      * Reduces the previous [HistoryViewState] and a new [HistoryResult] to a new state.

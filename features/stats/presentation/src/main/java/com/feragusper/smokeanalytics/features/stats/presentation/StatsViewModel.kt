@@ -36,7 +36,7 @@ class StatsViewModel @Inject constructor(
      * @param intent The user intent to be processed.
      * @return A Flow of [StatsResult] representing the result of processing the intent.
      */
-    override suspend fun transformer(intent: StatsIntent) = processHolder.processIntent(intent)
+    override fun transformer(intent: StatsIntent) = processHolder.processIntent(intent)
 
     /**
      * Reduces the previous [StatsViewState] and a new [StatsResult] to a new state.

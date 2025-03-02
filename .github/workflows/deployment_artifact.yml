@@ -29,17 +29,24 @@ jobs:
       # Step 3: Configure keys and decrypt the google-services.json file
       - name: Configure keys and decrypt google-services.json
         run: |
-          # Save the Google Auth Server Client ID in local.properties if required
-          echo google.auth.server.client.id="${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}" > ./local.properties
-
-          # Create the staging directory for the mobile app
+          # Configure staging keys
+          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
           mkdir -p ./apps/mobile/src/staging/
-
-          # Save the encrypted google-services.json file to staging directory
           echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
-
-          # Decrypt the google-services.json file using GPG
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
+          if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
+            echo "Decryption failed or file is empty!"
+            exit 1
+          fi
+          
+          # Configure production keys
+          mkdir -p ./apps/mobile/src/production/
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
+            gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
+          echo "Decryption failed or file is empty!"
+          exit 1
+          fi
 
       # Step 4: Build the Staging Debug APK with detailed error stack trace enabled
       - name: Build Staging Debug APK
