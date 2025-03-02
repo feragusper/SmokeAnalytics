@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.devtools.presentation
 
-import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsIntent
+import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.DevToolsResult
 import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.compose.DevToolsViewState
 import com.feragusper.smokeanalytics.features.devtools.presentation.process.DevToolsProcessHolder
@@ -10,9 +10,9 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
@@ -20,50 +20,76 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DevToolsViewModelTest {
 
-    private var processHolder: DevToolsProcessHolder = mockk()
-    private lateinit var state: DevToolsViewState
+    private val processHolder: DevToolsProcessHolder = mockk(relaxed = true)
     private val intentResults = MutableStateFlow<DevToolsResult>(DevToolsResult.Loading)
+    private lateinit var viewModel: DevToolsViewModel
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    /**
+     * Sets up the test by initializing the ViewModel and configuring mock behaviors.
+     */
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        every { processHolder.processIntent(DevToolsIntent.FetchUser) } returns intentResults
+
+        every { processHolder.processIntent(any()) } returns intentResults
+
+        viewModel = DevToolsViewModel(processHolder)
+
+        // Ensure coroutine execution before verification
+        runTest { advanceUntilIdle() }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    /**
+     * Resets Dispatchers after each test to avoid affecting other tests.
+     */
     @AfterEach
     fun tearDown() {
         Dispatchers.resetMain()
     }
 
+    /**
+     * Ensures that when a **loading result is emitted**, the UI state updates correctly.
+     */
     @Test
-    fun `GIVEN a loading result WHEN viewmodel is created THEN it displays loading`() {
-        runBlocking {
+    fun `GIVEN a loading result WHEN emitted THEN it displays loading`() = runTest {
+        viewModel.states().test {
             intentResults.emit(DevToolsResult.Loading)
-            state = DevToolsViewModel(processHolder).states().first()
-        }
 
-        state.displayLoading shouldBeEqualTo true
+            awaitItem().displayLoading shouldBeEqualTo true
+
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
+    /**
+     * Ensures that when a **UserLoggedOut result is emitted**, the UI state updates correctly.
+     */
     @Test
-    fun `GIVEN a user logged out result WHEN viewmodel is created THEN it shows logged out state`() {
-        runBlocking {
-            intentResults.emit(DevToolsResult.UserLoggedOut)
-            state = DevToolsViewModel(processHolder).states().first()
-        }
+    fun `GIVEN a user logged out result WHEN emitted THEN it shows logged out state`() = runTest {
+        viewModel.states().test {
+            // First emission: Simulate loading state (if needed)
+            intentResults.emit(DevToolsResult.Loading)
+            awaitItem().displayLoading shouldBeEqualTo true
 
-        state.displayLoading shouldBeEqualTo false
-        state.currentUser shouldBeEqualTo null
+            // Emit user logged out result
+            intentResults.emit(DevToolsResult.UserLoggedOut)
+
+            // Await new state and verify expectations
+            val state = awaitItem()
+
+            state.displayLoading shouldBeEqualTo false  // Ensure loading is cleared
+            state.currentUser shouldBeEqualTo null      // Ensure user is logged out
+
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Nested
     inner class UserLoggedIn {
 
-        private lateinit var viewModel: DevToolsViewModel
         private val id = "1"
         private val email = "fernancho@gmail.com"
         private val displayName = "Fernando Perez"
@@ -76,23 +102,32 @@ class DevToolsViewModelTest {
 
         @BeforeEach
         fun setUp() {
-            runBlocking {
-                intentResults.emit(DevToolsResult.UserLoggedIn(user))
-                viewModel = DevToolsViewModel(processHolder)
-            }
+            intentResults.value = DevToolsResult.UserLoggedIn(user)
         }
 
+        /**
+         * Ensures that when a **UserLoggedIn result is emitted**, the UI state updates correctly.
+         */
         @Test
-        fun `GIVEN a user logged in result WHEN viewmodel is created THEN shows logged in state`() {
-            runBlocking {
-                state = viewModel.states().first()
-            }
+        fun `GIVEN a user logged in result WHEN emitted THEN shows logged in state`() = runTest {
+            val sessionUser = Session.User(id = id, email = email, displayName = "Test User")
 
-            state.displayLoading shouldBeEqualTo false
-            state.currentUser shouldBeEqualTo DevToolsViewState.User(
-                id = id,
-                email = email
-            )
+            viewModel.states().test {
+                // Emit UserLoggedIn with Session.User
+                intentResults.emit(DevToolsResult.UserLoggedIn(sessionUser))
+
+                // Await updated state
+                val state = awaitItem()
+
+                // Extract expected DevToolsViewState.User from Session.User
+                val expectedUser =
+                    DevToolsViewState.User(id = sessionUser.id, email = sessionUser.email)
+
+                state.displayLoading shouldBeEqualTo false
+                state.currentUser shouldBeEqualTo expectedUser
+
+                cancelAndIgnoreRemainingEvents() // Clean up
+            }
         }
 
     }

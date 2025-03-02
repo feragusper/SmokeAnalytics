@@ -12,7 +12,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 /**
- * ViewModel for the history feature, managing UI state based on user intents and processing results.
+ * ViewModel for the authentication feature, managing UI state based on user intents and processing results.
+ *
+ * It extends [MVIViewModel] to implement the Model-View-Intent (MVI) architecture pattern.
+ * This ViewModel handles user authentication logic and updates the UI state accordingly.
  *
  * @property processHolder Encapsulates business logic to process [AuthenticationIntent] into [AuthenticationResult].
  */
@@ -23,11 +26,29 @@ class AuthenticationViewModel @Inject constructor(
     initialState = AuthenticationViewState()
 ) {
 
+    /**
+     * Navigator instance for handling navigation actions.
+     */
     override lateinit var navigator: AuthenticationNavigator
 
+    /**
+     * Transforms [AuthenticationIntent] into a stream of [AuthenticationResult]s.
+     *
+     * @param intent The user intent to be processed.
+     * @return A Flow of [AuthenticationResult] representing the result of processing the intent.
+     */
     override suspend fun transformer(intent: AuthenticationIntent) =
         processHolder.processIntent(intent)
 
+    /**
+     * Reduces the previous [AuthenticationViewState] and a new [AuthenticationResult] to a new state.
+     *
+     * This function is responsible for creating the new state based on the current state and the result.
+     *
+     * @param previous The previous state of the UI.
+     * @param result The result of processing the intent.
+     * @return The new state of the UI.
+     */
     override suspend fun reducer(
         previous: AuthenticationViewState,
         result: AuthenticationResult

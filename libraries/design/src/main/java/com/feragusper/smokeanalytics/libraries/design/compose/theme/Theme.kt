@@ -26,33 +26,40 @@ fun SmokeAnalyticsTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    // Determine the color scheme based on the current theme and device capabilities.
     val colorScheme = when {
+        // Use dynamic color scheme if supported (Android 12+).
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
+        // Use the custom dark color scheme.
         darkTheme -> darkColorScheme
+        // Use the custom light color scheme.
         else -> lightColorScheme
     }
 
+    // Obtain the current view and check if it's in edit mode (e.g., in the preview).
     val view = LocalView.current
     if (!view.isInEditMode) {
         val activity = view.context as Activity
         SideEffect {
             val window = activity.window
-            WindowCompat.setDecorFitsSystemWindows(window, false) // Allows content to extend into system bars
+            // Allow content to extend into the system bars.
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+
             val insetsController = WindowCompat.getInsetsController(window, view)
 
-            // Set the appearance of system bars based on theme
+            // Set the appearance of system bars (status and navigation bars) based on the theme.
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
 
-            // Use transparent system bars
-            window.setBackgroundDrawable(null) // Transparent background for the window
+            // Use transparent system bars for a more immersive UI experience.
+            window.setBackgroundDrawable(null)
         }
     }
 
+    // Apply the color scheme, typography, and other design tokens to the MaterialTheme.
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

@@ -31,24 +31,28 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import kotlinx.coroutines.launch
 
 /**
- * Describes the state of the history view, including loading indicators, smoke events, errors, and the currently selected date.
+ * Describes the state of the authentication view, including loading indicators and error states.
  *
  * @property displayLoading Indicates if the loading UI should be shown.
- * @property smokes The list of [Smoke] events to display, or null if not available.
  * @property error An optional error result affecting the current view state.
- * @property selectedDate The currently selected date for displaying smoke events.
  */
 data class AuthenticationViewState(
     internal val displayLoading: Boolean = false,
     internal val error: AuthenticationResult.Error? = null,
 ) : MVIViewState<AuthenticationIntent> {
 
+    /**
+     * Composable function that renders the authentication UI based on the current state.
+     *
+     * @param intent Lambda function to send user intentions to the ViewModel.
+     */
     @Composable
     override fun Compose(intent: (AuthenticationIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { contentPadding ->
+            // Display loading indicator
             if (displayLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -57,6 +61,7 @@ data class AuthenticationViewState(
                     CircularProgressIndicator()
                 }
             } else {
+                // Display authentication form
                 Column(
                     modifier = Modifier
                         .padding(contentPadding)
@@ -73,12 +78,15 @@ data class AuthenticationViewState(
                         onSignInSuccess = { intent(AuthenticationIntent.FetchUser) },
                         onSignInError = {
                             scope.launch {
-                                snackbarHostState.showSnackbar(context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general))
+                                snackbarHostState.showSnackbar(
+                                    context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general)
+                                )
                             }
                         },
                     )
                 }
 
+                // Display error messages as snackbars
                 val context = LocalContext.current
                 LaunchedEffect(error) {
                     error?.let {
@@ -94,12 +102,14 @@ data class AuthenticationViewState(
             }
         }
     }
-
 }
 
+/**
+ * Preview of the authentication view in the loading state.
+ */
 @CombinedPreviews
 @Composable
-private fun HistoryViewLoadingPreview() {
+private fun AuthenticationViewLoadingPreview() {
     SmokeAnalyticsTheme {
         AuthenticationViewState(
             displayLoading = true,
@@ -107,6 +117,9 @@ private fun HistoryViewLoadingPreview() {
     }
 }
 
+/**
+ * Preview of the authentication view in the success state.
+ */
 @CombinedPreviews
 @Composable
 private fun AuthenticationViewSuccessPreview() {

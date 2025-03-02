@@ -43,8 +43,19 @@ data class DevToolsViewState(
     internal val currentUser: User? = null,
 ) : MVIViewState<DevToolsIntent> {
 
+    /**
+     * Data class representing a user in the DevTools view.
+     *
+     * @property email The user's email address.
+     * @property id The user's unique identifier.
+     */
     data class User(val email: String?, val id: String)
 
+    /**
+     * Composable function that renders the DevTools UI based on the current state.
+     *
+     * @param intent Lambda function to send user intentions to the ViewModel.
+     */
     @Composable
     override fun Compose(intent: (DevToolsIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
@@ -66,11 +77,14 @@ data class DevToolsViewState(
                         CircularProgressIndicator()
                     }
                 } else {
+                    // Title
                     Text(
                         modifier = Modifier.padding(16.dp),
                         text = stringResource(R.string.devtools_title),
                         style = MaterialTheme.typography.titleLarge,
                     )
+
+                    // User Info
                     currentUser?.let { user ->
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -114,6 +128,8 @@ data class DevToolsViewState(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+
+                    // App Version
                     Spacer(modifier = Modifier.weight(1F))
                     LocalContext.current.versionName()?.let { versionName ->
                         Text(
@@ -130,6 +146,9 @@ data class DevToolsViewState(
     }
 }
 
+/**
+ * Preview of the DevTools view in the loading state.
+ */
 @CombinedPreviews
 @Composable
 private fun DevToolsLoadingPreview() {
@@ -140,6 +159,9 @@ private fun DevToolsLoadingPreview() {
     }
 }
 
+/**
+ * Preview of the DevTools view when the user is logged out.
+ */
 @CombinedPreviews
 @Composable
 private fun DevToolsLoggedOutViewPreview() {
@@ -148,6 +170,9 @@ private fun DevToolsLoggedOutViewPreview() {
     }
 }
 
+/**
+ * Preview of the DevTools view when the user is logged in.
+ */
 @CombinedPreviews
 @Composable
 private fun DevToolsLoggedInViewPreview() {

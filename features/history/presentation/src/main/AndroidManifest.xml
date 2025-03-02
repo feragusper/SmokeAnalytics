@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
+        <!-- History Activity for displaying smoke history -->
         <activity android:name=".HistoryActivity" />
     </application>
 </manifest>

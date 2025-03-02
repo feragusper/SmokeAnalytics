@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
+import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
@@ -7,43 +8,38 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.amshove.kluent.internal.assertEquals
-import org.junit.jupiter.api.AfterEach
+import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeProcessHolderTest {
 
-    private lateinit var results: Flow<HomeResult>
     private lateinit var processHolder: HomeProcessHolder
 
-    private var addSmokeUseCase: AddSmokeUseCase = mockk()
-    private var editSmokeUseCase: EditSmokeUseCase = mockk()
-    private var deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
-    private var fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
-    private var fetchSessionUseCase: FetchSessionUseCase = mockk()
+    private val addSmokeUseCase: AddSmokeUseCase = mockk()
+    private val editSmokeUseCase: EditSmokeUseCase = mockk()
+    private val deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
+    private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
+    private val fetchSessionUseCase: FetchSessionUseCase = mockk()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
@@ -56,178 +52,138 @@ class HomeProcessHolderTest {
         )
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @AfterEach
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
-
     @Nested
     @DisplayName("GIVEN user is logged in")
     inner class UserIsLoggedIn {
         @BeforeEach
         fun setUp() {
-            coEvery { fetchSessionUseCase() } answers { mockk<Session.LoggedIn>() }
+            coEvery { fetchSessionUseCase() } returns mockk<Session.LoggedIn>()
         }
 
         @Test
-        fun `AND fetch smoke count list is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
-            runTest {
-                val smokeCountListResult: SmokeCountListResult = mockk()
+        fun `WHEN fetching smoke count list THEN it returns success`() = runTest {
+            val smokeCountListResult: SmokeCountListResult = mockk()
+            coEvery { fetchSmokeCountListUseCase() } returns smokeCountListResult
 
-                coEvery { fetchSmokeCountListUseCase() } answers { smokeCountListResult }
-
-                results = processHolder.processIntent(HomeIntent.FetchSmokes)
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.FetchSmokesSuccess(smokeCountListResult), results.last())
+            processHolder.processIntent(HomeIntent.FetchSmokes).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.FetchSmokesSuccess(smokeCountListResult)
+                awaitComplete()
             }
+        }
 
         @Test
-        fun `WHEN tick time since last cigarette intent is processed THEN it should result with loading and success`() =
-            runTest {
-                val date: LocalDateTime = mockk()
-                val lastSmoke: Smoke = mockk<Smoke>().apply {
-                    coEvery { this@apply.date } answers { date }
-                }
-                val timeElapsedSinceNow: Pair<Long, Long> = mockk()
-                mockkStatic(LocalDateTime::timeElapsedSinceNow).apply {
-                    coEvery { date.timeElapsedSinceNow() } answers { timeElapsedSinceNow }
-                }
+        fun `WHEN ticking time since last cigarette THEN it updates time`() = runTest {
+            val date: LocalDateTime = mockk()
+            val lastSmoke: Smoke = mockk { every { this@mockk.date } returns date }
+            val timeElapsedSinceNow: Pair<Long, Long> = mockk()
+            mockkStatic(LocalDateTime::timeElapsedSinceNow)
+            every { date.timeElapsedSinceNow() } returns timeElapsedSinceNow
 
-                results =
-                    processHolder.processIntent(HomeIntent.TickTimeSinceLastCigarette(lastSmoke))
-                assertEquals(
-                    HomeResult.UpdateTimeSinceLastCigarette(timeElapsedSinceNow),
-                    results.first()
+            processHolder.processIntent(HomeIntent.TickTimeSinceLastCigarette(lastSmoke)).test {
+                awaitItem() shouldBeEqualTo HomeResult.UpdateTimeSinceLastCigarette(
+                    timeElapsedSinceNow
                 )
+                awaitComplete()
             }
-
+        }
 
         @Test
-        fun `AND fetch smoke count list throws exception WHEN add smoke intent is processed THEN it should result with loading and error`() =
-            runTest {
-                coEvery { fetchSmokeCountListUseCase() } throws (IllegalStateException("User not logged in"))
+        fun `WHEN adding smoke THEN it returns success`() = runTest {
+            coEvery { addSmokeUseCase.invoke(any()) } returns Unit
 
-                results = processHolder.processIntent(HomeIntent.FetchSmokes)
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.FetchSmokesError, results.last())
+            processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                awaitComplete()
             }
+        }
 
         @Test
-        fun `AND add smoke is success WHEN add smoke intent is processed THEN it should result with loading and success`() =
-            runTest {
-                coEvery { addSmokeUseCase.invoke(any()) } just Runs
+        fun `WHEN editing smoke THEN it returns success`() = runTest {
+            val id = "id"
+            val date: LocalDateTime = mockk()
+            coEvery { editSmokeUseCase(id, date) } just Runs
 
-                results = processHolder.processIntent(HomeIntent.AddSmoke)
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.AddSmokeSuccess, results.last())
+            processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.EditSmokeSuccess
+                awaitComplete()
             }
-
+        }
 
         @Test
-        fun `AND add smoke throws exception WHEN add smoke intent is processed THEN it should result with loading and error`() =
-            runTest {
-                coEvery { addSmokeUseCase() } throws (IllegalStateException("User not logged in"))
+        fun `WHEN deleting smoke THEN it returns success`() = runTest {
+            val id = "id"
+            coEvery { deleteSmokeUseCase(id) } just Runs
 
-                results = processHolder.processIntent(HomeIntent.AddSmoke)
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.Error.Generic, results.last())
+            processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.DeleteSmokeSuccess
+                awaitComplete()
             }
+        }
 
         @Test
-        fun `AND edit smoke is success WHEN edit smoke intent is processed THEN it should result with loading and success`() =
-            runTest {
-                val id = "id"
-                val date: LocalDateTime = mockk()
-                coEvery {
-                    editSmokeUseCase(
-                        id = id,
-                        date = date
-                    )
-                } just Runs
+        fun `WHEN adding smoke fails THEN it returns error`() = runTest {
+            coEvery { addSmokeUseCase() } throws IllegalStateException("Error")
 
-                results = processHolder.processIntent(
-                    HomeIntent.EditSmoke(
-                        id = id,
-                        date = date
-                    )
-                )
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.EditSmokeSuccess, results.last())
+            processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitComplete()
             }
-
+        }
 
         @Test
-        fun `AND edit smoke throws exception WHEN edit smoke intent is processed THEN it should result with loading and error`() =
-            runTest {
-                val id = "id"
-                val date: LocalDateTime = mockk()
-                coEvery {
-                    editSmokeUseCase(
-                        id = id,
-                        date = date
-                    )
-                } throws (IllegalStateException("Error"))
+        fun `WHEN editing smoke fails THEN it returns error`() = runTest {
+            val id = "id"
+            val date: LocalDateTime = mockk()
+            coEvery { editSmokeUseCase(id, date) } throws IllegalStateException("Error")
 
-                results = processHolder.processIntent(
-                    HomeIntent.EditSmoke(
-                        id = id,
-                        date = date
-                    )
-                )
-
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.Error.Generic, results.last())
+            processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitComplete()
             }
+        }
 
         @Test
-        fun `AND delete smoke is success WHEN delete smoke intent is processed THEN it should result with loading and success`() =
-            runTest {
-                val id = "id"
-                coEvery { deleteSmokeUseCase(id) } just Runs
+        fun `WHEN deleting smoke fails THEN it returns error`() = runTest {
+            val id = "id"
+            coEvery { deleteSmokeUseCase(id) } throws IllegalStateException("Error")
 
-                results = processHolder.processIntent(HomeIntent.DeleteSmoke(id))
-
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.DeleteSmokeSuccess, results.last())
+            processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitComplete()
             }
-
-
-        @Test
-        fun `AND delete smoke throws exception WHEN delete smoke intent is processed THEN it should result with loading and error`() =
-            runTest {
-                val id = "id"
-                coEvery { deleteSmokeUseCase(id) } throws (IllegalStateException("Error"))
-
-                results = processHolder.processIntent(HomeIntent.DeleteSmoke(id))
-
-                assertEquals(HomeResult.Loading, results.first())
-                assertEquals(HomeResult.Error.Generic, results.last())
-            }
+        }
     }
 
     @Nested
-    @DisplayName("GIVEN user not is logged in")
+    @DisplayName("GIVEN user is not logged in")
     inner class UserIsNotLoggedIn {
         @BeforeEach
         fun setUp() {
-            coEvery { fetchSessionUseCase() } answers { mockk<Session.Anonymous>() }
+            coEvery { fetchSessionUseCase() } returns mockk<Session.Anonymous>()
         }
 
         @Test
-        fun `WHEN add smoke intent is processed THEN it should result with not logged in`() =
-            runTest {
-                results = processHolder.processIntent(HomeIntent.AddSmoke)
-                assertEquals(HomeResult.Error.NotLoggedIn, results.first())
-                assertEquals(HomeResult.GoToAuthentication, results.last())
+        fun `WHEN adding smoke THEN it returns not logged in error`() = runTest {
+            processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.Error.NotLoggedIn
+                awaitItem() shouldBeEqualTo HomeResult.GoToAuthentication
+                awaitComplete()
             }
+        }
 
         @Test
-        fun `WHEN fetch smoke count list intent is processed THEN it should result with not logged in`() =
-            runTest {
-                results = processHolder.processIntent(HomeIntent.FetchSmokes)
-                assertEquals(HomeResult.NotLoggedIn, results.first())
+        fun `WHEN fetching smoke count list THEN it returns not logged in error`() = runTest {
+            processHolder.processIntent(HomeIntent.FetchSmokes).test {
+                awaitItem() shouldBeEqualTo HomeResult.NotLoggedIn
+                awaitComplete()
             }
+        }
     }
-
 }

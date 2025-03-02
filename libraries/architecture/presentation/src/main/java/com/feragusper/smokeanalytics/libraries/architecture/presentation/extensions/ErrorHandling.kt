@@ -14,7 +14,8 @@ import timber.log.Timber
  */
 fun <T> Flow<T>.catchAndLog(
     action: suspend FlowCollector<T>.(cause: Throwable) -> Unit,
-) = this.catch {
-    Timber.e("ErrorHandling", "Error caught", it)
-    action(it)
+) = this.catch { throwable ->
+    // Log the error using Timber.e with the throwable and a message.
+    Timber.e(throwable, "Error caught")
+    action(throwable)
 }

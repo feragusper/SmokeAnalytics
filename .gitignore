@@ -1,23 +1,25 @@
+# IntelliJ IDEA and Android Studio project files
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
 .idea/
 .DS_Store
+
+# Gradle build files and caches
+.gradle
 /build
 /captures
 .externalNativeBuild
 .cxx
+
+# Local configuration files (should not be checked in)
 local.properties
+/local.properties
+
+# Keystore and credentials (sensitive information)
 release.keystore
 release.keystore.properties
-playstore.credentiales.json
+playstore.credentials.json
 
-# Project exclude paths
+# Exclude build outputs from buildSrc
 /buildSrc/build/
 /buildSrc/build/classes/kotlin/main/
+/playstore.credentiales.json

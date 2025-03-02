@@ -1,4 +1,3 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     `android-lib`
     id("kotlin-kapt")
@@ -11,6 +10,10 @@ android {
 }
 
 dependencies {
+    implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:architecture:domain"))
+    implementation(project(":libraries:architecture:common"))
+    implementation(project(":libraries:wear:domain"))
     implementation(libs.bundles.androidx.base)
     implementation(libs.timber)
     implementation(libs.play.services.wearable)

@@ -1,43 +1,29 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
-import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisWeek
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
-import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths
-import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths.SMOKE_COUNT_TODAY
-import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
-import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.Wearable
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Implementation of [SmokeRepository] that interacts with Firebase Firestore to perform CRUD operations
- * on smoke data for the authenticated user.
+ * Implementation of [SmokeRepository] that interacts with Firebase Firestore
+ * to perform CRUD operations on smoke data for the authenticated user.
  *
  * @property firebaseFirestore The instance of [FirebaseFirestore] for database operations.
  * @property firebaseAuth The instance of [FirebaseAuth] for authentication details.
@@ -46,15 +32,7 @@ import javax.inject.Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
-    @ApplicationContext private val context: Context,
-) : SmokeRepository, OnMessageReceivedListener, CoroutineScope {
-
-    init {
-        Wearable.getMessageClient(context).addListener(this)
-    }
-
-    private val job = SupervisorJob()
-    override val coroutineContext = Dispatchers.IO + job
+) : SmokeRepository {
 
     /**
      * Constants for Firestore collection paths.
@@ -66,35 +44,52 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Adds a new smoke event to Firestore for the current user.
+     *
+     * @param date The date and time of the smoke event.
+     */
     override suspend fun addSmoke(date: LocalDateTime) {
         smokesQuery().add(SmokeEntity(date.toDate())).await()
-
-        syncWithWear()
     }
 
+    /**
+     * Edits an existing smoke event in Firestore.
+     *
+     * @param id The ID of the smoke event to edit.
+     * @param date The new date and time for the smoke event.
+     */
     override suspend fun editSmoke(id: String, date: LocalDateTime) {
         smokesQuery()
             .document(id)
             .set(SmokeEntity(date.toDate()))
             .await()
-
-        syncWithWear()
     }
 
+    /**
+     * Deletes a smoke event from Firestore.
+     *
+     * @param id The ID of the smoke event to delete.
+     */
     override suspend fun deleteSmoke(id: String) {
         smokesQuery()
             .document(id)
             .delete()
             .await()
-
-        syncWithWear()
     }
 
+    /**
+     * Fetches the list of smoke events for the current user, optionally filtered by date range.
+     *
+     * @param startDate The start date for filtering smoke events (inclusive).
+     * @param endDate The end date for filtering smoke events (exclusive).
+     * @return A list of [Smoke] objects.
+     */
     override suspend fun fetchSmokes(
         startDate: LocalDateTime?,
         endDate: LocalDateTime?
     ): List<Smoke> {
-        val baseQuery = smokesQuery() // Esta es la CollectionReference
+        val baseQuery = smokesQuery()
 
         var query: Query = baseQuery.orderBy(SmokeEntity::date.name, Direction.DESCENDING)
 
@@ -108,19 +103,38 @@ class SmokeRepositoryImpl @Inject constructor(
         val result = query.get().await()
 
         return result.documents.mapIndexedNotNull { index, document ->
+            val currentDate = document.getDate()
+            val previousDate = result.documents.getOrNull(index + 1)?.getDate()
+
+            // Calculate time elapsed since the previous smoke event
+            val timeElapsedSincePreviousSmoke = if (previousDate != null) {
+                currentDate.timeAfter(previousDate)
+            } else {
+                Pair(0L, 0L)  // Handle first smoke event case
+            }
+
             Smoke(
                 id = document.id,
-                date = document.getDate(),
-                timeElapsedSincePreviousSmoke = document.getDate()
-                    .timeAfter(result.documents.getOrNull(index + 1)?.getDate()),
+                date = currentDate,
+                timeElapsedSincePreviousSmoke = timeElapsedSincePreviousSmoke
             )
         }
     }
 
+    /**
+     * Fetches the smoke count statistics for the current user.
+     *
+     * @return A [SmokeCount] object containing counts for today, week, and month.
+     */
     override suspend fun fetchSmokeCount(): SmokeCount {
         return fetchSmokes().toSmokeCountListResult()
     }
 
+    /**
+     * Maps a list of [Smoke] objects to a [SmokeCount] object.
+     *
+     * @return A [SmokeCount] containing the counts for today, week, and month.
+     */
     private fun List<Smoke>.toSmokeCountListResult() = SmokeCount(
         today = filterToday(),
         week = filterThisWeek().size,
@@ -128,10 +142,19 @@ class SmokeRepositoryImpl @Inject constructor(
         lastSmoke = firstOrNull(),
     )
 
+    /**
+     * Filters the smoke events for today.
+     */
     private fun List<Smoke>.filterToday() = filter { it.date.isToday() }
 
+    /**
+     * Filters the smoke events for the current week.
+     */
     private fun List<Smoke>.filterThisWeek() = filter { it.date.isThisWeek() }
 
+    /**
+     * Filters the smoke events for the current month.
+     */
     private fun List<Smoke>.filterThisMonth() = filter { it.date.isThisMonth() }
 
     /**
@@ -153,30 +176,4 @@ class SmokeRepositoryImpl @Inject constructor(
     private fun DocumentSnapshot.getDate() =
         getDate(Smoke::date.name)?.toLocalDateTime()
             ?: throw IllegalStateException("Date not found")
-
-    private suspend fun syncWithWear() {
-        respondToWearWithSmokeCount(fetchSmokeCount())
-    }
-
-    override fun onMessageReceived(messageEvent: MessageEvent) {
-        Timber.d("onMessageReceived: ${messageEvent.path}")
-        when (messageEvent.path) {
-            WearPaths.REQUEST_SMOKES -> launch { syncWithWear() }
-            WearPaths.ADD_SMOKE -> launch { addSmoke(LocalDateTime.now()) }
-        }
-    }
-
-    private fun respondToWearWithSmokeCount(smokeCount: SmokeCount) {
-        Timber.d("respondToWearWithSmokeCount: $smokeCount")
-        val putDataMapRequest = PutDataMapRequest.create(WearPaths.SMOKE_DATA).apply {
-            dataMap.putInt(SMOKE_COUNT_TODAY, smokeCount.today.size)
-            dataMap.putInt(WearPaths.SMOKE_COUNT_WEEK, smokeCount.week)
-            dataMap.putInt(WearPaths.SMOKE_COUNT_MONTH, smokeCount.month)
-            smokeCount.lastSmoke?.date?.utcMillis()?.let {
-                dataMap.putLong(WearPaths.LAST_SMOKE_TIMESTAMP, it)
-            }
-        }
-        val putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent()
-        Wearable.getDataClient(context).putDataItem(putDataRequest)
-    }
 }

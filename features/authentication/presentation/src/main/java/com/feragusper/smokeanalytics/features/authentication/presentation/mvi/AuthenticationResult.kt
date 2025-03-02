@@ -6,17 +6,29 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
  * Represents the results of processing [AuthenticationIntent], which will modify the view state.
  */
 sealed interface AuthenticationResult : MVIResult {
-    object Loading : AuthenticationResult
-
-    object UserLoggedIn : AuthenticationResult
 
     /**
-     * Represents errors that might occur during the processing of history intents.
+     * Indicates that a loading state is in progress.
+     */
+    data object Loading : AuthenticationResult
+
+    /**
+     * Indicates that the user has successfully logged in.
+     */
+    data object UserLoggedIn : AuthenticationResult
+
+    /**
+     * Represents errors that might occur during the processing of authentication intents.
      */
     sealed interface Error : AuthenticationResult {
-        object Generic :
-            Error
+        /**
+         * A generic error result.
+         */
+        data object Generic : Error
     }
 
-    object NavigateUp : AuthenticationResult
+    /**
+     * Triggers navigation to the previous screen.
+     */
+    data object NavigateUp : AuthenticationResult
 }

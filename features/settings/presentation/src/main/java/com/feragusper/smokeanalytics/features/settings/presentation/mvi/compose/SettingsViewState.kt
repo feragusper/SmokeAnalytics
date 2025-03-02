@@ -69,78 +69,116 @@ data class SettingsViewState(
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                if (displayLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.testTag(TestTags.VIEW_PROGRESS)
-                        )
-                    }
-                } else {
-                    Text(
-                        modifier = Modifier.padding(16.dp),
-                        text = stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.titleLarge,
+                when {
+                    displayLoading -> LoadingView()
+                    currentEmail != null -> LoggedInView(
+                        currentEmail = currentEmail,
+                        onSignOut = { intent(SettingsIntent.SignOut) }
                     )
-                    currentEmail?.let { email ->
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_person),
-                                contentDescription = null
-                            )
-                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                Text(
-                                    text = stringResource(id = R.string.settings_email),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = email,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        HorizontalDivider()
-                        Button(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .testTag(TestTags.BUTTON_SIGN_OUT),
-                            onClick = { intent(SettingsIntent.SignOut) }
-                        ) {
-                            Text(text = stringResource(id = R.string.settings_logout))
-                        }
-                    } ?: run {
-                        val scope = rememberCoroutineScope()
-                        val context = LocalContext.current
-                        GoogleSignInComponent(
-                            modifier = Modifier.testTag(TestTags.BUTTON_SIGN_IN),
-                            onSignInSuccess = { intent(SettingsIntent.FetchUser) },
-                            onSignInError = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general))
-                                }
-                            },
-                        )
 
-                    }
-                    Spacer(modifier = Modifier.weight(1F))
-                    LocalContext.current.versionName()?.let { versionName ->
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = versionName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    else -> LoggedOutView(
+                        onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+                        snackbarHostState = snackbarHostState
+                    )
                 }
+                AppVersionFooter()
             }
+        }
+    }
+}
+
+@Composable
+private fun LoadingView() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.testTag(SettingsViewState.TestTags.VIEW_PROGRESS)
+        )
+    }
+}
+
+@Composable
+private fun LoggedInView(
+    currentEmail: String,
+    onSignOut: () -> Unit
+) {
+    Text(
+        modifier = Modifier.padding(16.dp),
+        text = stringResource(R.string.settings_title),
+        style = MaterialTheme.typography.titleLarge,
+    )
+    UserInfo(email = currentEmail)
+    HorizontalDivider()
+    Button(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
+        onClick = onSignOut
+    ) {
+        Text(text = stringResource(id = R.string.settings_logout))
+    }
+}
+
+@Composable
+private fun UserInfo(email: String) {
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_person),
+            contentDescription = null
+        )
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text(
+                text = stringResource(id = R.string.settings_email),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoggedOutView(
+    onSignInSuccess: () -> Unit,
+    snackbarHostState: SnackbarHostState
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    GoogleSignInComponent(
+        modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+        onSignInSuccess = onSignInSuccess,
+        onSignInError = {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general)
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun AppVersionFooter() {
+    // Place this inside a Column or Row to inherit the scope and access .weight()
+    Column(modifier = Modifier.fillMaxSize()) {
+        Spacer(modifier = Modifier.weight(1F))
+        LocalContext.current.versionName()?.let { versionName ->
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = versionName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

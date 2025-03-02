@@ -1,3 +1,5 @@
+# Integration workflow: runs on pushes to master and pull requests targeting master.
+# This workflow performs code checks, caching of dependencies, and SonarQube analysis.
 name: Integration
 
 on:
@@ -15,42 +17,64 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      # Step 1: Checkout the repository with full history.
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK 11
+      # Step 2: Set up JDK 17 using the Zulu distribution.
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Config keys
+      # Step 3: Configure keys by decrypting google-services.json for both staging and production.
+      - name: Configure keys for staging and production
         run: |
+          # Configure staging keys
           echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
-          mkdir ./apps/mobile/src/staging/
+          mkdir -p ./apps/mobile/src/staging/
           echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
-          mkdir ./apps/mobile/src/production/
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+          if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
+            echo "Decryption failed or file is empty!"
+            exit 1
+          fi
+          
+          # Configure production keys
+          mkdir -p ./apps/mobile/src/production/
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
+            gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
+          echo "Decryption failed or file is empty!"
+          exit 1
+          fi
 
-      - name: Config keystore
+      # Step 4: Configure the keystore and Play Store credentials by decrypting the necessary files.
+      - name: Configure keystore and Play Store credentials
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
         shell: bash
         run: |
+          # Decrypt release keystore properties
           echo "${{ secrets.RELEASE_KEYSTORE_PROPERTIES }}" > ./release.keystore.properties.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.properties.asc > ./release.keystore.properties
+
+          # Decrypt release keystore file
           echo "${{ secrets.RELEASE_KEYSTORE }}" > ./release.keystore.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.asc > ./release.keystore
+
+          # Decrypt Play Store credentials file
           echo "${{ secrets.PLAYSTORE_CREDENTIALS }}" > ./playstore.credentials.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
-      - name: Check
-        run: bash ./gradlew check --stacktrace
+      # Step 5: Run Gradle checks to verify the project integrity.
+      - name: Run Gradle checks
+        run: ./gradlew check --stacktrace
 
+      # Step 6: Cache SonarQube packages to speed up subsequent builds.
       - name: Cache SonarQube packages
         uses: actions/cache@v3
         with:
@@ -58,6 +82,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      # Step 7: Cache Gradle dependencies to accelerate the build process.
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -65,7 +90,8 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
 
-      - name: Build and analyze
+      # Step 8: Build the project and perform SonarQube analysis.
+      - name: Build and analyze with SonarQube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

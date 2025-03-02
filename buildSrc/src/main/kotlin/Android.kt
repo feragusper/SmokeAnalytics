@@ -1,5 +1,10 @@
 object Android {
-	const val MIN_SDK = 26
-	const val TARGET_SDK = 35
-	const val COMPILE_SDK = 35
+    // Minimum SDK version supported by the app.
+    const val MIN_SDK = 26
+
+    // Target SDK version, used to optimize the app's behavior on newer OS versions.
+    const val TARGET_SDK = 35
+
+    // Compile SDK version for building the app.
+    const val COMPILE_SDK = 35
 }

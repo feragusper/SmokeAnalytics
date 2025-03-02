@@ -5,13 +5,15 @@ import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
 /**
- * The application class for SmokeAnalytics. Initializes global libraries and settings, such as Timber for logging.
+ * The application class for SmokeAnalytics.
+ * Initializes global libraries and settings, such as Timber for logging.
  */
 @HiltAndroidApp
 class SmokeAnalyticsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) {
+            // Plant Timber's DebugTree for logging during debug builds.
             Timber.plant(Timber.DebugTree())
         }
     }

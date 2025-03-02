@@ -1,18 +1,9 @@
 package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -22,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -59,15 +49,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
-import kotlin.math.roundToInt
 
 /**
  * A row item for displaying smoke event details with swipe-to-dismiss functionality.
@@ -87,80 +74,43 @@ fun SwipeToDismissRow(
     onDelete: () -> Unit,
     fullDateTimeEdit: Boolean,
     onEdit: (LocalDateTime) -> Unit,
-) = BoxWithConstraints {
+) {
+    Box {
 
-    var willDismissDirection: SwipeToDismissBoxValue? by remember {
-        mutableStateOf(null)
-    }
+        var willDismissDirection: SwipeToDismissBoxValue? by remember { mutableStateOf(null) }
 
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = {
-            if (willDismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        }
-    )
-
-    val width = constraints.maxWidth.toFloat()
-    val threshold = 0.4f
-
-    LaunchedEffect(key1 = Unit, block = {
-        snapshotFlow { dismissState.requireOffset() }
-            .collect {
-                willDismissDirection = when {
-                    it < -width * threshold -> SwipeToDismissBoxValue.EndToStart
-                    else -> null
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = {
+                if (willDismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                    onDelete()
+                    true
+                } else {
+                    false
                 }
             }
-    })
+        )
 
-    val hapticFeedback = LocalHapticFeedback.current
-    LaunchedEffect(key1 = willDismissDirection, block = {
-        if (willDismissDirection != null) {
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-        }
-    })
-
-    SwipeToDismissBox(state = dismissState,
-        backgroundContent =
-        {
-            AnimatedContent(
-                targetState = willDismissDirection != null,
-                transitionSpec = {
-                    fadeIn(
-                        tween(0),
-                        initialAlpha = if (targetState) 1f else 0f,
-                    ) togetherWith fadeOut(
-                        tween(0),
-                        targetAlpha = if (targetState) .7f else 0f,
-                    )
-                }, label = ""
-            ) { willDismiss ->
-                val revealSize = remember { Animatable(if (willDismiss) 0f else 1f) }
-                val iconSize = remember { Animatable(if (willDismiss) .8f else 1f) }
-                LaunchedEffect(key1 = Unit, block = {
-                    if (willDismiss) {
-                        revealSize.snapTo(0f)
-                        launch {
-                            revealSize.animateTo(
-                                targetValue = 1f,
-                                animationSpec = tween(400)
-                            )
-                        }
-                        iconSize.snapTo(.8f)
-                        iconSize.animateTo(
-                            targetValue = 1.45f,
-                            animationSpec = spring(Spring.DampingRatioHighBouncy)
-                        )
-                        iconSize.animateTo(
-                            targetValue = 1f,
-                            animationSpec = spring(Spring.DampingRatioLowBouncy)
-                        )
+        LaunchedEffect(key1 = dismissState) {
+            snapshotFlow { dismissState.requireOffset() }
+                .collect {
+                    willDismissDirection = when {
+                        it < -300 -> SwipeToDismissBoxValue.EndToStart
+                        else -> null
                     }
-                })
+                }
+        }
+
+        val hapticFeedback = LocalHapticFeedback.current
+        LaunchedEffect(key1 = willDismissDirection) {
+            if (willDismissDirection != null) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+        }
+
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {
+                // We no longer need 'AnimatedContent' as the backgroundContent does not depend on 'targetState'
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -172,13 +122,7 @@ fun SwipeToDismissRow(
                             .align(Alignment.CenterEnd)
                             .fillMaxHeight()
                             .aspectRatio(1f)
-                            .scale(iconSize.value)
-                            .offset {
-                                IntOffset(
-                                    x = 0,
-                                    y = (10 * (1f - iconSize.value)).roundToInt()
-                                )
-                            },
+                            .scale(1.45f),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -188,18 +132,19 @@ fun SwipeToDismissRow(
                         )
                     }
                 }
+            },
+            enableDismissFromStartToEnd = false,
+            content = {
+                SmokeItem(
+                    date = date,
+                    timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                    fullDateTimeEdit = fullDateTimeEdit,
+                    onEdit = onEdit
+                )
             }
-        },
-        enableDismissFromStartToEnd = false,
-        content =
-        {
-            SmokeItem(
-                date = date,
-                timeAfterPrevious = timeElapsedSincePreviousSmoke,
-                fullDateTimeEdit = fullDateTimeEdit,
-                onEdit = onEdit
-            )
-        })
+        )
+
+    }
 }
 
 @Composable
@@ -222,6 +167,7 @@ private fun SmokeItem(
             Text(
                 text = date.timeFormatted(),
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground
             )
             val (hours, minutes) = timeAfterPrevious
             Text(
@@ -240,6 +186,7 @@ private fun SmokeItem(
                     ).joinToString(" and ")
                 }",
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -286,15 +233,8 @@ private fun SmokeItem(
                     },
                 )
             }
-
         }
     }
-
-}
-
-private enum class DateTimeDialogType {
-    Date,
-    Time
 }
 
 /**
@@ -307,7 +247,7 @@ private enum class DateTimeDialogType {
  * @param onTimeSelected Callback invoked with the selected hour and minute after both date and time have been chosen.
  */
 @Composable
-private fun DateTimePickerDialog(
+fun DateTimePickerDialog(
     initialDateTime: LocalDateTime,
     onDismiss: () -> Unit,
     onDateSelected: (LocalDateTime) -> Unit,
@@ -340,7 +280,6 @@ private fun DateTimePickerDialog(
             )
         }
     }
-
 }
 
 /**
@@ -414,3 +353,12 @@ fun TimePickerDialog(
         }
     }
 }
+
+/**
+ * Enum representing the dialog type for date and time selection.
+ */
+private enum class DateTimeDialogType {
+    Date,
+    Time
+}
+
