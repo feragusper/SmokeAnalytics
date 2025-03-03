@@ -26,8 +26,14 @@ subprojects {
                 filesSafeProperty("sonar.tests", "$projectDir/src/test/java")
 
                 // Exclude specific classes from coverage reports using KoverConfig settings.
-                property("sonar.exclusions", "**/libraries/chart/**, **/libraries/chart/**/*")
-                property("sonar.coverage.exclusions", "**/libraries/chart/**, **/libraries/chart/**/*")
+                property(
+                    "sonar.exclusions",
+                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                )
+                property(
+                    "sonar.coverage.exclusions",
+                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                )
 
                 // Specify the coverage plugin.
                 property("sonar.java.coveragePlugin", "jacoco")
