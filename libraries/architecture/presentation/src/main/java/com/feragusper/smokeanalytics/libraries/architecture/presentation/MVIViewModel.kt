@@ -78,5 +78,5 @@ abstract class MVIViewModel<I : MVIIntent, S : MVIViewState<I>, R : MVIResult, N
      * @param result The result of an operation that affects the state.
      * @return The new state.
      */
-    protected abstract suspend fun reducer(previous: S, result: R): S
+    protected abstract fun reducer(previous: S, result: R): S
 }

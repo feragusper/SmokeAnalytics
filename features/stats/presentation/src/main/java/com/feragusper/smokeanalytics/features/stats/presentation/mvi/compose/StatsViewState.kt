@@ -47,16 +47,14 @@ import java.util.Locale
  */
 data class StatsViewState(
     val stats: SmokeStats? = null,
-    val period: StatsPeriod = StatsPeriod.WEEK,  // Default to week view
-    val selectedDate: LocalDate = LocalDate.now()
 ) : MVIViewState<StatsIntent> {
 
     enum class StatsPeriod { DAY, WEEK, MONTH, YEAR }
 
     @Composable
     override fun Compose(intent: (StatsIntent) -> Unit) {
-        var currentPeriod by remember { mutableStateOf(period) }
-        var selectedDate by remember { mutableStateOf(selectedDate) }
+        var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
+        var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
         LaunchedEffect(currentPeriod, selectedDate) {
             intent(
@@ -237,7 +235,8 @@ private fun LineChart(stats: Map<String, Int>) {
         }
 
     val lastValue = reducedCumulativeStats.lastOrNull()?.second ?: 0
-    val adjustedCumulativeStats = reducedCumulativeStats.toMutableList().apply {
+    val adjustedCumulativeStats = buildList<Pair<String, Int>> {
+        addAll(reducedCumulativeStats)
         if (last().first != "24:00") {
             add("24:00" to lastValue)
         }

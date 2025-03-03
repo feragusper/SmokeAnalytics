@@ -20,7 +20,10 @@ class KoverConfig(
             "**/*Typography.kt",
             "**/compose/**",
             "**/di/**",
-            "**/extensions/**"
+            "**/extensions/**",
+            "**/libraries/chart/**",
+            "**/libraries/chart/**/*",
+            "com.feragusper.smokeanalytics.libraries.chart.**"
         )
     }
 

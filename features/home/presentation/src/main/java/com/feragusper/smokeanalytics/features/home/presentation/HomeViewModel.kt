@@ -71,7 +71,7 @@ class HomeViewModel @Inject constructor(
      * @param result The result of processing the intent.
      * @return The new state of the UI.
      */
-    override suspend fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
+    override fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
         when (result) {
             Loading -> previous.copy(
                 displayLoading = true,

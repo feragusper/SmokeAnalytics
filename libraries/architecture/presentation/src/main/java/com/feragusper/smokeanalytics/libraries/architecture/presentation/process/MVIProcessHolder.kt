@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
  * @param I The type of [MVIIntent] that this process holder can handle.
  * @param R The type of [MVIResult] that this process holder emits.
  */
-interface MVIProcessHolder<I : MVIIntent, R : MVIResult> {
+fun interface MVIProcessHolder<I : MVIIntent, R : MVIResult> {
 
     /**
      * Transforms an [MVIIntent] into a stream of [MVIResult]s.
