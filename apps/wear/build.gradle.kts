@@ -1,4 +1,8 @@
+import com.google.common.base.Charsets
 import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -41,6 +45,39 @@ android {
         versionName = majorMinorPatchVersionName
     }
 
+    signingConfigs {
+        // Debug signing configuration using the debug keystore.
+        getByName("debug") {
+            storeFile = file("$rootDir/debug.keystore")
+        }
+        // Release signing configuration using properties from a file.
+        create("release") {
+            val properties = properties("release.keystore.properties")
+            storeFile = file("$rootDir/release.keystore")
+            storePassword = properties.getProperty("storePassword")
+            keyAlias = properties.getProperty("keyAlias")
+            keyPassword = properties.getProperty("keyPassword")
+        }
+    }
+
+    buildTypes {
+        release {
+            // Disable code minification for release builds.
+            isMinifyEnabled = false
+            // Configure ProGuard rules.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // Use the release signing configuration.
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // Use debug signing configuration.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -78,6 +115,18 @@ android {
             dimension = "environment"
         }
     }
+}
+
+// Utility function to load properties from a file located at the root directory.
+fun properties(propertiesFileName: String): Properties {
+    val properties = Properties()
+    val propertiesFile = File(rootDir, propertiesFileName)
+    if (propertiesFile.isFile) {
+        InputStreamReader(FileInputStream(propertiesFile), Charsets.UTF_8).use { reader ->
+            properties.load(reader)
+        }
+    }
+    return properties
 }
 
 dependencies {
