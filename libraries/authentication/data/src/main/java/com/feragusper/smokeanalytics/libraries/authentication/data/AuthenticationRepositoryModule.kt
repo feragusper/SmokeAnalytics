@@ -4,14 +4,15 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Authenticat
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 /**
  * Provides the binding for [AuthenticationRepository] to its implementation [AuthenticationRepositoryImpl],
  * allowing Dagger-Hilt to inject the concrete implementation wherever an [AuthenticationRepository] is required.
  */
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 abstract class AuthenticationRepositoryModule {
 
     /**
@@ -21,6 +22,7 @@ abstract class AuthenticationRepositoryModule {
      * @return The [AuthenticationRepository] instance.
      */
     @Binds
+    @Singleton
     abstract fun provideAuthenticationRepository(
         authenticationRepository: AuthenticationRepositoryImpl
     ): AuthenticationRepository

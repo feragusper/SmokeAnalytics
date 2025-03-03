@@ -51,7 +51,7 @@ class DevToolsViewModel @Inject constructor(
      * @param result The result of processing the intent.
      * @return The new state of the UI.
      */
-    override suspend fun reducer(
+    override fun reducer(
         previous: DevToolsViewState,
         result: DevToolsResult,
     ): DevToolsViewState = when (result) {

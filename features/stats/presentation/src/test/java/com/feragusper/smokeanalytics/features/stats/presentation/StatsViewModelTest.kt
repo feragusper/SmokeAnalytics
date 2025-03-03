@@ -7,7 +7,7 @@ import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.Sta
 import com.feragusper.smokeanalytics.features.stats.presentation.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase.PeriodType
-import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,7 +39,7 @@ class StatsViewModelTest {
     @Test
     fun `GIVEN loading state WHEN stats are requested THEN emits loading state first`() =
         runTest {
-            coEvery { processHolder.processIntent(any()) } returns flowOf(StatsResult.Loading)
+            every { processHolder.processIntent(any()) } returns flowOf(StatsResult.Loading)
 
             val viewModel = StatsViewModel(processHolder)
 
@@ -50,8 +50,6 @@ class StatsViewModelTest {
             viewModel.states().test {
                 awaitItem() shouldBeEqualTo StatsViewState(
                     stats = null,
-                    period = StatsViewState.StatsPeriod.WEEK,
-                    selectedDate = LocalDate.of(2025, 3, 2)
                 )
             }
         }
@@ -73,7 +71,7 @@ class StatsViewModelTest {
 
             val selectedDate = LocalDate.of(2025, 3, 2)
 
-            coEvery { processHolder.processIntent(any()) } returns flowOf(
+            every { processHolder.processIntent(any()) } returns flowOf(
                 StatsResult.Success(mockStats)
             )
 
@@ -86,8 +84,6 @@ class StatsViewModelTest {
             viewModel.states().test {
                 awaitItem() shouldBeEqualTo StatsViewState(
                     stats = mockStats,
-                    period = StatsViewState.StatsPeriod.WEEK,
-                    selectedDate = selectedDate
                 )
             }
         }
@@ -95,7 +91,7 @@ class StatsViewModelTest {
     @Test
     fun `GIVEN an error result WHEN stats fail to load THEN it resets stats`() =
         runTest {
-            coEvery { processHolder.processIntent(any()) } returns flowOf(
+            every { processHolder.processIntent(any()) } returns flowOf(
                 StatsResult.Error(Exception("Stats loading failed"))
             )
 
@@ -108,8 +104,6 @@ class StatsViewModelTest {
             viewModel.states().test {
                 awaitItem() shouldBeEqualTo StatsViewState(
                     stats = null,
-                    period = StatsViewState.StatsPeriod.WEEK,
-                    selectedDate = LocalDate.of(2025, 3, 2)
                 )
             }
         }

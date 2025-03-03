@@ -46,7 +46,7 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
         processHolder.processIntent(intent)
 
     // Reducer function to update the state based on the TileResult
-    override suspend fun reducer(
+    override fun reducer(
         previous: TileViewState,
         result: TileResult
     ): TileViewState = when (result) {

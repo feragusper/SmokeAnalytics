@@ -4,7 +4,7 @@ import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
-import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,7 +24,7 @@ class SettingsViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        coEvery { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
+        every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
             SettingsResult.Loading
         )
         viewModel = SettingsViewModel(processHolder)
@@ -41,7 +41,7 @@ class SettingsViewModelTest {
     @Test
     fun `GIVEN a loading result WHEN emitted THEN it displays loading`() =
         runTest {
-            coEvery { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
+            every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
                 SettingsResult.Loading
             )
 
@@ -53,7 +53,7 @@ class SettingsViewModelTest {
     @Test
     fun `GIVEN a user logged out result WHEN emitted THEN it shows logged out state`() =
         runTest {
-            coEvery { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
+            every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
                 SettingsResult.UserLoggedOut
             )
 
@@ -68,7 +68,7 @@ class SettingsViewModelTest {
     fun `GIVEN a user logged in result WHEN emitted THEN it updates UI state`() =
         runTest {
             val email = "fernando@example.com"
-            coEvery { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
+            every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
                 SettingsResult.UserLoggedIn(email)
             )
 
@@ -83,10 +83,10 @@ class SettingsViewModelTest {
     fun `GIVEN a user logs in THEN signs out THEN it updates state correctly`() =
         runTest {
             val email = "fernando@example.com"
-            coEvery { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
+            every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
                 SettingsResult.UserLoggedIn(email)
             )
-            coEvery { processHolder.processIntent(SettingsIntent.SignOut) } returns flowOf(
+            every { processHolder.processIntent(SettingsIntent.SignOut) } returns flowOf(
                 SettingsResult.UserLoggedOut
             )
 
