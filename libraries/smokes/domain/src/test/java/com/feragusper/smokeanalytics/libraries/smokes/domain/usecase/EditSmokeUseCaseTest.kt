@@ -1,7 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
-import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,7 +14,6 @@ import java.time.LocalDateTime
 class EditSmokeUseCaseTest {
 
     private val smokeRepository: SmokeRepository = mockk()
-    private val wearSyncManager: WearSyncManager.Mobile = mockk()
 
     private lateinit var editSmokeUseCase: EditSmokeUseCase
 
@@ -24,18 +22,17 @@ class EditSmokeUseCaseTest {
      */
     @BeforeEach
     fun setUp() {
-        editSmokeUseCase = EditSmokeUseCase(smokeRepository, wearSyncManager)
+        editSmokeUseCase = EditSmokeUseCase(smokeRepository)
 
         // Default mock behavior: Just execute without returning anything
         coEvery { smokeRepository.editSmoke(any(), any()) } just Runs
-        coEvery { wearSyncManager.syncWithWear() } just Runs
     }
 
     /**
      * Ensures that invoking the use case **edits the smoke event** and **syncs with Wear OS**.
      */
     @Test
-    fun `GIVEN a smoke event ID and date WHEN invoke is executed THEN it should call editSmoke and syncWithWear`() =
+    fun `GIVEN a smoke event ID and date WHEN invoke is executed THEN it should call editSmoke`() =
         runTest {
             // Arrange: Define an ID and a new date
             val smokeId = "id"
@@ -46,6 +43,5 @@ class EditSmokeUseCaseTest {
 
             // Assert: Verify that both `editSmoke()` and `syncWithWear()` were called correctly
             coVerify(exactly = 1) { smokeRepository.editSmoke(smokeId, newDate) }
-            coVerify(exactly = 1) { wearSyncManager.syncWithWear() }
         }
 }

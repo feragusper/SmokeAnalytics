@@ -17,7 +17,5 @@ fun DevToolsView(viewModel: DevToolsViewModel) {
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
 
     // Render the UI based on the current state and send user intents to the ViewModel.
-    viewState.Compose { intent ->
-        viewModel.intents().trySend(intent)
-    }
+    viewState.Compose()
 }

@@ -10,6 +10,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUse
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -32,6 +33,7 @@ class HistoryProcessHolder @Inject constructor(
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
+    private val syncWithWearUseCase: SyncWithWearUseCase
 ) : MVIProcessHolder<HistoryIntent, HistoryResult> {
 
     /**
@@ -58,6 +60,7 @@ class HistoryProcessHolder @Inject constructor(
         emit(HistoryResult.Loading)
         deleteSmokeUseCase.invoke(intent.id)
         emit(HistoryResult.DeleteSmokeSuccess)
+        syncWithWearUseCase.invoke()
     }.catchAndLog {
         emit(HistoryResult.Error.Generic)
     }
@@ -72,6 +75,7 @@ class HistoryProcessHolder @Inject constructor(
         emit(HistoryResult.Loading)
         editSmokeUseCase.invoke(intent.id, intent.date)
         emit(HistoryResult.EditSmokeSuccess)
+        syncWithWearUseCase.invoke()
     }.catchAndLog {
         emit(HistoryResult.Error.Generic)
     }
@@ -118,6 +122,7 @@ class HistoryProcessHolder @Inject constructor(
                 emit(HistoryResult.Loading)
                 addSmokeUseCase.invoke(intent.date)
                 emit(HistoryResult.AddSmokeSuccess)
+                syncWithWearUseCase.invoke()
             }
         }
     }.catchAndLog {

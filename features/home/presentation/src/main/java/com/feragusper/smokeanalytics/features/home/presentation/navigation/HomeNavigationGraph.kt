@@ -18,7 +18,8 @@ import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeN
  * @param homeNavigator The navigator used to handle navigation actions for Home.
  */
 fun NavGraphBuilder.homeNavigationGraph(
-    homeNavigator: HomeNavigator
+    homeNavigator: HomeNavigator,
+    onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
 ) {
     // Define the navigation graph for Home with a start destination.
     navigation(startDestination = START, route = ROUTE) {
@@ -30,7 +31,10 @@ fun NavGraphBuilder.homeNavigationGraph(
             viewModel.navigator = homeNavigator
 
             // Display the HomeView using the ViewModel.
-            HomeView(viewModel)
+            HomeView(
+                viewModel,
+                onFabConfigChanged,
+            )
         }
     }
 }

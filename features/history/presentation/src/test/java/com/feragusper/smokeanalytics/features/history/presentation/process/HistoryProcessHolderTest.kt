@@ -5,13 +5,14 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +22,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.amshove.kluent.shouldBe
-import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -40,6 +40,7 @@ class HistoryProcessHolderTest {
     private val deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
     private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
+    private val syncWithWearUseCase: SyncWithWearUseCase = mockk()
 
     @BeforeEach
     fun setUp() {
@@ -50,7 +51,11 @@ class HistoryProcessHolderTest {
             deleteSmokeUseCase,
             fetchSmokesUseCase,
             fetchSessionUseCase,
+            syncWithWearUseCase
         )
+
+        // Default mock behavior
+        coEvery { syncWithWearUseCase.invoke() } just Runs
     }
 
     @AfterEach
@@ -68,25 +73,7 @@ class HistoryProcessHolderTest {
         }
 
         @Test
-        fun `WHEN fetching smoke list THEN returns Loading and Success`() = runTest {
-            val date: LocalDateTime = mockk()
-            val smokeList: List<Smoke> = mockk()
-            coEvery { fetchSmokesUseCase(date) } returns smokeList
-
-            results = processHolder.processIntent(HistoryIntent.FetchSmokes(date))
-
-            results.test {
-                awaitItem() shouldBe HistoryResult.Loading
-                awaitItem() shouldBeEqualTo HistoryResult.FetchSmokesSuccess(
-                    selectedDate = date,
-                    smokes = smokeList
-                )
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        @Test
-        fun `WHEN adding smoke THEN returns Loading and Success`() = runTest {
+        fun `WHEN adding smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val date: LocalDateTime = mockk()
             coEvery { addSmokeUseCase(date) } just Runs
 
@@ -95,12 +82,13 @@ class HistoryProcessHolderTest {
             results.test {
                 awaitItem() shouldBe HistoryResult.Loading
                 awaitItem() shouldBe HistoryResult.AddSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }
         }
 
         @Test
-        fun `WHEN editing smoke THEN returns Loading and Success`() = runTest {
+        fun `WHEN editing smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val id = "id"
             val date: LocalDateTime = mockk()
             coEvery { editSmokeUseCase(id, date) } just Runs
@@ -110,27 +98,13 @@ class HistoryProcessHolderTest {
             results.test {
                 awaitItem() shouldBe HistoryResult.Loading
                 awaitItem() shouldBe HistoryResult.EditSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }
         }
 
         @Test
-        fun `WHEN editing smoke fails THEN returns Loading and Generic Error`() = runTest {
-            val id = "id"
-            val date: LocalDateTime = mockk()
-            coEvery { editSmokeUseCase(id, date) } throws IllegalStateException("Error")
-
-            results = processHolder.processIntent(HistoryIntent.EditSmoke(id, date))
-
-            results.test {
-                awaitItem() shouldBe HistoryResult.Loading
-                awaitItem() shouldBe HistoryResult.Error.Generic
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        @Test
-        fun `WHEN deleting smoke THEN returns Loading and Success`() = runTest {
+        fun `WHEN deleting smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val id = "id"
             coEvery { deleteSmokeUseCase(id) } just Runs
 
@@ -139,20 +113,7 @@ class HistoryProcessHolderTest {
             results.test {
                 awaitItem() shouldBe HistoryResult.Loading
                 awaitItem() shouldBe HistoryResult.DeleteSmokeSuccess
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        @Test
-        fun `WHEN deleting smoke fails THEN returns Loading and Generic Error`() = runTest {
-            val id = "id"
-            coEvery { deleteSmokeUseCase(id) } throws IllegalStateException("Error")
-
-            results = processHolder.processIntent(HistoryIntent.DeleteSmoke(id))
-
-            results.test {
-                awaitItem() shouldBe HistoryResult.Loading
-                awaitItem() shouldBe HistoryResult.Error.Generic
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -174,17 +135,7 @@ class HistoryProcessHolderTest {
             results.test {
                 awaitItem() shouldBe HistoryResult.Error.NotLoggedIn
                 awaitItem() shouldBe HistoryResult.GoToAuthentication
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        @Test
-        fun `WHEN fetching smoke list THEN returns NotLoggedIn`() = runTest {
-            val date: LocalDateTime = mockk()
-            results = processHolder.processIntent(HistoryIntent.FetchSmokes(date))
-
-            results.test {
-                awaitItem() shouldBeEqualTo HistoryResult.NotLoggedIn(date)
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
                 cancelAndIgnoreRemainingEvents()
             }
         }

@@ -1,12 +1,9 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi.compose
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,41 +16,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -61,6 +50,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
+import com.valentinilk.shimmer.shimmer
 import java.time.LocalDateTime
 
 /**
@@ -85,23 +75,10 @@ data class HomeViewState(
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    override fun Compose(intent: (HomeIntent) -> Unit) {
-        val snackbarHostState = remember { SnackbarHostState() }
-        val isFABVisible = rememberSaveable { mutableStateOf(true) }
-
-        // Handle FAB visibility on scroll
-        val nestedScrollConnection = remember {
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    when {
-                        available.y < -1 -> isFABVisible.value = false
-                        available.y > 1 -> isFABVisible.value = true
-                    }
-                    return Offset.Zero
-                }
-            }
-        }
-
+    fun Compose(
+        onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
+        intent: (HomeIntent) -> Unit
+    ) {
         // Pull to refresh state management
         val pullToRefreshState = remember {
             object : PullToRefreshState {
@@ -121,80 +98,56 @@ data class HomeViewState(
             }
         }
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            floatingActionButton = {
-                AnimatedVisibility(
-                    visible = isFABVisible.value && !displayLoading,
-                    enter = slideInVertically(initialOffsetY = { it * 2 }),
-                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
-                ) {
-                    FloatingActionButton(
-                        modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
-                        onClick = { intent(HomeIntent.AddSmoke) }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
-                                contentDescription = ""
-                            )
-                            Text(
-                                text = stringResource(R.string.home_button_track),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                }
-            }
-        ) { contentPadding ->
-            PullToRefreshBox(
-                isRefreshing = displayRefreshLoading,
-                onRefresh = { intent(HomeIntent.FetchSmokes) },
-                state = pullToRefreshState,
-                modifier = Modifier.padding(contentPadding),
-                indicator = {
-                    PullToRefreshDefaults.Indicator(
-                        state = pullToRefreshState,
-                        isRefreshing = displayRefreshLoading,
-                        modifier = Modifier.align(Alignment.TopCenter),
-                    )
-                }
-            ) {
-                if (displayLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    HomeContent(
-                        nestedScrollConnection = nestedScrollConnection,
-                        smokesPerDay = smokesPerDay,
-                        smokesPerWeek = smokesPerWeek,
-                        smokesPerMonth = smokesPerMonth,
-                        timeSinceLastCigarette = timeSinceLastCigarette,
-                        latestSmokes = latestSmokes,
-                        intent = intent
-                    )
+        LaunchedEffect(displayLoading) {
+            onFabConfigChanged.invoke(!displayLoading) { intent(HomeIntent.AddSmoke) }
+        }
+
+        // Handle FAB visibility on scroll
+        val nestedScrollConnection = remember {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    onFabConfigChanged.invoke(available.y > 1) { intent(HomeIntent.AddSmoke) }
+                    return Offset.Zero
                 }
             }
         }
+
+        PullToRefreshBox(
+            isRefreshing = displayRefreshLoading,
+            onRefresh = { intent(HomeIntent.FetchSmokes) },
+            state = pullToRefreshState,
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = displayRefreshLoading,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                )
+            }
+        ) {
+            HomeContent(
+                nestedScrollConnection = nestedScrollConnection,
+                smokesPerDay = smokesPerDay,
+                smokesPerWeek = smokesPerWeek,
+                smokesPerMonth = smokesPerMonth,
+                timeSinceLastCigarette = timeSinceLastCigarette,
+                latestSmokes = latestSmokes,
+                intent = intent,
+                isLoading = displayLoading
+            )
+        }
+//        }
     }
 }
 
 @Composable
-fun HomeContent(
+private fun HomeContent(
     nestedScrollConnection: NestedScrollConnection,
     smokesPerDay: Int?,
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
     latestSmokes: List<Smoke>?,
+    isLoading: Boolean,
     intent: (HomeIntent) -> Unit
 ) {
     Column(
@@ -206,14 +159,19 @@ fun HomeContent(
             smokesPerDay = smokesPerDay,
             smokesPerWeek = smokesPerWeek,
             smokesPerMonth = smokesPerMonth,
+            isLoading = isLoading,
             onHistoryClick = { intent(HomeIntent.OnClickHistory) }
         )
 
-        TimeSinceLastCigaretteSection(timeSinceLastCigarette)
+        TimeSinceLastCigaretteSection(
+            timeSinceLastCigarette = timeSinceLastCigarette,
+            isLoading = isLoading
+        )
 
         LatestSmokesSection(
             latestSmokes = latestSmokes,
             nestedScrollConnection = nestedScrollConnection,
+            isLoading = isLoading,
             onEdit = { id, date -> intent(HomeIntent.EditSmoke(id, date)) },
             onDelete = { id -> intent(HomeIntent.DeleteSmoke(id)) }
         )
@@ -225,74 +183,77 @@ private fun StatsSection(
     smokesPerDay: Int?,
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
+    isLoading: Boolean,
     onHistoryClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background)
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            smokesPerDay?.let {
-                Stat(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onHistoryClick() },
-                    titleResourceId = R.string.home_label_per_day,
-                    count = it
-                )
-            }
-            smokesPerWeek?.let {
-                Stat(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onHistoryClick() },
-                    titleResourceId = R.string.home_label_per_week,
-                    count = it
-                )
-            }
-            smokesPerMonth?.let {
-                Stat(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onHistoryClick() },
-                    titleResourceId = R.string.home_label_per_month,
-                    count = it
-                )
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Stat(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onHistoryClick() },
+                titleResourceId = R.string.home_label_per_day,
+                count = smokesPerDay,
+                isLoading = isLoading
+            )
+            Stat(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onHistoryClick() },
+                titleResourceId = R.string.home_label_per_week,
+                count = smokesPerWeek,
+                isLoading = isLoading
+            )
+            Stat(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onHistoryClick() },
+                titleResourceId = R.string.home_label_per_month,
+                count = smokesPerMonth,
+                isLoading = isLoading
+            )
         }
     }
 }
 
 @Composable
 private fun TimeSinceLastCigaretteSection(
-    timeSinceLastCigarette: Pair<Long, Long>?
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    isLoading: Boolean
 ) {
-    timeSinceLastCigarette?.let {
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = MaterialTheme.shapes.medium
-                )
-                .fillMaxWidth()
-                .padding(16.dp),
-            contentAlignment = Alignment.BottomEnd,
+    Spacer(modifier = Modifier.height(16.dp))
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.medium
+            )
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(
-                    4.dp,
-                    Alignment.CenterVertically
-                ),
-            ) {
-                Text(
-                    text = stringResource(id = R.string.home_since_your_last_cigarette),
-                    style = MaterialTheme.typography.labelSmall
+            Text(
+                text = stringResource(id = R.string.home_since_your_last_cigarette),
+                style = MaterialTheme.typography.labelSmall
+            )
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .size(100.dp, 26.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .shimmer()
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 )
+            } else {
                 Text(
-                    text = timeSinceLastCigarette.let { (hours, minutes) ->
+                    text = timeSinceLastCigarette?.let { (hours, minutes) ->
                         listOfNotNull(
                             stringResource(
                                 id = R.string.home_smoked_after_hours_short,
@@ -303,15 +264,15 @@ private fun TimeSinceLastCigaretteSection(
                                 minutes.toInt()
                             )
                         ).joinToString(", ")
-                    },
+                    } ?: "--",
                     style = MaterialTheme.typography.titleLarge
                 )
             }
-            Image(
-                painter = painterResource(id = R.drawable.il_cigarette_background),
-                contentDescription = null
-            )
         }
+        Image(
+            painter = painterResource(id = R.drawable.il_cigarette_background),
+            contentDescription = null
+        )
     }
 }
 
@@ -319,6 +280,7 @@ private fun TimeSinceLastCigaretteSection(
 private fun LatestSmokesSection(
     latestSmokes: List<Smoke>?,
     nestedScrollConnection: NestedScrollConnection,
+    isLoading: Boolean,
     onEdit: (String, LocalDateTime) -> Unit,
     onDelete: (String) -> Unit
 ) {
@@ -328,7 +290,25 @@ private fun LatestSmokesSection(
         style = MaterialTheme.typography.titleSmall,
     )
 
-    latestSmokes?.takeIf { it.isNotEmpty() }?.let {
+    if (isLoading) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(top = 32.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            items(3) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .shimmer()
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                )
+            }
+        }
+    } else if (!latestSmokes.isNullOrEmpty()) {
         LazyColumn(
             modifier = Modifier
                 .padding(top = 16.dp)
@@ -336,7 +316,7 @@ private fun LatestSmokesSection(
                 .nestedScroll(nestedScrollConnection),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(it) { smoke ->
+            items(latestSmokes) { smoke ->
                 SwipeToDismissRow(
                     date = smoke.date,
                     timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
@@ -347,7 +327,7 @@ private fun LatestSmokesSection(
                 HorizontalDivider()
             }
         }
-    } ?: run {
+    } else {
         EmptySmokes()
     }
 }
@@ -357,6 +337,14 @@ private fun LatestSmokesSection(
 @Composable
 private fun HomeViewLoadingPreview() {
     SmokeAnalyticsTheme {
-        HomeViewState(displayLoading = true).Compose {}
+//        HomeViewState(displayLoading = true).Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun HomeViewPreview() {
+    SmokeAnalyticsTheme {
+//        HomeViewState().Compose {}
     }
 }

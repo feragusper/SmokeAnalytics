@@ -53,11 +53,9 @@ data class DevToolsViewState(
 
     /**
      * Composable function that renders the DevTools UI based on the current state.
-     *
-     * @param intent Lambda function to send user intentions to the ViewModel.
      */
     @Composable
-    override fun Compose(intent: (DevToolsIntent) -> Unit) {
+    fun Compose() {
         val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -155,7 +153,7 @@ private fun DevToolsLoadingPreview() {
     SmokeAnalyticsTheme {
         DevToolsViewState(
             displayLoading = true
-        ).Compose {}
+        ).Compose()
     }
 }
 
@@ -166,7 +164,7 @@ private fun DevToolsLoadingPreview() {
 @Composable
 private fun DevToolsLoggedOutViewPreview() {
     SmokeAnalyticsTheme {
-        DevToolsViewState().Compose {}
+        DevToolsViewState().Compose()
     }
 }
 
@@ -182,6 +180,6 @@ private fun DevToolsLoggedInViewPreview() {
                 id = "123",
                 email = "fernancho@gmail.com"
             )
-        ).Compose {}
+        ).Compose()
     }
 }
