@@ -35,4 +35,6 @@ dependencies {
     // Dagger Hilt dependencies for dependency injection.
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
+
+    implementation(libs.compose.shimmer)
 }

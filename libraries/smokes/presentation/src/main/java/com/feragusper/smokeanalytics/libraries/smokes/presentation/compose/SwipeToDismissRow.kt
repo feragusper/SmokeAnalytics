@@ -77,11 +77,11 @@ fun SwipeToDismissRow(
 ) {
     Box {
 
-        var willDismissDirection: SwipeToDismissBoxValue? by remember { mutableStateOf(null) }
+        val willDismissDirection: SwipeToDismissBoxValue? by remember { mutableStateOf(null) }
 
         val dismissState = rememberSwipeToDismissBoxState(
-            confirmValueChange = {
-                if (willDismissDirection == SwipeToDismissBoxValue.EndToStart) {
+            confirmValueChange = { dismissValue ->
+                if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
                     onDelete()
                     true
                 } else {
@@ -91,11 +91,10 @@ fun SwipeToDismissRow(
         )
 
         LaunchedEffect(key1 = dismissState) {
-            snapshotFlow { dismissState.requireOffset() }
-                .collect {
-                    willDismissDirection = when {
-                        it < -300 -> SwipeToDismissBoxValue.EndToStart
-                        else -> null
+            snapshotFlow { dismissState.currentValue }
+                .collect { value ->
+                    if (value == SwipeToDismissBoxValue.EndToStart) {
+                        onDelete()
                     }
                 }
         }

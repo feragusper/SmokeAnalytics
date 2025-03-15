@@ -52,7 +52,7 @@ data class StatsViewState(
     enum class StatsPeriod { DAY, WEEK, MONTH, YEAR }
 
     @Composable
-    override fun Compose(intent: (StatsIntent) -> Unit) {
+    fun Compose(intent: (StatsIntent) -> Unit) {
         var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
         var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 

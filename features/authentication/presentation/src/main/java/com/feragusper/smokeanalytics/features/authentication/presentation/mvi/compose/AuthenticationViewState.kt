@@ -47,7 +47,7 @@ data class AuthenticationViewState(
      * @param intent Lambda function to send user intentions to the ViewModel.
      */
     @Composable
-    override fun Compose(intent: (AuthenticationIntent) -> Unit) {
+    fun Compose(intent: (AuthenticationIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },

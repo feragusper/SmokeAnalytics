@@ -13,8 +13,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,32 +55,27 @@ data class SettingsViewState(
     }
 
     @Composable
-    override fun Compose(intent: (SettingsIntent) -> Unit) {
+    fun Compose(intent: (SettingsIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+        Column(
+            modifier = Modifier
+                .padding(vertical = 16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(it)
-                    .padding(vertical = 16.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                when {
-                    displayLoading -> LoadingView()
-                    currentEmail != null -> LoggedInView(
-                        currentEmail = currentEmail,
-                        onSignOut = { intent(SettingsIntent.SignOut) }
-                    )
+            when {
+                displayLoading -> LoadingView()
+                currentEmail != null -> LoggedInView(
+                    currentEmail = currentEmail,
+                    onSignOut = { intent(SettingsIntent.SignOut) }
+                )
 
-                    else -> LoggedOutView(
-                        onSignInSuccess = { intent(SettingsIntent.FetchUser) },
-                        snackbarHostState = snackbarHostState
-                    )
-                }
-                AppVersionFooter()
+                else -> LoggedOutView(
+                    onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+                    snackbarHostState = snackbarHostState
+                )
             }
+            AppVersionFooter()
         }
     }
 }
@@ -104,11 +97,6 @@ private fun LoggedInView(
     currentEmail: String,
     onSignOut: () -> Unit
 ) {
-    Text(
-        modifier = Modifier.padding(16.dp),
-        text = stringResource(R.string.settings_title),
-        style = MaterialTheme.typography.titleLarge,
-    )
     UserInfo(email = currentEmail)
     HorizontalDivider()
     Button(

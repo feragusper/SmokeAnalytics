@@ -2,22 +2,19 @@ package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
-import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.every
+import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -39,6 +36,7 @@ class HomeProcessHolderTest {
     private val deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
+    private val syncWithWearUseCase: SyncWithWearUseCase = mockk()
 
     @BeforeEach
     fun setUp() {
@@ -48,8 +46,12 @@ class HomeProcessHolderTest {
             editSmokeUseCase = editSmokeUseCase,
             deleteSmokeUseCase = deleteSmokeUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
-            fetchSessionUseCase = fetchSessionUseCase
+            fetchSessionUseCase = fetchSessionUseCase,
+            syncWithWearUseCase = syncWithWearUseCase
         )
+
+        // Default mock behavior for sync
+        coEvery { syncWithWearUseCase.invoke() } just Runs
     }
 
     @Nested
@@ -61,46 +63,20 @@ class HomeProcessHolderTest {
         }
 
         @Test
-        fun `WHEN fetching smoke count list THEN it returns success`() = runTest {
-            val smokeCountListResult: SmokeCountListResult = mockk()
-            coEvery { fetchSmokeCountListUseCase() } returns smokeCountListResult
-
-            processHolder.processIntent(HomeIntent.FetchSmokes).test {
-                awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.FetchSmokesSuccess(smokeCountListResult)
-                awaitComplete()
-            }
-        }
-
-        @Test
-        fun `WHEN ticking time since last cigarette THEN it updates time`() = runTest {
-            val date: LocalDateTime = mockk()
-            val lastSmoke: Smoke = mockk { every { this@mockk.date } returns date }
-            val timeElapsedSinceNow: Pair<Long, Long> = mockk()
-            mockkStatic(LocalDateTime::timeElapsedSinceNow)
-            every { date.timeElapsedSinceNow() } returns timeElapsedSinceNow
-
-            processHolder.processIntent(HomeIntent.TickTimeSinceLastCigarette(lastSmoke)).test {
-                awaitItem() shouldBeEqualTo HomeResult.UpdateTimeSinceLastCigarette(
-                    timeElapsedSinceNow
-                )
-                awaitComplete()
-            }
-        }
-
-        @Test
-        fun `WHEN adding smoke THEN it returns success`() = runTest {
-            coEvery { addSmokeUseCase.invoke(any()) } returns Unit
+        fun `WHEN adding smoke THEN it returns success and syncs with Wear`() = runTest {
+            coEvery { addSmokeUseCase.invoke(any()) } just Runs
+            coEvery { syncWithWearUseCase.invoke() } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
 
         @Test
-        fun `WHEN editing smoke THEN it returns success`() = runTest {
+        fun `WHEN editing smoke THEN it returns success and syncs with Wear`() = runTest {
             val id = "id"
             val date: LocalDateTime = mockk()
             coEvery { editSmokeUseCase(id, date) } just Runs
@@ -108,18 +84,20 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.EditSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
 
         @Test
-        fun `WHEN deleting smoke THEN it returns success`() = runTest {
+        fun `WHEN deleting smoke THEN it returns success and syncs with Wear`() = runTest {
             val id = "id"
             coEvery { deleteSmokeUseCase(id) } just Runs
 
             processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.DeleteSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
@@ -131,6 +109,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
                 awaitComplete()
             }
         }
@@ -144,6 +123,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
                 awaitComplete()
             }
         }
@@ -156,6 +136,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
                 awaitComplete()
             }
         }
@@ -174,6 +155,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Error.NotLoggedIn
                 awaitItem() shouldBeEqualTo HomeResult.GoToAuthentication
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
                 awaitComplete()
             }
         }

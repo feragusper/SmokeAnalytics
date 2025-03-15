@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
 
+    implementation(libs.compose.shimmer)
+
     // Unit testing dependencies
     testImplementation(libs.bundles.test)
 

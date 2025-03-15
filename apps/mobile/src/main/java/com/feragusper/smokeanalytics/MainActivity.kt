@@ -6,8 +6,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -19,12 +25,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -32,6 +43,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
@@ -97,15 +109,49 @@ private fun MainContainerScreen(
     )
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showFab by remember { mutableStateOf(true) }
+
     Scaffold(
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = showFab,
+                enter = slideInVertically(initialOffsetY = { it * 2 }),
+                exit = slideOutVertically(targetOffsetY = { it * 2 }),
+            ) {
+                FloatingActionButton(
+                    modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
+                    onClick = { fabAction?.invoke() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
+                            contentDescription = ""
+                        )
+                        Text(
+                            text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+        }
     ) { innerPadding ->
         MainScreenNavigationConfigurations(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
             navigateToAuthentication = navigateToAuthentication,
-            navigateToHistory = navigateToHistory
+            navigateToHistory = navigateToHistory,
+            onFabConfigChanged = { isVisible, action ->
+                showFab = isVisible
+                fabAction = action
+            },
         )
     }
 }
@@ -163,6 +209,7 @@ private fun MainScreenNavigationConfigurations(
     modifier: Modifier,
     navigateToAuthentication: () -> Unit,
     navigateToHistory: () -> Unit,
+    onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
 ) {
     NavHost(
         modifier = modifier,
@@ -175,7 +222,8 @@ private fun MainScreenNavigationConfigurations(
                 navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = settingsNavigator.navigateToSettings,
                 navigateToHistory = navigateToHistory
-            )
+            ),
+            onFabConfigChanged = onFabConfigChanged,
         )
         statsNavigationGraph(StatsNavigator())
         settingsNavigationGraph(settingsNavigator)

@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -29,6 +30,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -51,11 +54,14 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.dateFormatted
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
+import com.valentinilk.shimmer.shimmer
 import java.time.LocalDateTime
 
 /**
@@ -80,7 +86,7 @@ data class HistoryViewState(
      */
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    override fun Compose(intent: (HistoryIntent) -> Unit) {
+    fun Compose(intent: (HistoryIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         val isFABVisible = rememberSaveable { mutableStateOf(true) }
 
@@ -140,94 +146,126 @@ data class HistoryViewState(
                                 contentDescription = null,
                             )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.mediumTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
             }
         ) { contentPadding ->
-            if (displayLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
+            var showDatePicker by remember { mutableStateOf(false) }
+            if (showDatePicker) {
+                DatePickerDialog(
+                    initialDate = selectedDate,
+                    onConfirm = { date ->
+                        showDatePicker = false
+                        intent(HistoryIntent.FetchSmokes(date))
+                    },
+                    onDismiss = { showDatePicker = false }
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Date Picker and Navigation
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                var showDatePicker by remember { mutableStateOf(false) }
-                if (showDatePicker) {
-                    DatePickerDialog(
-                        initialDate = selectedDate,
-                        onConfirm = { date ->
-                            showDatePicker = false
-                            intent(HistoryIntent.FetchSmokes(date))
-                        },
-                        onDismiss = { showDatePicker = false }
+                    IconButton(onClick = {
+                        intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(-1)))
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = ""
+                        )
+                    }
+                    Text(
+                        modifier = Modifier.clickable { showDatePicker = true },
+                        text = selectedDate.dateFormatted()
                     )
+                    IconButton(onClick = {
+                        intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1)))
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = ""
+                        )
+                    }
                 }
 
-                Column(
-                    modifier = Modifier
-                        .padding(contentPadding)
-                        .padding(horizontal = 16.dp)
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    // Date Picker and Navigation
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                Stat(
+                    titleResourceId = R.string.history_smoked,
+                    count = smokes?.size ?: 0,
+                    isLoading = displayLoading
+                )
+
+                if (displayLoading) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(top = 32.dp)
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
-                        IconButton(onClick = {
-                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(-1)))
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = ""
-                            )
-                        }
-                        Text(
-                            modifier = Modifier.clickable { showDatePicker = true },
-                            text = selectedDate.dateFormatted()
-                        )
-                        IconButton(onClick = {
-                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1)))
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = ""
+                        items(3) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(58.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .shimmer()
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                             )
                         }
                     }
-
-                    Stat(
-                        titleResourceId = R.string.history_smoked,
-                        count = smokes?.size ?: 0
-                    )
-
-                    smokes?.takeIf { it.isNotEmpty() }?.let {
-                        LazyColumn(
-                            modifier = Modifier
-                                .nestedScroll(nestedScrollConnection)
-                                .fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(smokes) { smoke ->
-                                SwipeToDismissRow(
-                                    date = smoke.date,
-                                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                                    onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
-                                    fullDateTimeEdit = true,
-                                    onEdit = { date ->
-                                        intent(HistoryIntent.EditSmoke(smoke.id, date))
-                                    }
-                                )
-                                HorizontalDivider()
-                            }
+                } else if (!smokes.isNullOrEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(top = 16.dp)
+                            .fillMaxSize()
+                            .nestedScroll(nestedScrollConnection),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(smokes) { smoke ->
+                            SwipeToDismissRow(
+                                date = smoke.date,
+                                timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
+                                fullDateTimeEdit = false,
+                                onEdit = { date -> intent(HistoryIntent.EditSmoke(smoke.id, date)) }
+                            )
+                            HorizontalDivider()
                         }
-                    } ?: run { EmptySmokes() }
+                    }
+                } else {
+                    EmptySmokes()
                 }
             }
         }
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun HistoryViewLoadingPreview() {
+    SmokeAnalyticsTheme {
+        HistoryViewState(displayLoading = true).Compose {}
+    }
+}
+
+@CombinedPreviews
+@Composable
+private fun HistoryViewPreview() {
+    SmokeAnalyticsTheme {
+        HistoryViewState().Compose {}
     }
 }
