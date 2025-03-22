@@ -59,11 +59,8 @@ class SmokeStatsTest {
         val stats = SmokeStats.from(smokes, 2023, 3, null)
 
         // Adjust the expected values based on the corrected week grouping
-        stats.weekly["W1"] shouldBeEqualTo 2  // Week 1 (March 1st - 7th) => 2 smokes
-        stats.weekly["W2"] shouldBeEqualTo 1  // Week 2 (March 8th - 14th) => 1 smoke
-        stats.weekly["W3"] shouldBeEqualTo 1  // Week 3 (March 15th - 21st) => 1 smoke
-        stats.weekly["W4"] shouldBeEqualTo 1  // Week 4 (March 22nd - 28th) => 1 smoke
-        stats.weekly["W5"] shouldBeEqualTo 1  // Week 5 (March 29th - 31st) => 1 smoke
+        stats.weekly["Wed"] shouldBeEqualTo 5 // March 1st, 2nd, 8th, 15th, 22nd, 29th are Wednesdays
+        stats.weekly["Thu"] shouldBeEqualTo 1 // March 23rd is a Thursday
     }
 
     @Test

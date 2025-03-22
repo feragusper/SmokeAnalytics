@@ -6,11 +6,11 @@
 
 [![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=<OWNER>_<REPO_NAME>&metric=alert_status)](https://sonarcloud.io/dashboard?id=<OWNER>_<REPO_NAME>)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=<OWNER>_<REPO_NAME>&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=<OWNER>_<REPO_NAME>)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=<OWNER>_<REPO_NAME>&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=<OWNER>_<REPO_NAME>)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=<OWNER>_<REPO_NAME>&metric=code_smells)](https://sonarcloud.io/component_measures/metric/code_smells/list?id=<OWNER>_<REPO_NAME>)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=<OWNER>_<REPO_NAME>&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=<OWNER>_<REPO_NAME>)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics>)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=feragusper_SmokeAnalytics)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=feragusper_SmokeAnalytics)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=code_smells)](https://sonarcloud.io/component_measures/metric/code_smells/list?id=feragusper_SmokeAnalytics)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=feragusper_SmokeAnalytics)
 
 Android application to track smoking habits and run analytics on them.
 
@@ -117,9 +117,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-
-## Third-Party Libraries
-
-This project includes code from the AAY-Chart library, originally developed
-by [The Chance](https://github.com/TheChance101/AAY-chart) under the MIT License. Modifications have
-been made to better integrate with Smoke Analytics.

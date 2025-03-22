@@ -43,43 +43,41 @@ data class SmokeStats(
             val filteredSmokes =
                 smokes.filter { it.date.year == year && it.date.monthValue == month }
 
-            // Daily Statistics
+            // Daily stats (1–31)
             val dailyStats = (1..totalDaysInMonth).associate { it.toString() to 0 }.toMutableMap()
             filteredSmokes.groupBy { it.date.dayOfMonth.toString() }
                 .mapValues { it.value.size }
                 .forEach { (day, count) -> dailyStats[day] = count }
 
-            // Weekly Statistics (adjust week calculation)
+            // Weekly stats (Mon–Sun)
             val weeklyStats = DayOfWeek.entries
                 .associate { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) to 0 }
                 .toMutableMap()
+            filteredSmokes.groupBy {
+                it.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+            }
+                .mapValues { it.value.size }
+                .forEach { (dayOfWeek, count) -> weeklyStats[dayOfWeek] = count }
 
+            // Monthly stats (Week 1–5)
+            val weekOfMonthStats = (1..5).associate { "W$it" to 0 }.toMutableMap()
             filteredSmokes.groupBy {
                 val weekOfMonth = (it.date.dayOfMonth - 1) / 7 + 1
                 "W$weekOfMonth"
             }
                 .mapValues { it.value.size }
-                .forEach { (week, count) -> weeklyStats[week] = count }
+                .forEach { (week, count) -> weekOfMonthStats[week] = count }
 
-            // Monthly Statistics (Week of the Month)
-            val weeksInMonth = (1..5).associate { "W$it" to 0 }.toMutableMap()
-            filteredSmokes.groupBy {
-                // Week number calculation adjusted for actual days in month
-                "W${((it.date.dayOfMonth - 1) / 7) + 1}"
-            }
-                .mapValues { it.value.size }
-                .forEach { (week, count) -> weeksInMonth[week] = count }
-
-            // Yearly Statistics (Month of the Year)
+            // Yearly stats (Jan–Dec)
             val yearlyStats = Month.entries
                 .associate { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) to 0 }
                 .toMutableMap()
             smokes.filter { it.date.year == year }
                 .groupBy { it.date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
                 .mapValues { it.value.size }
-                .forEach { (month, count) -> yearlyStats[month] = count }
+                .forEach { (monthName, count) -> yearlyStats[monthName] = count }
 
-            // Hourly Statistics (Time of the Day)
+            // Hourly stats (00:00–23:00)
             val hourlyStats = (0..23).associate {
                 LocalTime.of(it, 0).format(DateTimeFormatter.ofPattern("HH:00")) to 0
             }.toMutableMap()
@@ -95,24 +93,24 @@ data class SmokeStats(
                 .forEach { (hour, count) -> hourlyStats[hour] = count }
 
             val totalMonth = filteredSmokes.size
-            val totalWeek = filteredSmokes.filter {
+            val totalWeek = filteredSmokes.count {
                 it.date.toLocalDate() in startOfMonth..endOfMonth
-            }.size
+            }
             val totalDay = dailyFilteredSmokes.size
             val dailyAverage = if (totalDaysInMonth > 0)
                 totalMonth.toFloat() / totalDaysInMonth
             else 0f
 
             return SmokeStats(
-                dailyStats,
-                weeklyStats,
-                weeksInMonth,
-                yearlyStats,
-                hourlyStats,
-                totalMonth,
-                totalWeek,
-                totalDay,
-                dailyAverage
+                daily = dailyStats,
+                weekly = weeklyStats,
+                monthly = weekOfMonthStats,
+                yearly = yearlyStats,
+                hourly = hourlyStats,
+                totalMonth = totalMonth,
+                totalWeek = totalWeek,
+                totalDay = totalDay,
+                dailyAverage = dailyAverage
             )
         }
     }

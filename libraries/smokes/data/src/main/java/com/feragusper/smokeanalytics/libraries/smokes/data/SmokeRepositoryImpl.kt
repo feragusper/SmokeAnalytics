@@ -1,8 +1,10 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isThisWeek
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.isToday
+import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.lastInstantToday
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
@@ -93,12 +95,14 @@ class SmokeRepositoryImpl @Inject constructor(
 
         var query: Query = baseQuery.orderBy(SmokeEntity::date.name, Direction.DESCENDING)
 
-        startDate?.let {
-            query = query.whereGreaterThanOrEqualTo(SmokeEntity::date.name, it.toDate())
-        }
-        endDate?.let {
-            query = query.whereLessThan(SmokeEntity::date.name, it.toDate())
-        }
+        query = query.whereGreaterThanOrEqualTo(
+            SmokeEntity::date.name,
+            (startDate?.toLocalDate()?.atStartOfDay() ?: firstInstantThisMonth()).toDate()
+        )
+        query = query.whereLessThan(
+            SmokeEntity::date.name,
+            (endDate?.plusDays(1)?.toLocalDate()?.atStartOfDay() ?: lastInstantToday()).toDate()
+        )
 
         val result = query.get().await()
 

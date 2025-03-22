@@ -21,9 +21,6 @@ class KoverConfig(
             "**/compose/**",
             "**/di/**",
             "**/extensions/**",
-            "**/libraries/chart/**",
-            "**/libraries/chart/**/*",
-            "com.feragusper.smokeanalytics.libraries.chart.**"
         )
     }
 
@@ -38,8 +35,6 @@ class KoverConfig(
             excludes {
                 // Exclude classes by fully-qualified name (wildcards '*' and '?' are supported).
                 classes(koverReportExclusionsClasses)
-                // Exclude all classes in the specified package and its subpackages.
-                packages("com.feragusper.smokeanalytics.libraries.chart.**")
                 // Exclude all classes and functions annotated with matching annotations.
                 annotatedBy("*Generated*")
             }
