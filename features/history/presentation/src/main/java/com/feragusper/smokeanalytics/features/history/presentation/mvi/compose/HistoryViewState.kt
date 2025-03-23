@@ -240,7 +240,7 @@ data class HistoryViewState(
                                 date = smoke.date,
                                 timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
                                 onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
-                                fullDateTimeEdit = false,
+                                fullDateTimeEdit = true,
                                 onEdit = { date -> intent(HistoryIntent.EditSmoke(smoke.id, date)) }
                             )
                             HorizontalDivider()

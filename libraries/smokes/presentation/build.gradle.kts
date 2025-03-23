@@ -25,6 +25,8 @@ dependencies {
     // Include the architecture domain module for shared domain logic.
     implementation(project(":libraries:architecture:domain"))
 
+    implementation(libs.revealswipe)
+
     // Use the Compose BOM for consistent Compose library versions.
     implementation(platform(libs.androidx.compose.bom))
     // Include a bundle of Jetpack Compose libraries.

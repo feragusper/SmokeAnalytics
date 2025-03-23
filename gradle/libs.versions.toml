@@ -31,6 +31,7 @@ navVersion = "2.8.8"
 playServicesWearable = "19.0.0"
 protolayoutCore = "1.2.1"
 protolayoutMaterial = "1.2.1"
+revealswipe = "2.2.0"
 sonarqubeGradlePlugin = "4.0.0.2929"
 tiles = "1.4.1"
 tilesMaterial = "1.4.1"
@@ -92,6 +93,7 @@ material3 = { module = "androidx.compose.material3:material3", version.ref = "ma
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+revealswipe = { module = "de.charlex.compose:revealswipe", version.ref = "revealswipe" }
 sonarqube-gradle-plugin = { module = "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin", version.ref = "sonarqubeGradlePlugin" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
