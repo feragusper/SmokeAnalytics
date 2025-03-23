@@ -1,9 +1,7 @@
 # Smoke Analytics
 
 [![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_artifact.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_artifact.yml)
-
 [![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml)
-
 [![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics>)

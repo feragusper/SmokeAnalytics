@@ -1,51 +1,37 @@
 package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -54,6 +40,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
+import de.charlex.compose.RevealDirection
+import de.charlex.compose.RevealSwipe
+import de.charlex.compose.rememberRevealState
 import java.time.LocalDateTime
 
 /**
@@ -66,7 +55,6 @@ import java.time.LocalDateTime
  * @param fullDateTimeEdit Flag indicating if both date and time can be edited. If false, only time is editable.
  * @param onEdit Callback invoked with a new LocalDateTime when the user edits the event's time (or date and time).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDismissRow(
     date: LocalDateTime,
@@ -75,74 +63,96 @@ fun SwipeToDismissRow(
     fullDateTimeEdit: Boolean,
     onEdit: (LocalDateTime) -> Unit,
 ) {
-    Box {
+    val shape = MaterialTheme.shapes.medium
 
-        val willDismissDirection: SwipeToDismissBoxValue? by remember { mutableStateOf(null) }
+    val state = rememberRevealState(
+        directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
+        positionalThreshold = { it * 0.5f },
+    )
 
-        val dismissState = rememberSwipeToDismissBoxState(
-            confirmValueChange = { dismissValue ->
-                if (dismissValue == SwipeToDismissBoxValue.EndToStart) {
-                    onDelete()
-                    true
-                } else {
-                    false
-                }
-            }
-        )
+    var showDatePicker by remember { mutableStateOf(false) }
 
-        LaunchedEffect(key1 = dismissState) {
-            snapshotFlow { dismissState.currentValue }
-                .collect { value ->
-                    if (value == SwipeToDismissBoxValue.EndToStart) {
-                        onDelete()
-                    }
-                }
-        }
-
-        val hapticFeedback = LocalHapticFeedback.current
-        LaunchedEffect(key1 = willDismissDirection) {
-            if (willDismissDirection != null) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-            }
-        }
-
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {
-                // We no longer need 'AnimatedContent' as the backgroundContent does not depend on 'targetState'
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 8.dp)
-                        .background(color = Color.Red)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .fillMaxHeight()
-                            .aspectRatio(1f)
-                            .scale(1.45f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = rememberVectorPainter(Icons.Default.Delete),
-                            colorFilter = ColorFilter.tint(Color.Black),
-                            contentDescription = null
-                        )
-                    }
-                }
-            },
-            enableDismissFromStartToEnd = false,
-            content = {
-                SmokeItem(
-                    date = date,
-                    timeAfterPrevious = timeElapsedSincePreviousSmoke,
-                    fullDateTimeEdit = fullDateTimeEdit,
-                    onEdit = onEdit
+    RevealSwipe(
+        modifier = Modifier.padding(vertical = 5.dp),
+        state = state,
+        shape = shape,
+        backgroundCardStartColor = MaterialTheme.colorScheme.primaryContainer,
+        backgroundCardEndColor = MaterialTheme.colorScheme.errorContainer,
+        backgroundStartActionLabel = "Edit smoke",
+        backgroundEndActionLabel = "Delete smoke",
+        onBackgroundStartClick = {
+            showDatePicker = true
+            true
+        },
+        onBackgroundEndClick = {
+            onDelete()
+            true
+        },
+        hiddenContentStart = {
+            IconButton(onClick = { showDatePicker = true }) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_pencil),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
+        },
+        hiddenContentEnd = {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        },
+        card = { cardShape, content ->
+            Card(
+                modifier = Modifier.matchParentSize(),
+                colors = CardDefaults.cardColors(
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                    containerColor = Color.Transparent
+                ),
+                shape = cardShape,
+                content = content
+            )
+        }
+    ) {
+        SmokeItem(
+            date = date,
+            timeAfterPrevious = timeElapsedSincePreviousSmoke,
         )
+    }
 
+    if (showDatePicker) {
+        var selectedDateTime = date
+
+        if (fullDateTimeEdit) {
+            DateTimePickerDialog(
+                initialDateTime = date,
+                onDismiss = {
+                    showDatePicker = false
+                },
+                onDateSelected = { dateSelected ->
+                    selectedDateTime = dateSelected
+                },
+                onTimeSelected = { hour, minutes ->
+                    showDatePicker = false
+                    onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                }
+            )
+        } else {
+            TimePickerDialog(
+                initialDate = date,
+                onConfirm = { hour, minutes ->
+                    showDatePicker = false
+                    onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                },
+                onDismiss = {
+                    showDatePicker = false
+                },
+            )
+        }
     }
 }
 
@@ -150,8 +160,6 @@ fun SwipeToDismissRow(
 private fun SmokeItem(
     date: LocalDateTime,
     timeAfterPrevious: Pair<Long, Long>,
-    fullDateTimeEdit: Boolean,
-    onEdit: (LocalDateTime) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -189,50 +197,6 @@ private fun SmokeItem(
             )
         }
 
-        var showDatePicker by remember {
-            mutableStateOf(false)
-        }
-
-        IconButton(
-            modifier = Modifier.wrapContentWidth(),
-            onClick = { showDatePicker = true }
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_pencil),
-                contentDescription = null
-            )
-        }
-
-        if (showDatePicker) {
-            var selectedDateTime = date
-
-            if (fullDateTimeEdit) {
-                DateTimePickerDialog(
-                    initialDateTime = date,
-                    onDismiss = {
-                        showDatePicker = false
-                    },
-                    onDateSelected = { date ->
-                        selectedDateTime = date
-                    },
-                    onTimeSelected = { hour, minutes ->
-                        showDatePicker = false
-                        onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
-                    }
-                )
-            } else {
-                TimePickerDialog(
-                    initialDate = date,
-                    onConfirm = { hour, minutes ->
-                        showDatePicker = false
-                        onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
-                    },
-                    onDismiss = {
-                        showDatePicker = false
-                    },
-                )
-            }
-        }
     }
 }
 

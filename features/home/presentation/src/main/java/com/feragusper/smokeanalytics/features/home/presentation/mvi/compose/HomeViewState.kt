@@ -337,7 +337,7 @@ private fun LatestSmokesSection(
 @Composable
 private fun HomeViewLoadingPreview() {
     SmokeAnalyticsTheme {
-//        HomeViewState(displayLoading = true).Compose {}
+        HomeViewState(displayLoading = true).Compose({ _, _ -> }, {})
     }
 }
 
@@ -345,6 +345,6 @@ private fun HomeViewLoadingPreview() {
 @Composable
 private fun HomeViewPreview() {
     SmokeAnalyticsTheme {
-//        HomeViewState().Compose {}
+        HomeViewState().Compose({ _, _ -> }, {})
     }
 }
