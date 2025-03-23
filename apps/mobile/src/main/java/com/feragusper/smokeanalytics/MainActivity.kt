@@ -110,14 +110,14 @@ private fun MainContainerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-    var showFab by remember { mutableStateOf(true) }
+    var showFab by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = showFab,
+                visible = showFab && currentRoute(navController) == BottomNavigationScreens.Home.route,
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {

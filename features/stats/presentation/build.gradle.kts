@@ -37,9 +37,6 @@ dependencies {
     // Domain layer for accessing smoke-related data
     implementation(project(":libraries:smokes:domain"))
 
-    // Chart library for visualizing statistics
-    implementation(project(":libraries:chart"))
-
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
@@ -50,6 +47,11 @@ dependencies {
     // Dependency injection with Hilt
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
+
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m2)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.views)
 
     // Unit testing dependencies
     testImplementation(libs.bundles.test)

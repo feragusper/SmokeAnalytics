@@ -1,8 +1,6 @@
 package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,9 +12,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,16 +28,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
-import com.feragusper.smokeanalytics.libraries.chart.barChart.BarChart
-import com.feragusper.smokeanalytics.libraries.chart.barChart.model.BarParameters
-import com.feragusper.smokeanalytics.libraries.chart.baseComponents.model.GridOrientation
-import com.feragusper.smokeanalytics.libraries.chart.lineChart.LineChart
-import com.feragusper.smokeanalytics.libraries.chart.lineChart.model.LineParameters
-import com.feragusper.smokeanalytics.libraries.chart.lineChart.model.LineType
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase.PeriodType
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
+import com.patrykandpatrick.vico.compose.common.VicoTheme
+import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
+import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import java.time.LocalDate
 import java.util.Locale
 
@@ -62,27 +69,35 @@ data class StatsViewState(
                     selectedDate.year,
                     selectedDate.month.value,
                     selectedDate.dayOfMonth,
-                    when (currentPeriod) {
-                        StatsPeriod.DAY -> PeriodType.DAY
-                        StatsPeriod.WEEK -> PeriodType.WEEK
-                        StatsPeriod.MONTH -> PeriodType.MONTH
-                        StatsPeriod.YEAR -> PeriodType.YEAR
-                    }
+                    currentPeriod.toDomainPeriodType()
                 )
             )
         }
 
-        Scaffold { paddingValues ->
+        ProvideVicoTheme(rememberSmokeAnalyticsVicoTheme()) {
             Column(
                 modifier = Modifier
-                    .padding(paddingValues)
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TabRow(selectedTabIndex = currentPeriod.ordinal) {
+                TabRow(
+                    modifier = Modifier.padding(vertical = 16.dp),
+                    selectedTabIndex = currentPeriod.ordinal,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    indicator = { tabPositions ->
+                        SecondaryIndicator(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[currentPeriod.ordinal]),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                ) {
                     StatsPeriod.entries.forEach { period ->
+                        val isSelected = currentPeriod == period
                         Tab(
-                            selected = currentPeriod == period,
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            selected = isSelected,
                             onClick = {
                                 currentPeriod = period
                                 intent(
@@ -93,8 +108,16 @@ data class StatsViewState(
                                         period = period.toDomainPeriodType()
                                     )
                                 )
-                            }
-                        ) { Text(period.name.replaceFirstChar { it.uppercase() }) }
+                            },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ) {
+                            Text(
+                                text = period.name.lowercase()
+                                    .replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
                     }
                 }
 
@@ -114,21 +137,12 @@ data class StatsViewState(
                     }
                 )
 
-                when (currentPeriod) {
-                    StatsPeriod.DAY -> stats?.let {
-                        LineChart(stats.hourly)
-                    }
-
-                    StatsPeriod.WEEK -> stats?.let {
-                        BarChart(stats.weekly)
-                    }
-
-                    StatsPeriod.MONTH -> stats?.let {
-                        BarChart(stats.monthly)
-                    }
-
-                    StatsPeriod.YEAR -> stats?.let {
-                        BarChart(stats.yearly)
+                stats?.let {
+                    when (currentPeriod) {
+                        StatsPeriod.DAY -> LineChart(stats.hourly)
+                        StatsPeriod.WEEK -> BarChart(stats.weekly)
+                        StatsPeriod.MONTH -> BarChart(stats.monthly)
+                        StatsPeriod.YEAR -> BarChart(stats.yearly)
                     }
                 }
             }
@@ -196,71 +210,95 @@ fun HeaderNavigation(
 
 @Composable
 private fun BarChart(stats: Map<String, Int>) {
-    Box(
+    val modelProducer = remember { CartesianChartModelProducer() }
+    val xAxisFormatter = rememberXAxisFormatter(stats)
+
+    LaunchedEffect(stats) {
+        modelProducer.runTransaction {
+            columnSeries {
+                series(stats.values.map { it.toFloat() })
+            }
+        }
+    }
+
+    CartesianChartHost(
+        chart = rememberCartesianChart(
+            rememberColumnCartesianLayer(),
+            startAxis = VerticalAxis.rememberStart(),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                valueFormatter = xAxisFormatter
+            ),
+        ),
+        modelProducer = modelProducer,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
-    ) {
-        BarChart(
-            chartParameters = listOf(
-                BarParameters(
-                    dataName = null,
-                    data = stats.values.map { it.toDouble() },
-                    barColor = MaterialTheme.colorScheme.primary
-                )
+    )
+}
+
+
+@Composable
+private fun LineChart(stats: Map<String, Int>) {
+    val modelProducer = remember { CartesianChartModelProducer() }
+
+    val xAxisFormatter = rememberXAxisFormatter(stats)
+
+    val accumulatedValues = stats.values.runningFold(0) { sum, value -> sum + value }.drop(1)
+
+    LaunchedEffect(stats) {
+        modelProducer.runTransaction {
+            lineSeries {
+                series(accumulatedValues.map { it.toFloat() })
+            }
+        }
+    }
+
+    CartesianChartHost(
+        chart = rememberCartesianChart(
+            rememberLineCartesianLayer(),
+            startAxis = VerticalAxis.rememberStart(),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                valueFormatter = xAxisFormatter
             ),
-            gridColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
-            xAxisData = stats.keys.toList(),
-            spaceBetweenGroups = 30.dp,
-            barWidth = 20.dp,
-            barCornerRadius = 12.dp,
+        ),
+        modelProducer = modelProducer,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    )
+}
+
+@Composable
+fun rememberSmokeAnalyticsVicoTheme(): VicoTheme {
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    val outline = MaterialTheme.colorScheme.outline
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val errorColor = MaterialTheme.colorScheme.error
+
+    return remember(primary, secondary, tertiary, outline, textColor, errorColor) {
+        VicoTheme(
+            candlestickCartesianLayerColors = VicoTheme.CandlestickCartesianLayerColors(
+                bullish = primary,
+                bearish = errorColor,
+                neutral = secondary
+            ),
+            columnCartesianLayerColors = listOf(primary, secondary, tertiary),
+            lineCartesianLayerColors = listOf(primary, secondary, tertiary),
+            lineColor = outline,
+            textColor = textColor
         )
     }
 }
 
 @Composable
-private fun LineChart(stats: Map<String, Int>) {
-    val cumulativeStats = stats.entries
-        .scan("00:00" to 0) { acc, entry ->
-            entry.key to acc.second + entry.value
+fun rememberXAxisFormatter(stats: Map<String, Int>): CartesianValueFormatter {
+    val labels = stats.keys.toList()
+    return remember(labels) {
+        CartesianValueFormatter { _, value, _ ->
+            labels.getOrNull(value.toInt()) ?: "?"
         }
-        .drop(1)
-
-    val reducedCumulativeStats = cumulativeStats
-        .chunked(6) { chunk ->
-            val firstLabel = chunk.first().first
-            val totalValue = chunk.last().second
-            firstLabel to totalValue
-        }
-
-    val lastValue = reducedCumulativeStats.lastOrNull()?.second ?: 0
-    val adjustedCumulativeStats = buildList<Pair<String, Int>> {
-        addAll(reducedCumulativeStats)
-        if (last().first != "24:00") {
-            add("24:00" to lastValue)
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
-    ) {
-        LineChart(
-            linesParameters = listOf(
-                LineParameters(
-                    data = adjustedCumulativeStats.map { it.second.toDouble() },
-                    lineColor = MaterialTheme.colorScheme.primary,
-                    lineType = LineType.CURVED_LINE,
-                    lineShadow = true,
-                )
-            ),
-            gridColor = MaterialTheme.colorScheme.secondary,
-            xAxisData = adjustedCumulativeStats.map { it.first },
-            gridOrientation = GridOrientation.VERTICAL
-        )
     }
 }
 
@@ -284,3 +322,4 @@ private fun StatsViewPreview() {
         StatsViewState().Compose {}
     }
 }
+

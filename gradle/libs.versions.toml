@@ -36,6 +36,7 @@ tiles = "1.4.1"
 tilesMaterial = "1.4.1"
 timber = "5.0.1"
 turbine = "1.1.0"
+vico = "2.0.3"
 
 # Libraries
 [libraries]
@@ -93,6 +94,10 @@ mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 sonarqube-gradle-plugin = { module = "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin", version.ref = "sonarqubeGradlePlugin" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
+vico-compose-m2 = { group = "com.patrykandpatrick.vico", name = "compose-m2", version.ref = "vico" }
+vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
+vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref = "vico" }
 
 # Plugins
 [plugins]

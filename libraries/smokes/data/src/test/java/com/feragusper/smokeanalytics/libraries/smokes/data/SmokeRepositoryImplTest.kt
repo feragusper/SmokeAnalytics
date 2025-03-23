@@ -82,7 +82,7 @@ class SmokeRepositoryImplTest {
             runTest {
                 mockFetchSmokes()
 
-                val result = smokeRepository.fetchSmokes()
+                val result = smokeRepository.fetchSmokes(localDateTime1, localDateTime2)
 
                 assertEquals(
                     listOf(
@@ -159,7 +159,22 @@ class SmokeRepositoryImplTest {
             }
 
         private fun mockFetchSmokes() {
-            every { collectionReference.get() } answers {
+            val query = mockk<Query>(relaxed = true)
+            val finalQuery = mockk<Query>(relaxed = true)
+
+            every {
+                collectionReference.orderBy("date", Query.Direction.DESCENDING)
+            } returns query
+
+            every {
+                query.whereGreaterThanOrEqualTo(any<String>(), any())
+            } returns finalQuery
+
+            every {
+                finalQuery.whereLessThan(any<String>(), any())
+            } returns finalQuery
+
+            every { finalQuery.get() } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
