@@ -2,22 +2,25 @@ package com.feragusper.smokeanalytics
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,6 +44,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.exyte.animatednavbar.AnimatedNavigationBar
+import com.exyte.animatednavbar.animation.balltrajectory.Parabolic
+import com.exyte.animatednavbar.animation.indendshape.Height
+import com.exyte.animatednavbar.animation.indendshape.shapeCornerRadius
+import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
@@ -167,32 +175,49 @@ private fun BottomNavigation(
     navController: NavHostController,
     items: List<BottomNavigationScreens>
 ) {
-    NavigationBar {
-        items.forEach { screen ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(screen.iconId),
-                        contentDescription = ""
-                    )
-                },
-                label = { Text(stringResource(id = screen.labelId)) },
-                selected = currentRoute(navController) == screen.route,
+    var selectedIndex by remember { mutableStateOf(0) }
+
+    AnimatedNavigationBar(
+        selectedIndex = selectedIndex,
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 40.dp)
+            .height(85.dp),
+        ballColor = MaterialTheme.colorScheme.primary,
+        cornerRadius = shapeCornerRadius(25.dp),
+        ballAnimation = Parabolic(tween(500, easing = LinearOutSlowInEasing)),
+        indentAnimation = Height(
+            indentWidth = 56.dp,
+            indentHeight = 15.dp,
+            animationSpec = tween(
+                1000,
+                easing = { OvershootInterpolator().getInterpolation(it) })
+        )
+    ) {
+        items.forEachIndexed { index, screen ->
+            DropletButton(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+                isSelected = selectedIndex == index,
+                icon = screen.iconId,
+                iconColor = MaterialTheme.colorScheme.onSurface,
+                dropletColor = MaterialTheme.colorScheme.primary,
+                animationSpec = tween(durationMillis = 500, easing = LinearEasing),
+                size = 24.dp,
                 onClick = {
+                    selectedIndex = index
                     navController.navigate(screen.route) {
-                        // Pop up to the start destination of the graph to avoid building a large back stack.
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
-                        // Avoid multiple copies of the same destination when re-selecting the same item.
                         launchSingleTop = true
-                        // Restore state when reselecting a previously selected item.
                         restoreState = true
                     }
                 }
             )
         }
     }
+
 }
 
 /**
@@ -248,7 +273,6 @@ private fun currentRoute(navController: NavHostController): String? {
  */
 private sealed class BottomNavigationScreens(
     val route: String,
-    @StringRes val labelId: Int,
     @DrawableRes val iconId: Int
 ) {
 
@@ -257,7 +281,6 @@ private sealed class BottomNavigationScreens(
      */
     data object Home : BottomNavigationScreens(
         HomeNavigator.ROUTE,
-        R.string.bottom_navigation_item_home_title,
         R.drawable.ic_home
     )
 
@@ -266,7 +289,6 @@ private sealed class BottomNavigationScreens(
      */
     data object Stats : BottomNavigationScreens(
         StatsNavigator.ROUTE,
-        R.string.bottom_navigation_item_stats_title,
         R.drawable.ic_stats
     )
 
@@ -275,7 +297,6 @@ private sealed class BottomNavigationScreens(
      */
     data object Settings : BottomNavigationScreens(
         SettingsNavigator.ROUTE,
-        R.string.bottom_navigation_item_settings_title,
         R.drawable.ic_settings
     )
 }
