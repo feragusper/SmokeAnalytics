@@ -132,6 +132,7 @@ android {
         buildConfig = true
     }
 
+    @Suppress("UnstableApiUsage")
     composeOptions {
         // Specify the Kotlin compiler extension version for Compose.
         kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
@@ -189,6 +190,8 @@ dependencies {
     kapt(libs.hilt.compiler)
     // Include devtools module only in debug builds.
     debugImplementation(project(":features:devtools:presentation"))
+
+    implementation(libs.animated.navigation.bar)
 }
 
 // Task to print the current version name to the console.

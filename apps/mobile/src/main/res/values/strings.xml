@@ -1,5 +1,0 @@
-<resources>
-    <string name="bottom_navigation_item_home_title">Home</string>
-    <string name="bottom_navigation_item_settings_title">Settings</string>
-    <string name="bottom_navigation_item_stats_title">Stats</string>
-</resources>
