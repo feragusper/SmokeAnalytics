@@ -1,8 +1,6 @@
 plugins {
     // Use the custom java-lib plugin for a modular Java/Kotlin library.
     `java-lib`
-    // Enable Kotlin annotation processing.
-    id("kotlin-kapt")
 }
 
 dependencies {

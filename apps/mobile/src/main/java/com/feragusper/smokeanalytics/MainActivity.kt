@@ -50,6 +50,8 @@ import com.exyte.animatednavbar.animation.indendshape.Height
 import com.exyte.animatednavbar.animation.indendshape.shapeCornerRadius
 import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
+import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.ChatbotNavigator
+import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.chatbotNavigationGraph
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
@@ -113,6 +115,7 @@ private fun MainContainerScreen(
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Stats,
+        BottomNavigationScreens.Chatbot,
         BottomNavigationScreens.Settings,
     )
     val snackbarHostState = remember { SnackbarHostState() }
@@ -251,6 +254,7 @@ private fun MainScreenNavigationConfigurations(
             onFabConfigChanged = onFabConfigChanged,
         )
         statsNavigationGraph(StatsNavigator())
+        chatbotNavigationGraph(ChatbotNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
 }
@@ -290,6 +294,14 @@ private sealed class BottomNavigationScreens(
     data object Stats : BottomNavigationScreens(
         StatsNavigator.ROUTE,
         R.drawable.ic_stats
+    )
+
+    /**
+     * The Chatbot screen, allowing users to interact with the AI assistant.
+     */
+    data object Chatbot : BottomNavigationScreens(
+        ChatbotNavigator.ROUTE,
+        R.drawable.ic_chatbot
     )
 
     /**

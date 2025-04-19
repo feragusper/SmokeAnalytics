@@ -186,6 +186,7 @@ dependencies {
     implementation(project(":features:home:presentation"))
     implementation(project(":features:settings:presentation"))
     implementation(project(":features:stats:presentation"))
+    implementation(project(":features:chatbot:presentation"))
     // Hilt annotation processor.
     kapt(libs.hilt.compiler)
     // Include devtools module only in debug builds.

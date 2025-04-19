@@ -3,8 +3,6 @@
 plugins {
     // Apply the Java Library plugin for modular Java code.
     `java-lib`
-    // Enable Kotlin annotation processing.
-    id("kotlin-kapt")
 }
 
 dependencies {

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     // Apply the Java Library plugin for modular Java projects.
     id("java-library")
@@ -7,6 +9,16 @@ plugins {
     id("org.jetbrains.kotlinx.kover")
     // Apply the SonarQube plugin for static code analysis.
     id("org.sonarqube")
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 java {
