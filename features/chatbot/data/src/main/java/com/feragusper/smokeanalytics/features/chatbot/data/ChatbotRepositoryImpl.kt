@@ -3,8 +3,6 @@ package com.feragusper.smokeanalytics.features.chatbot.data
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.ai.client.generativeai.GenerativeModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -14,26 +12,24 @@ class ChatbotRepositoryImpl @Inject constructor(
     private val gemini: GenerativeModel
 ) : ChatbotRepository {
 
-    override suspend fun sendMessage(message: String): String = withContext(Dispatchers.IO) {
-        runCatching {
-            gemini.generateContent(message).text
-        }.getOrElse {
-            it.printStackTrace()
-            "Ups, el coach tuvo un mal día y no pudo responder."
-        } ?: "Sin respuesta del modelo."
-    }
+    override suspend fun sendMessage(message: String) = runCatching {
+        gemini.generateContent(message).text
+    }.getOrElse {
+        it.printStackTrace()
+        "Ups, el coach tuvo un mal día y no pudo responder."
+    } ?: "Sin respuesta del modelo."
 
     override suspend fun sendInitialMessageWithContext(
         name: String,
         recentSmokes: List<Smoke>
-    ): String = withContext(Dispatchers.IO) {
+    ): String {
         val todayCount = recentSmokes.count { it.date.toLocalDate() == LocalDate.now() }
         val total = recentSmokes.size
         val lastDate = recentSmokes.firstOrNull()?.date?.toString() ?: "No registrado"
 
         val prompt = buildPrompt(name, todayCount, total, lastDate)
 
-        runCatching {
+        return runCatching {
             gemini.generateContent(prompt).text
         }.getOrElse {
             it.printStackTrace()
