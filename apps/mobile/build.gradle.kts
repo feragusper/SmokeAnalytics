@@ -39,7 +39,7 @@ val gitCode: Int by lazy {
 }
 
 // Construct the version name using a major.minor.patch pattern with the git code.
-val majorMinorPatchVersionName = "0.3.0.$gitCode"
+val majorMinorPatchVersionName = "0.4.0.$gitCode"
 
 android {
     // Set the application namespace.
