@@ -44,6 +44,9 @@ include(":features:home:domain")
 include(":features:home:presentation")
 include(":features:settings:presentation")
 include(":features:stats:presentation")
+include(":features:chatbot:presentation")
+include(":features:chatbot:domain")
+include(":features:chatbot:data")
 
 // Include library modules
 include(":libraries:architecture:common")

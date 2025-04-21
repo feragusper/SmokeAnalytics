@@ -26,13 +26,23 @@ jobs:
       # Step 3: Configure keys and decrypt the production google-services.json file
       - name: Configure keys for production
         run: |
-          # Save the Google Auth Server Client ID into local.properties
+          # Save production API keys into local.properties
           echo google.auth.server.client.id="${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}" > ./local.properties
-          # Create production directory (using -p to avoid error if it already exists)
+          echo google.ai.client.generativeai.api.key="${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY }}" >> ./local.properties
+
+          echo "✅ local.properties configured for production."
+
+          # Decrypt google-services.json for production
           mkdir -p ./apps/mobile/src/production/
-          # Save the encrypted google-services.json file and decrypt it using GPG
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+
+          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
+            echo "❌ Decryption failed or file is empty (production)!"
+            exit 1
+          fi
+
+          echo "✅ Production google-services.json decrypted."
 
       # Step 4: Set up Ruby environment needed for Fastlane
       - name: Setup Ruby
@@ -47,25 +57,25 @@ jobs:
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
 
-      # Step 6: Configure keystore and Play Store credentials by decrypting the secured files
+      # Step 6: Configure keystore and Play Store credentials
       - name: Configure keystore and Play Store credentials
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
         shell: bash
         run: |
-          # Decrypt the keystore properties
+          # Decrypt keystore properties
           echo "${{ secrets.RELEASE_KEYSTORE_PROPERTIES }}" > ./release.keystore.properties.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.properties.asc > ./release.keystore.properties
-          
-          # Decrypt the keystore file
+
+          # Decrypt keystore file
           echo "${{ secrets.RELEASE_KEYSTORE }}" > ./release.keystore.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./release.keystore.asc > ./release.keystore
-          
-          # Decrypt the Play Store credentials file
+
+          # Decrypt Play Store credentials file
           echo "${{ secrets.PLAYSTORE_CREDENTIALS }}" > ./playstore.credentials.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
-      # Step 7: Build the Android App Bundle for production release with a stacktrace for debugging
+      # Step 7: Build the Android App Bundle for production release
       - name: Build Android App Bundle
         run: ./gradlew bundleProductionRelease --stacktrace
 
@@ -77,16 +87,14 @@ jobs:
       - name: Retrieve Version
         id: android_version
         run: |
-          # The following command sets the version name as an output variable.
-          # Note: The use of ::set-output is deprecated. In a real project, consider using GITHUB_OUTPUT.
           echo "::set-output name=VERSION_NAME::$(${{ github.workspace }}/gradlew -q printVersionName)"
 
-      # Step 10: Set the version name into the GitHub environment variable for later steps
+      # Step 10: Set the version name as GitHub environment variable
       - name: Set version environment variable
         run: |
           echo "version_name=${{ steps.android_version.outputs.VERSION_NAME }}" >> $GITHUB_ENV
 
-      # Step 11: Push a Git tag corresponding to the version name
+      # Step 11: Push Git tag for this version
       - name: Push Git Tag
         run: |
           git config user.name "GitHub Actions"
@@ -94,7 +102,7 @@ jobs:
           git tag "${{ env.version_name }}"
           git push origin "${{ env.version_name }}"
 
-      # Step 12: Create a GitHub Release based on the new tag
+      # Step 12: Create a GitHub Release based on the tag
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

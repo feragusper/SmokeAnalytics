@@ -1,7 +1,6 @@
 # Workflow to build the Android Debug APK and upload the generated artifact
 name: Deploy Artifact
 
-# Trigger the workflow when a push is made to the master branch
 on:
   push:
     branches:
@@ -13,46 +12,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository with full history
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Step 2: Set up JDK 17 using the Zulu distribution
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
 
-      # Step 3: Configure keys and decrypt the google-services.json file
       - name: Configure keys and decrypt google-services.json
         run: |
-          # Configure staging keys
+          # Set up local.properties with staging keys only
           echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
+          echo google.ai.client.generativeai.api.key=\"${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}\" >> ./local.properties
+
+          echo "✅ local.properties configured for staging."
+
+          # Decrypt google-services.json for staging
           mkdir -p ./apps/mobile/src/staging/
           echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
           gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
+
           if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
-            echo "Decryption failed or file is empty!"
+            echo "❌ Decryption failed or file is empty (staging)!"
             exit 1
           fi
-          
-          # Configure production keys
-          mkdir -p ./apps/mobile/src/production/
-            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
-            gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
-          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
-          echo "Decryption failed or file is empty!"
-          exit 1
-          fi
 
-      # Step 4: Build the Staging Debug APK with detailed error stack trace enabled
+          echo "✅ Staging google-services.json decrypted."
+
       - name: Build Staging Debug APK
         run: ./gradlew assembleStagingDebug --stacktrace
 
-      # Step 5: Upload the generated APK as an artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
