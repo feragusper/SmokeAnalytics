@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
@@ -12,6 +14,15 @@ plugins {
 android {
     // Set the namespace for the Android library.
     namespace = "com.feragusper.smokeanalytics.features.chatbot.data"
+
+    defaultConfig {
+        // Add a BuildConfig field for Google Auth Server Client ID, loaded from local properties.
+        buildConfigField(
+            "String",
+            "GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY",
+            gradleLocalProperties(rootDir, providers).getProperty("google.ai.client.generativeai.api.key"),
+        )
+    }
 }
 
 dependencies {
