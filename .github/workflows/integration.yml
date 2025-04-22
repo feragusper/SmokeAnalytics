@@ -7,7 +7,7 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
     branches:
       - master
 
@@ -29,26 +29,30 @@ jobs:
           java-version: 17
 
       - name: Configure API keys and google-services.json
+        shell: bash
+        env:
+          GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}
+          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}
+          GOOGLE_SERVICES_JSON_STAGING: ${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          # Configure local.properties with staging keys
-          echo google.auth.server.client.id=\"${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}\" > ./local.properties
-          echo google.ai.client.generativeai.api.key=\"${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}\" >> ./local.properties
+          echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING > ./local.properties
+          echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
 
           echo "✅ local.properties configured for staging."
 
-          # Decrypt google-services.json for staging
           mkdir -p ./apps/mobile/src/staging/
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}" > ./apps/mobile/src/staging/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
+          echo "$GOOGLE_SERVICES_JSON_STAGING" > ./apps/mobile/src/staging/google-services.json.asc
+          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
           if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (staging)!"
             exit 1
           fi
 
-          # Decrypt google-services.json for production (in case some tests hit prod config)
           mkdir -p ./apps/mobile/src/production/
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > ./apps/mobile/src/production/google-services.json.asc
-          gpg -d --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+          echo "$GOOGLE_SERVICES_JSON" > ./apps/mobile/src/production/google-services.json.asc
+          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
           if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (production)!"
             exit 1
