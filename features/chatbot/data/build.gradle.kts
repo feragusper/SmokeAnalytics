@@ -20,7 +20,9 @@ android {
         buildConfigField(
             "String",
             "GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY",
-            gradleLocalProperties(rootDir, providers).getProperty("google.ai.client.generativeai.api.key"),
+            gradleLocalProperties(rootDir, providers)
+                .getProperty("google.ai.client.generativeai.api.key")
+                .asBuildConfigString(),
         )
     }
 }
