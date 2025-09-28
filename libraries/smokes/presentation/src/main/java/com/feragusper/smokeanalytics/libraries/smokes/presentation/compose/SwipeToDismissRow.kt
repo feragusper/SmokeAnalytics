@@ -67,7 +67,6 @@ fun SwipeToDismissRow(
 
     val state = rememberRevealState(
         directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
-        positionalThreshold = { it * 0.5f },
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -100,7 +99,7 @@ fun SwipeToDismissRow(
         hiddenContentEnd = {
             IconButton(onClick = onDelete) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector = Icons.Filled.Delete,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )

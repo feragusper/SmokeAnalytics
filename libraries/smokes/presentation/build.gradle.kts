@@ -33,6 +33,8 @@ dependencies {
     implementation(libs.bundles.compose)
     // Include Material3 components for modern UI design.
     implementation(libs.material3)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // Dagger Hilt dependencies for dependency injection.
     implementation(libs.hilt)

@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.identity.googleid)
+    implementation(libs.identity.googleid)
 
     // Include Timber for logging.
     implementation(libs.timber)

@@ -84,6 +84,8 @@ data class HomeViewState(
             object : PullToRefreshState {
                 private val anim = Animatable(0f, Float.VectorConverter)
                 override val distanceFraction get() = anim.value
+                override val isAnimating: Boolean
+                    get() = anim.isRunning
                 override suspend fun animateToThreshold() {
                     anim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy))
                 }

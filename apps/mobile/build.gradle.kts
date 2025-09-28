@@ -1,4 +1,5 @@
 import com.google.common.base.Charsets
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStreamReader
@@ -39,7 +40,7 @@ val gitCode: Int by lazy {
 }
 
 // Construct the version name using a major.minor.patch pattern with the git code.
-val majorMinorPatchVersionName = "0.4.0.$gitCode"
+val majorMinorPatchVersionName = "0.5.0.$gitCode"
 
 android {
     // Set the application namespace.
@@ -115,27 +116,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        // Set the JVM target for Kotlin.
-        jvmTarget = Java.JVM_TARGET
-        // Enable experimental APIs.
-        freeCompilerArgs = listOf(
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=kotlin.RequiresOptIn"
-        )
-    }
 
     buildFeatures {
         // Enable Jetpack Compose.
         compose = true
         // Enable generation of BuildConfig.
         buildConfig = true
-    }
-
-    @Suppress("UnstableApiUsage")
-    composeOptions {
-        // Specify the Kotlin compiler extension version for Compose.
-        kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
     }
 
     packaging {
@@ -148,6 +134,17 @@ android {
     lint {
         // Disable specific lint rule.
         disable.add("EnsureInitializerMetadata")
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.addAll(
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "-opt-in=kotlin.RequiresOptIn"
+        )
     }
 }
 
@@ -196,8 +193,6 @@ dependencies {
 }
 
 // Task to print the current version name to the console.
-task("printVersionName") {
-    doLast {
-        println(majorMinorPatchVersionName)
-    }
+tasks.register("printVersionName") {
+    doLast { println(majorMinorPatchVersionName) }
 }

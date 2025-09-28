@@ -1,3 +1,4 @@
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -29,4 +30,4 @@ java {
 
 // Configure Kover code coverage reports using the centralized KoverConfig.
 // 'layout' is a Gradle-provided property representing the project layout.
-koverReport(KoverConfig(layout).koverReport)
+extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
