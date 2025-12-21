@@ -1,18 +1,56 @@
 plugins {
-    // Use the custom java-lib plugin for a modular Java/Kotlin library.
-    `java-lib`
+    kotlin("multiplatform")
+}
+
+kotlin {
+    jvm()
+
+    js(IR) {
+        browser()
+        binaries.library()
+    }
+
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.library()
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                // No platform deps here
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+        val jvmMain by getting {
+            // No javax.inject needed anymore in domain
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.bundles.test)
+            }
+        }
+
+        val jsMain by getting
+        val jsTest by getting
+
+        val wasmJsMain by getting
+        val wasmJsTest by getting
+    }
 }
 
 dependencies {
-    // Use javax.inject for dependency injection annotations.
-    implementation(libs.javax.inject)
-
-    // Unit testing dependencies.
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.bundles.test)
+    add("jvmTestImplementation", platform(libs.junit.bom))
 }
 
-tasks.test {
-    // Configure the test task to use JUnit Platform (JUnit 5).
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }

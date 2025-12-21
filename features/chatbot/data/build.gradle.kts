@@ -33,6 +33,8 @@ dependencies {
 
     implementation(libs.generativeai)
 
+    implementation(libs.kotlinx.datetime)
+
     // Dagger Hilt dependencies for dependency injection.
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)

@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.features.chatbot.data
 
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.GenerateContentResponse
 import io.mockk.coEvery

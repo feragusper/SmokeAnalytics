@@ -29,7 +29,7 @@ android {
 
 dependencies {
     // Architecture and presentation layers
-    implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
 
     // Design system for consistent theming and UI components
     implementation(project(":libraries:design"))

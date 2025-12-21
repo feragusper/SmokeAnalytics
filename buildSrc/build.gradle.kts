@@ -1,4 +1,3 @@
-// buildSrc/build.gradle.kts
 // This build script sets up the buildSrc module using the Kotlin DSL.
 // It defines repositories and dependencies required to work with the version catalog
 // and common Gradle plugins used throughout the project.

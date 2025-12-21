@@ -8,9 +8,12 @@ androidxCoreKtx = "1.17.0"
 androidxNavigationCompose = "2.9.5"
 animatedNavigationBar = "1.0.0"
 composeShimmer = "1.3.3"
+composeMultiplatform = "1.8.0"
 coroutinesTest = "1.10.2"
 credentials = "1.5.0"
 espressoCore = "3.7.0"
+firebaseApp = "1.13.0"
+firebaseAuth = "1.13.0"
 firebaseBOM = "34.4.0"
 generativeai = "0.9.0"
 googleid = "1.1.1"
@@ -24,8 +27,12 @@ javaxInject = "1"
 junit = "1.3.0"
 junit4 = "4.13.2"
 junitBOM = "6.0.0"
+kermit = "2.0.8"
 kluent = "1.73"
 kotlin = "2.2.20"
+kotlinxDatetime = "0.6.1"
+kotlinxCoroutines = "1.8.1"
+kotlinx-serialization = "1.7.3"
 kover = "0.9.2"
 material3 = "1.4.0"
 mockk = "1.14.6"
@@ -73,10 +80,12 @@ animated-navigation-bar = { module = "com.exyte:animated-navigation-bar", versio
 app-cash-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+firebase-app = { module = "dev.gitlive:firebase-app", version.ref = "firebaseApp" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
+gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseAuth" }
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
@@ -92,9 +101,13 @@ junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kluent = { module = "org.amshove.kluent:kluent", version.ref = "kluent" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
@@ -109,7 +122,10 @@ vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref 
 
 # Plugins
 [plugins]
+buildkonfig = { id = "com.codingfeline.buildkonfig", version = "0.15.2" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 # Bundles
 [bundles]

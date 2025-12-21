@@ -177,13 +177,17 @@ dependencies {
     implementation(libs.timber)
     // Project modules.
     implementation(project(":libraries:design"))
-    implementation(project(":libraries:architecture:presentation"))
-    implementation(project(":features:authentication:presentation"))
-    implementation(project(":features:history:presentation"))
-    implementation(project(":features:home:presentation"))
-    implementation(project(":features:settings:presentation"))
-    implementation(project(":features:stats:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
+    implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:smokes:domain"))
+    implementation(project(":features:authentication:presentation:mobile"))
+    implementation(project(":features:history:presentation:mobile"))
+    implementation(project(":features:home:presentation:mobile"))
+    implementation(project(":features:home:domain"))
+    implementation(project(":features:settings:presentation:mobile"))
+    implementation(project(":features:stats:presentation:mobile"))
     implementation(project(":features:chatbot:presentation"))
+    implementation(project(":features:chatbot:domain"))
     // Hilt annotation processor.
     kapt(libs.hilt.compiler)
     // Include devtools module only in debug builds.

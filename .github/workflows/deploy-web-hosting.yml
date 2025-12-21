@@ -1,0 +1,47 @@
+name: Deploy Web (Firebase Hosting)
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Target environment"
+        required: true
+        type: choice
+        options: [staging, prod]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Build web bundle + prepare hosting dir
+        run: ./gradlew :apps:web:prepareFirebaseHosting -Psmoke.env=${{ inputs.env }} --no-configuration-cache --rerun-tasks
+
+      - name: Deploy to Firebase Hosting (staging)
+        if: ${{ inputs.env == 'staging' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS_STAGING }}
+          projectId: smoke-analytics-staging
+          target: staging
+          channelId: live
+
+      - name: Deploy to Firebase Hosting (prod)
+        if: ${{ inputs.env == 'prod' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS }}
+          projectId: smoke-analytics
+          target: prod
+          channelId: live

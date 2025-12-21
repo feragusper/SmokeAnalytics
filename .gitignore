@@ -23,3 +23,17 @@ playstore.credentials.json
 /buildSrc/build/
 /buildSrc/build/classes/kotlin/main/
 /playstore.credentiales.json
+
+# --- Kotlin compiler internals ---
+.kotlin/
+
+# --- Kotlin JS / Compose Web ---
+kotlin-js-store/
+node_modules/
+yarn.lock
+
+# --- Compose Multiplatform ---
+compose-build/
+
+# Firebase local cache
+.firebase/

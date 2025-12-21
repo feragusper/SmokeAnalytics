@@ -1,20 +1,54 @@
-// build.gradle.kts for libraries:architecture:domain
-
 plugins {
-    // Apply the Java Library plugin for modular Java code.
-    `java-lib`
+    kotlin("multiplatform")
 }
 
-dependencies {
-    // Use Javax Inject for dependency injection annotations.
-    implementation(libs.javax.inject)
-    // Use JUnit BOM to manage consistent versions of JUnit dependencies.
-    testImplementation(platform(libs.junit.bom))
-    // Include additional test dependencies bundled together.
-    testImplementation(libs.bundles.test)
+kotlin {
+    jvm()
+
+    js(IR) {
+        browser()
+        binaries.library()
+    }
+
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.library()
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(libs.kotlinx.datetime)
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+        val jvmMain by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.junit.jupiter.api)
+                implementation(libs.junit.jupiter.params)
+                runtimeOnly(libs.junit.jupiter.engine)
+
+                implementation(libs.kluent)
+                implementation(libs.coroutines.test)
+                implementation(libs.app.cash.turbine)
+            }
+        }
+
+        val jsMain by getting
+        val jsTest by getting
+
+        val wasmJsMain by getting
+        val wasmJsTest by getting
+    }
 }
 
-// Configure the test task to use JUnit Platform (JUnit 5).
-tasks.test {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }

@@ -26,13 +26,13 @@ android {
 
 dependencies {
     // Architecture and presentation layers
-    implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:design"))
 
     // Authentication modules for user session and sign-in management
-    implementation(project(":libraries:authentication:presentation"))
+    implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
-    implementation(project(":libraries:authentication:data"))
+    implementation(project(":libraries:authentication:data:mobile"))
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)
