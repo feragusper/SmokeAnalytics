@@ -9,28 +9,10 @@ pluginManagement {
 dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-
     @Suppress("UnstableApiUsage")
     repositories {
         google()
         mavenCentral()
-
-        // Kotlin/JS downloads Node distributions via an Ivy repository.
-        // With FAIL_ON_PROJECT_REPOS, it must be declared here.
-        exclusiveContent {
-            forRepository {
-                ivy("https://nodejs.org/dist") {
-                    name = "NodeDistributions"
-                    patternLayout {
-                        artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]")
-                    }
-                    metadataSources { artifact() }
-                }
-            }
-            filter {
-                includeGroup("org.nodejs")
-            }
-        }
     }
 }
 
