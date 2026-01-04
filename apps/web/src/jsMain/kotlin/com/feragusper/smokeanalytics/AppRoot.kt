@@ -7,9 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
-import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebScreen
+import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebDependencies
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebScreen
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebScreen
@@ -54,7 +54,6 @@ fun AppRoot(graph: WebAppGraph) {
                 when (tab) {
                     WebTab.Home -> HomeWebScreen(
                         deps = homeDeps,
-                        onNavigateToAuth = { route = WebRoute.Auth },
                         onNavigateToHistory = { route = WebRoute.History },
                     )
 
