@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.home.presentation.web
+package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 

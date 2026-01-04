@@ -7,6 +7,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -23,10 +26,15 @@ import org.jetbrains.compose.web.dom.Hr
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Represents the dependencies required by the [HomeWebScreen].
+ *
+ * @param deps Dependencies required by the [HomeWebScreen].
+ * @param onNavigateToHistory Callback to navigate to the history screen.
+ */
 @Composable
 fun HomeWebScreen(
     deps: HomeWebDependencies,
-    onNavigateToAuth: () -> Unit,
     onNavigateToHistory: () -> Unit,
 ) {
     val store = remember(deps) { HomeWebStore(processHolder = deps.homeProcessHolder) }
@@ -36,20 +44,22 @@ fun HomeWebScreen(
     val state by store.state.collectAsState()
 
     state.Render(
-        onNavigateToHistory = onNavigateToHistory,
         onIntent = { intent ->
             when (intent) {
                 HomeIntent.OnClickHistory -> onNavigateToHistory()
-//                HomeIntent.GoToAuthentication -> onNavigateToAuth()
                 else -> store.send(intent)
             }
         }
     )
 }
 
+/**
+ * Represents the dependencies required by the [HomeWebScreen].
+ *
+ * @param onIntent Callback to send intents to the [HomeWebStore].
+ */
 @Composable
 fun HomeViewState.Render(
-    onNavigateToHistory: () -> Unit,
     onIntent: (HomeIntent) -> Unit,
 ) {
     Div {

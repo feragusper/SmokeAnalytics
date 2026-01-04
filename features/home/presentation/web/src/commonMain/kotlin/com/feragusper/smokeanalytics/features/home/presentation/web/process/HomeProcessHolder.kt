@@ -1,6 +1,8 @@
-package com.feragusper.smokeanalytics.features.home.presentation.web
+package com.feragusper.smokeanalytics.features.home.presentation.web.process
 
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -13,6 +15,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 
+/**
+ * Represents the process holder for the Home screen.
+ *
+ * @property addSmokeUseCase The use case for adding a smoke.
+ * @property editSmokeUseCase The use case for editing a smoke.
+ * @property deleteSmokeUseCase The use case for deleting a smoke.
+ * @property fetchSmokeCountListUseCase The use case for fetching smoke count list.
+ * @property fetchSessionUseCase The use case for fetching the session.
+ */
 class HomeProcessHolder(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val editSmokeUseCase: EditSmokeUseCase,
@@ -21,6 +32,12 @@ class HomeProcessHolder(
     private val fetchSessionUseCase: FetchSessionUseCase,
 ) {
 
+    /**
+     * Processes the given intent and returns a flow of results.
+     *
+     * @param intent The intent to process.
+     * @return A flow of results.
+     */
     fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
         HomeIntent.FetchSmokes -> processFetchSmokes(isRefresh = false)
         HomeIntent.RefreshFetchSmokes -> processFetchSmokes(isRefresh = true)

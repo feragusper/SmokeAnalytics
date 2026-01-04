@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics
 
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
-import com.feragusper.smokeanalytics.features.home.presentation.web.HomeProcessHolder
+import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.data.AuthenticationRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase

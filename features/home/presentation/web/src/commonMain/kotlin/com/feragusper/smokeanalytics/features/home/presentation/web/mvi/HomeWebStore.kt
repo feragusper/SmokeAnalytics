@@ -1,5 +1,7 @@
-package com.feragusper.smokeanalytics.features.home.presentation.web
+package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
+import com.feragusper.smokeanalytics.features.home.presentation.web.HomeViewState
+import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

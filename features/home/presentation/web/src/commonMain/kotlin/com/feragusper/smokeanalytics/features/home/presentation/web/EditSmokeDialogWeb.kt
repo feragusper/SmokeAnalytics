@@ -16,6 +16,14 @@ import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Displays a dialog for editing a smoke.
+ *
+ * @param initialInstant The initial instant to be displayed in the dialog.
+ * @param fullDateTimeEdit Whether to allow full date and time editing.
+ * @param onDismiss Callback to be invoked when the dialog is dismissed.
+ * @param onConfirm Callback to be invoked when the user confirms the changes.
+ */
 @Composable
 internal fun EditSmokeDialogWeb(
     initialInstant: Instant,
