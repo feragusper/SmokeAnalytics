@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
+/**
+ * Represents the store for the History screen.
+ *
+ * @property processHolder The process holder for the History screen.
+ * @property scope The coroutine scope for the store.
+ */
 class HistoryWebStore(
     private val processHolder: HistoryProcessHolder,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
@@ -21,12 +27,24 @@ class HistoryWebStore(
     private val intents = Channel<HistoryIntent>(capacity = Channel.Factory.BUFFERED)
 
     private val _state = MutableStateFlow(HistoryViewState())
+
+    /**
+     * The current state of the History screen.
+     */
     val state: StateFlow<HistoryViewState> = _state.asStateFlow()
 
+    /**
+     * Sends an intent to the store.
+     *
+     * @param intent The intent to send.
+     */
     fun send(intent: HistoryIntent) {
         intents.trySend(intent)
     }
 
+    /**
+     * Starts the store.
+     */
     fun start() {
         scope.launch {
             intents

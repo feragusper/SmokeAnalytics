@@ -7,14 +7,25 @@ import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.auth
 
+/**
+ * Represents an authentication repository.
+ *
+ * @property firebaseAuth The Firebase authentication.
+ */
 class AuthenticationRepositoryImpl(
     private val firebaseAuth: FirebaseAuth = Firebase.auth,
 ) : AuthenticationRepository {
 
+    /**
+     * @see AuthenticationRepository.signOut
+     */
     override suspend fun signOut() {
         firebaseAuth.signOut()
     }
 
+    /**
+     * @see AuthenticationRepository.fetchSession
+     */
     override fun fetchSession(): Session = firebaseAuth.toSession()
 }
 

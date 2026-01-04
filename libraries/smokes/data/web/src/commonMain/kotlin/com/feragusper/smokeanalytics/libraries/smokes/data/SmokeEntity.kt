@@ -3,15 +3,18 @@ package com.feragusper.smokeanalytics.libraries.smokes.data
 import kotlinx.serialization.Serializable
 
 /**
- * Firestore entity for a smoke event.
+ * Represents a smoke entity.
  *
- * Schema (Android + Web):
- *  - timestampMillis: Double (epoch millis)
+ * @property timestampMillis The timestamp of the smoke.
  */
 @Serializable
 data class SmokeEntity(
     val timestampMillis: Double = 0.0
 ) {
+
+    /**
+     * Represents the fields of the smoke entity.
+     */
     object Fields {
         const val TIMESTAMP_MILLIS = "timestampMillis"
     }

@@ -17,6 +17,12 @@ import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Represents a component for signing in with Google.
+ *
+ * @param onSignInSuccess The callback to invoke when the sign in is successful.
+ * @param onSignInError The callback to invoke when the sign in fails.
+ */
 @Composable
 fun GoogleSignInComponentWeb(
     onSignInSuccess: () -> Unit,

@@ -18,11 +18,20 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.firestore
 import kotlinx.datetime.Instant
 
+/**
+ * Represents a smoke repository.
+ *
+ * @property firebaseFirestore The Firebase Firestore.
+ * @property firebaseAuth The Firebase Auth.
+ */
 class SmokeRepositoryImpl(
     private val firebaseFirestore: FirebaseFirestore = Firebase.firestore,
     private val firebaseAuth: FirebaseAuth = Firebase.auth,
 ) : SmokeRepository {
 
+    /**
+     * Represents the Firestore collection.
+     */
     interface FirestoreCollection {
         companion object {
             const val USERS = "users"
@@ -30,24 +39,36 @@ class SmokeRepositoryImpl(
         }
     }
 
+    /**
+     * @see SmokeRepository.addSmoke
+     */
     override suspend fun addSmoke(date: Instant) {
         smokesCollection().add(
             SmokeEntity(timestampMillis = date.toEpochMilliseconds().toDouble())
         )
     }
 
+    /**
+     * @see SmokeRepository.editSmoke
+     */
     override suspend fun editSmoke(id: String, date: Instant) {
         smokesCollection()
             .document(id)
             .set(SmokeEntity(timestampMillis = date.toEpochMilliseconds().toDouble()))
     }
 
+    /**
+     * @see SmokeRepository.deleteSmoke
+     */
     override suspend fun deleteSmoke(id: String) {
         smokesCollection()
             .document(id)
             .delete()
     }
 
+    /**
+     * @see SmokeRepository.fetchSmokes
+     */
     override suspend fun fetchSmokes(
         start: Instant?,
         end: Instant?,
@@ -79,6 +100,9 @@ class SmokeRepositoryImpl(
         }
     }
 
+    /**
+     * @see SmokeRepository.fetchSmokeCount
+     */
     override suspend fun fetchSmokeCount(): SmokeCount {
         return fetchSmokes().toSmokeCountListResult()
     }

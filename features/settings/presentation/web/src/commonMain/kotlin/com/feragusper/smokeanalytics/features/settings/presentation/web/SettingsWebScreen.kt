@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
+import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Button
@@ -14,6 +16,11 @@ import org.jetbrains.compose.web.dom.Hr
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
+/**
+ * Screen for the Settings screen.
+ *
+ * @param deps The dependencies for the Settings screen.
+ */
 @Composable
 fun SettingsWebScreen(
     deps: SettingsWebDependencies,

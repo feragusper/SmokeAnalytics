@@ -1,5 +1,7 @@
-package com.feragusper.smokeanalytics.features.stats.presentation.web
+package com.feragusper.smokeanalytics.features.stats.presentation.web.process
 
+import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
+import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsResult
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
