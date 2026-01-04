@@ -1,3 +1,5 @@
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.kotlinx.kover")
@@ -28,3 +30,6 @@ kotlin {
         val jsTest by getting
     }
 }
+
+// Configure Kover code coverage reports using the centralized KoverConfig.
+extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
