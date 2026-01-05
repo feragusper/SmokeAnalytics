@@ -1,4 +1,4 @@
-plugins { id("kmp-lib") } // tu convención KMP (jvm + wasmJs + kover/sonar)
+plugins { id("kmp-lib") }
 
 kotlin {
     sourceSets {
@@ -17,12 +17,13 @@ kotlin {
         }
 
         val commonTest by getting {
-            dependencies { implementation(kotlin("test")) }
+            dependencies {
+                implementation(kotlin("test"))
+            }
         }
 
         val jvmMain by getting {
             dependencies {
-                // Si necesitás @Inject del lado JVM:
                 implementation(libs.javax.inject)
                 implementation(project(":libraries:smokes:domain"))
             }
@@ -38,7 +39,6 @@ kotlin {
                 implementation(libs.app.cash.turbine)
             }
         }
-        // wasmJsMain / wasmJsTest quedan vacíos por ahora
     }
 }
 

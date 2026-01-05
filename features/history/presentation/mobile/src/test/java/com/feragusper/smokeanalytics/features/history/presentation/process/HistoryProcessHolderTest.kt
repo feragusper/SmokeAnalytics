@@ -5,6 +5,10 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -14,19 +18,23 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.amshove.kluent.shouldBe
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryProcessHolderTest {
+
+    private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var processHolder: HistoryProcessHolder
     private lateinit var results: Flow<HistoryResult>
@@ -40,7 +48,8 @@ class HistoryProcessHolderTest {
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(Dispatchers.Unconfined)
+        Dispatchers.setMain(testDispatcher)
+
         processHolder = HistoryProcessHolder(
             addSmokeUseCase,
             editSmokeUseCase,
@@ -50,7 +59,6 @@ class HistoryProcessHolderTest {
             syncWithWearUseCase
         )
 
-        // Default mock behavior
         coEvery { syncWithWearUseCase.invoke() } just Runs
     }
 
@@ -70,7 +78,7 @@ class HistoryProcessHolderTest {
 
         @Test
         fun `WHEN adding smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
-            val date: LocalDateTime = mockk()
+            val date: Instant = Clock.System.now()
             coEvery { addSmokeUseCase(date) } just Runs
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
@@ -86,7 +94,7 @@ class HistoryProcessHolderTest {
         @Test
         fun `WHEN editing smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val id = "id"
-            val date: LocalDateTime = mockk()
+            val date: Instant = Clock.System.now()
             coEvery { editSmokeUseCase(id, date) } just Runs
 
             results = processHolder.processIntent(HistoryIntent.EditSmoke(id, date))
@@ -126,12 +134,14 @@ class HistoryProcessHolderTest {
 
         @Test
         fun `WHEN adding smoke THEN returns NotLoggedIn Error and GoToAuthentication`() = runTest {
-            results = processHolder.processIntent(HistoryIntent.AddSmoke(mockk()))
+            val date: Instant = Clock.System.now()
+
+            results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
             results.test {
                 awaitItem() shouldBe HistoryResult.Error.NotLoggedIn
                 awaitItem() shouldBe HistoryResult.GoToAuthentication
-                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }
         }

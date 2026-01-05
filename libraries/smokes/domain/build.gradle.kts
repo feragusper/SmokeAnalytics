@@ -19,6 +19,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.coroutines.test)
             }
         }
 
@@ -34,8 +35,6 @@ kotlin {
                 implementation(libs.bundles.test)
             }
         }
-
-        // wasm/otros targets los sigue manejando tu plugin `kmp-lib`
     }
 }
 

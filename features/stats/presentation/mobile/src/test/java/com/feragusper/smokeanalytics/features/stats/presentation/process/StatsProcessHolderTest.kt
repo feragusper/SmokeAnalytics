@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

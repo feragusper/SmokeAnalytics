@@ -48,7 +48,16 @@ dependencies {
     kapt(libs.hilt.compiler)
 
     // Unit testing dependencies
-    testImplementation(libs.bundles.test)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    // resto del bundle
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.kluent)
+    testImplementation(libs.app.cash.turbine)
 
     // Debug-specific dependencies for Compose UI tooling
     debugImplementation(libs.bundles.compose.debug)

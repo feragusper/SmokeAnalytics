@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseUser
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runTest
 import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.Test
@@ -55,16 +56,17 @@ class AuthenticationRepositoryImplTest {
      * Verifies that the signOut method correctly calls the signOut function from FirebaseAuth.
      */
     @Test
-    fun `GIVEN signOut is called WHEN signOut is invoked THEN it should call firebaseAuth signOut`() {
-        // Arrange: Set up a mock for firebaseAuth and ensure signOut is called
-        every { firebaseAuth.signOut() } returns Unit
+    fun `GIVEN signOut is called WHEN signOut is invoked THEN it should call firebaseAuth signOut`() =
+        runTest {
+            // Arrange: Set up a mock for firebaseAuth and ensure signOut is called
+            every { firebaseAuth.signOut() } returns Unit
 
-        // Act: Call the signOut method
-        authenticationRepository.signOut()
+            // Act: Call the signOut method
+            authenticationRepository.signOut()
 
-        // Assert: Verify that the signOut method was called
-        verify { firebaseAuth.signOut() }
-    }
+            // Assert: Verify that the signOut method was called
+            verify { firebaseAuth.signOut() }
+        }
 
     /**
      * Verifies that when an error occurs during fetching session, it should be handled properly.

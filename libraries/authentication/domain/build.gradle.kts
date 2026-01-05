@@ -17,21 +17,16 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                // No platform deps here
-            }
-        }
+        val commonMain by getting
 
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(libs.coroutines.test)
             }
         }
 
-        val jvmMain by getting {
-            // No javax.inject needed anymore in domain
-        }
+        val jvmMain by getting
 
         val jvmTest by getting {
             dependencies {

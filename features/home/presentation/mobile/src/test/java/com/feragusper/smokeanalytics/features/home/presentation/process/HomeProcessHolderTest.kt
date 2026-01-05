@@ -6,6 +6,9 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -14,17 +17,23 @@ import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.amshove.kluent.shouldBeEqualTo
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeProcessHolderTest {
+
+    private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var processHolder: HomeProcessHolder
 
@@ -37,7 +46,8 @@ class HomeProcessHolderTest {
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(Dispatchers.Unconfined)
+        Dispatchers.setMain(testDispatcher)
+
         processHolder = HomeProcessHolder(
             addSmokeUseCase = addSmokeUseCase,
             editSmokeUseCase = editSmokeUseCase,
@@ -47,13 +57,18 @@ class HomeProcessHolderTest {
             syncWithWearUseCase = syncWithWearUseCase
         )
 
-        // Default mock behavior for sync
         coEvery { syncWithWearUseCase.invoke() } just Runs
+    }
+
+    @AfterEach
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Nested
     @DisplayName("GIVEN user is logged in")
     inner class UserIsLoggedIn {
+
         @BeforeEach
         fun setUp() {
             coEvery { fetchSessionUseCase() } returns mockk<Session.LoggedIn>()
@@ -62,7 +77,6 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN adding smoke THEN it returns success and syncs with Wear`() = runTest {
             coEvery { addSmokeUseCase.invoke(any()) } just Runs
-            coEvery { syncWithWearUseCase.invoke() } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
@@ -75,7 +89,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN editing smoke THEN it returns success and syncs with Wear`() = runTest {
             val id = "id"
-            val date: LocalDateTime = mockk()
+            val date: Instant = Clock.System.now()
             coEvery { editSmokeUseCase(id, date) } just Runs
 
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
@@ -106,7 +120,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
-                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
@@ -114,13 +128,13 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN editing smoke fails THEN it returns error`() = runTest {
             val id = "id"
-            val date: LocalDateTime = mockk()
+            val date: Instant = Clock.System.now()
             coEvery { editSmokeUseCase(id, date) } throws IllegalStateException("Error")
 
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
-                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
@@ -133,7 +147,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic
-                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }
@@ -142,6 +156,7 @@ class HomeProcessHolderTest {
     @Nested
     @DisplayName("GIVEN user is not logged in")
     inner class UserIsNotLoggedIn {
+
         @BeforeEach
         fun setUp() {
             coEvery { fetchSessionUseCase() } returns mockk<Session.Anonymous>()
@@ -152,7 +167,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Error.NotLoggedIn
                 awaitItem() shouldBeEqualTo HomeResult.GoToAuthentication
-                coVerify(exactly = 0) { syncWithWearUseCase.invoke() } // Ensure sync is not called
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
         }

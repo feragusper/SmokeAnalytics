@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
 import com.feragusper.smokeanalytics.features.stats.presentation.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +44,12 @@ class StatsViewModelTest {
             val viewModel = StatsViewModel(processHolder)
 
             viewModel.intents().trySend(
-                StatsIntent.LoadStats(year = 2025, month = 3, day = 2, period = PeriodType.WEEK)
+                StatsIntent.LoadStats(
+                    year = 2025,
+                    month = 3,
+                    day = 2,
+                    period = FetchSmokeStatsUseCase.PeriodType.WEEK
+                )
             )
 
             viewModel.states().test {
@@ -77,7 +83,12 @@ class StatsViewModelTest {
             val viewModel = StatsViewModel(processHolder)
 
             viewModel.intents().trySend(
-                StatsIntent.LoadStats(year = 2025, month = 3, day = 2, period = PeriodType.WEEK)
+                StatsIntent.LoadStats(
+                    year = 2025,
+                    month = 3,
+                    day = 2,
+                    period = FetchSmokeStatsUseCase.PeriodType.WEEK
+                )
             )
 
             viewModel.states().test {
@@ -97,7 +108,12 @@ class StatsViewModelTest {
             val viewModel = StatsViewModel(processHolder)
 
             viewModel.intents().trySend(
-                StatsIntent.LoadStats(year = 2025, month = 3, day = 2, period = PeriodType.WEEK)
+                StatsIntent.LoadStats(
+                    year = 2025,
+                    month = 3,
+                    day = 2,
+                    period = FetchSmokeStatsUseCase.PeriodType.WEEK
+                )
             )
 
             viewModel.states().test {

@@ -1,9 +1,9 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeAfter
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.toLocalDateTime
+import com.feragusper.smokeanalytics.libraries.architecture.domain.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -17,15 +17,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Instant
 import org.amshove.kluent.internal.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.util.Date
 
 class SmokeRepositoryImplTest {
 
@@ -40,8 +38,13 @@ class SmokeRepositoryImplTest {
     fun `GIVEN the user is null WHEN add smoke is called THEN it should throw an illegal state exception`() =
         runTest {
             every { firebaseAuth.currentUser } returns null
-
-            assertThrows<IllegalStateException> { smokeRepository.addSmoke(LocalDateTime.now()) }
+            assertThrows<IllegalStateException> {
+                smokeRepository.addSmoke(
+                    Instant.fromEpochMilliseconds(
+                        0
+                    )
+                )
+            }
         }
 
     @Nested
@@ -50,11 +53,12 @@ class SmokeRepositoryImplTest {
         private val id1 = "id1"
         private val id2 = "id2"
 
-        private val localDateTime1 = LocalDateTime.of(2023, 1, 1, 12, 0)
-        private val localDateTime2 = LocalDateTime.of(2023, 1, 1, 10, 0)
+        private val instant1 =
+            Instant.fromEpochMilliseconds(1_672_574_400_000) // 2023-01-01T12:00:00Z-ish depending TZ, but ok for test
+        private val instant2 = Instant.fromEpochMilliseconds(1_672_567_200_000) // earlier
 
         private val timeAfterNothing = 0L to 0L
-        private val timeAfter2 = localDateTime1.timeAfter(localDateTime2)
+        private val timeAfter2 = instant1.timeAfter(instant2)
 
         private val uid = "uid"
 
@@ -70,7 +74,7 @@ class SmokeRepositoryImplTest {
 
             every {
                 collectionReference.orderBy(
-                    "date",
+                    SmokeEntity.Fields.TIMESTAMP_MILLIS,
                     Query.Direction.DESCENDING
                 )
             } returns collectionReference
@@ -81,18 +85,18 @@ class SmokeRepositoryImplTest {
             runTest {
                 mockFetchSmokes()
 
-                val result = smokeRepository.fetchSmokes(localDateTime1, localDateTime2)
+                val result = smokeRepository.fetchSmokes(instant1, instant2)
 
                 assertEquals(
                     listOf(
                         Smoke(
                             id = id1,
-                            date = localDateTime1,
+                            date = instant1,
                             timeElapsedSincePreviousSmoke = timeAfter2
                         ),
                         Smoke(
                             id = id2,
-                            date = localDateTime2,
+                            date = instant2,
                             timeElapsedSincePreviousSmoke = timeAfterNothing
                         )
                     ),
@@ -102,7 +106,7 @@ class SmokeRepositoryImplTest {
 
         @Test
         fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() = runTest {
-            val date = LocalDateTime.of(2023, 1, 1, 12, 0)
+            val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
             val smokeEntitySlot = slot<SmokeEntity>()
 
             every { collectionReference.add(capture(smokeEntitySlot)) } answers {
@@ -118,15 +122,21 @@ class SmokeRepositoryImplTest {
             smokeRepository.addSmoke(date)
 
             assertTrue(smokeEntitySlot.isCaptured)
-            assertEquals(date, smokeEntitySlot.captured.date.toLocalDateTime())
+            assertEquals(
+                date.toEpochMilliseconds().toDouble(),
+                smokeEntitySlot.captured.timestampMillis
+            )
         }
 
         @Test
         fun `GIVEN user is logged in WHEN edit smoke is called THEN it should finish`() = runTest {
             val id = "id"
-            val date = Date.from(localDateTime1.atZone(ZoneId.systemDefault()).toInstant())
+            val date = instant1
 
-            every { collectionReference.document(id).set(SmokeEntity(date)) } answers {
+            val documentRef = mockk<DocumentReference>()
+            every { collectionReference.document(id) } returns documentRef
+
+            every { documentRef.set(any<SmokeEntity>()) } answers {
                 mockk<Task<Void>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -136,7 +146,7 @@ class SmokeRepositoryImplTest {
                 }
             }
 
-            smokeRepository.editSmoke(id, localDateTime1)
+            smokeRepository.editSmoke(id, date)
         }
 
         @Test
@@ -144,7 +154,10 @@ class SmokeRepositoryImplTest {
             runTest {
                 val id = "id"
 
-                every { collectionReference.document(id).delete() } answers {
+                val documentRef = mockk<DocumentReference>()
+                every { collectionReference.document(id) } returns documentRef
+
+                every { documentRef.delete() } answers {
                     mockk<Task<Void>>().apply {
                         every { isComplete } returns true
                         every { isSuccessful } returns true
@@ -162,7 +175,10 @@ class SmokeRepositoryImplTest {
             val finalQuery = mockk<Query>(relaxed = true)
 
             every {
-                collectionReference.orderBy("date", Query.Direction.DESCENDING)
+                collectionReference.orderBy(
+                    SmokeEntity.Fields.TIMESTAMP_MILLIS,
+                    Query.Direction.DESCENDING
+                )
             } returns query
 
             every {
@@ -181,8 +197,8 @@ class SmokeRepositoryImplTest {
                     every { result } answers {
                         mockk<QuerySnapshot>().apply {
                             every { documents } returns listOf(
-                                mockDocumentSnapshot(id1, localDateTime1),
-                                mockDocumentSnapshot(id2, localDateTime2)
+                                mockDocumentSnapshot(id1, instant1),
+                                mockDocumentSnapshot(id2, instant2)
                             )
                         }
                     }
@@ -191,14 +207,11 @@ class SmokeRepositoryImplTest {
             }
         }
 
-        private fun mockDocumentSnapshot(id: String, date: LocalDateTime): DocumentSnapshot {
+        private fun mockDocumentSnapshot(id: String, date: Instant): DocumentSnapshot {
             return mockk<DocumentSnapshot>().apply {
                 every { this@apply.id } returns id
-                every { getDate("date") } answers {
-                    Date.from(
-                        date.atZone(ZoneId.systemDefault()).toInstant()
-                    )
-                }
+                every { getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) } returns date.toEpochMilliseconds()
+                    .toDouble()
             }
         }
     }
