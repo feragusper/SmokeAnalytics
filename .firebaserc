@@ -1,0 +1,23 @@
+{
+  "projects": {
+    "staging": "smoke-analytics-staging",
+    "prod": "smoke-analytics"
+  },
+  "targets": {
+    "smoke-analytics-staging": {
+      "hosting": {
+        "staging": [
+          "smoke-analytics-staging"
+        ]
+      }
+    },
+    "smoke-analytics": {
+      "hosting": {
+        "prod": [
+          "smoke-analytics"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

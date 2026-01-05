@@ -2,7 +2,7 @@ package com.feragusper.smokeanalytics.libraries.wear.data
 
 import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.utcMillis
+import com.feragusper.smokeanalytics.libraries.architecture.domain.utcMillis
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
@@ -17,8 +17,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 import timber.log.Timber
-import java.time.LocalDateTime
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -68,7 +68,7 @@ class WearSyncManagerImpl(
             coroutineScope.launch(dispatcherProvider.io()) {
                 when (messageEvent.path) {
                     WearPaths.REQUEST_SMOKES -> syncWithWear()
-                    WearPaths.ADD_SMOKE -> smokeRepository.addSmoke(LocalDateTime.now())
+                    WearPaths.ADD_SMOKE -> smokeRepository.addSmoke(Clock.System.now())
                 }
             }
         }

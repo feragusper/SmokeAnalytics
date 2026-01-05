@@ -29,7 +29,7 @@ android {
 
 dependencies {
     // Architecture and presentation layers
-    implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
 
     // Design system for consistent theming and UI components
     implementation(project(":libraries:design"))
@@ -54,5 +54,9 @@ dependencies {
     implementation(libs.vico.views)
 
     // Unit testing dependencies
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

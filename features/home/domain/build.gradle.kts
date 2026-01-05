@@ -1,23 +1,48 @@
-plugins {
-    // Apply the Java Library plugin for this module.
-    `java-lib`
+plugins { id("kmp-lib") }
+
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":libraries:architecture:domain"))
+                implementation(project(":libraries:smokes:domain"))
+            }
+        }
+
+        @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+        wasmJs {
+            browser()
+            binaries.library()
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.javax.inject)
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.junit.jupiter.api)
+                implementation(libs.junit.jupiter.params)
+                runtimeOnly(libs.junit.jupiter.engine)
+
+                implementation(libs.kluent)
+                implementation(libs.coroutines.test)
+                implementation(libs.app.cash.turbine)
+            }
+        }
+    }
 }
 
 dependencies {
-    // Architecture domain module for shared business logic.
-    implementation(project(":libraries:architecture:domain"))
-    // Smokes domain module for smoke-related business logic.
-    implementation(project(":libraries:smokes:domain"))
-
-    // Dependency injection using javax.inject annotations.
-    implementation(libs.javax.inject)
-
-    // Unit testing dependencies.
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.bundles.test)
+    add("jvmTestImplementation", platform(libs.junit.bom))
 }
 
-tasks.test {
-    // Use JUnit Platform for running tests.
-    useJUnitPlatform()
-}
+tasks.withType<Test>().configureEach { useJUnitPlatform() }

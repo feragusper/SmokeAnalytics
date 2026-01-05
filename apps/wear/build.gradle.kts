@@ -130,11 +130,11 @@ fun properties(propertiesFileName: String): Properties {
 }
 
 dependencies {
-    implementation(project(":libraries:architecture:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:architecture:common"))
     implementation(project(":libraries:wear:domain"))
     implementation(project(":libraries:wear:data"))
-    implementation(project(":libraries:smokes:data"))
+    implementation(project(":libraries:smokes:data:mobile"))
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)

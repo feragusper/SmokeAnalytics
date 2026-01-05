@@ -1,21 +1,47 @@
 plugins {
-    // Use the custom java-lib plugin for a modular Java/Kotlin library.
-    `java-lib`
+    id("kmp-lib")
+}
+
+kotlin {
+
+    jvm()
+    js(IR) { browser() }
+    wasmJs { browser() }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":libraries:architecture:domain"))
+                implementation(libs.kotlinx.datetime)
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.coroutines.test)
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation(project(":libraries:wear:domain"))
+                implementation(libs.javax.inject) // solo si todavía usás @Inject en código jvm específico
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.bundles.test)
+            }
+        }
+    }
 }
 
 dependencies {
-    // Include the architecture domain module for shared domain logic.
-    implementation(project(":libraries:architecture:domain"))
-    implementation(project(":libraries:wear:domain"))
-    // Use javax.inject for dependency injection annotations.
-    implementation(libs.javax.inject)
-
-    // Unit testing dependencies.
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.bundles.test)
+    add("jvmTestImplementation", platform(libs.junit.bom))
 }
 
-tasks.test {
-    // Configure the test task to use JUnit Platform (JUnit 5).
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }

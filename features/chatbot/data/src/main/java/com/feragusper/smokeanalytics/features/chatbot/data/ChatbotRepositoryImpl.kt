@@ -3,49 +3,76 @@ package com.feragusper.smokeanalytics.features.chatbot.data
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.ai.client.generativeai.GenerativeModel
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @Singleton
 class ChatbotRepositoryImpl @Inject constructor(
-    private val gemini: GenerativeModel
+    private val gemini: GenerativeModel,
 ) : ChatbotRepository {
 
-    override suspend fun sendMessage(message: String) = runCatching {
-        gemini.generateContent(message).text
-    }.getOrElse {
-        it.printStackTrace()
-        "Ups, el coach tuvo un mal día y no pudo responder."
-    } ?: "Sin respuesta del modelo."
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault()
+
+    override suspend fun sendMessage(message: String): String {
+        return runCatching {
+            gemini.generateContent(message).text
+        }.getOrElse { throwable ->
+            throwable.printStackTrace()
+            null
+        } ?: "No response from the model."
+    }
 
     override suspend fun sendInitialMessageWithContext(
         name: String,
-        recentSmokes: List<Smoke>
+        recentSmokes: List<Smoke>,
     ): String {
-        val todayCount = recentSmokes.count { it.date.toLocalDate() == LocalDate.now() }
-        val total = recentSmokes.size
-        val lastDate = recentSmokes.firstOrNull()?.date?.toString() ?: "No registrado"
+        val today = Clock.System.now().toLocalDateTime(timeZone).date
 
-        val prompt = buildPrompt(name, todayCount, total, lastDate)
+        val todayCount = recentSmokes.count { smoke ->
+            smoke.date.toLocalDateTime(timeZone).date == today
+        }
+
+        val total = recentSmokes.size
+
+        val lastDate = recentSmokes
+            .firstOrNull()
+            ?.date
+            ?.toLocalDateTime(timeZone)
+            ?.toString()
+            ?: "Not recorded"
+
+        val prompt = buildPrompt(
+            name = name,
+            today = todayCount,
+            total = total,
+            lastDate = lastDate,
+        )
 
         return runCatching {
             gemini.generateContent(prompt).text
-        }.getOrElse {
-            it.printStackTrace()
-            "No se pudo generar un mensaje motivacional. Probá más tarde."
-        } ?: "Sin respuesta del modelo."
+        }.getOrElse { throwable ->
+            throwable.printStackTrace()
+            null
+        } ?: "No response from the model."
     }
 
-    private fun buildPrompt(name: String, today: Int, total: Int, lastDate: String): String = """
-        Sos un coach motivacional para dejar de fumar. Respondé con empatía, motivación y un poco de humor.
-        Estás hablando con $name
-        Datos del usuario:
-        - Fumó $today cigarrillos hoy
-        - Tiene $total cigarrillos registrados
-        - El último fue el $lastDate
+    private fun buildPrompt(
+        name: String,
+        today: Int,
+        total: Int,
+        lastDate: String,
+    ): String = """
+        You are a motivational coach helping someone quit smoking. Respond with empathy, motivation, and a bit of humor.
+        You are talking to $name.
 
-        ¿Qué le dirías para motivarlo?
+        User data:
+        - Smoked $today cigarettes today
+        - Has $total cigarettes recorded
+        - The last one was at $lastDate
+
+        What would you say to motivate them?
     """.trimIndent()
 }
-

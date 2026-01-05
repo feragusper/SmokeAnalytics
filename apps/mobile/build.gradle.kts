@@ -1,4 +1,5 @@
 import com.google.common.base.Charsets
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStreamReader
@@ -39,7 +40,7 @@ val gitCode: Int by lazy {
 }
 
 // Construct the version name using a major.minor.patch pattern with the git code.
-val majorMinorPatchVersionName = "0.4.0.$gitCode"
+val majorMinorPatchVersionName = "0.5.0.$gitCode"
 
 android {
     // Set the application namespace.
@@ -115,27 +116,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        // Set the JVM target for Kotlin.
-        jvmTarget = Java.JVM_TARGET
-        // Enable experimental APIs.
-        freeCompilerArgs = listOf(
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=kotlin.RequiresOptIn"
-        )
-    }
 
     buildFeatures {
         // Enable Jetpack Compose.
         compose = true
         // Enable generation of BuildConfig.
         buildConfig = true
-    }
-
-    @Suppress("UnstableApiUsage")
-    composeOptions {
-        // Specify the Kotlin compiler extension version for Compose.
-        kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
     }
 
     packaging {
@@ -148,6 +134,17 @@ android {
     lint {
         // Disable specific lint rule.
         disable.add("EnsureInitializerMetadata")
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.addAll(
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "-opt-in=kotlin.RequiresOptIn"
+        )
     }
 }
 
@@ -180,13 +177,17 @@ dependencies {
     implementation(libs.timber)
     // Project modules.
     implementation(project(":libraries:design"))
-    implementation(project(":libraries:architecture:presentation"))
-    implementation(project(":features:authentication:presentation"))
-    implementation(project(":features:history:presentation"))
-    implementation(project(":features:home:presentation"))
-    implementation(project(":features:settings:presentation"))
-    implementation(project(":features:stats:presentation"))
+    implementation(project(":libraries:architecture:presentation:mobile"))
+    implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:smokes:domain"))
+    implementation(project(":features:authentication:presentation:mobile"))
+    implementation(project(":features:history:presentation:mobile"))
+    implementation(project(":features:home:presentation:mobile"))
+    implementation(project(":features:home:domain"))
+    implementation(project(":features:settings:presentation:mobile"))
+    implementation(project(":features:stats:presentation:mobile"))
     implementation(project(":features:chatbot:presentation"))
+    implementation(project(":features:chatbot:domain"))
     // Hilt annotation processor.
     kapt(libs.hilt.compiler)
     // Include devtools module only in debug builds.
@@ -196,8 +197,6 @@ dependencies {
 }
 
 // Task to print the current version name to the console.
-task("printVersionName") {
-    doLast {
-        println(majorMinorPatchVersionName)
-    }
+tasks.register("printVersionName") {
+    doLast { println(majorMinorPatchVersionName) }
 }

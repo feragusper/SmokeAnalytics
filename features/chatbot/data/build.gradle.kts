@@ -33,6 +33,8 @@ dependencies {
 
     implementation(libs.generativeai)
 
+    implementation(libs.kotlinx.datetime)
+
     // Dagger Hilt dependencies for dependency injection.
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
@@ -43,4 +45,7 @@ dependencies {
     // Unit testing dependencies.
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

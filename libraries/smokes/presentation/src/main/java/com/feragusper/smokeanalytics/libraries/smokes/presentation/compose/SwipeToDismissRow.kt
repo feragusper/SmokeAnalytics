@@ -38,36 +38,41 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.feragusper.smokeanalytics.libraries.architecture.domain.extensions.timeFormatted
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
 import de.charlex.compose.RevealDirection
 import de.charlex.compose.RevealSwipe
 import de.charlex.compose.rememberRevealState
-import java.time.LocalDateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * A row item for displaying smoke event details with swipe-to-dismiss functionality.
  * It allows users to delete the event by swiping and edit the event's time by tapping.
  *
- * @param date The date and time of the smoke event.
+ * All time values are represented as [Instant] to stay consistent with domain/data and Web.
+ *
+ * @param date The date/time of the smoke event.
  * @param timeElapsedSincePreviousSmoke The time elapsed since the previous smoke event.
- * @param onDelete Callback invoked when the item is swiped to dismiss, indicating deletion.
+ * @param onDelete Callback invoked when the item is deleted.
  * @param fullDateTimeEdit Flag indicating if both date and time can be edited. If false, only time is editable.
- * @param onEdit Callback invoked with a new LocalDateTime when the user edits the event's time (or date and time).
+ * @param onEdit Callback invoked with a new [Instant] when the user edits the event.
  */
 @Composable
 fun SwipeToDismissRow(
-    date: LocalDateTime,
+    date: Instant,
     timeElapsedSincePreviousSmoke: Pair<Long, Long>,
     onDelete: () -> Unit,
     fullDateTimeEdit: Boolean,
-    onEdit: (LocalDateTime) -> Unit,
+    onEdit: (Instant) -> Unit,
 ) {
+    val timeZone = TimeZone.currentSystemDefault()
     val shape = MaterialTheme.shapes.medium
 
     val state = rememberRevealState(
         directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
-        positionalThreshold = { it * 0.5f },
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -100,7 +105,7 @@ fun SwipeToDismissRow(
         hiddenContentEnd = {
             IconButton(onClick = onDelete) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector = Icons.Filled.Delete,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -120,25 +125,33 @@ fun SwipeToDismissRow(
     ) {
         SmokeItem(
             date = date,
+            timeZone = timeZone,
             timeAfterPrevious = timeElapsedSincePreviousSmoke,
         )
     }
 
     if (showDatePicker) {
-        var selectedDateTime = date
+        var selectedDateTime: LocalDateTime = date.toLocalDateTime(timeZone)
 
         if (fullDateTimeEdit) {
             DateTimePickerDialog(
                 initialDateTime = date,
-                onDismiss = {
-                    showDatePicker = false
-                },
-                onDateSelected = { dateSelected ->
-                    selectedDateTime = dateSelected
+                onDismiss = { showDatePicker = false },
+                onDateSelected = { selectedInstant ->
+                    selectedDateTime = selectedInstant.toLocalDateTime(timeZone)
                 },
                 onTimeSelected = { hour, minutes ->
                     showDatePicker = false
-                    onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                    val updatedLocalDateTime = LocalDateTime(
+                        year = selectedDateTime.year,
+                        monthNumber = selectedDateTime.monthNumber,
+                        dayOfMonth = selectedDateTime.dayOfMonth,
+                        hour = hour,
+                        minute = minutes,
+                        second = selectedDateTime.second,
+                        nanosecond = selectedDateTime.nanosecond,
+                    )
+                    onEdit(updatedLocalDateTime.toInstant(timeZone))
                 }
             )
         } else {
@@ -146,11 +159,19 @@ fun SwipeToDismissRow(
                 initialDate = date,
                 onConfirm = { hour, minutes ->
                     showDatePicker = false
-                    onEdit(selectedDateTime.toLocalDate().atTime(hour, minutes))
+                    val base = selectedDateTime
+                    val updatedLocalDateTime = LocalDateTime(
+                        year = base.year,
+                        monthNumber = base.monthNumber,
+                        dayOfMonth = base.dayOfMonth,
+                        hour = hour,
+                        minute = minutes,
+                        second = base.second,
+                        nanosecond = base.nanosecond,
+                    )
+                    onEdit(updatedLocalDateTime.toInstant(timeZone))
                 },
-                onDismiss = {
-                    showDatePicker = false
-                },
+                onDismiss = { showDatePicker = false },
             )
         }
     }
@@ -158,9 +179,12 @@ fun SwipeToDismissRow(
 
 @Composable
 private fun SmokeItem(
-    date: LocalDateTime,
+    date: Instant,
+    timeZone: TimeZone,
     timeAfterPrevious: Pair<Long, Long>,
 ) {
+    val local = date.toLocalDateTime(timeZone)
+
     Row(
         modifier = Modifier
             .background(color = MaterialTheme.colorScheme.background)
@@ -172,10 +196,11 @@ private fun SmokeItem(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = date.timeFormatted(),
+                text = "%02d:%02d".format(local.hour, local.minute),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
+
             val (hours, minutes) = timeAfterPrevious
             Text(
                 text = "${stringResource(id = R.string.smokes_smoked_after)} ${
@@ -196,30 +221,20 @@ private fun SmokeItem(
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
-
     }
 }
 
 /**
  * Displays a dialog allowing the user to select both a date and a time, with the selections made in two steps.
- * First, the date is chosen, followed by the time.
- *
- * @param initialDateTime The initial date and time to display in the picker.
- * @param onDismiss Callback invoked when the dialog is dismissed without a selection.
- * @param onDateSelected Callback invoked when a date is selected, before the time selection step.
- * @param onTimeSelected Callback invoked with the selected hour and minute after both date and time have been chosen.
  */
 @Composable
 fun DateTimePickerDialog(
-    initialDateTime: LocalDateTime,
+    initialDateTime: Instant,
     onDismiss: () -> Unit,
-    onDateSelected: (LocalDateTime) -> Unit,
+    onDateSelected: (Instant) -> Unit,
     onTimeSelected: (Int, Int) -> Unit,
 ) {
-
-    var dateTimeDialogType by remember {
-        mutableStateOf(DateTimeDialogType.Date)
-    }
+    var dateTimeDialogType by remember { mutableStateOf(DateTimeDialogType.Date) }
 
     when (dateTimeDialogType) {
         DateTimeDialogType.Date -> {
@@ -236,9 +251,7 @@ fun DateTimePickerDialog(
         DateTimeDialogType.Time -> {
             TimePickerDialog(
                 initialDate = initialDateTime,
-                onConfirm = { hour, minute ->
-                    onTimeSelected(hour, minute)
-                },
+                onConfirm = { hour, minute -> onTimeSelected(hour, minute) },
                 onDismiss = onDismiss,
             )
         }
@@ -246,29 +259,25 @@ fun DateTimePickerDialog(
 }
 
 /**
- * Displays a dialog for time selection, providing an interface for choosing an hour and minute.
- *
- * @param initialDate The initial date and time to display in the picker.
- * @param onDismiss Callback invoked when the dialog is dismissed without making a selection.
- * @param onConfirm Callback invoked with the selected hour and minute upon confirmation.
+ * Displays a dialog for time selection.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(
-    initialDate: LocalDateTime,
+    initialDate: Instant,
     onDismiss: () -> Unit,
     onConfirm: (Int, Int) -> Unit,
 ) {
+    val local = initialDate.toLocalDateTime(TimeZone.currentSystemDefault())
+
     val timePickerState = rememberTimePickerState(
-        initialHour = initialDate.hour,
-        initialMinute = initialDate.minute,
+        initialHour = local.hour,
+        initialMinute = local.minute,
     )
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
@@ -292,18 +301,16 @@ fun TimePickerDialog(
                     text = stringResource(id = R.string.smokes_date_time_picker_title),
                     style = MaterialTheme.typography.labelMedium
                 )
-                TimePicker(
-                    state = timePickerState
-                )
+
+                TimePicker(state = timePickerState)
+
                 Row(
                     modifier = Modifier
                         .height(40.dp)
                         .fillMaxWidth()
                 ) {
                     Spacer(modifier = Modifier.weight(1f))
-                    Button(onClick = {
-                        onDismiss()
-                    }) {
+                    Button(onClick = onDismiss) {
                         Text(text = stringResource(id = R.string.smokes_date_time_picker_button_cancel))
                     }
                     Button(onClick = {
@@ -317,11 +324,7 @@ fun TimePickerDialog(
     }
 }
 
-/**
- * Enum representing the dialog type for date and time selection.
- */
 private enum class DateTimeDialogType {
     Date,
     Time
 }
-

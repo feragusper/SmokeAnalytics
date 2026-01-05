@@ -1,3 +1,6 @@
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     // Apply the Android Library plugin for building library modules.
     id("com.android.library")
@@ -18,28 +21,11 @@ android {
         minSdk = Android.MIN_SDK
     }
 
-    compileOptions {
-        // Set Java source and target compatibility to Java 17.
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        // Set the JVM target for Kotlin compilation.
-        jvmTarget = Java.JVM_TARGET
-    }
-
     buildFeatures {
         // Enable generation of BuildConfig class.
         buildConfig = true
     }
 
-    composeOptions {
-        // Specify the Kotlin compiler extension version for Jetpack Compose.
-        kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
-    }
-
-    @Suppress("UnstableApiUsage")
     testOptions {
         unitTests.all {
             // Use JUnit Platform for unit tests.
@@ -58,18 +44,20 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+}
+
 // Configure Kover code coverage reports using the centralized KoverConfig.
-koverReport(KoverConfig(layout).koverReport)
+extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
 
 // Additional Kover report configuration.
-koverReport {
-    defaults {
-        // Merge default reports with those of the 'release' build variant.
-        mergeWith("release")
-    }
-
-    // Configure reports for the 'release' build variant.
-    androidReports("release") {
-        // Additional release-specific configuration can be added here.
+kover {
+    reports {
+        variant("release") {
+            html { onCheck.set(true) }
+            xml  { onCheck.set(true) }
+        }
     }
 }
