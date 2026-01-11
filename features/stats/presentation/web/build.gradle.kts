@@ -14,6 +14,7 @@ kotlin {
             dependencies {
                 // --- Architecture / state handling ---
                 implementation(project(":libraries:architecture:domain"))
+                implementation(project(":libraries:design:web"))
 
                 // --- Domain ---
                 implementation(project(":libraries:smokes:domain"))
@@ -28,7 +29,5 @@ kotlin {
                 implementation(npm("chart.js", "4.4.1"))
             }
         }
-
-        val jsTest by getting
     }
 }

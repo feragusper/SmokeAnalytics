@@ -1,5 +1,4 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import org.gradle.api.tasks.Sync
 
 plugins {
     kotlin("multiplatform")
@@ -77,9 +76,10 @@ kotlin {
                 implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
+                implementation(project(":libraries:design:web"))
 
-                implementation("dev.gitlive:firebase-auth:1.13.0")
-                implementation("dev.gitlive:firebase-app:1.13.0")
+                implementation(libs.gitlive.firebase.auth)
+                implementation(libs.firebase.app)
             }
         }
     }

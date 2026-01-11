@@ -10,6 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
+import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
+import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -19,10 +23,8 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -32,7 +34,6 @@ fun StatsWebScreen(
     deps: StatsWebDependencies,
 ) {
     val store = remember(deps) { StatsWebStore(processHolder = deps.processHolder) }
-
     LaunchedEffect(store) { store.start() }
 
     val state by store.state.collectAsState()
@@ -91,111 +92,142 @@ private fun StatsWebContent(
     onDateChange: (LocalDate) -> Unit,
     onReload: () -> Unit,
 ) {
-    val tz = remember { TimeZone.currentSystemDefault() }
+    Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
 
-    Div {
-        H2 { Text("Stats") }
+        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Stats") }
 
-        // Tabs
-        Div {
-            StatsPeriod.entries.forEach { p ->
-                val isSelected = p == currentPeriod
-                Button(attrs = {
-                    if (state.displayLoading) disabled()
-                    onClick { onPeriodChange(p) }
-                }) {
-                    Text(if (isSelected) "[$p]" else p.name)
+        SurfaceCard {
+            Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
+
+                Div(attrs = { classes(SmokeWebStyles.periodPills) }) {
+                    StatsPeriod.entries.forEach { p ->
+                        val isSelected = p == currentPeriod
+                        val label = p.label()
+
+                        if (isSelected) {
+                            PrimaryButton(
+                                text = label,
+                                onClick = { /* no-op */ },
+                                enabled = !state.displayLoading
+                            )
+                        } else {
+                            GhostButton(
+                                text = label,
+                                onClick = { onPeriodChange(p) },
+                                enabled = !state.displayLoading
+                            )
+                        }
+
+                        Span { Text(" ") }
+                    }
                 }
-                Span { Text(" ") }
+
+                Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+
+                    GhostButton(
+                        text = "←",
+                        onClick = { onDateChange(selectedDate.shift(currentPeriod, -1)) },
+                        enabled = !state.displayLoading
+                    )
+
+                    Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
+                        Text(selectedDate.headerLabel(currentPeriod))
+                    }
+
+                    GhostButton(
+                        text = "→",
+                        onClick = { onDateChange(selectedDate.shift(currentPeriod, +1)) },
+                        enabled = !state.displayLoading
+                    )
+
+                    Input(
+                        type = InputType.Date,
+                        attrs = {
+                            value(selectedDate.toHtmlDate())
+                            if (state.displayLoading) disabled()
+                            onInput { e ->
+                                val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                                onDateChange(picked)
+                            }
+                            classes(SmokeWebStyles.dateInput)
+                        }
+                    )
+
+                    GhostButton(
+                        text = "Reload",
+                        onClick = onReload,
+                        enabled = !state.displayLoading
+                    )
+                }
             }
         }
 
-        // Header navigation (← label →) + optional date input
-        Div {
-            Button(attrs = {
-                if (state.displayLoading) disabled()
-                onClick { onDateChange(selectedDate.shift(currentPeriod, -1, tz)) }
-            }) { Text("←") }
-
-            Span { Text("  ") }
-
-            Text(selectedDate.headerLabel(currentPeriod))
-
-            Span { Text("  ") }
-
-            Button(attrs = {
-                if (state.displayLoading) disabled()
-                onClick { onDateChange(selectedDate.shift(currentPeriod, +1, tz)) }
-            }) { Text("→") }
-
-            Span { Text("   ") }
-
-            Input(
-                type = InputType.Date,
-                attrs = {
-                    value(selectedDate.toHtmlDate())
-                    if (state.displayLoading) disabled()
-                    onInput { e ->
-                        val picked = (e.value ?: "").toLocalDateOrNull() ?: return@onInput
-                        onDateChange(picked)
-                    }
-                }
-            )
-
-            Span { Text("  ") }
-
-            Button(attrs = {
-                if (state.displayLoading) disabled()
-                onClick { onReload() }
-            }) { Text("Reload") }
-        }
-
         if (state.displayLoading) {
-            Div { Text("Loading...") }
+            SurfaceCard { Text("Loading...") }
         }
 
         if (state.error != null) {
-            Div { Text("Something went wrong") }
+            SurfaceCard { Text("Something went wrong") }
         }
 
         state.stats?.let { stats ->
             val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
-            Div {
-                Canvas(attrs = {
-                    id(chartId)
-                    attr("width", "900")
-                    attr("height", "360")
-                })
-            }
+            SurfaceCard {
+                Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
+                    Text(currentPeriod.chartTitle())
+                }
 
-            when (currentPeriod) {
-                StatsPeriod.DAY -> LineChartJs(
-                    canvasId = chartId,
-                    title = "Today",
-                    data = stats.hourly
-                )
+                Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
+                    Canvas(attrs = {
+                        id(chartId)
+                        attr("width", "1200")
+                        attr("height", "420")
+                    })
+                }
 
-                StatsPeriod.WEEK -> BarChartJs(
-                    canvasId = chartId,
-                    title = "Week",
-                    data = stats.weekly
-                )
+                when (currentPeriod) {
+                    StatsPeriod.DAY -> LineChartJs(
+                        canvasId = chartId,
+                        title = "Today",
+                        data = stats.hourly
+                    )
 
-                StatsPeriod.MONTH -> BarChartJs(
-                    canvasId = chartId,
-                    title = "Month",
-                    data = stats.monthly
-                )
+                    StatsPeriod.WEEK -> BarChartJs(
+                        canvasId = chartId,
+                        title = "Week",
+                        data = stats.weekly
+                    )
 
-                StatsPeriod.YEAR -> BarChartJs(
-                    canvasId = chartId,
-                    title = "Year",
-                    data = stats.yearly
-                )
+                    StatsPeriod.MONTH -> BarChartJs(
+                        canvasId = chartId,
+                        title = "Month",
+                        data = stats.monthly
+                    )
+
+                    StatsPeriod.YEAR -> BarChartJs(
+                        canvasId = chartId,
+                        title = "Year",
+                        data = stats.yearly
+                    )
+                }
             }
         }
     }
+}
+
+private fun StatsPeriod.label(): String = when (this) {
+    StatsPeriod.DAY -> "Day"
+    StatsPeriod.WEEK -> "Week"
+    StatsPeriod.MONTH -> "Month"
+    StatsPeriod.YEAR -> "Year"
+}
+
+private fun StatsPeriod.chartTitle(): String = when (this) {
+    StatsPeriod.DAY -> "Today (hourly)"
+    StatsPeriod.WEEK -> "This week"
+    StatsPeriod.MONTH -> "This month"
+    StatsPeriod.YEAR -> "This year"
 }
 
 @Composable
@@ -206,7 +238,6 @@ private fun LineChartJs(
 ) {
     val labels = remember(data) { data.keys.toList() }
     val values = remember(data) { data.values.map { it as Number } }
-
     val chartHolder = remember { mutableStateOf<Chart?>(null) }
 
     DisposableEffect(canvasId, labels, values) {
@@ -244,7 +275,6 @@ private fun BarChartJs(
 ) {
     val labels = remember(data) { data.keys.toList() }
     val values = remember(data) { data.values.map { it as Number } }
-
     val chartHolder = remember { mutableStateOf<Chart?>(null) }
 
     DisposableEffect(canvasId, labels, values) {
@@ -274,7 +304,7 @@ private fun BarChartJs(
     }
 }
 
-private fun LocalDate.shift(period: StatsPeriod, amount: Int, tz: TimeZone): LocalDate {
+private fun LocalDate.shift(period: StatsPeriod, amount: Int): LocalDate {
     val unit = when (period) {
         StatsPeriod.DAY -> DateTimeUnit.DAY
         StatsPeriod.WEEK -> DateTimeUnit.WEEK
