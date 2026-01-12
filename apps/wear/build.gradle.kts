@@ -1,4 +1,5 @@
 import com.google.common.base.Charsets
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStreamReader
@@ -82,12 +83,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = Java.JVM_TARGET
-        freeCompilerArgs = listOf(
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=kotlin.RequiresOptIn",
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.fromTarget(Java.JVM_TARGET))
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                "-opt-in=kotlin.RequiresOptIn",
+            )
+        }
     }
 
     buildFeatures {
@@ -95,6 +98,7 @@ android {
         buildConfig = true
     }
 
+    @Suppress("UnstableApiUsage")
     composeOptions {
         kotlinCompilerExtensionVersion = Java.KOTLIN_COMPILER_EXTENSION_VERSION
     }
@@ -140,7 +144,7 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(libs.hilt)
     implementation(libs.timber)
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
     implementation(libs.androidx.tiles)
     implementation(libs.horologist.composables)
     implementation(libs.horologist.tiles)

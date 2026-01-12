@@ -176,7 +176,7 @@ dependencies {
     // Timber for logging.
     implementation(libs.timber)
     // Project modules.
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
     implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:smokes:domain"))

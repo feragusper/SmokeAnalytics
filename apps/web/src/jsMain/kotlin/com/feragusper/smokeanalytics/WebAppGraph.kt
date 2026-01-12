@@ -13,9 +13,8 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.auth.externals.GoogleAuthProvider
+import dev.gitlive.firebase.auth.externals.getAuth
 import dev.gitlive.firebase.auth.externals.signInWithPopup
 import kotlinx.coroutines.await
 
@@ -73,9 +72,8 @@ data class WebAppGraph(
             )
 
             val signInWithGoogleWeb: suspend () -> Unit = {
-                val auth = Firebase.auth
                 val provider = GoogleAuthProvider()
-                signInWithPopup(auth.js, provider).await()
+                signInWithPopup(getAuth(), provider).await()
             }
 
             return WebAppGraph(

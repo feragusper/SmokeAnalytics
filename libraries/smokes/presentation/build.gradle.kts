@@ -21,7 +21,7 @@ android {
 
 dependencies {
     // Include the design library for consistent theming and UI components.
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
     // Include the architecture domain module for shared domain logic.
     implementation(project(":libraries:architecture:domain"))
 

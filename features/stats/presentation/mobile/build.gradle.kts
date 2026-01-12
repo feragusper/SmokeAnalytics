@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":libraries:architecture:presentation:mobile"))
 
     // Design system for consistent theming and UI components
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     // Domain layer for accessing smoke-related data
     implementation(project(":libraries:smokes:domain"))

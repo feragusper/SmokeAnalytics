@@ -30,7 +30,7 @@ dependencies {
     implementation(project(":libraries:architecture:domain"))
 
     // Design system for consistent theming and UI components
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     // Authentication modules for user session management
     implementation(project(":libraries:authentication:domain"))

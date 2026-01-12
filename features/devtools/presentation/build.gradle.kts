@@ -27,7 +27,7 @@ android {
 dependencies {
     // Architecture and presentation layers
     implementation(project(":libraries:architecture:presentation:mobile"))
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     // Authentication modules for user session and sign-in management
     implementation(project(":libraries:authentication:presentation:mobile"))
