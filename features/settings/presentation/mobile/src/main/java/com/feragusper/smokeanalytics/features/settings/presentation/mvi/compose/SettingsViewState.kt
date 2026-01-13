@@ -170,15 +170,14 @@ private fun LoggedOutView(
     snackbarHostState: SnackbarHostState
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val message =
+        stringResource(com.feragusper.smokeanalytics.libraries.design.mobile.R.string.error_general)
     GoogleSignInComponent(
         modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
         onSignInSuccess = onSignInSuccess,
         onSignInError = {
             scope.launch {
-                snackbarHostState.showSnackbar(
-                    context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general)
-                )
+                snackbarHostState.showSnackbar(message)
             }
         },
     )

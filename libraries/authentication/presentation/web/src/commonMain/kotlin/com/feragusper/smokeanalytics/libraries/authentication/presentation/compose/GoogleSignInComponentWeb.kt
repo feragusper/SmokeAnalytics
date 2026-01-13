@@ -6,9 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import dev.gitlive.firebase.Firebase
-import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.auth.externals.GoogleAuthProvider
+import dev.gitlive.firebase.auth.externals.getAuth
 import dev.gitlive.firebase.auth.externals.signInWithPopup
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.await
@@ -39,9 +38,8 @@ fun GoogleSignInComponentWeb(
                     loading = true
                     try {
                         runCatching {
-                            val auth = Firebase.auth
                             val provider = GoogleAuthProvider()
-                            signInWithPopup(auth.js, provider).await()
+                            signInWithPopup(getAuth(), provider).await()
                         }.onSuccess {
                             onSignInSuccess()
                         }.onFailure { t ->

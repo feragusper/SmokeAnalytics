@@ -40,7 +40,7 @@ val gitCode: Int by lazy {
 }
 
 // Construct the version name using a major.minor.patch pattern with the git code.
-val majorMinorPatchVersionName = "0.5.0.$gitCode"
+val majorMinorPatchVersionName = "0.6.0.$gitCode"
 
 android {
     // Set the application namespace.
@@ -176,7 +176,7 @@ dependencies {
     // Timber for logging.
     implementation(libs.timber)
     // Project modules.
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
     implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:smokes:domain"))

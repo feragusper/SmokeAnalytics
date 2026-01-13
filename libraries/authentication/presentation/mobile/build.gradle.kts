@@ -34,7 +34,7 @@ android {
 
 dependencies {
     // Include the design library for consistent theming and UI components.
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     // Use the Compose BOM for consistent Compose library versions.
     implementation(platform(libs.androidx.compose.bom))

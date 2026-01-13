@@ -84,7 +84,7 @@ class MainTileService : SuspendingTileService() {
                 ResourceBuilders.ImageResource.Builder()
                     .setAndroidResourceByResId(
                         ResourceBuilders.AndroidImageResourceByResId.Builder()
-                            .setResourceId(com.feragusper.smokeanalytics.libraries.design.R.drawable.ic_cigarette)
+                            .setResourceId(com.feragusper.smokeanalytics.libraries.design.mobile.R.drawable.ic_cigarette)
                             .build()
                     ).build()
             )

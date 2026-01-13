@@ -32,7 +32,7 @@ dependencies {
     implementation(project(":libraries:architecture:presentation:mobile"))
 
     // Design system for consistent theming and UI components
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     implementation(project(":features:chatbot:domain"))
     implementation(project(":features:chatbot:data"))

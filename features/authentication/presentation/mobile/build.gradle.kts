@@ -34,7 +34,7 @@ dependencies {
     implementation(project(":libraries:authentication:domain"))
 
     // Design system for consistent theming and UI components
-    implementation(project(":libraries:design"))
+    implementation(project(":libraries:design:mobile"))
 
     // AndroidX and Compose libraries
     implementation(libs.bundles.androidx.base)

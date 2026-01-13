@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.authentication.presentation.R
@@ -72,14 +71,15 @@ data class AuthenticationViewState(
                 ) {
                     Text(text = stringResource(id = R.string.authentication_sign_in_to_continue))
                     val scope = rememberCoroutineScope()
-                    val context = LocalContext.current
+                    val message =
+                        stringResource(com.feragusper.smokeanalytics.libraries.design.mobile.R.string.error_general)
                     GoogleSignInComponent(
                         modifier = Modifier.padding(top = 16.dp),
                         onSignInSuccess = { intent(AuthenticationIntent.FetchUser) },
                         onSignInError = {
                             scope.launch {
                                 snackbarHostState.showSnackbar(
-                                    context.getString(com.feragusper.smokeanalytics.libraries.design.R.string.error_general)
+                                    message
                                 )
                             }
                         },
@@ -87,14 +87,14 @@ data class AuthenticationViewState(
                 }
 
                 // Display error messages as snackbars
-                val context = LocalContext.current
+                val message = stringResource(
+                    R.string.error_generic
+                )
                 LaunchedEffect(error) {
                     error?.let {
                         when (it) {
                             AuthenticationResult.Error.Generic -> snackbarHostState.showSnackbar(
-                                context.getString(
-                                    R.string.error_generic
-                                )
+                                message
                             )
                         }
                     }

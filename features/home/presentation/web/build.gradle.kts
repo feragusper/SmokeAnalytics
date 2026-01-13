@@ -15,6 +15,7 @@ kotlin {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:logging"))
+                implementation(project(":libraries:design:web"))
 
                 implementation(libs.kotlinx.coroutines.core)
 

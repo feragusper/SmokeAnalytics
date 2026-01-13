@@ -9,6 +9,11 @@ import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
+import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
+import com.feragusper.smokeanalytics.libraries.design.SmokeRow
+import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -21,14 +26,11 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Li
+import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Ul
 
 @Composable
 fun HistoryWebScreen(
@@ -42,180 +44,193 @@ fun HistoryWebScreen(
     val state by store.state.collectAsState()
     val tz = remember { TimeZone.currentSystemDefault() }
 
-    // Per-row edit state
     val editing = remember { mutableStateMapOf<String, Boolean>() }
     val draftDateTime = remember { mutableStateMapOf<String, String>() }
 
-    // ✅ Normalize selected day to 00:00 so all "day actions" are consistent.
     val selectedDayStart = state.selectedDate.dayStart(tz)
     val selectedLocalDate = selectedDayStart.toLocalDateTime(tz).date
     val selectedDateLabel = selectedLocalDate.toUiDate()
 
-    Div {
-        H3 { Text("History • $selectedDateLabel") }
+    Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
 
-        if (state.displayLoading) {
-            Div { Text("Loading...") }
+        // Title
+        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+            Text("History • $selectedDateLabel")
         }
 
+        // Errors
         state.error?.let { err ->
-            Div {
+            SurfaceCard {
                 Text(
                     when (err) {
                         HistoryResult.Error.NotLoggedIn -> "Not logged in"
                         HistoryResult.Error.Generic -> "Something went wrong"
                     }
                 )
-            }
 
-            if (err == HistoryResult.Error.NotLoggedIn) {
-                Button(attrs = { onClick { onNavigateToAuth() } }) { Text("Go to sign in") }
+                if (err == HistoryResult.Error.NotLoggedIn) {
+                    Div {
+                        PrimaryButton(
+                            text = "Go to sign in",
+                            onClick = onNavigateToAuth,
+                            enabled = !state.displayLoading
+                        )
+                    }
+                }
             }
         }
 
-        // Controls
-        Div {
-            Button(attrs = { onClick { store.send(HistoryIntent.NavigateUp); onNavigateUp() } }) {
-                Text("Back")
+        // Top actions (Back / Add / Refresh)
+        Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
+
+            Div {
+                GhostButton(
+                    text = "Back",
+                    onClick = {
+                        store.send(HistoryIntent.NavigateUp)
+                        onNavigateUp()
+                    },
+                    enabled = !state.displayLoading
+                )
             }
 
-            Span { Text("  ") }
-
-            Button(
-                attrs = {
-                    if (state.displayLoading) disabled()
-                    onClick { store.send(HistoryIntent.AddSmoke(selectedDayStart)) }
-                }
-            ) { Text("Add smoke") }
-
-            Span { Text("  ") }
-
-            Button(
-                attrs = {
-                    if (state.displayLoading) disabled()
-                    onClick { store.send(HistoryIntent.FetchSmokes(selectedDayStart)) }
-                }
-            ) { Text("Refresh") }
+            Div {
+                PrimaryButton(
+                    text = "Add smoke",
+                    onClick = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
+                    enabled = !state.displayLoading
+                )
+                Span { Text(" ") }
+                GhostButton(
+                    text = "Refresh",
+                    onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart)) },
+                    enabled = !state.displayLoading
+                )
+            }
         }
 
-        // Day navigation + day picker
-        Div {
-            Button(
-                attrs = {
-                    if (state.displayLoading) disabled()
-                    onClick {
+        // Day navigation + picker
+        Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
+            Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+
+                GhostButton(
+                    text = "←",
+                    onClick = {
                         store.send(
                             HistoryIntent.FetchSmokes(
                                 selectedDayStart.minusDays(1, tz)
                             )
                         )
-                    }
+                    },
+                    enabled = !state.displayLoading
+                )
+
+                Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
+                    Text(selectedDateLabel)
                 }
-            ) { Text("←") }
 
-            Span { Text("  ") }
-
-            Input(
-                type = InputType.Date,
-                attrs = {
-                    value(selectedLocalDate.toHtmlDate())
-                    if (state.displayLoading) disabled()
-                    onInput { e ->
-                        val picked = (e.value ?: "").toLocalDateOrNull() ?: return@onInput
-                        store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
-                    }
-                }
-            )
-
-            Span { Text("  ") }
-
-            Button(
-                attrs = {
-                    if (state.displayLoading) disabled()
-                    onClick {
+                GhostButton(
+                    text = "→",
+                    onClick = {
                         store.send(
                             HistoryIntent.FetchSmokes(
                                 selectedDayStart.plusDays(1, tz)
                             )
                         )
+                    },
+                    enabled = !state.displayLoading
+                )
+
+                Input(
+                    type = InputType.Date,
+                    attrs = {
+                        classes(SmokeWebStyles.dateInput)
+                        value(selectedLocalDate.toHtmlDate())
+                        if (state.displayLoading) disabled()
+                        onInput { e ->
+                            val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                            store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+                        }
                     }
-                }
-            ) { Text("→") }
+                )
+            }
+
+            Div {
+                Text("Smokes: ${state.smokes.size}")
+            }
         }
 
-        Div { Text("Smokes: ${state.smokes.size}") }
+        if (state.displayLoading) {
+            SurfaceCard { Text("Loading...") }
+        } else if (state.smokes.isEmpty()) {
+            SurfaceCard { Text("No smokes for this day.") }
+        } else {
+            Div(attrs = { classes(SmokeWebStyles.list) }) {
+                state.smokes.forEach { smoke ->
+                    val id = smoke.id
+                    val isEditing = editing[id] == true
 
-        Ul {
-            state.smokes.forEach { smoke ->
-                val id = smoke.id
-                val isEditing = editing[id] == true
-
-                val local = smoke.date.toLocalDateTime(tz)
-                val label = "${local.date.toUiDate()} ${local.toUiTime()}"
-
-                Li {
-                    Text(label)
-                    Span { Text("  ") }
+                    val local = smoke.date.toLocalDateTime(tz)
+                    val hh = local.hour.toString().padStart(2, '0')
+                    val mm = local.minute.toString().padStart(2, '0')
+                    val timeLabel = "$hh:$mm"
+                    val subtitle = local.date.toUiDate()
 
                     if (!isEditing) {
-                        Button(
-                            attrs = {
-                                if (state.displayLoading) disabled()
-                                onClick {
-                                    editing[id] = true
-                                    draftDateTime[id] = smoke.date.toHtmlDateTimeLocal(tz)
-                                }
-                            }
-                        ) { Text("Edit") }
-
-                        Span { Text("  ") }
-
-                        Button(
-                            attrs = {
-                                if (state.displayLoading) disabled()
-                                onClick { store.send(HistoryIntent.DeleteSmoke(id)) }
-                            }
-                        ) { Text("Delete") }
+                        SmokeRow(
+                            time = timeLabel,
+                            subtitle = subtitle,
+                            onEdit = {
+                                editing[id] = true
+                                draftDateTime[id] = smoke.date.toHtmlDateTimeLocal(tz)
+                            },
+                            onDelete = { store.send(HistoryIntent.DeleteSmoke(id)) }
+                        )
                     } else {
                         val draft = draftDateTime[id] ?: smoke.date.toHtmlDateTimeLocal(tz)
 
-                        Input(
-                            type = InputType.DateTimeLocal,
-                            attrs = {
-                                value(draft)
-                                if (state.displayLoading) disabled()
-                                onInput { ev ->
-                                    draftDateTime[id] = ev.value ?: draft
-                                }
+                        SurfaceCard {
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                                Text("Edit smoke")
                             }
-                        )
 
-                        Span { Text("  ") }
+                            P { Text("Current: ${local.date.toUiDate()} ${local.toUiTime()}") }
 
-                        Button(
-                            attrs = {
-                                if (state.displayLoading) disabled()
-                                onClick {
-                                    val v = draftDateTime[id] ?: return@onClick
-                                    val newInstant =
-                                        v.toInstantFromHtmlDateTimeLocalOrNull(tz) ?: return@onClick
-                                    store.send(HistoryIntent.EditSmoke(id, newInstant))
-                                    editing[id] = false
+                            Input(
+                                type = InputType.DateTimeLocal,
+                                attrs = {
+                                    classes(SmokeWebStyles.dateInput)
+                                    value(draft)
+                                    if (state.displayLoading) disabled()
+                                    onInput { ev ->
+                                        draftDateTime[id] = ev.value
+                                    }
                                 }
-                            }
-                        ) { Text("Apply") }
+                            )
 
-                        Span { Text("  ") }
-
-                        Button(
-                            attrs = {
-                                if (state.displayLoading) disabled()
-                                onClick {
-                                    editing[id] = false
-                                    draftDateTime.remove(id)
-                                }
+                            Div {
+                                PrimaryButton(
+                                    text = "Apply",
+                                    enabled = !state.displayLoading,
+                                    onClick = {
+                                        val v = draftDateTime[id] ?: return@PrimaryButton
+                                        val newInstant =
+                                            v.toInstantFromHtmlDateTimeLocalOrNull(tz) ?: return@PrimaryButton
+                                        store.send(HistoryIntent.EditSmoke(id, newInstant))
+                                        editing[id] = false
+                                    }
+                                )
+                                Span { Text(" ") }
+                                GhostButton(
+                                    text = "Cancel",
+                                    enabled = !state.displayLoading,
+                                    onClick = {
+                                        editing[id] = false
+                                        draftDateTime.remove(id)
+                                    }
+                                )
                             }
-                        ) { Text("Cancel") }
+                        }
                     }
                 }
             }
