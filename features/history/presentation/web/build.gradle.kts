@@ -15,10 +15,10 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.html.core)
 
-                implementation(project(":libraries:design:web"))
                 implementation(project(":libraries:architecture:domain"))
-                implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:authentication:domain"))
+                implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:smokes:domain"))
             }
         }
     }

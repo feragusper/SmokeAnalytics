@@ -21,9 +21,6 @@ dependencies {
     implementation(libs.hilt)
     kapt(libs.hilt.compiler)
 
-    // Only if used
-    // implementation(libs.androidx.compose.runtime)
-
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)
 }

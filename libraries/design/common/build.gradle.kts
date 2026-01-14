@@ -8,12 +8,6 @@ kotlin {
     js(IR) {
         browser()
     }
-
-    sourceSets {
-        commonMain.dependencies {
-            // nada android/web acá; solo kotlin común
-        }
-    }
 }
 
 android {

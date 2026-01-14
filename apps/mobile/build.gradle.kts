@@ -161,39 +161,30 @@ fun properties(propertiesFileName: String): Properties {
 }
 
 dependencies {
-    // Base AndroidX libraries bundle.
-    implementation(libs.bundles.androidx.base)
-    // Use Compose BOM for consistent Compose library versions.
-    implementation(platform(libs.androidx.compose.bom))
-    // Jetpack Compose libraries bundle.
-    implementation(libs.bundles.compose)
-    // Material 3 design components.
-    implementation(libs.material3)
-    // AndroidX Navigation libraries bundle.
-    implementation(libs.bundles.androidx.navigation)
-    // Dagger Hilt for dependency injection.
-    implementation(libs.hilt)
-    // Timber for logging.
-    implementation(libs.timber)
-    // Project modules.
-    implementation(project(":libraries:design:mobile"))
     implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:design:mobile"))
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":features:authentication:presentation:mobile"))
+    implementation(project(":features:chatbot:presentation"))
+    implementation(project(":features:chatbot:domain"))
     implementation(project(":features:history:presentation:mobile"))
     implementation(project(":features:home:presentation:mobile"))
     implementation(project(":features:home:domain"))
     implementation(project(":features:settings:presentation:mobile"))
     implementation(project(":features:stats:presentation:mobile"))
-    implementation(project(":features:chatbot:presentation"))
-    implementation(project(":features:chatbot:domain"))
-    // Hilt annotation processor.
-    kapt(libs.hilt.compiler)
-    // Include devtools module only in debug builds.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.androidx.base)
+    implementation(libs.bundles.compose)
+    implementation(libs.material3)
+    implementation(libs.bundles.androidx.navigation)
+    implementation(libs.hilt)
+    implementation(libs.timber)
+    implementation(libs.animated.navigation.bar)
+
     debugImplementation(project(":features:devtools:presentation"))
 
-    implementation(libs.animated.navigation.bar)
+    kapt(libs.hilt.compiler)
 }
 
 // Task to print the current version name to the console.

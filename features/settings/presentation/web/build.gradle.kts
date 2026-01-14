@@ -13,12 +13,12 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                implementation(compose.runtime)
-                implementation(compose.html.core)
-
                 implementation(project(":libraries:design:web"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:presentation:web"))
+
+                implementation(compose.runtime)
+                implementation(compose.html.core)
             }
         }
     }
