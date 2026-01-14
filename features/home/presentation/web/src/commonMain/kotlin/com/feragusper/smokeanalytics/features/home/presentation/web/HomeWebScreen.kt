@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
@@ -21,7 +22,9 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -62,6 +65,11 @@ fun HomeWebScreen(
 fun HomeViewState.Render(
     onIntent: (HomeIntent) -> Unit,
 ) {
+    val tz = remember { TimeZone.currentSystemDefault() }
+
+    val editing = remember { mutableStateMapOf<String, Boolean>() }
+    val draftTime = remember { mutableStateMapOf<String, String>() }
+
     Div {
         Div(attrs = { classes(SmokeWebStyles.statsRow) }) {
             StatCard(
@@ -103,19 +111,77 @@ fun HomeViewState.Render(
         } else {
             Div(attrs = { classes(SmokeWebStyles.list) }) {
                 latestSmokes.forEach { smoke ->
-                    val local = smoke.date.toLocalDateTime(TimeZone.currentSystemDefault())
+                    val id = smoke.id
+                    val isEditing = editing[id] == true
+
+                    val local = smoke.date.toLocalDateTime(tz)
                     val hh = local.hour.toString().padStart(2, '0')
                     val mm = local.minute.toString().padStart(2, '0')
+                    val timeLabel = "$hh:$mm"
+
                     val subtitle = smoke.timeElapsedSincePreviousSmoke.let { (h, m) ->
                         if (h > 0) "After $h hours and $m minutes" else "After $m minutes"
                     }
 
-                    SmokeRow(
-                        time = "$hh:$mm",
-                        subtitle = subtitle,
-                        onEdit = { onIntent(HomeIntent.EditSmoke(smoke.id, smoke.date)) },
-                        onDelete = { onIntent(HomeIntent.DeleteSmoke(smoke.id)) }
-                    )
+                    if (!isEditing) {
+                        SmokeRow(
+                            time = timeLabel,
+                            subtitle = subtitle,
+                            onEdit = {
+                                editing[id] = true
+                                draftTime[id] = smoke.date.toTimeInputValue(tz)
+                            },
+                            onDelete = { onIntent(HomeIntent.DeleteSmoke(id)) }
+                        )
+                    } else {
+                        val draft = draftTime[id] ?: smoke.date.toTimeInputValue(tz)
+
+                        SurfaceCard {
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                                Text("Edit smoke time")
+                            }
+
+                            Input(
+                                type = org.jetbrains.compose.web.attributes.InputType.Time,
+                                attrs = {
+                                    classes(SmokeWebStyles.dateInput)
+                                    value(draft)
+                                    if (displayLoading) disabled()
+                                    onInput { ev -> draftTime[id] = ev.value }
+                                }
+                            )
+
+                            Div {
+                                PrimaryButton(
+                                    text = "Apply",
+                                    enabled = !displayLoading,
+                                    onClick = {
+                                        val newTime = draftTime[id] ?: return@PrimaryButton
+                                        val dateValue = smoke.date.toDateInputValue(tz)
+
+                                        val newInstant = dateTimeInputsToInstant(
+                                            dateValue = dateValue,
+                                            timeValue = newTime,
+                                            timeZone = tz,
+                                        )
+
+                                        onIntent(HomeIntent.EditSmoke(id, newInstant))
+                                        editing[id] = false
+                                        draftTime.remove(id)
+                                    }
+                                )
+                                Span { Text(" ") }
+                                GhostButton(
+                                    text = "Cancel",
+                                    enabled = !displayLoading,
+                                    onClick = {
+                                        editing[id] = false
+                                        draftTime.remove(id)
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

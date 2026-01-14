@@ -190,7 +190,7 @@ private fun StatsWebContent(
                     StatsPeriod.DAY -> LineChartJs(
                         canvasId = chartId,
                         title = "Today",
-                        data = stats.hourly
+                        data = stats.hourly.toCumulativeHourly()
                     )
 
                     StatsPeriod.WEEK -> BarChartJs(
@@ -368,4 +368,22 @@ private fun barDataset(
     ds["borderWidth"] = 1
     ds["fill"] = false
     return ds
+}
+
+private fun Map<String, Int>.toCumulativeHourly(): Map<String, Int> {
+    fun hourKey(label: String): Int = label.substringBefore(":").toIntOrNull() ?: Int.MAX_VALUE
+
+    val byHour = this.entries
+        .sortedBy { hourKey(it.key) }
+        .associate { it.key to it.value }
+
+    val labels = (0..23).map { h -> h.toString().padStart(2, '0') + ":00" }
+
+    var acc = 0
+    val out = linkedMapOf<String, Int>()
+    labels.forEach { label ->
+        acc += byHour[label] ?: 0
+        out[label] = acc
+    }
+    return out
 }
