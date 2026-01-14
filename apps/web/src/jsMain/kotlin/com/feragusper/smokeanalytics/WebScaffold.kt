@@ -7,8 +7,8 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun WebScaffold(
-    tab: WebTab,
-    onTabSelected: (WebTab) -> Unit,
+    route: WebRoute,
+    onNavigate: (WebRoute) -> Unit,
     content: @Composable () -> Unit,
 ) {
     Div(attrs = { classes(SmokeWebStyles.shell) }) {
@@ -16,28 +16,26 @@ fun WebScaffold(
             Div(attrs = { classes(SmokeWebStyles.sidebarTitle) }) { Text("Smoke Analytics") }
 
             Div(attrs = { classes(SmokeWebStyles.navList) }) {
-                WebTab.entries.forEach { t ->
+                val items = listOf(
+                    "Home" to WebRoute.Home,
+                    "Stats" to WebRoute.Stats,
+                    "Settings" to WebRoute.Settings,
+                )
+
+                items.forEach { (label, target) ->
                     Div(
                         attrs = {
                             classes(SmokeWebStyles.navItem)
-                            if (t == tab) classes(SmokeWebStyles.navItemActive)
-                            onClick { onTabSelected(t) }
+                            if (route == target) classes(SmokeWebStyles.navItemActive)
+                            onClick { onNavigate(target) }
                         }
-                    ) { Text(t.label()) }
+                    ) { Text(label) }
                 }
             }
         }
 
         Div(attrs = { classes(SmokeWebStyles.main) }) {
-            Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
-                content()
-            }
+            Div(attrs = { classes(SmokeWebStyles.mainInner) }) { content() }
         }
     }
-}
-
-private fun WebTab.label(): String = when (this) {
-    WebTab.Home -> "Home"
-    WebTab.Stats -> "Stats"
-    WebTab.Settings -> "Settings"
 }
