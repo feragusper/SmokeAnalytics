@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,8 @@ import com.feragusper.smokeanalytics.features.settings.presentation.web.Settings
 import com.feragusper.smokeanalytics.features.settings.presentation.web.createSettingsWebDependencies
 import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
 import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
+import kotlinx.browser.window
+import org.w3c.dom.events.Event
 
 /**
  * The root composable for the web application.
@@ -24,13 +27,20 @@ import com.feragusper.smokeanalytics.features.stats.presentation.web.createStats
  */
 @Composable
 fun AppRoot(graph: WebAppGraph) {
-    var tab by remember { mutableStateOf(WebTab.Home) }
-    var route by remember { mutableStateOf(WebRoute.Tabs) }
+    var route by remember {
+        mutableStateOf(parseRouteFromHash(window.location.hash))
+    }
+
+    DisposableEffect(Unit) {
+        val handler: (Event) -> Unit = {
+            route = parseRouteFromHash(window.location.hash)
+        }
+        window.addEventListener("hashchange", handler)
+        onDispose { window.removeEventListener("hashchange", handler) }
+    }
 
     val homeDeps = remember(graph) {
-        HomeWebDependencies(
-            homeProcessHolder = graph.homeProcessHolder,
-        )
+        HomeWebDependencies(homeProcessHolder = graph.homeProcessHolder)
     }
 
     val historyDeps = remember(graph) {
@@ -46,38 +56,35 @@ fun AppRoot(graph: WebAppGraph) {
     }
 
     when (route) {
-        WebRoute.Tabs -> {
+        WebRoute.Home, WebRoute.Stats, WebRoute.Settings -> {
             WebScaffold(
-                tab = tab,
-                onTabSelected = { tab = it },
+                route = route,
+                onNavigate = ::navigateTo,
             ) {
-                when (tab) {
-                    WebTab.Home -> HomeWebScreen(
+                when (route) {
+                    WebRoute.Home -> HomeWebScreen(
                         deps = homeDeps,
-                        onNavigateToHistory = { route = WebRoute.History },
+                        onNavigateToHistory = { navigateTo(WebRoute.History) },
                     )
 
-                    WebTab.Stats -> {
+                    WebRoute.Stats -> {
                         val statsDeps = remember(graph) {
-                            createStatsWebDependencies(
-                                fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
-                            )
+                            createStatsWebDependencies(fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase)
                         }
-                        StatsWebScreen(
-                            deps = statsDeps
-                        )
+                        StatsWebScreen(deps = statsDeps)
                     }
 
-                    WebTab.Settings -> {
+                    WebRoute.Settings -> {
                         val settingsDeps = remember(graph) {
                             createSettingsWebDependencies(
                                 fetchSessionUseCase = graph.fetchSessionUseCase,
                                 signOutUseCase = graph.signOutUseCase,
                             )
                         }
-
                         SettingsWebScreen(deps = settingsDeps)
                     }
+
+                    else -> Unit
                 }
             }
         }
@@ -87,39 +94,29 @@ fun AppRoot(graph: WebAppGraph) {
                 createAuthenticationWebDependencies(
                     fetchSessionUseCase = graph.fetchSessionUseCase,
                     signOutUseCase = graph.signOutUseCase,
-                    signInWithGoogle = { /* no-op for now (handled by UI component) */ }
+                    signInWithGoogle = { /* handled by UI component */ }
                 )
             }
 
-
             AuthenticationWebScreen(
                 deps = authDeps,
-                onLoggedIn = {
-                    route = WebRoute.Tabs
-                    tab = WebTab.Home
-                }
+                onLoggedIn = { navigateTo(WebRoute.Home) }
             )
         }
 
         WebRoute.History -> {
             HistoryWebScreen(
                 deps = historyDeps,
-                onNavigateUp = {
-                    route = WebRoute.Tabs
-                    tab = WebTab.Home
-                },
-                onNavigateToAuth = { route = WebRoute.Auth },
+                onNavigateUp = { navigateTo(WebRoute.Home) },
+                onNavigateToAuth = { navigateTo(WebRoute.Auth) },
             )
         }
     }
 }
 
-/**
- * The dependency graph for the web application.
- */
-private enum class WebRoute { Tabs, Auth, History }
-
-/**
- * The tabs for the web application.
- */
-enum class WebTab { Home, Stats, Settings }
+private fun navigateTo(route: WebRoute) {
+    val target = route.toHash()
+    if (window.location.hash != target) {
+        window.location.hash = target
+    }
+}

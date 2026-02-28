@@ -61,23 +61,22 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                implementation(compose.runtime)
-                implementation(compose.html.core)
-                implementation(libs.kotlinx.coroutines.core)
-
                 implementation(project(":libraries:architecture:domain"))
-                implementation(project(":features:home:domain"))
-                implementation(project(":features:home:presentation:web"))
-                implementation(project(":features:history:presentation:web"))
-                implementation(project(":features:authentication:presentation:web"))
-                implementation(project(":features:stats:presentation:web"))
-                implementation(project(":features:settings:presentation:web"))
-                implementation(project(":libraries:smokes:domain"))
-                implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
                 implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:smokes:domain"))
+                implementation(project(":libraries:smokes:data:web"))
+                implementation(project(":features:authentication:presentation:web"))
+                implementation(project(":features:history:presentation:web"))
+                implementation(project(":features:home:domain"))
+                implementation(project(":features:home:presentation:web"))
+                implementation(project(":features:settings:presentation:web"))
+                implementation(project(":features:stats:presentation:web"))
 
+                implementation(compose.runtime)
+                implementation(compose.html.core)
+                implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.gitlive.firebase.auth)
                 implementation(libs.firebase.app)
             }

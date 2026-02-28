@@ -12,22 +12,15 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                // ─────────── Domain ───────────
                 implementation(project(":libraries:authentication:domain"))
 
-                // ─────────── Coroutines ───────────
-                implementation(libs.kotlinx.coroutines.core)
-
-                // ─────────── Compose Web (DOM) ───────────
                 implementation(compose.runtime)
                 implementation(compose.html.core)
-
-                // ─────────── Firebase (GitLive, JS) ───────────
-                implementation("dev.gitlive:firebase-auth:1.13.0")
-                implementation("dev.gitlive:firebase-app:1.13.0")
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.gitlive.firebase.auth)
+                implementation(libs.firebase.app)
             }
         }
 
-        val jsTest by getting
     }
 }

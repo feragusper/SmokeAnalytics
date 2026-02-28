@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
     id("kmp-lib")
 }
@@ -29,17 +33,7 @@ kotlin {
                 implementation(libs.javax.inject) // solo si todavía usás @Inject en código jvm específico
             }
         }
-
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.bundles.test)
-            }
-        }
     }
-}
-
-dependencies {
-    add("jvmTestImplementation", platform(libs.junit.bom))
 }
 
 tasks.withType<Test>().configureEach {

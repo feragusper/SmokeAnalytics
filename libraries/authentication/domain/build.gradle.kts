@@ -26,19 +26,6 @@ kotlin {
             }
         }
 
-        val jvmMain by getting
-
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.bundles.test)
-            }
-        }
-
-        val jsMain by getting
-        val jsTest by getting
-
-        val wasmJsMain by getting
-        val wasmJsTest by getting
     }
 }
 

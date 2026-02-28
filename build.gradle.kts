@@ -26,7 +26,7 @@ buildscript {
 plugins {
     // Google Services plugin is declared here but not applied by default.
     // Apply it in the respective modules as needed.
-    id("com.google.gms.google-services") version "4.4.3" apply false
+    id("com.google.gms.google-services") version "4.4.4" apply false
 
     // Apply the SonarQube plugin globally for static code analysis.
     sonarqube

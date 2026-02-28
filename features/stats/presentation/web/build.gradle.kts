@@ -12,19 +12,13 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                // --- Architecture / state handling ---
                 implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:design:web"))
-
-                // --- Domain ---
                 implementation(project(":libraries:smokes:domain"))
 
-                // --- Coroutines ---
-                implementation(libs.kotlinx.coroutines.core)
-
-                // --- Compose Web ---
                 implementation(compose.runtime)
                 implementation(compose.html.core)
+                implementation(libs.kotlinx.coroutines.core)
 
                 implementation(npm("chart.js", "4.4.1"))
             }

@@ -14,8 +14,8 @@ kotlin {
             dependencies {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:architecture:domain"))
-                implementation("dev.gitlive:firebase-auth:2.1.0")
-                implementation("dev.gitlive:firebase-firestore:2.1.0")
+                implementation(libs.gitlive.firebase.auth)
+                implementation(libs.gitlive.firebase.firestore)
                 implementation(libs.kotlinx.serialization.json)
             }
         }

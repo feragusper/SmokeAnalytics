@@ -13,7 +13,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":libraries:authentication:domain"))
-                implementation("dev.gitlive:firebase-auth:1.13.0") // o la versión que uses en el resto
+                implementation(libs.gitlive.firebase.auth) // o la versión que uses en el resto
             }
         }
     }

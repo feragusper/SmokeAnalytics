@@ -15,6 +15,7 @@ espressoCore = "3.7.0"
 firebaseApp = "2.4.0"
 firebaseAuth = "2.4.0"
 firebaseBOM = "34.7.0"
+firebaseFirestore = "2.1.0"
 generativeai = "0.9.0"
 googleid = "1.1.1"
 gradle = "8.13.2"
@@ -86,6 +87,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
 gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseAuth" }
+gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebaseFirestore" }
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }

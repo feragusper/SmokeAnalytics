@@ -22,30 +22,7 @@ kotlin {
                 api(libs.kotlinx.datetime)
             }
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
-
-        val jvmMain by getting
-        val jvmTest by getting {
-            dependencies {
-                implementation(libs.junit.jupiter.api)
-                implementation(libs.junit.jupiter.params)
-                runtimeOnly(libs.junit.jupiter.engine)
-
-                implementation(libs.kluent)
-                implementation(libs.coroutines.test)
-                implementation(libs.app.cash.turbine)
-            }
-        }
-
         val jsMain by getting
-        val jsTest by getting
-
-        val wasmJsMain by getting
-        val wasmJsTest by getting
     }
 }
 
