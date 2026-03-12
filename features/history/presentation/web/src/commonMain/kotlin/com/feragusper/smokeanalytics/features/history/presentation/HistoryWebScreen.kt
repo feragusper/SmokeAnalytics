@@ -57,7 +57,6 @@ fun HistoryWebScreen(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "History for $selectedDateLabel",
-            subtitle = "Move across days, edit previous entries, and keep the selected context visible while data reloads.",
             eyebrow = "History",
             badgeText = when {
                 state.displayLoading -> "Loading day"
@@ -188,9 +187,8 @@ fun HistoryWebScreen(
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
                                 Text("Edit smoke")
                             }
-
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("Current time: ${local.date.toUiDate()} ${local.toUiTime()}")
+                                Text("${local.date.toUiDate()} ${local.toUiTime()}")
                             }
 
                             Input(

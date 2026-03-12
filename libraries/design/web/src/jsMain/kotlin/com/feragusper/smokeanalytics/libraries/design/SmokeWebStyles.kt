@@ -145,17 +145,15 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val brandBadge by style {
-        property("width", "48px")
-        property("height", "48px")
+        property("width", "40px")
+        property("height", "40px")
         property("border-radius", "16px")
         backgroundColor(Color("var(--sa-color-primary-soft)"))
-        color(Color("var(--sa-color-primary)"))
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)
-        fontSize(18.px)
-        fontWeight(700)
-        property("letter-spacing", "0.02em")
+        property("overflow", "hidden")
+        property("border", "1px solid var(--sa-color-outline)")
     }
 
     val brandText by style {
@@ -192,10 +190,9 @@ object SmokeWebStyles : StyleSheet() {
     val navItem by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
-        justifyContent(JustifyContent.SpaceBetween)
         gap(8.px)
         padding(12.px, 14.px)
-        property("border-radius", "16px")
+        property("border-radius", "12px")
         cursor("pointer")
         property("user-select", "none")
         property(
@@ -270,8 +267,8 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
-        gap(16.px)
-        padding(20.px)
+        gap(12.px)
+        padding(18.px)
         property("border-radius", "var(--sa-radius-lg)")
         backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("border", "1px solid var(--sa-color-outline)")
@@ -288,7 +285,7 @@ object SmokeWebStyles : StyleSheet() {
     val pageHeroText by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        gap(8.px)
+        gap(4.px)
     }
 
     val pageHeroEyebrow by style {
@@ -300,9 +297,9 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val pageHeroTitle by style {
-        fontSize(28.px)
+        fontSize(24.px)
         fontWeight(700)
-        lineHeight("1.05")
+        lineHeight("1.1")
     }
 
     val pageHeroSubtitle by style {
@@ -317,7 +314,7 @@ object SmokeWebStyles : StyleSheet() {
         alignItems(AlignItems.Center)
         property("flex-wrap", "wrap")
         justifyContent(JustifyContent.FlexEnd)
-        gap(10.px)
+        gap(8.px)
     }
 
     val statusPill by style {

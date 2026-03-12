@@ -97,7 +97,6 @@ private fun StatsWebContent(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Trend overview",
-            subtitle = "Explore how each period behaves without losing context when you shift dates or reload the chart.",
             eyebrow = "Stats",
             badgeText = when {
                 state.displayLoading -> "Loading"
@@ -184,9 +183,6 @@ private fun StatsWebContent(
                     Text(currentPeriod.chartTitle())
                 }
                 Div(attrs = { classes(SmokeWebStyles.chartSkeleton) })
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Preparing the next chart and recalculating the selected range.")
-                }
             }
 
             else -> {

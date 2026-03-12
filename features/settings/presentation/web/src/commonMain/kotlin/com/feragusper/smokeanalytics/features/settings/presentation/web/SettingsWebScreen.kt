@@ -41,7 +41,6 @@ private fun SettingsViewState.Render(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Session settings",
-            subtitle = "Keep sign-in state explicit and make account actions feel stable on the web.",
             eyebrow = "Settings",
             badgeText = when {
                 displayLoading -> "Loading"
@@ -74,9 +73,7 @@ private fun SettingsViewState.Render(
         if (currentEmail != null) {
             SurfaceCard {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Signed in") }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("The current web session is connected to $currentEmail.")
-                }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(currentEmail) }
 
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     PrimaryButton(
@@ -94,9 +91,6 @@ private fun SettingsViewState.Render(
         } else {
             SurfaceCard {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Sign in") }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Use Google to restore your smoke history and keep the dashboard in sync.")
-                }
 
                 GoogleSignInComponentWeb(
                     onSignInSuccess = { onIntent(SettingsIntent.FetchUser) },

@@ -51,7 +51,6 @@ fun AuthenticationViewState.Render(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Sign in to continue",
-            subtitle = "Bring your smoke history and web dashboard back into sync with a single Google sign-in flow.",
             eyebrow = "Auth",
             badgeText = if (displayLoading) "Checking session" else "Secure sign-in",
             badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
@@ -72,9 +71,6 @@ fun AuthenticationViewState.Render(
 
         SurfaceCard {
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Continue with Google") }
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Use the same account as the mobile app to keep history, stats, and session state aligned.")
-            }
 
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                 GoogleSignInComponentWeb(

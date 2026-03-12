@@ -65,7 +65,6 @@ fun HomeViewState.Render(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Daily snapshot",
-            subtitle = "Start from the latest activity, keep quick actions nearby, and make refreshes feel calm instead of disruptive.",
             eyebrow = "Home",
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
@@ -148,9 +147,6 @@ fun HomeViewState.Render(
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
                         Text("Since your last cigarette")
                     }
-                    Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                        Text("A quick signal for the current streak without leaving the dashboard.")
-                    }
                 }
             }
 
@@ -163,17 +159,14 @@ fun HomeViewState.Render(
                 } ?: "--"
 
                 Div(attrs = { classes(SmokeWebStyles.sinceValue) }) { Text(since) }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text(if (displayRefreshLoading) "Refreshing latest streak..." else "Keep the rhythm visible to reduce guesswork.")
+                if (displayRefreshLoading) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Refreshing...") }
                 }
             }
 
             Div(attrs = { classes(SmokeWebStyles.sectionHeader) }) {
                 Div(attrs = { classes(SmokeWebStyles.sectionHeaderText) }) {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Smoked today") }
-                    Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                        Text("Review the latest entries, edit time stamps, or jump into the full history.")
-                    }
                 }
             }
 
@@ -218,10 +211,6 @@ fun HomeViewState.Render(
                             SurfaceCard {
                                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
                                     Text("Edit smoke time")
-                                }
-
-                                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                    Text("Adjust the time without leaving the dashboard.")
                                 }
 
                                 Input(
