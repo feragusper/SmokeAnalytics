@@ -9,18 +9,16 @@ import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.Sett
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
+import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
-/**
- * Screen for the Settings screen.
- *
- * @param deps The dependencies for the Settings screen.
- */
 @Composable
 fun SettingsWebScreen(
     deps: SettingsWebDependencies,
@@ -40,26 +38,52 @@ fun SettingsWebScreen(
 private fun SettingsViewState.Render(
     onIntent: (SettingsIntent) -> Unit,
 ) {
-    Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        PageSectionHeader(
+            title = "Session settings",
+            subtitle = "Keep sign-in state explicit and make account actions feel stable on the web.",
+            eyebrow = "Settings",
+            badgeText = when {
+                displayLoading -> "Loading"
+                currentEmail != null -> "Signed in"
+                else -> "Guest"
+            },
+            badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
+            actions = {
+                GhostButton(
+                    text = "Refresh session",
+                    onClick = { onIntent(SettingsIntent.FetchUser) },
+                    enabled = !displayLoading
+                )
+            }
+        )
 
-        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Settings") }
+        errorMessage?.let { msg ->
+            InlineErrorCard(
+                message = msg,
+                actionLabel = "Try again",
+                onAction = { onIntent(SettingsIntent.FetchUser) },
+            )
+        }
 
-        if (displayLoading) {
-            SurfaceCard { Text("Loading...") }
+        if (displayLoading && currentEmail == null) {
+            LoadingSkeletonCard(heightPx = 112, lineWidths = listOf("42%", "70%", "36%"))
             return@Div
         }
 
         if (currentEmail != null) {
             SurfaceCard {
-                P { Text("Signed in as: $currentEmail") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Signed in") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("The current web session is connected to $currentEmail.")
+                }
 
-                Div {
+                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     PrimaryButton(
-                        text = "Sign out",
+                        text = if (displayLoading) "Working..." else "Sign out",
                         onClick = { onIntent(SettingsIntent.SignOut) },
                         enabled = !displayLoading
                     )
-                    org.jetbrains.compose.web.dom.Span { Text(" ") }
                     GhostButton(
                         text = "Refresh session",
                         onClick = { onIntent(SettingsIntent.FetchUser) },
@@ -69,22 +93,18 @@ private fun SettingsViewState.Render(
             }
         } else {
             SurfaceCard {
-                P { Text("You are not signed in.") }
-
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Sign in") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Use Google to restore your smoke history and keep the dashboard in sync.")
+                }
 
                 GoogleSignInComponentWeb(
                     onSignInSuccess = { onIntent(SettingsIntent.FetchUser) },
                     onSignInError = { t ->
                         console.error("Sign-in error", t)
+                        onIntent(SettingsIntent.FetchUser)
                     }
                 )
-            }
-        }
-
-        errorMessage?.let { msg ->
-            SurfaceCard {
-                Text(msg)
             }
         }
     }

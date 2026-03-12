@@ -49,13 +49,12 @@ fun PrimaryButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
 ) {
-    Button(
-        attrs = {
-            classes(SmokeWebStyles.button, SmokeWebStyles.buttonPrimary)
-            if (!enabled) attr("disabled", "true")
-            onClick { if (enabled) onClick() }
-        }
-    ) { Text(text) }
+    ActionButton(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        extraClass = SmokeWebStyles.buttonPrimary,
+    )
 }
 
 @Composable
@@ -64,13 +63,21 @@ fun GhostButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
 ) {
-    Button(
-        attrs = {
-            classes(SmokeWebStyles.button)
-            if (!enabled) attr("disabled", "true")
-            onClick { if (enabled) onClick() }
-        }
-    ) { Text(text) }
+    ActionButton(text = text, onClick = onClick, enabled = enabled)
+}
+
+@Composable
+fun DangerButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
+    ActionButton(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        extraClass = SmokeWebStyles.buttonDanger,
+    )
 }
 
 @Composable
@@ -91,8 +98,28 @@ fun SmokeRow(
                 Span { Text(" ") }
             }
             if (onDelete != null) {
-                GhostButton(text = "Delete", onClick = onDelete)
+                DangerButton(text = "Delete", onClick = onDelete)
             }
         }
     }
+}
+
+@Composable
+private fun ActionButton(
+    text: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    extraClass: String? = null,
+) {
+    Button(
+        attrs = {
+            classes(SmokeWebStyles.button)
+            extraClass?.let { classes(it) }
+            if (!enabled) {
+                attr("disabled", "true")
+                classes(SmokeWebStyles.buttonDisabled)
+            }
+            onClick { if (enabled) onClick() }
+        }
+    ) { Text(text) }
 }

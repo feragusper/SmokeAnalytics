@@ -8,20 +8,17 @@ import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationIntent
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
-import org.jetbrains.compose.web.dom.Button
+import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
+import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
+import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
+import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
+import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
-/**
- * Composable function that represents the authentication screen for the web platform.
- * It manages the authentication flow, including displaying a sign-in component and handling
- * user interactions like signing in, signing out, and navigating away.
- *
- * @param deps The dependencies required by this screen, such as the process holder for the MVI store.
- * @param onLoggedIn A lambda function to be invoked when the user has successfully logged in.
- */
 @Composable
 fun AuthenticationWebScreen(
     deps: AuthenticationWebDependencies,
@@ -41,12 +38,6 @@ fun AuthenticationWebScreen(
     )
 }
 
-/**
- * Composable function that renders the authentication view state.
- *
- * @param onLoggedIn A lambda function to be invoked when the user has successfully logged in.
- * @param onIntent A lambda function to be invoked when an intent is received.
- */
 @Composable
 fun AuthenticationViewState.Render(
     onLoggedIn: () -> Unit,
@@ -57,36 +48,48 @@ fun AuthenticationViewState.Render(
         return
     }
 
-    Div {
-        H2 { Text("Auth") }
-
-        if (displayLoading) {
-            P { Text("Loading...") }
-        }
-
-        GoogleSignInComponentWeb(
-            onSignInSuccess = {
-                onIntent(AuthenticationIntent.FetchUser)
-            },
-            onSignInError = {
-                onIntent(AuthenticationIntent.FetchUser)
-            }
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        PageSectionHeader(
+            title = "Sign in to continue",
+            subtitle = "Bring your smoke history and web dashboard back into sync with a single Google sign-in flow.",
+            eyebrow = "Auth",
+            badgeText = if (displayLoading) "Checking session" else "Secure sign-in",
+            badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
         )
 
-        Button(attrs = { onClick { onIntent(AuthenticationIntent.SignOut) } }) {
-            Text("Sign out")
+        error?.let {
+            InlineErrorCard(
+                title = "Authentication failed",
+                message = "The session could not be restored. Try signing in again.",
+                actionLabel = "Retry session check",
+                onAction = { onIntent(AuthenticationIntent.FetchUser) },
+            )
         }
 
-        Button(attrs = { onClick { onIntent(AuthenticationIntent.NavigateUp) } }) {
-            Text("Back")
+        if (displayLoading) {
+            LoadingSkeletonCard(heightPx = 140, lineWidths = listOf("44%", "72%", "50%"))
         }
 
-        if (error != null) {
-            P {
-                Text(
-                    when (error) {
-                        AuthenticationViewState.AuthenticationError.Generic -> "Something went wrong"
-                    }
+        SurfaceCard {
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Continue with Google") }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("Use the same account as the mobile app to keep history, stats, and session state aligned.")
+            }
+
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                GoogleSignInComponentWeb(
+                    onSignInSuccess = { onIntent(AuthenticationIntent.FetchUser) },
+                    onSignInError = { onIntent(AuthenticationIntent.FetchUser) }
+                )
+                PrimaryButton(
+                    text = "Refresh session",
+                    onClick = { onIntent(AuthenticationIntent.FetchUser) },
+                    enabled = !displayLoading,
+                )
+                GhostButton(
+                    text = "Sign out",
+                    onClick = { onIntent(AuthenticationIntent.SignOut) },
+                    enabled = !displayLoading,
                 )
             }
         }
