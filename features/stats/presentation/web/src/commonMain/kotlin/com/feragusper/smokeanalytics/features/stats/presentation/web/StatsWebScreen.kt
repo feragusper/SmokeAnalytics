@@ -377,8 +377,8 @@ private fun lineDataset(title: String, values: List<Number>): dynamic {
     val dataset = jsObject()
     dataset["label"] = title
     dataset["data"] = values.toTypedArray()
-    dataset["borderColor"] = "#185ADB"
-    dataset["backgroundColor"] = "rgba(24,90,219,0.18)"
+    dataset["borderColor"] = "#006A6A"
+    dataset["backgroundColor"] = "rgba(0,106,106,0.18)"
     dataset["tension"] = 0.3
     dataset["fill"] = true
     return dataset
@@ -389,13 +389,13 @@ private fun barDataset(title: String, values: List<Number>): dynamic {
     dataset["label"] = title
     dataset["data"] = values.toTypedArray()
     dataset["backgroundColor"] = arrayOf(
-        "#185ADB",
-        "#3F76E8",
-        "#5D92FF",
-        "#8AB4FF",
-        "#AEC8FF",
-        "#D3E1FF",
-        "#7ABF9A",
+        "#006A6A",
+        "#1D7B7B",
+        "#3A8C8C",
+        "#4A6363",
+        "#6D8686",
+        "#9AB0B0",
+        "#B0CCCB",
     )
     dataset["borderRadius"] = 10
     dataset["maxBarThickness"] = 42

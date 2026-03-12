@@ -38,38 +38,34 @@ object SmokeWebStyles : StyleSheet() {
 
     val appRoot by style {
         fontFamily(
-            "\"DM Sans\"",
+            "system-ui",
             "\"Segoe UI\"",
-            "\"Helvetica Neue\"",
+            "\"Roboto\"",
             "Arial",
             "sans-serif"
         )
         property("text-rendering", "optimizeLegibility")
-        property("--sa-color-primary", "#185ADB")
-        property("--sa-color-onPrimary", "#F8FAFF")
-        property("--sa-color-primary-soft", "rgba(24,90,219,0.12)")
-        property("--sa-color-secondary", "#4D5B74")
-        property("--sa-color-bg", "#F5F8FC")
-        property("--sa-color-bg-accent", "#E9F0FF")
-        property("--sa-color-onBg", "#111827")
-        property("--sa-color-surface", "rgba(255,255,255,0.82)")
-        property("--sa-color-surface-strong", "#FFFFFF")
-        property("--sa-color-onSurface", "#162033")
-        property("--sa-color-outline", "rgba(17,24,39,0.10)")
-        property("--sa-color-outline-strong", "rgba(17,24,39,0.18)")
-        property("--sa-color-danger", "#C0392B")
-        property("--sa-color-danger-soft", "rgba(192,57,43,0.12)")
-        property("--sa-color-success-soft", "rgba(14,159,110,0.14)")
-        property("--sa-color-success", "#0E9F6E")
-        property("--sa-radius-lg", "24px")
-        property("--sa-radius-md", "18px")
-        property("--sa-radius-sm", "14px")
-        property("--sa-shadow-1", "0 18px 48px rgba(30,41,59,0.10)")
-        property("--sa-shadow-2", "0 26px 56px rgba(30,41,59,0.16)")
-        property(
-            "--sa-shell-gradient",
-            "radial-gradient(circle at top left, rgba(24,90,219,0.18), transparent 30%), linear-gradient(180deg, #F8FBFF 0%, #F5F8FC 42%, #EDF2F9 100%)"
-        )
+        property("--sa-color-primary", "#006A6A")
+        property("--sa-color-onPrimary", "#FFFFFF")
+        property("--sa-color-primary-soft", "rgba(0,106,106,0.10)")
+        property("--sa-color-secondary", "#4A6363")
+        property("--sa-color-bg", "#FFFFFF")
+        property("--sa-color-bg-accent", "#F4F8F8")
+        property("--sa-color-onBg", "#000000")
+        property("--sa-color-surface", "#DDE4E3")
+        property("--sa-color-surface-strong", "#F5F8F8")
+        property("--sa-color-onSurface", "#161D1D")
+        property("--sa-color-outline", "rgba(22,29,29,0.10)")
+        property("--sa-color-outline-strong", "rgba(22,29,29,0.18)")
+        property("--sa-color-danger", "#BA1A1A")
+        property("--sa-color-danger-soft", "rgba(186,26,26,0.10)")
+        property("--sa-color-success-soft", "rgba(0,106,106,0.10)")
+        property("--sa-color-success", "#006A6A")
+        property("--sa-radius-lg", "20px")
+        property("--sa-radius-md", "16px")
+        property("--sa-radius-sm", "12px")
+        property("--sa-shadow-1", "0 8px 24px rgba(0,0,0,0.06)")
+        property("--sa-shadow-2", "0 12px 28px rgba(0,0,0,0.10)")
         property("--sa-transition-fast", "160ms ease")
         property("--sa-transition-page", "220ms cubic-bezier(0.22, 1, 0.36, 1)")
         backgroundColor(Color("var(--sa-color-bg)"))
@@ -77,29 +73,25 @@ object SmokeWebStyles : StyleSheet() {
         padding(0.px)
         property("width", "100%")
         minHeight(100.vh)
-        property("background-image", "var(--sa-shell-gradient)")
-        property("background-attachment", "fixed")
     }
 
     val appRootDarkTokens by style {
-        property("--sa-color-primary", "#8AB4FF")
-        property("--sa-color-onPrimary", "#08152F")
-        property("--sa-color-primary-soft", "rgba(138,180,255,0.18)")
-        property("--sa-color-secondary", "#C5D1E5")
-        property("--sa-color-bg", "#08111F")
-        property("--sa-color-bg-accent", "#102036")
-        property("--sa-color-onBg", "#F4F7FB")
-        property("--sa-color-surface", "rgba(10,18,32,0.84)")
-        property("--sa-color-surface-strong", "#0F1A2D")
-        property("--sa-color-onSurface", "#EFF4FF")
+        property("--sa-color-primary", "#80D5D4")
+        property("--sa-color-onPrimary", "#003737")
+        property("--sa-color-primary-soft", "rgba(128,213,212,0.14)")
+        property("--sa-color-secondary", "#B0CCCB")
+        property("--sa-color-bg", "#000000")
+        property("--sa-color-bg-accent", "#051F1F")
+        property("--sa-color-onBg", "#FFFFFF")
+        property("--sa-color-surface", "#0E1514")
+        property("--sa-color-surface-strong", "#051F1F")
+        property("--sa-color-onSurface", "#B0CCCB")
         property("--sa-color-outline", "rgba(255,255,255,0.10)")
-        property("--sa-color-outline-strong", "rgba(255,255,255,0.18)")
-        property("--sa-color-danger-soft", "rgba(255,120,96,0.16)")
-        property("--sa-color-success-soft", "rgba(57,202,154,0.16)")
-        property(
-            "--sa-shell-gradient",
-            "radial-gradient(circle at top left, rgba(138,180,255,0.18), transparent 30%), linear-gradient(180deg, #08111F 0%, #0A1424 45%, #0B172A 100%)"
-        )
+        property("--sa-color-outline-strong", "rgba(255,255,255,0.16)")
+        property("--sa-color-danger", "#FFB4AB")
+        property("--sa-color-danger-soft", "rgba(255,180,171,0.12)")
+        property("--sa-color-success-soft", "rgba(128,213,212,0.12)")
+        property("--sa-color-success", "#80D5D4")
     }
 
     val appRootReducedMotion by style {
@@ -132,11 +124,7 @@ object SmokeWebStyles : StyleSheet() {
         padding(20.px)
         property("border-radius", "var(--sa-radius-lg)")
         property("border", "1px solid var(--sa-color-outline)")
-        property(
-            "background",
-            "linear-gradient(180deg, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.70) 100%)"
-        )
-        property("backdrop-filter", "blur(18px)")
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("box-shadow", "var(--sa-shadow-1)")
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
@@ -160,15 +148,14 @@ object SmokeWebStyles : StyleSheet() {
         property("width", "48px")
         property("height", "48px")
         property("border-radius", "16px")
-        property("background", "linear-gradient(135deg, var(--sa-color-primary) 0%, #4F8CFF 100%)")
-        color(Color("var(--sa-color-onPrimary)"))
+        backgroundColor(Color("var(--sa-color-primary-soft)"))
+        color(Color("var(--sa-color-primary)"))
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         justifyContent(JustifyContent.Center)
-        fontSize(20.px)
+        fontSize(18.px)
         fontWeight(700)
-        property("box-shadow", "0 12px 24px rgba(24,90,219,0.28)")
-        property("letter-spacing", "0.04em")
+        property("letter-spacing", "0.02em")
     }
 
     val brandText by style {
@@ -178,13 +165,13 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val sidebarTitle by style {
-        fontSize(18.px)
+        fontSize(16.px)
         fontWeight(700)
         lineHeight("1.1")
     }
 
     val sidebarSubtitle by style {
-        fontSize(13.px)
+        fontSize(12.px)
         color(Color("var(--sa-color-secondary)"))
         lineHeight("1.3")
     }
@@ -232,7 +219,6 @@ object SmokeWebStyles : StyleSheet() {
     val navItemActive by style {
         backgroundColor(Color("var(--sa-color-primary)"))
         color(Color("var(--sa-color-onPrimary)"))
-        property("box-shadow", "0 18px 30px rgba(24,90,219,0.24)")
     }
 
     val navItemMeta by style {
@@ -244,7 +230,7 @@ object SmokeWebStyles : StyleSheet() {
         marginTop(12.px)
         padding(14.px)
         property("border-radius", "16px")
-        backgroundColor(Color("var(--sa-color-bg-accent)"))
+        backgroundColor(Color("var(--sa-color-surface)"))
         color(Color("var(--sa-color-onSurface)"))
         property("border", "1px solid var(--sa-color-outline)")
     }
@@ -285,15 +271,11 @@ object SmokeWebStyles : StyleSheet() {
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
         gap(16.px)
-        padding(22.px)
+        padding(20.px)
         property("border-radius", "var(--sa-radius-lg)")
-        property(
-            "background",
-            "linear-gradient(135deg, rgba(24,90,219,0.12) 0%, rgba(255,255,255,0.80) 55%, rgba(255,255,255,0.92) 100%)"
-        )
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("border", "1px solid var(--sa-color-outline)")
         property("box-shadow", "var(--sa-shadow-1)")
-        property("backdrop-filter", "blur(18px)")
 
         media(mediaMaxWidth(780.px)) {
             self {
@@ -312,19 +294,19 @@ object SmokeWebStyles : StyleSheet() {
     val pageHeroEyebrow by style {
         fontSize(12.px)
         fontWeight(700)
-        property("letter-spacing", "0.12em")
+        property("letter-spacing", "0.10em")
         property("text-transform", "uppercase")
         color(Color("var(--sa-color-primary)"))
     }
 
     val pageHeroTitle by style {
-        fontSize(30.px)
+        fontSize(28.px)
         fontWeight(700)
         lineHeight("1.05")
     }
 
     val pageHeroSubtitle by style {
-        fontSize(15.px)
+        fontSize(14.px)
         lineHeight("1.5")
         color(Color("var(--sa-color-secondary)"))
         property("max-width", "720px")
@@ -348,6 +330,7 @@ object SmokeWebStyles : StyleSheet() {
         color(Color("var(--sa-color-primary)"))
         fontSize(12.px)
         fontWeight(700)
+        property("border", "1px solid var(--sa-color-outline)")
     }
 
     val statusPillBusy by style {
@@ -439,7 +422,6 @@ object SmokeWebStyles : StyleSheet() {
         property("border-radius", "var(--sa-radius-md)")
         padding(18.px)
         property("box-shadow", "var(--sa-shadow-1)")
-        property("backdrop-filter", "blur(16px)")
         border {
             width(1.px)
             style(LineStyle.Solid)
@@ -470,8 +452,7 @@ object SmokeWebStyles : StyleSheet() {
         fontSize(12.px)
         fontWeight(700)
         opacity(0.72)
-        property("text-transform", "uppercase")
-        property("letter-spacing", "0.08em")
+        property("letter-spacing", "0.02em")
     }
 
     val statValue by style {
@@ -488,7 +469,7 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val helperText by style {
-        fontSize(13.px)
+        fontSize(12.px)
         color(Color("var(--sa-color-secondary)"))
         marginTop(8.px)
         lineHeight("1.45")
@@ -507,7 +488,7 @@ object SmokeWebStyles : StyleSheet() {
         gap(12.px)
         padding(14.px)
         property("border-radius", "var(--sa-radius-sm)")
-        backgroundColor(Color("rgba(255,255,255,0.44)"))
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("border", "1px solid var(--sa-color-outline)")
 
         media(mediaMaxWidth(700.px)) {
@@ -617,7 +598,7 @@ object SmokeWebStyles : StyleSheet() {
             style(LineStyle.Solid)
             color(Color("var(--sa-color-outline)"))
         }
-        backgroundColor(Color("rgba(255,255,255,0.66)"))
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
         color(Color("var(--sa-color-onSurface)"))
     }
 
@@ -635,10 +616,7 @@ object SmokeWebStyles : StyleSheet() {
         property("width", "100%")
         property("height", "320px")
         property("border-radius", "16px")
-        property(
-            "background",
-            "linear-gradient(180deg, rgba(24,90,219,0.10) 0%, rgba(255,255,255,0.28) 100%)"
-        )
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("border", "1px dashed var(--sa-color-outline)")
         property("position", "relative")
         property("overflow", "hidden")
@@ -649,7 +627,7 @@ object SmokeWebStyles : StyleSheet() {
         property("border-radius", "12px")
         property(
             "background",
-            "linear-gradient(90deg, rgba(17,24,39,0.08) 0%, rgba(17,24,39,0.16) 50%, rgba(17,24,39,0.08) 100%)"
+            "linear-gradient(90deg, rgba(22,29,29,0.10) 0%, rgba(22,29,29,0.18) 50%, rgba(22,29,29,0.10) 100%)"
         )
         property("background-size", "220% 100%")
         property("animation", "sa-shimmer 1.4s linear infinite")

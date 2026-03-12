@@ -1,12 +1,7 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
-  <path d="M37 84C37 66.3269 51.3269 52 69 52H92" stroke="#F8FAFF" stroke-width="12" stroke-linecap="round"/>
-  <path d="M73 34C79.5 39.5 81.5 46 79 53C76.5 60 80 66.5 89 72" stroke="#DCE9FF" stroke-width="8" stroke-linecap="round"/>
-  <path d="M52 34C58.5 39.5 60.5 46 58 53C55.5 60 59 66.5 68 72" stroke="#DCE9FF" stroke-width="8" stroke-linecap="round" opacity="0.78"/>
-  <defs>
-    <linearGradient id="bg" x1="16" y1="10" x2="110" y2="122" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#185ADB"/>
-      <stop offset="1" stop-color="#4F8CFF"/>
-    </linearGradient>
-  </defs>
+  <rect x="12" y="12" width="104" height="104" rx="28" fill="#F4F8F8"/>
+  <rect x="12.5" y="12.5" width="103" height="103" rx="27.5" stroke="#DDE4E3"/>
+  <path d="M42 82C42 69.8497 51.8497 60 64 60H88" stroke="#006A6A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M55 38C60.8 42.8 62.4 48.2 60.2 54.2C58.3 59.5 60.9 64.3 67 68.8" stroke="#4A6363" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M73 31C78.3 35.3 79.8 40 77.9 45.1C76.2 49.6 78.2 53.6 83 57.2" stroke="#4A6363" stroke-width="5.5" stroke-linecap="round" opacity="0.72"/>
 </svg>
