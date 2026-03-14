@@ -10,6 +10,13 @@ sealed interface SettingsIntent {
      */
     data object FetchUser : SettingsIntent
 
+    data class UpdatePreferences(
+        val packPrice: Double,
+        val cigarettesPerPack: Int,
+        val dayStartHour: Int,
+        val locationTrackingEnabled: Boolean,
+    ) : SettingsIntent
+
     /**
      * Represents the intent to sign out.
      */

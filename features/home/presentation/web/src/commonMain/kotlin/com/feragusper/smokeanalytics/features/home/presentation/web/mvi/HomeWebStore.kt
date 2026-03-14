@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
+import com.feragusper.smokeanalytics.features.home.domain.elapsedToneFrom
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,6 +74,14 @@ class HomeWebStore(
                 smokesPerMonth = result.smokeCountListResult.countByMonth,
                 latestSmokes = result.smokeCountListResult.todaysSmokes,
                 timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
+                greetingTitle = result.greetingState.title,
+                greetingMessage = result.greetingState.message,
+                financialSummary = result.financialSummary,
+                gamificationSummary = result.gamificationSummary,
+                elapsedTone = elapsedToneFrom(
+                    result.smokeCountListResult.timeSinceLastCigarette.first,
+                    result.smokeCountListResult.timeSinceLastCigarette.second,
+                ),
             )
 
             is HomeResult.UpdateTimeSinceLastCigarette -> previous.copy(

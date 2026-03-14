@@ -13,4 +13,5 @@ data class Smoke(
     val id: String,
     val date: Instant,
     val timeElapsedSincePreviousSmoke: Pair<Long, Long> = 0L to 0L,
+    val location: GeoPoint? = null,
 )

@@ -1,6 +1,10 @@
 package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
+import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
+import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.GreetingState
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 sealed interface HomeResult {
 
@@ -26,7 +30,11 @@ sealed interface HomeResult {
     }
 
     data class FetchSmokesSuccess(
-        val smokeCountListResult: SmokeCountListResult
+        val smokeCountListResult: SmokeCountListResult,
+        val preferences: UserPreferences,
+        val greetingState: GreetingState,
+        val financialSummary: FinancialSummary,
+        val gamificationSummary: GamificationSummary,
     ) : HomeResult
 
     data object FetchSmokesError : HomeResult

@@ -21,6 +21,8 @@ class SettingsNavigator(
      * This lambda is used to trigger the navigation action, ensuring consistency with the MVI pattern.
      */
     val navigateToSettings: () -> Unit = { navController.navigate(ROUTE) }
+    val navigateToAbout: () -> Unit = { navController.navigate(ABOUT) }
+    val navigateBack: () -> Unit = { navController.popBackStack() }
 
     companion object {
         // Navigation route for the Settings graph.
@@ -28,5 +30,6 @@ class SettingsNavigator(
 
         // Start destination within the Settings graph.
         const val START = "settings"
+        const val ABOUT = "settings_about"
     }
 }

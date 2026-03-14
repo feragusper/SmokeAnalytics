@@ -2,10 +2,15 @@ package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
@@ -43,6 +48,9 @@ class HomeProcessHolderTest {
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
     private val syncWithWearUseCase: SyncWithWearUseCase = mockk()
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
+    private val locationCaptureService: LocationCaptureService = mockk()
+    private val widgetRefreshService: WidgetRefreshService = mockk()
 
     @BeforeEach
     fun setUp() {
@@ -54,10 +62,17 @@ class HomeProcessHolderTest {
             deleteSmokeUseCase = deleteSmokeUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
             fetchSessionUseCase = fetchSessionUseCase,
-            syncWithWearUseCase = syncWithWearUseCase
+            syncWithWearUseCase = syncWithWearUseCase,
+            fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
+            locationCaptureService = locationCaptureService,
+            widgetRefreshService = widgetRefreshService,
         )
 
         coEvery { syncWithWearUseCase.invoke() } just Runs
+        coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+        coEvery { locationCaptureService.captureCurrentLocation() } returns null
+        coEvery { fetchSmokeCountListUseCase.invoke(any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
+        coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs
     }
 
     @AfterEach

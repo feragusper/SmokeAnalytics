@@ -18,14 +18,17 @@ class FetchSmokeStatsUseCase(
         year: Int,
         month: Int,
         day: Int?,
-        periodType: PeriodType
+        periodType: PeriodType,
+        dayStartHour: Int = 0,
     ): SmokeStats {
         val (start, endExclusive) = when (periodType) {
             PeriodType.DAY -> {
                 requireNotNull(day) { "day is required for PeriodType.DAY" }
                 val date = LocalDate(year, month, day)
-                date.atStartOfDayIn(timeZone) to date.plus(DatePeriod(days = 1))
-                    .atStartOfDayIn(timeZone)
+                date.atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
+                    date.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
             }
 
             PeriodType.WEEK -> {
@@ -33,19 +36,28 @@ class FetchSmokeStatsUseCase(
                 val date = LocalDate(year, month, day)
                 val startOfWeek = date.minusDaysToMonday()
                 val endOfWeek = startOfWeek.plus(DatePeriod(days = 7))
-                startOfWeek.atStartOfDayIn(timeZone) to endOfWeek.atStartOfDayIn(timeZone)
+                startOfWeek.atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
+                    endOfWeek.atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
             }
 
             PeriodType.MONTH -> {
                 val date = LocalDate(year, month, 1)
                 val endOfMonth = date.plus(DatePeriod(months = 1))
-                date.atStartOfDayIn(timeZone) to endOfMonth.atStartOfDayIn(timeZone)
+                date.atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
+                    endOfMonth.atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
             }
 
             PeriodType.YEAR -> {
                 val date = LocalDate(year, 1, 1)
                 val endOfYear = date.plus(DatePeriod(years = 1))
-                date.atStartOfDayIn(timeZone) to endOfYear.atStartOfDayIn(timeZone)
+                date.atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
+                    endOfYear.atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
             }
         }
 
@@ -55,7 +67,8 @@ class FetchSmokeStatsUseCase(
             year = year,
             month = month,
             day = day,
-            timeZone = timeZone
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
         )
     }
 

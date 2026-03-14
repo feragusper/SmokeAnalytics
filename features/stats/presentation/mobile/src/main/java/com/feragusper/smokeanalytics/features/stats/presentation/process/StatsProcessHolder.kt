@@ -4,6 +4,8 @@ import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -19,7 +21,8 @@ import javax.inject.Inject
  * @property fetchSmokeStatsUseCase Use case for fetching smoke statistics.
  */
 class StatsProcessHolder @Inject constructor(
-    private val fetchSmokeStatsUseCase: FetchSmokeStatsUseCase
+    private val fetchSmokeStatsUseCase: FetchSmokeStatsUseCase,
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
 ) : MVIProcessHolder<StatsIntent, StatsResult> {
 
     /**
@@ -62,9 +65,10 @@ class StatsProcessHolder @Inject constructor(
     ): Flow<StatsResult> = flow {
         // Emit loading state to show a loading indicator in the UI
         emit(StatsResult.Loading)
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
 
         // Fetch the statistics data using the use case
-        val stats = fetchSmokeStatsUseCase(year, month, day, period)
+        val stats = fetchSmokeStatsUseCase(year, month, day, period, preferences.dayStartHour)
 
         // Emit the success result with the fetched statistics
         emit(StatsResult.Success(stats))

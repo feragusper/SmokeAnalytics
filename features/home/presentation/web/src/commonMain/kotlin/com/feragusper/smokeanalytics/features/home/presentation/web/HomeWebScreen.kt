@@ -114,6 +114,27 @@ fun HomeViewState.Render(
             LoadingSkeletonCard(heightPx = 110, lineWidths = listOf("28%", "42%"))
             LoadingSkeletonList(rows = 4)
         } else {
+            if (greetingTitle != null || financialSummary != null || gamificationSummary != null) {
+                SurfaceCard {
+                    greetingTitle?.let { title ->
+                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(title) }
+                    }
+                    greetingMessage?.let { message ->
+                        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(message) }
+                    }
+                    financialSummary?.let { summary ->
+                        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                            Text("Spent today ${summary.spentToday.asMoney()}")
+                        }
+                    }
+                    gamificationSummary?.let { summary ->
+                        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                            Text("Points ${summary.points} · Streak ${summary.currentStreakHours}h")
+                        }
+                    }
+                }
+            }
+
             Div(
                 attrs = {
                     classes(SmokeWebStyles.statsRow)
@@ -158,7 +179,15 @@ fun HomeViewState.Render(
                     }
                 } ?: "--"
 
-                Div(attrs = { classes(SmokeWebStyles.sinceValue) }) { Text(since) }
+                Div(attrs = { classes(SmokeWebStyles.sinceValue) }) {
+                    Text(
+                        when (elapsedTone) {
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "Now $since"
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "Holding $since"
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "Clear for $since"
+                        }
+                    )
+                }
                 if (displayRefreshLoading) {
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Refreshing...") }
                 }
@@ -258,6 +287,13 @@ fun HomeViewState.Render(
             }
         }
     }
+}
+
+private fun Double.asMoney(): String {
+    val cents = (this * 100).toInt()
+    val whole = cents / 100
+    val fraction = (cents % 100).toString().padStart(2, '0')
+    return "$whole.$fraction"
 }
 
 internal fun Instant.toDateInputValue(timeZone: TimeZone): String {

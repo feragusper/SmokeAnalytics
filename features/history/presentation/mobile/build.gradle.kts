@@ -27,6 +27,7 @@ android {
 dependencies {
     // Authentication feature
     implementation(project(":features:authentication:presentation:mobile"))
+    implementation(project(":features:home:domain"))
 
     // Architecture and presentation layers
     implementation(project(":libraries:architecture:presentation:mobile"))
@@ -34,6 +35,7 @@ dependencies {
 
     // Authentication modules
     implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:preferences:domain"))
 
     // Design system for consistent theming and UI components
     implementation(project(":libraries:design:mobile"))

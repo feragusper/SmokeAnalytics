@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.features.stats.presentation.process
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.StatsResult
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import io.mockk.coEvery
@@ -21,11 +23,13 @@ class StatsProcessHolderTest {
 
     private lateinit var processHolder: StatsProcessHolder
     private val fetchSmokeStatsUseCase: FetchSmokeStatsUseCase = mockk()
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        processHolder = StatsProcessHolder(fetchSmokeStatsUseCase)
+        coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+        processHolder = StatsProcessHolder(fetchSmokeStatsUseCase, fetchUserPreferencesUseCase)
     }
 
     @Test
@@ -47,7 +51,7 @@ class StatsProcessHolderTest {
             dailyAverage = 3.5f
         )
 
-        coEvery { fetchSmokeStatsUseCase(year, month, day, period) } returns mockStats
+        coEvery { fetchSmokeStatsUseCase(year, month, day, period, 6) } returns mockStats
 
         processHolder.processIntent(StatsIntent.LoadStats(year, month, day, period)).test {
             awaitItem() shouldBeEqualTo StatsResult.Loading
@@ -55,7 +59,7 @@ class StatsProcessHolderTest {
             awaitComplete()
         }
 
-        coVerify { fetchSmokeStatsUseCase(year, month, day, period) }
+        coVerify { fetchSmokeStatsUseCase(year, month, day, period, 6) }
     }
 
     @Test
@@ -67,7 +71,7 @@ class StatsProcessHolderTest {
             val period = FetchSmokeStatsUseCase.PeriodType.WEEK
             val exception = RuntimeException("Error fetching stats")
 
-            coEvery { fetchSmokeStatsUseCase(year, month, day, period) } throws exception
+            coEvery { fetchSmokeStatsUseCase(year, month, day, period, 6) } throws exception
 
             processHolder.processIntent(StatsIntent.LoadStats(year, month, day, period)).test {
                 awaitItem() shouldBeEqualTo StatsResult.Loading
@@ -75,6 +79,6 @@ class StatsProcessHolderTest {
                 awaitComplete()
             }
 
-            coVerify { fetchSmokeStatsUseCase(year, month, day, period) }
+            coVerify { fetchSmokeStatsUseCase(year, month, day, period, 6) }
         }
 }

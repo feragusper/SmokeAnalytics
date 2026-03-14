@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -63,6 +64,8 @@ class SettingsViewModel @Inject constructor(
         is SettingsResult.UserLoggedIn -> previous.copy(
             displayLoading = false,
             currentEmail = result.email,
+            preferences = result.preferences,
+            infoMessage = null,
         )
 
         /**
@@ -71,11 +74,21 @@ class SettingsViewModel @Inject constructor(
         SettingsResult.UserLoggedOut -> previous.copy(
             displayLoading = false,
             currentEmail = null,
+            preferences = UserPreferences(),
+            infoMessage = null,
         )
 
         /**
          * Indicates that the application is currently loading or processing data.
          */
-        SettingsResult.Loading -> previous.copy(displayLoading = true)
+        SettingsResult.Loading -> previous.copy(displayLoading = true, infoMessage = null)
+        SettingsResult.PreferencesSaved -> previous.copy(
+            displayLoading = false,
+            infoMessage = "Saved",
+        )
+        is SettingsResult.Error -> previous.copy(
+            displayLoading = false,
+            infoMessage = result.message,
+        )
     }
 }

@@ -161,9 +161,12 @@ fun properties(propertiesFileName: String): Properties {
 }
 
 dependencies {
+    implementation(project(":libraries:architecture:domain"))
     implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:design:mobile"))
+    implementation(project(":libraries:preferences:domain"))
+    implementation(project(":libraries:preferences:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:chatbot:presentation"))
@@ -181,6 +184,9 @@ dependencies {
     implementation(libs.hilt)
     implementation(libs.timber)
     implementation(libs.animated.navigation.bar)
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.material3)
+    implementation(libs.play.review.ktx)
 
     debugImplementation(project(":features:devtools:presentation"))
 

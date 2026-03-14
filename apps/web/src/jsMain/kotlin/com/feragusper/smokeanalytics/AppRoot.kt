@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.apps.web.AboutWebScreen
+import com.feragusper.smokeanalytics.apps.web.MapWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebDependencies
@@ -42,6 +44,8 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.History -> "Smoke Analytics | History"
             WebRoute.Stats -> "Smoke Analytics | Stats"
             WebRoute.Settings -> "Smoke Analytics | Settings"
+            WebRoute.Map -> "Smoke Analytics | Map"
+            WebRoute.About -> "Smoke Analytics | About"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
     }
@@ -58,6 +62,8 @@ fun AppRoot(graph: WebAppGraph) {
                 deleteSmokeUseCase = graph.deleteSmokeUseCase,
                 fetchSmokesUseCase = graph.fetchSmokesUseCase,
                 fetchSessionUseCase = graph.fetchSessionUseCase,
+                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+                locationCaptureService = graph.locationCaptureService,
             )
         )
     }
@@ -71,13 +77,18 @@ fun AppRoot(graph: WebAppGraph) {
     }
 
     val statsDeps = remember(graph) {
-        createStatsWebDependencies(fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase)
+        createStatsWebDependencies(
+            fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+        )
     }
 
     val settingsDeps = remember(graph) {
         createSettingsWebDependencies(
             fetchSessionUseCase = graph.fetchSessionUseCase,
             signOutUseCase = graph.signOutUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
         )
     }
 
@@ -94,6 +105,14 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Stats -> StatsWebScreen(deps = statsDeps)
 
             WebRoute.Settings -> SettingsWebScreen(deps = settingsDeps)
+
+            WebRoute.Map -> MapWebScreen(
+                fetchSmokesUseCase = graph.fetchSmokesUseCase,
+            )
+
+            WebRoute.About -> AboutWebScreen(
+                onShare = { shareSmokeAnalytics() }
+            )
 
             WebRoute.Auth -> AuthenticationWebScreen(
                 deps = authDeps,
@@ -113,5 +132,20 @@ private fun navigateTo(route: WebRoute) {
     val target = route.toHash()
     if (window.location.hash != target) {
         window.location.hash = target
+    }
+}
+
+private suspend fun shareSmokeAnalytics() {
+    val shareText = "Smoke Analytics helps you track smokes, streaks, and spending."
+    val shareUrl = window.location.origin
+    val nav = js("navigator")
+
+    try {
+        if (js("typeof navigator.share === 'function'") as Boolean) {
+            nav.share(js("{ title: 'Smoke Analytics', text: shareText, url: shareUrl }"))
+        } else if (js("navigator.clipboard && navigator.clipboard.writeText") as Boolean) {
+            nav.clipboard.writeText("$shareText $shareUrl")
+        }
+    } catch (_: Throwable) {
     }
 }

@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:authentication:data:mobile"))
+    implementation(project(":libraries:preferences:domain"))
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)
@@ -42,6 +43,7 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
+    implementation(libs.play.review.ktx)
 
     // Firebase dependencies for authentication
     implementation(platform(libs.firebase.bom))

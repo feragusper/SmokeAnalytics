@@ -65,6 +65,8 @@ kotlin {
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
                 implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:preferences:domain"))
+                implementation(project(":libraries:preferences:data:web"))
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":features:authentication:presentation:web"))

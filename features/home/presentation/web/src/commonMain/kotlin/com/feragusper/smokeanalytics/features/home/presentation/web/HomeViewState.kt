@@ -1,5 +1,8 @@
 package com.feragusper.smokeanalytics.features.home.presentation.web
 
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
+import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
+import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
@@ -22,6 +25,11 @@ data class HomeViewState(
     val smokesPerMonth: Int? = null,
     val timeSinceLastCigarette: Pair<Long, Long>? = null,
     val latestSmokes: List<Smoke>? = null,
+    val greetingTitle: String? = null,
+    val greetingMessage: String? = null,
+    val financialSummary: FinancialSummary? = null,
+    val gamificationSummary: GamificationSummary? = null,
+    val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     val error: HomeError? = null,
 ) {
 

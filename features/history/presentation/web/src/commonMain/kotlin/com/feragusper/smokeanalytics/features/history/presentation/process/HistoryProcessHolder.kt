@@ -2,8 +2,13 @@ package com.feragusper.smokeanalytics.features.history.presentation.process
 
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.dayStartInstant
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
@@ -13,9 +18,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 
 class HistoryProcessHolder(
     private val addSmokeUseCase: AddSmokeUseCase,
@@ -23,6 +26,8 @@ class HistoryProcessHolder(
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val locationCaptureService: LocationCaptureService,
 ) {
 
     fun processIntent(intent: HistoryIntent): Flow<HistoryResult> = when (intent) {
@@ -35,8 +40,8 @@ class HistoryProcessHolder(
 
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
         val tz = TimeZone.Companion.currentSystemDefault()
-
-        val dayStart = intent.date.toLocalDateTime(tz).date.atStartOfDayIn(tz)
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val dayStart = intent.date.dayStartInstant(timeZone = tz, dayStartHour = preferences.dayStartHour)
         val nextDayStart = dayStart.plus(1, DateTimeUnit.Companion.DAY, tz)
 
         when (fetchSessionUseCase()) {
@@ -45,15 +50,10 @@ class HistoryProcessHolder(
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
 
-                val raw = fetchSmokesUseCase(
+                val filtered = fetchSmokesUseCase(
                     start = dayStart,
                     end = nextDayStart,
                 )
-
-                val filtered = raw.filter { smoke ->
-                    val d = smoke.date.toLocalDateTime(tz).date
-                    d == dayStart.toLocalDateTime(tz).date
-                }
 
                 emit(
                     HistoryResult.FetchSmokesSuccess(
@@ -74,7 +74,15 @@ class HistoryProcessHolder(
 
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
-                addSmokeUseCase(intent.date)
+                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val location = if (preferences.locationTrackingEnabled) {
+                    locationCaptureService.captureCurrentLocation()?.let {
+                        GeoPoint(latitude = it.latitude, longitude = it.longitude)
+                    }
+                } else {
+                    null
+                }
+                addSmokeUseCase(intent.date, location)
                 emit(HistoryResult.AddSmokeSuccess)
             }
         }

@@ -17,6 +17,8 @@ fun WebScaffold(
         "Home" to WebRoute.Home,
         "History" to WebRoute.History,
         "Stats" to WebRoute.Stats,
+        "Map" to WebRoute.Map,
+        "About" to WebRoute.About,
         "Settings" to WebRoute.Settings,
     )
 

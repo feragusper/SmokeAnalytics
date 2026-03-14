@@ -16,7 +16,12 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import kotlinx.browser.window
+import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -49,11 +54,8 @@ private fun SettingsViewState.Render(
             },
             badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
             actions = {
-                GhostButton(
-                    text = "Refresh session",
-                    onClick = { onIntent(SettingsIntent.FetchUser) },
-                    enabled = !displayLoading
-                )
+                GhostButton(text = "About", onClick = { window.location.hash = "#about" }, enabled = !displayLoading)
+                GhostButton(text = "Refresh", onClick = { onIntent(SettingsIntent.FetchUser) }, enabled = !displayLoading)
             }
         )
 
@@ -68,6 +70,10 @@ private fun SettingsViewState.Render(
         if (displayLoading && currentEmail == null) {
             LoadingSkeletonCard(heightPx = 112, lineWidths = listOf("42%", "70%", "36%"))
             return@Div
+        }
+
+        infoMessage?.let { msg ->
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(msg) }
         }
 
         if (currentEmail != null) {
@@ -88,6 +94,34 @@ private fun SettingsViewState.Render(
                     )
                 }
             }
+
+            PreferencesCard(
+                preferences = preferences,
+                displayLoading = displayLoading,
+                onSave = { prefs ->
+                    onIntent(
+                        SettingsIntent.UpdatePreferences(
+                            packPrice = prefs.packPrice,
+                            cigarettesPerPack = prefs.cigarettesPerPack,
+                            dayStartHour = prefs.dayStartHour,
+                            locationTrackingEnabled = prefs.locationTrackingEnabled,
+                        )
+                    )
+                }
+            )
+
+            SurfaceCard {
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Account") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Current tier: ${preferences.accountTier.name}")
+                }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Premium is defined but not billable yet.")
+                }
+                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                    GhostButton(text = "Open About", onClick = { window.location.hash = "#about" })
+                }
+            }
         } else {
             SurfaceCard {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Sign in") }
@@ -102,4 +136,75 @@ private fun SettingsViewState.Render(
             }
         }
     }
+}
+
+@Composable
+private fun PreferencesCard(
+    preferences: UserPreferences,
+    displayLoading: Boolean,
+    onSave: (UserPreferences) -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
+
+        PreferenceField(
+            label = "Pack price",
+            value = if (preferences.packPrice == 0.0) "" else preferences.packPrice.toString(),
+            displayLoading = displayLoading,
+            onChange = { raw ->
+                onSave(preferences.copy(packPrice = raw.toDoubleOrNull() ?: 0.0))
+            }
+        )
+
+        PreferenceField(
+            label = "Cigarettes per pack",
+            value = preferences.cigarettesPerPack.toString(),
+            displayLoading = displayLoading,
+            onChange = { raw ->
+                onSave(
+                    preferences.copy(
+                        cigarettesPerPack = raw.toIntOrNull()?.coerceAtLeast(1) ?: preferences.cigarettesPerPack
+                    )
+                )
+            }
+        )
+
+        PreferenceField(
+            label = "First hour of the day",
+            value = preferences.dayStartHour.toString().padStart(2, '0'),
+            displayLoading = displayLoading,
+            onChange = { raw ->
+                onSave(preferences.copy(dayStartHour = raw.toIntOrNull()?.coerceIn(0, 23) ?: preferences.dayStartHour))
+            }
+        )
+
+        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+            Input(type = InputType.Checkbox, attrs = {
+                checked(preferences.locationTrackingEnabled)
+                if (displayLoading) disabled()
+                onInput {
+                    onSave(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                }
+            })
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("Track location with smokes")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreferenceField(
+    label: String,
+    value: String,
+    displayLoading: Boolean,
+    onChange: (String) -> Unit,
+) {
+    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(label) }
+    Input(type = InputType.Text, attrs = {
+        classes(SmokeWebStyles.dateInput)
+        value(value)
+        if (displayLoading) disabled()
+        onInput { onChange(it.value) }
+    })
 }

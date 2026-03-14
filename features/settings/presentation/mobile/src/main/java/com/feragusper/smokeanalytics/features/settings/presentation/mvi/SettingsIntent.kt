@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
  * Defines user intentions that can trigger actions within the Settings feature.
@@ -16,6 +17,10 @@ sealed class SettingsIntent : MVIIntent {
      * This is typically triggered when the Settings screen is opened to display user details.
      */
     object FetchUser : SettingsIntent()
+
+    data class UpdatePreferences(
+        val preferences: UserPreferences,
+    ) : SettingsIntent()
 
     /**
      * Represents an intent to sign out the current user.

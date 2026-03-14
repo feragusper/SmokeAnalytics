@@ -22,7 +22,7 @@ class FetchSmokeCountListUseCase(
      *
      * @return A [SmokeCountListResult] containing today's smokes, weekly and monthly counts, and details about the last smoke event.
      */
-    suspend operator fun invoke() = smokeRepository.fetchSmokeCount().let {
+    suspend operator fun invoke(dayStartHour: Int = 0) = smokeRepository.fetchSmokeCount(dayStartHour).let {
         SmokeCountListResult(
             todaysSmokes = it.today,
             countByWeek = it.week,
