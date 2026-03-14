@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.platform
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -16,6 +17,7 @@ class AndroidLocationCaptureService @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : LocationCaptureService {
 
+    @SuppressLint("MissingPermission")
     override suspend fun captureCurrentLocation(): Coordinate? {
         if (!hasLocationPermission()) return null
 
