@@ -39,8 +39,10 @@ object SmokeWebStyles : StyleSheet() {
     val appRoot by style {
         fontFamily(
             "system-ui",
+            "-apple-system",
             "\"Segoe UI\"",
-            "\"Roboto\"",
+            "Roboto",
+            "Helvetica",
             "Arial",
             "sans-serif"
         )
