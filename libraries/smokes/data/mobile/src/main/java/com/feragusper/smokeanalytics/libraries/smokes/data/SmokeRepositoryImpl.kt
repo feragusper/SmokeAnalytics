@@ -1,13 +1,14 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.firstInstantThisMonth
-import com.feragusper.smokeanalytics.libraries.architecture.domain.isThisMonth
-import com.feragusper.smokeanalytics.libraries.architecture.domain.isThisWeek
-import com.feragusper.smokeanalytics.libraries.architecture.domain.isToday
-import com.feragusper.smokeanalytics.libraries.architecture.domain.lastInstantToday
+import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentDayBucket
+import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentMonthBucket
+import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentWeekBucket
+import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
@@ -34,16 +35,32 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addSmoke(date: Instant) {
+    override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
         smokesQuery().add(
-            SmokeEntity(timestampMillis = date.toEpochMilliseconds().toDouble())
+            SmokeEntity(
+                timestampMillis = date.toEpochMilliseconds().toDouble(),
+                latitude = location?.latitude,
+                longitude = location?.longitude,
+            )
         ).await()
     }
 
-    override suspend fun editSmoke(id: String, date: Instant) {
+    override suspend fun editSmoke(id: String, date: Instant, location: GeoPoint?) {
+        val preservedLocation = location ?: smokesQuery()
+            .document(id)
+            .get()
+            .await()
+            .getGeoPoint()
+
         smokesQuery()
             .document(id)
-            .set(SmokeEntity(timestampMillis = date.toEpochMilliseconds().toDouble()))
+            .set(
+                SmokeEntity(
+                    timestampMillis = date.toEpochMilliseconds().toDouble(),
+                    latitude = preservedLocation?.latitude,
+                    longitude = preservedLocation?.longitude,
+                )
+            )
             .await()
     }
 
@@ -59,7 +76,7 @@ class SmokeRepositoryImpl @Inject constructor(
         endDate: Instant?
     ): List<Smoke> {
         val startMillis = (startDate ?: firstInstantThisMonth()).toEpochMilliseconds().toDouble()
-        val endMillis = (endDate ?: lastInstantToday()).toEpochMilliseconds().toDouble()
+        val endMillis = (endDate ?: nextDayStartInstant()).toEpochMilliseconds().toDouble()
 
         var query: Query = smokesQuery()
             .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
@@ -77,25 +94,34 @@ class SmokeRepositoryImpl @Inject constructor(
             Smoke(
                 id = document.id,
                 date = currentInstant,
-                timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant)
+                timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant),
+                location = document.getGeoPoint(),
             )
         }
     }
 
-    override suspend fun fetchSmokeCount(): SmokeCount {
-        return fetchSmokes().toSmokeCountListResult()
+    override suspend fun fetchSmokeCount(dayStartHour: Int): SmokeCount {
+        return fetchSmokes(
+            startDate = firstInstantThisMonth(dayStartHour = dayStartHour),
+            endDate = nextDayStartInstant(dayStartHour = dayStartHour),
+        ).toSmokeCountListResult(dayStartHour)
     }
 
-    private fun List<Smoke>.toSmokeCountListResult() = SmokeCount(
-        today = filterToday(),
-        week = filterThisWeek().size,
-        month = filterThisMonth().size,
+    private fun List<Smoke>.toSmokeCountListResult(dayStartHour: Int) = SmokeCount(
+        today = filterToday(dayStartHour),
+        week = filterThisWeek(dayStartHour).size,
+        month = filterThisMonth(dayStartHour).size,
         lastSmoke = firstOrNull(),
     )
 
-    private fun List<Smoke>.filterToday() = filter { it.date.isToday() }
-    private fun List<Smoke>.filterThisWeek() = filter { it.date.isThisWeek() }
-    private fun List<Smoke>.filterThisMonth() = filter { it.date.isThisMonth() }
+    private fun List<Smoke>.filterToday(dayStartHour: Int) =
+        filter { it.date.isInCurrentDayBucket(dayStartHour = dayStartHour) }
+
+    private fun List<Smoke>.filterThisWeek(dayStartHour: Int) =
+        filter { it.date.isInCurrentWeekBucket(dayStartHour = dayStartHour) }
+
+    private fun List<Smoke>.filterThisMonth(dayStartHour: Int) =
+        filter { it.date.isInCurrentMonthBucket(dayStartHour = dayStartHour) }
 
     private fun smokesQuery() = firebaseAuth.currentUser?.uid?.let { uid ->
         firebaseFirestore.collection("$USERS/$uid/$SMOKES")
@@ -104,5 +130,11 @@ class SmokeRepositoryImpl @Inject constructor(
     private fun DocumentSnapshot.getInstant(): Instant? {
         val millis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) ?: return null
         return Instant.fromEpochMilliseconds(millis.toLong())
+    }
+
+    private fun DocumentSnapshot.getGeoPoint(): GeoPoint? {
+        val latitude = getDouble(SmokeEntity.Fields.LATITUDE) ?: return null
+        val longitude = getDouble(SmokeEntity.Fields.LONGITUDE) ?: return null
+        return GeoPoint(latitude = latitude, longitude = longitude)
     }
 }

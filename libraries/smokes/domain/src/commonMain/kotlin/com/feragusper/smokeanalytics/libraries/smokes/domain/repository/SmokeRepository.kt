@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.repository
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import kotlinx.datetime.Instant
 
 /**
@@ -14,7 +15,7 @@ interface SmokeRepository {
      *
      * @param timestamp The timestamp of the smoke.
      */
-    suspend fun addSmoke(timestamp: Instant)
+    suspend fun addSmoke(timestamp: Instant, location: GeoPoint? = null)
 
     /**
      * Fetches the smokes.
@@ -34,7 +35,7 @@ interface SmokeRepository {
      *
      * @return The smoke count.
      */
-    suspend fun fetchSmokeCount(): SmokeCount
+    suspend fun fetchSmokeCount(dayStartHour: Int = 0): SmokeCount
 
     /**
      * Edits a smoke.
@@ -42,7 +43,7 @@ interface SmokeRepository {
      * @param id The id of the smoke.
      * @param timestamp The timestamp of the smoke.
      */
-    suspend fun editSmoke(id: String, timestamp: Instant)
+    suspend fun editSmoke(id: String, timestamp: Instant, location: GeoPoint? = null)
 
     /**
      * Deletes a smoke.

@@ -77,7 +77,7 @@ class SettingsViewTest {
             )
         )
         composeTestRule.setContent {
-            SettingsView(viewModel)
+            SettingsView(viewModel = viewModel, onOpenAbout = {})
         }
     }
 }

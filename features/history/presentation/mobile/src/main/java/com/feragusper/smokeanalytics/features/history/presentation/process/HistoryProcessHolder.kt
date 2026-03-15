@@ -2,10 +2,18 @@ package com.feragusper.smokeanalytics.features.history.presentation.process
 
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
+import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.dayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
@@ -13,6 +21,9 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import javax.inject.Inject
 
 /**
@@ -33,7 +44,11 @@ class HistoryProcessHolder @Inject constructor(
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
-    private val syncWithWearUseCase: SyncWithWearUseCase
+    private val syncWithWearUseCase: SyncWithWearUseCase,
+    private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val locationCaptureService: LocationCaptureService,
+    private val widgetRefreshService: WidgetRefreshService,
 ) : MVIProcessHolder<HistoryIntent, HistoryResult> {
 
     /**
@@ -59,6 +74,7 @@ class HistoryProcessHolder @Inject constructor(
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {
         emit(HistoryResult.Loading)
         deleteSmokeUseCase.invoke(intent.id)
+        refreshWidgetSnapshot()
         emit(HistoryResult.DeleteSmokeSuccess)
         syncWithWearUseCase.invoke()
     }.catchAndLog {
@@ -74,6 +90,7 @@ class HistoryProcessHolder @Inject constructor(
     private fun processEditSmoke(intent: HistoryIntent.EditSmoke) = flow {
         emit(HistoryResult.Loading)
         editSmokeUseCase.invoke(intent.id, intent.date)
+        refreshWidgetSnapshot()
         emit(HistoryResult.EditSmokeSuccess)
         syncWithWearUseCase.invoke()
     }.catchAndLog {
@@ -88,14 +105,18 @@ class HistoryProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the fetch operation.
      */
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val timeZone = TimeZone.currentSystemDefault()
+        val dayStart = intent.date.dayStartInstant(timeZone = timeZone, dayStartHour = preferences.dayStartHour)
+        val nextDayStart = dayStart.plus(1, DateTimeUnit.DAY, timeZone)
         when (fetchSessionUseCase()) {
-            is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(intent.date))
+            is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(dayStart))
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
                 emit(
                     HistoryResult.FetchSmokesSuccess(
-                        selectedDate = intent.date,
-                        smokes = fetchSmokesUseCase.invoke(intent.date)
+                        selectedDate = dayStart,
+                        smokes = fetchSmokesUseCase.invoke(dayStart, nextDayStart)
                     )
                 )
             }
@@ -120,12 +141,27 @@ class HistoryProcessHolder @Inject constructor(
 
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
-                addSmokeUseCase.invoke(intent.date)
+                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val location = if (preferences.locationTrackingEnabled) {
+                    locationCaptureService.captureCurrentLocation()?.let {
+                        GeoPoint(latitude = it.latitude, longitude = it.longitude)
+                    }
+                } else {
+                    null
+                }
+                addSmokeUseCase.invoke(intent.date, location)
+                refreshWidgetSnapshot()
                 emit(HistoryResult.AddSmokeSuccess)
                 syncWithWearUseCase.invoke()
             }
         }
     }.catchAndLog {
         emit(HistoryResult.Error.Generic)
+    }
+
+    private suspend fun refreshWidgetSnapshot() {
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val smokeCounts = fetchSmokeCountListUseCase(preferences.dayStartHour)
+        widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
     }
 }

@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.HistoryViewSt
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ import kotlinx.datetime.Clock
  * @property processHolder The process holder for the History screen.
  * @property scope The coroutine scope for the store.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class HistoryWebStore(
     private val processHolder: HistoryProcessHolder,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),

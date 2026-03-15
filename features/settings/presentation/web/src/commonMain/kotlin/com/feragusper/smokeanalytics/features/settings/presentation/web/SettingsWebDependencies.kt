@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.features.settings.presentation.web
 import com.feragusper.smokeanalytics.features.settings.presentation.web.process.SettingsProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 
 /**
  * Represents the dependencies for the Settings screen.
@@ -24,11 +26,15 @@ class SettingsWebDependencies(
 fun createSettingsWebDependencies(
     fetchSessionUseCase: FetchSessionUseCase,
     signOutUseCase: SignOutUseCase,
+    fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
 ): SettingsWebDependencies {
     return SettingsWebDependencies(
         processHolder = SettingsProcessHolder(
             fetchSessionUseCase = fetchSessionUseCase,
             signOutUseCase = signOutUseCase,
+            fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = updateUserPreferencesUseCase,
         )
     )
 }

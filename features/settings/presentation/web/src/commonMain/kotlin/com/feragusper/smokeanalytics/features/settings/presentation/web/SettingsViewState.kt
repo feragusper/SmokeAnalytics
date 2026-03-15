@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.web
 
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+
 /**
  * Represents the state of the Settings screen.
  *
@@ -10,5 +12,7 @@ package com.feragusper.smokeanalytics.features.settings.presentation.web
 data class SettingsViewState(
     val displayLoading: Boolean = false,
     val currentEmail: String? = null,
+    val preferences: UserPreferences = UserPreferences(),
     val errorMessage: String? = null,
+    val infoMessage: String? = null,
 )

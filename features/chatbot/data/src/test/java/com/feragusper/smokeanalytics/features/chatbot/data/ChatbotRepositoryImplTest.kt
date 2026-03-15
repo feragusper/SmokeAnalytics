@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.chatbot.data
 
+import com.feragusper.smokeanalytics.features.chatbot.domain.buildCoachContext
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.GenerateContentResponse
@@ -31,21 +32,21 @@ class ChatbotRepositoryImplTest {
     fun `sendMessage should return generated text from Gemini`() = runTest {
         val userPrompt = "Hola"
         val responseText = "¡Hola! ¿Cómo estás hoy?"
+        val context = buildCoachContext(name = "Fer", recentSmokes = emptyList())
 
         val response: GenerateContentResponse = mockk {
             every { text } returns responseText
         }
 
-        coEvery { gemini.generateContent(userPrompt) } returns response
+        coEvery { gemini.generateContent(any<String>()) } returns response
 
-        val result = repository.sendMessage(userPrompt)
+        val result = repository.sendMessage(userPrompt, context)
 
         result shouldBeEqualTo responseText
     }
 
     @Test
     fun `sendInitialMessageWithContext should build and send correct prompt`() = runTest {
-        val name = "Fer"
         val now: Instant = Clock.System.now()
 
         val smokes = List(10) { index ->
@@ -55,6 +56,7 @@ class ChatbotRepositoryImplTest {
                 timeElapsedSincePreviousSmoke = 5L to 0L
             )
         }
+        val context = buildCoachContext(name = "Fer", recentSmokes = smokes)
 
         val expectedResponse = "¡Vamos Fer! Estás avanzando."
 
@@ -64,7 +66,7 @@ class ChatbotRepositoryImplTest {
 
         coEvery { gemini.generateContent(any<String>()) } returns response
 
-        val result = repository.sendInitialMessageWithContext(name, smokes)
+        val result = repository.sendInitialMessage(context)
 
         result shouldBeEqualTo expectedResponse
     }

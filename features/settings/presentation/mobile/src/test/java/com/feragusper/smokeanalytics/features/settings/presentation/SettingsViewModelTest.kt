@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -69,7 +70,7 @@ class SettingsViewModelTest {
         runTest {
             val email = "fernando@example.com"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email)
+                SettingsResult.UserLoggedIn(email, UserPreferences())
             )
 
             viewModel.states().test {
@@ -84,7 +85,7 @@ class SettingsViewModelTest {
         runTest {
             val email = "fernando@example.com"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email)
+                SettingsResult.UserLoggedIn(email, UserPreferences())
             )
             every { processHolder.processIntent(SettingsIntent.SignOut) } returns flowOf(
                 SettingsResult.UserLoggedOut

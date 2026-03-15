@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":libraries:design:mobile"))
 
     // Domain layer for accessing smoke-related data
+    implementation(project(":libraries:preferences:domain"))
     implementation(project(":libraries:smokes:domain"))
 
     // Core AndroidX libraries and Compose dependencies

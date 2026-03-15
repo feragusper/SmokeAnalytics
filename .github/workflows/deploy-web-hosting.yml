@@ -9,6 +9,9 @@ on:
         type: choice
         options: [staging, prod]
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -25,6 +30,13 @@ jobs:
 
       - name: Build web bundle + prepare hosting dir
         run: ./gradlew :apps:web:prepareFirebaseHosting -Psmoke.env=${{ inputs.env }} --no-configuration-cache --rerun-tasks
+
+      - name: Retrieve web release metadata
+        if: ${{ inputs.env == 'prod' }}
+        id: web_version
+        run: |
+          echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:web:printWebVersionName -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:web:printWebReleaseTag -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Firebase Hosting (staging)
         if: ${{ inputs.env == 'staging' }}
@@ -45,3 +57,22 @@ jobs:
           projectId: smoke-analytics
           target: prod
           channelId: live
+
+      - name: Push Web Git Tag
+        if: ${{ inputs.env == 'prod' }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git tag "${{ steps.web_version.outputs.release_tag }}"
+          git push origin "${{ steps.web_version.outputs.release_tag }}"
+
+      - name: Create Web Release
+        if: ${{ inputs.env == 'prod' }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.web_version.outputs.release_tag }}
+          release_name: "Web ${{ steps.web_version.outputs.version_name }}"
+          draft: false
+          prerelease: false

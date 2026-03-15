@@ -2,16 +2,17 @@ package com.feragusper.smokeanalytics.features.chatbot.domain
 
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatbotUseCaseTest {
@@ -29,30 +30,22 @@ class ChatbotUseCaseTest {
 
     @Test
     fun `sendMessage should delegate to chatbotRepository`() = runTest {
-        // Given
         val userMessage = "Hola"
         val expectedReply = "Hola, ¿cómo estás?"
+        val smokes = sampleSmokes()
 
-        coEvery { chatbotRepository.sendMessage(userMessage) } returns expectedReply
+        coEvery { smokeRepository.fetchSmokes() } returns smokes
+        coEvery { authRepository.fetchSession() } returns Session.Anonymous
+        coEvery { chatbotRepository.sendMessage(userMessage, any()) } returns expectedReply
 
-        // When
         val result = useCase.sendMessage(userMessage)
 
-        // Then
         result shouldBeEqualTo expectedReply
     }
 
     @Test
     fun `sendInitialMessageWithContext should use displayName from logged-in session`() = runTest {
-        // Given
-        val now = LocalDateTime.now()
-        val smokes = List(35) { index ->
-            Smoke(
-                id = "$index",
-                date = now.minusMinutes(index.toLong()),
-                timeElapsedSincePreviousSmoke = 5L to 0L
-            )
-        }
+        val smokes = sampleSmokes(35)
         val session = Session.LoggedIn(
             user = Session.User(
                 id = "userId",
@@ -63,41 +56,33 @@ class ChatbotUseCaseTest {
 
         coEvery { smokeRepository.fetchSmokes() } returns smokes
         coEvery { authRepository.fetchSession() } returns session
-        coEvery {
-            chatbotRepository.sendInitialMessageWithContext("Fer", smokes.take(30))
-        } returns "¡Hola Fer!"
+        coEvery { chatbotRepository.sendInitialMessage(any()) } returns "¡Hola Fer!"
 
-        // When
         val result = useCase.sendInitialMessageWithContext()
 
-        // Then
         result shouldBeEqualTo "¡Hola Fer!"
     }
 
     @Test
     fun `sendInitialMessageWithContext should use fallback name if session is anonymous`() =
         runTest {
-            // Given
-            val now = LocalDateTime.now()
-            val smokes = List(10) {
-                Smoke(
-                    id = "$it",
-                    date = now.minusMinutes(it.toLong()),
-                    timeElapsedSincePreviousSmoke = 10L to 0L
-                )
-            }
+            val smokes = sampleSmokes(10)
 
             coEvery { smokeRepository.fetchSmokes() } returns smokes
             coEvery { authRepository.fetchSession() } returns Session.Anonymous
-            coEvery {
-                chatbotRepository.sendInitialMessageWithContext("Usuario sin nombre", smokes)
-            } returns "Hola desconocido"
+            coEvery { chatbotRepository.sendInitialMessage(any()) } returns "Hola desconocido"
 
-            // When
             val result = useCase.sendInitialMessageWithContext()
 
-            // Then
             result shouldBeEqualTo "Hola desconocido"
         }
+
+    private fun sampleSmokes(count: Int = 5) = List(count) { index ->
+        com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke(
+            id = "$index",
+            date = Clock.System.now().minus(index.toLong() * 45L, DateTimeUnit.MINUTE),
+            timeElapsedSincePreviousSmoke = 1L to 0L
+        )
+    }
 
 }

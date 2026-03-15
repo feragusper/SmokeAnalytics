@@ -5,6 +5,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":libraries:architecture:domain"))
+                implementation(project(":libraries:preferences:domain"))
                 implementation(project(":libraries:smokes:domain"))
             }
         }

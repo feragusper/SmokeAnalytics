@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -81,14 +82,14 @@ class FetchSmokeStatsUseCaseTest {
         var smokesToReturn: List<Smoke> = emptyList()
 
         override suspend fun fetchSmokes(
-            startDate: Instant?,
-            endDate: Instant?
+            start: Instant?,
+            end: Instant?
         ): List<Smoke> = smokesToReturn
 
-        override suspend fun addSmoke(date: Instant) = Unit
-        override suspend fun editSmoke(id: String, date: Instant) = Unit
+        override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?) = Unit
+        override suspend fun editSmoke(id: String, timestamp: Instant, location: GeoPoint?) = Unit
         override suspend fun deleteSmoke(id: String) = Unit
-        override suspend fun fetchSmokeCount(): SmokeCount {
+        override suspend fun fetchSmokeCount(dayStartHour: Int): SmokeCount {
             throw UnsupportedOperationException("Not needed for this test")
         }
     }

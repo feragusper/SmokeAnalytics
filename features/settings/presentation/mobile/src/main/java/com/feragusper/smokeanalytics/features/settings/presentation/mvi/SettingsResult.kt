@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
  * Represents the possible outcomes of processing [SettingsIntent] actions.
@@ -23,7 +24,10 @@ sealed class SettingsResult : MVIResult {
      *
      * @property email The email of the logged-in user, or null if not available.
      */
-    data class UserLoggedIn(val email: String?) : SettingsResult()
+    data class UserLoggedIn(
+        val email: String?,
+        val preferences: UserPreferences,
+    ) : SettingsResult()
 
     /**
      * Indicates that the user has successfully logged out.
@@ -31,4 +35,8 @@ sealed class SettingsResult : MVIResult {
      * This result is used to update the UI state to reflect that no user is currently logged in.
      */
     object UserLoggedOut : SettingsResult()
+
+    data object PreferencesSaved : SettingsResult()
+
+    data class Error(val message: String) : SettingsResult()
 }

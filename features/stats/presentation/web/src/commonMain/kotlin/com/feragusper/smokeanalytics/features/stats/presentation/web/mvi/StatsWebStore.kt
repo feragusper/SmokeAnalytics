@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsViewSt
 import com.feragusper.smokeanalytics.features.stats.presentation.web.process.StatsProcessHolder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
  * @property processHolder The process holder for the Stats screen.
  * @property scope The coroutine scope for the store.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class StatsWebStore(
     private val processHolder: StatsProcessHolder,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),

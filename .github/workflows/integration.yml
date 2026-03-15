@@ -1,4 +1,4 @@
-# Integration workflow: runs on pushes to master and pull requests targeting master.
+# Integration workflow: runs on pull requests targeting master/develop and on pushes to master.
 # This workflow performs code checks, caching of dependencies, and SonarQube analysis.
 name: Integration
 
@@ -10,6 +10,11 @@ on:
     types: [ opened, synchronize, reopened ]
     branches:
       - master
+      - develop
+
+concurrency:
+  group: integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:

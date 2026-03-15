@@ -12,12 +12,16 @@ import androidx.compose.runtime.remember
  * @param viewModel The [SettingsViewModel] that manages the state and business logic for the Settings feature.
  */
 @Composable
-fun SettingsView(viewModel: SettingsViewModel) {
+fun SettingsView(
+    viewModel: SettingsViewModel,
+    onOpenAbout: () -> Unit,
+) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
 
     // Render the UI based on the current state and send user intents to the ViewModel.
-    viewState.Compose { intent ->
-        viewModel.intents().trySend(intent)
-    }
+    viewState.Compose(
+        intent = { intent -> viewModel.intents().trySend(intent) },
+        onOpenAbout = onOpenAbout,
+    )
 }

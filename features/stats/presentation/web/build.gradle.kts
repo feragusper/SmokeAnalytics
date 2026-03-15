@@ -14,6 +14,7 @@ kotlin {
             dependencies {
                 implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:preferences:domain"))
                 implementation(project(":libraries:smokes:domain"))
 
                 implementation(compose.runtime)

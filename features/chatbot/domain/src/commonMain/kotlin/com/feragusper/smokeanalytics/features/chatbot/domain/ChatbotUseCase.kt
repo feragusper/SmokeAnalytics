@@ -11,13 +11,18 @@ class ChatbotUseCase constructor(
 ) {
 
     suspend fun sendMessage(message: String): String {
-        return chatbotRepository.sendMessage(message)
+        val context = loadContext()
+        return chatbotRepository.sendMessage(message, context)
     }
 
     suspend fun sendInitialMessageWithContext(): String {
+        return chatbotRepository.sendInitialMessage(loadContext())
+    }
+
+    private suspend fun loadContext(): CoachContext {
         val smokes = smokeRepository.fetchSmokes().take(30)
         val name = (authRepository.fetchSession() as? Session.LoggedIn)?.user?.displayName
-            ?: "Usuario sin nombre"
-        return chatbotRepository.sendInitialMessageWithContext(name, smokes)
+            ?: "Smoker"
+        return buildCoachContext(name = name, recentSmokes = smokes)
     }
 }

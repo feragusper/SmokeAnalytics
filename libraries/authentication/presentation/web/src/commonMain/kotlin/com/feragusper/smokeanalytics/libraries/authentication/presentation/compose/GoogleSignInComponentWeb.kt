@@ -6,15 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import dev.gitlive.firebase.auth.externals.GoogleAuthProvider
 import dev.gitlive.firebase.auth.externals.getAuth
 import dev.gitlive.firebase.auth.externals.signInWithPopup
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Text
 
 /**
  * Represents a component for signing in with Google.
@@ -30,35 +28,32 @@ fun GoogleSignInComponentWeb(
     val scope = rememberCoroutineScope()
     var loading by remember { mutableStateOf(false) }
 
-    Button(
-        attrs = {
-            if (loading) disabled()
-            onClick {
-                scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    loading = true
-                    try {
-                        runCatching {
-                            val provider = GoogleAuthProvider()
-                            signInWithPopup(getAuth(), provider).await()
-                        }.onSuccess {
-                            onSignInSuccess()
-                        }.onFailure { t ->
-                            val code = (t.asDynamic().code as? String)
-                            val msg = (t.asDynamic().message as? String) ?: t.message
-                            onSignInError(
-                                RuntimeException(
-                                    "${code ?: "unknown"}: ${msg ?: "Unknown"}",
-                                    t
-                                )
+    PrimaryButton(
+        text = if (loading) "Signing in..." else "Continue with Google",
+        enabled = !loading,
+        onClick = {
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                loading = true
+                try {
+                    runCatching {
+                        val provider = GoogleAuthProvider()
+                        signInWithPopup(getAuth(), provider).await()
+                    }.onSuccess {
+                        onSignInSuccess()
+                    }.onFailure { t ->
+                        val code = (t.asDynamic().code as? String)
+                        val msg = (t.asDynamic().message as? String) ?: t.message
+                        onSignInError(
+                            RuntimeException(
+                                "${code ?: "unknown"}: ${msg ?: "Unknown"}",
+                                t
                             )
-                        }
-                    } finally {
-                        loading = false
+                        )
                     }
+                } finally {
+                    loading = false
                 }
             }
         }
-    ) {
-        Text(if (loading) "Signing in..." else "Sign in with Google")
-    }
+    )
 }
