@@ -13,6 +13,7 @@ val gitCode: Int by lazy { smokeGitCode(rootProject.projectDir) }
 val productVersionName = smokeProductVersion(rootProject.projectDir)
 val webVersionName = smokeWebVersionName(rootProject.projectDir, smokeEnv)
 val webReleaseTag = smokePlatformTag("web", webVersionName)
+val webFaviconName = if (smokeEnv == "prod") "favicon-prod.svg" else "favicon-staging.svg"
 
 private data class WebFirebaseConfig(
     val apiKey: String,
@@ -101,7 +102,12 @@ val prepareFirebaseHosting by tasks.registering(Sync::class) {
     val firebaseOut = layout.buildDirectory.dir("firebaseHosting")
 
     from(webpackOut)
-    from(resourcesOut)
+    from(resourcesOut) {
+        exclude("favicon.svg")
+    }
+    from(layout.projectDirectory.file("src/jsMain/resources/$webFaviconName")) {
+        rename { "favicon.svg" }
+    }
     into(firebaseOut)
 }
 
