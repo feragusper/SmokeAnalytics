@@ -4,6 +4,9 @@ name: Deploy to Play Store
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -73,26 +76,23 @@ jobs:
           gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
       - name: Build Android App Bundle
-        run: ./gradlew bundleProductionRelease --stacktrace
+        run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
 
       - name: Build & deploy Android release to Play Store
         run: bundler exec fastlane android deploy_playstore
 
-      - name: Retrieve Version
+      - name: Retrieve release metadata
         id: android_version
         run: |
-          echo "::set-output name=VERSION_NAME::$(${{ github.workspace }}/gradlew -q printVersionName)"
-
-      - name: Set version environment variable
-        run: |
-          echo "version_name=${{ steps.android_version.outputs.VERSION_NAME }}" >> $GITHUB_ENV
+          echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
 
       - name: Push Git Tag
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git tag "${{ env.version_name }}"
-          git push origin "${{ env.version_name }}"
+          git tag "${{ steps.android_version.outputs.release_tag }}"
+          git push origin "${{ steps.android_version.outputs.release_tag }}"
 
       - name: Create Release
         id: create_release
@@ -100,7 +100,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.version_name }}
-          release_name: "Release ${{ env.version_name }}"
+          tag_name: ${{ steps.android_version.outputs.release_tag }}
+          release_name: "Android ${{ steps.android_version.outputs.version_name }}"
           draft: false
           prerelease: false

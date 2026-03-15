@@ -48,10 +48,10 @@ jobs:
           echo "✅ Staging google-services.json decrypted."
 
       - name: Build Staging Debug APK
-        run: ./gradlew assembleStagingDebug --stacktrace
+        run: ./gradlew :apps:mobile:assembleStagingDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: mobile
-          path: ./apps/mobile/build/outputs/apk/debug/app-debug.apk
+          path: ./apps/mobile/build/outputs/apk/staging/debug/*.apk

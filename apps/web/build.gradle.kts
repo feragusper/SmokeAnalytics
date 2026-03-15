@@ -1,5 +1,4 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
-import java.io.ByteArrayOutputStream
 
 plugins {
     kotlin("multiplatform")
@@ -10,30 +9,10 @@ plugins {
 
 private val smokeEnv: String = providers.gradleProperty("smoke.env").orNull ?: "staging"
 
-val gitCode: Int by lazy {
-    val stdout = ByteArrayOutputStream()
-    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
-        .directory(rootProject.projectDir)
-        .redirectErrorStream(true)
-        .start()
-
-    process.inputStream.use { inputStream ->
-        inputStream.copyTo(stdout)
-    }
-
-    val exitCode = process.waitFor()
-    if (exitCode != 0) {
-        throw IllegalStateException("Git command failed with exit code $exitCode")
-    }
-
-    stdout.toString().trim().toInt()
-}
-
-val webVersionName = buildString {
-    append("0.6.0-web.")
-    append(gitCode)
-    if (smokeEnv != "prod") append("-").append(smokeEnv)
-}
+val gitCode: Int by lazy { smokeGitCode(rootProject.projectDir) }
+val productVersionName = smokeProductVersion(rootProject.projectDir)
+val webVersionName = smokeWebVersionName(rootProject.projectDir, smokeEnv)
+val webReleaseTag = smokePlatformTag("web", webVersionName)
 
 private data class WebFirebaseConfig(
     val apiKey: String,
@@ -124,4 +103,16 @@ val prepareFirebaseHosting by tasks.registering(Sync::class) {
     from(webpackOut)
     from(resourcesOut)
     into(firebaseOut)
+}
+
+tasks.register("printProductVersion") {
+    doLast { println(productVersionName) }
+}
+
+tasks.register("printWebVersionName") {
+    doLast { println(webVersionName) }
+}
+
+tasks.register("printWebReleaseTag") {
+    doLast { println(webReleaseTag) }
 }

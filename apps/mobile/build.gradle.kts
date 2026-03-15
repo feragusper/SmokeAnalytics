@@ -1,6 +1,5 @@
 import com.google.common.base.Charsets
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.util.Properties
@@ -20,27 +19,10 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
-val gitCode: Int by lazy {
-    val stdout = ByteArrayOutputStream()
-    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
-        .directory(rootProject.projectDir)
-        .redirectErrorStream(true)
-        .start()
-
-    process.inputStream.use { inputStream ->
-        inputStream.copyTo(stdout)
-    }
-
-    val exitCode = process.waitFor()
-    if (exitCode != 0) {
-        throw IllegalStateException("Git command failed with exit code $exitCode")
-    }
-
-    stdout.toString().trim().toInt()
-}
-
-// Construct the version name using a major.minor.patch pattern with the git code.
-val majorMinorPatchVersionName = "0.6.0.$gitCode"
+val gitCode: Int by lazy { smokeGitCode(rootProject.projectDir) }
+val productVersionName = smokeProductVersion(rootProject.projectDir)
+val androidVersionName = smokeAndroidVersionName(rootProject.projectDir)
+val androidReleaseTag = smokePlatformTag("android", androidVersionName)
 
 android {
     // Set the application namespace.
@@ -56,7 +38,7 @@ android {
         targetSdk = Android.TARGET_SDK
         // Define versionCode and versionName.
         versionCode = gitCode
-        versionName = majorMinorPatchVersionName
+        versionName = androidVersionName
     }
 
     signingConfigs {
@@ -193,7 +175,18 @@ dependencies {
     kapt(libs.hilt.compiler)
 }
 
-// Task to print the current version name to the console.
+tasks.register("printProductVersion") {
+    doLast { println(productVersionName) }
+}
+
 tasks.register("printVersionName") {
-    doLast { println(majorMinorPatchVersionName) }
+    doLast { println(androidVersionName) }
+}
+
+tasks.register("printAndroidVersionName") {
+    doLast { println(androidVersionName) }
+}
+
+tasks.register("printAndroidReleaseTag") {
+    doLast { println(androidReleaseTag) }
 }
