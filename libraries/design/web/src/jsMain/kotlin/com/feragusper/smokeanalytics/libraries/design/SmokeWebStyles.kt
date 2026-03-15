@@ -544,6 +544,21 @@ object SmokeWebStyles : StyleSheet() {
         }
     }
 
+    val buttonPrimaryUrgent by style {
+        backgroundColor(Color("#BA1A1A"))
+        color(Color("#FFFFFF"))
+    }
+
+    val buttonPrimaryCaution by style {
+        backgroundColor(Color("#B26A00"))
+        color(Color("#FFFFFF"))
+    }
+
+    val buttonPrimaryCalm by style {
+        backgroundColor(Color("var(--sa-color-primary)"))
+        color(Color("var(--sa-color-onPrimary)"))
+    }
+
     val buttonDanger by style {
         backgroundColor(Color("var(--sa-color-danger-soft)"))
         color(Color("var(--sa-color-danger)"))
@@ -668,6 +683,21 @@ object SmokeWebStyles : StyleSheet() {
         fontSize(14.px)
         lineHeight("1.5")
         color(Color("var(--sa-color-onSurface)"))
+    }
+
+    val elapsedCardUrgent by style {
+        backgroundColor(Color("rgba(186,26,26,0.08)"))
+        property("border-color", "rgba(186,26,26,0.18)")
+    }
+
+    val elapsedCardCaution by style {
+        backgroundColor(Color("rgba(178,106,0,0.10)"))
+        property("border-color", "rgba(178,106,0,0.18)")
+    }
+
+    val elapsedCardCalm by style {
+        backgroundColor(Color("var(--sa-color-success-soft)"))
+        property("border-color", "rgba(0,106,106,0.18)")
     }
 
     init {

@@ -61,6 +61,16 @@ fun HomeViewState.Render(
     val editing = remember { mutableStateMapOf<String, Boolean>() }
     val draftTime = remember { mutableStateMapOf<String, String>() }
     val showingInitialSkeleton = displayLoading && latestSmokes == null
+    val elapsedCardToneClass = when (elapsedTone) {
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
+    }
+    val addSmokeToneClass = when (elapsedTone) {
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
+    }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
@@ -81,6 +91,7 @@ fun HomeViewState.Render(
                     text = "Add smoke",
                     onClick = { onIntent(HomeIntent.AddSmoke) },
                     enabled = !displayLoading,
+                    extraClass = addSmokeToneClass,
                 )
                 GhostButton(
                     text = "History",
@@ -171,7 +182,12 @@ fun HomeViewState.Render(
                 }
             }
 
-            SurfaceCard(*(if (displayRefreshLoading) arrayOf(SmokeWebStyles.surfaceMuted) else emptyArray())) {
+            SurfaceCard(
+                *buildList {
+                    add(elapsedCardToneClass)
+                    if (displayRefreshLoading) add(SmokeWebStyles.surfaceMuted)
+                }.toTypedArray()
+            ) {
                 val since = timeSinceLastCigarette?.let { (h, m) ->
                     buildString {
                         if (h > 0) append("${h}h, ")

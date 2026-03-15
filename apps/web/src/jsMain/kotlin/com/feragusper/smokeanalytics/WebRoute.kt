@@ -6,6 +6,7 @@ sealed class WebRoute {
     data object Settings : WebRoute()
     data object History : WebRoute()
     data object Map : WebRoute()
+    data object Coach : WebRoute()
     data object About : WebRoute()
     data object Auth : WebRoute()
 }
@@ -16,6 +17,7 @@ internal fun WebRoute.toHash(): String = when (this) {
     WebRoute.Settings -> "#/settings"
     WebRoute.History -> "#/history"
     WebRoute.Map -> "#/map"
+    WebRoute.Coach -> "#/coach"
     WebRoute.About -> "#/about"
     WebRoute.Auth -> "#/auth"
 }
@@ -25,6 +27,7 @@ internal fun parseRouteFromHash(hash: String): WebRoute = when (hash.removePrefi
     "/settings" -> WebRoute.Settings
     "/history" -> WebRoute.History
     "/map" -> WebRoute.Map
+    "/coach" -> WebRoute.Coach
     "/about" -> WebRoute.About
     "/auth" -> WebRoute.Auth
     "/home", "/", "" -> WebRoute.Home

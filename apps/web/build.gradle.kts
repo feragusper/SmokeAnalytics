@@ -1,4 +1,5 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import java.io.ByteArrayOutputStream
 
 plugins {
     kotlin("multiplatform")
@@ -8,6 +9,31 @@ plugins {
 }
 
 private val smokeEnv: String = providers.gradleProperty("smoke.env").orNull ?: "staging"
+
+val gitCode: Int by lazy {
+    val stdout = ByteArrayOutputStream()
+    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+
+    process.inputStream.use { inputStream ->
+        inputStream.copyTo(stdout)
+    }
+
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        throw IllegalStateException("Git command failed with exit code $exitCode")
+    }
+
+    stdout.toString().trim().toInt()
+}
+
+val webVersionName = buildString {
+    append("0.6.0-web.")
+    append(gitCode)
+    if (smokeEnv != "prod") append("-").append(smokeEnv)
+}
 
 private data class WebFirebaseConfig(
     val apiKey: String,
@@ -42,6 +68,7 @@ buildkonfig {
     packageName = "com.feragusper.smokeanalytics.apps.web"
 
     defaultConfigs {
+        buildConfigField(STRING, "APP_VERSION", webVersionName)
         buildConfigField(STRING, "SMOKE_ENV", smokeEnv)
         buildConfigField(STRING, "FIREBASE_API_KEY", cfg.apiKey)
         buildConfigField(STRING, "FIREBASE_AUTH_DOMAIN", cfg.authDomain)
@@ -70,6 +97,7 @@ kotlin {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":features:authentication:presentation:web"))
+                implementation(project(":features:chatbot:domain"))
                 implementation(project(":features:history:presentation:web"))
                 implementation(project(":features:home:domain"))
                 implementation(project(":features:home:presentation:web"))

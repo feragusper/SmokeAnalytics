@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
+import com.feragusper.smokeanalytics.apps.web.BuildKonfig
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
@@ -17,6 +18,7 @@ fun WebScaffold(
         "Home" to WebRoute.Home,
         "History" to WebRoute.History,
         "Stats" to WebRoute.Stats,
+        "Coach" to WebRoute.Coach,
         "Map" to WebRoute.Map,
         "About" to WebRoute.About,
         "Settings" to WebRoute.Settings,
@@ -50,6 +52,13 @@ fun WebScaffold(
                     ) {
                         Text(label)
                     }
+                }
+            }
+
+            Div(attrs = { classes(SmokeWebStyles.navFooter) }) {
+                Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text("Web") }
+                Div(attrs = { classes(SmokeWebStyles.navFooterBody) }) {
+                    Text(BuildKonfig.APP_VERSION)
                 }
             }
         }

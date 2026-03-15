@@ -1,5 +1,10 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.R
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
@@ -178,6 +184,15 @@ private fun PreferencesCard(
     onSave: (UserPreferences) -> Unit,
 ) {
     SettingsCard(title = "Preferences") {
+        val context = LocalContext.current
+        val locationPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { granted ->
+            val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            onSave(preferences.copy(locationTrackingEnabled = hasPermission))
+        }
+
         val packPriceText = if (preferences.packPrice == 0.0) "" else preferences.packPrice.toString()
         OutlinedTextField(
             value = packPriceText,
@@ -244,7 +259,20 @@ private fun PreferencesCard(
             }
             Switch(
                 checked = preferences.locationTrackingEnabled,
-                onCheckedChange = { checked -> onSave(preferences.copy(locationTrackingEnabled = checked)) },
+                onCheckedChange = { checked ->
+                    if (!checked) {
+                        onSave(preferences.copy(locationTrackingEnabled = false))
+                    } else if (context.hasLocationPermission()) {
+                        onSave(preferences.copy(locationTrackingEnabled = true))
+                    } else {
+                        locationPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                            )
+                        )
+                    }
+                },
                 enabled = enabled,
             )
         }
@@ -324,6 +352,12 @@ private fun AppVersionFooter() {
 private fun stringResourceSafe(id: Int, fallback: String): String = runCatching {
     androidx.compose.ui.res.stringResource(id = id)
 }.getOrDefault(fallback)
+
+private fun Context.hasLocationPermission(): Boolean {
+    val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+    val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+    return fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED
+}
 
 @CombinedPreviews
 @Composable

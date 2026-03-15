@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.apps.web.AboutWebScreen
+import com.feragusper.smokeanalytics.apps.web.CoachWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
@@ -45,6 +46,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Stats -> "Smoke Analytics | Stats"
             WebRoute.Settings -> "Smoke Analytics | Settings"
             WebRoute.Map -> "Smoke Analytics | Map"
+            WebRoute.Coach -> "Smoke Analytics | Coach"
             WebRoute.About -> "Smoke Analytics | About"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
@@ -108,6 +110,10 @@ fun AppRoot(graph: WebAppGraph) {
 
             WebRoute.Map -> MapWebScreen(
                 fetchSmokesUseCase = graph.fetchSmokesUseCase,
+            )
+
+            WebRoute.Coach -> CoachWebScreen(
+                chatbotUseCase = graph.chatbotUseCase,
             )
 
             WebRoute.About -> AboutWebScreen(

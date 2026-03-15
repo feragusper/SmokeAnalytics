@@ -48,12 +48,13 @@ fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    extraClass: String? = null,
 ) {
     ActionButton(
         text = text,
         onClick = onClick,
         enabled = enabled,
-        extraClass = SmokeWebStyles.buttonPrimary,
+        extraClass = listOfNotNull(SmokeWebStyles.buttonPrimary, extraClass).joinToString(" "),
     )
 }
 
@@ -114,7 +115,7 @@ private fun ActionButton(
     Button(
         attrs = {
             classes(SmokeWebStyles.button)
-            extraClass?.let { classes(it) }
+            extraClass?.split(" ")?.filter { it.isNotBlank() }?.let { classes(*it.toTypedArray()) }
             if (!enabled) {
                 attr("disabled", "true")
                 classes(SmokeWebStyles.buttonDisabled)
