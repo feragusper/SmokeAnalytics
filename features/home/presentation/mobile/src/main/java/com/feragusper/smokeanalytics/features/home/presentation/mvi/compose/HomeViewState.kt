@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -43,6 +44,9 @@ import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
+import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
+import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -64,6 +68,11 @@ data class HomeViewState(
     internal val smokesPerMonth: Int? = null,
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
+    internal val greetingTitle: String? = null,
+    internal val greetingMessage: String? = null,
+    internal val financialSummary: FinancialSummary? = null,
+    internal val gamificationSummary: GamificationSummary? = null,
+    internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
 
@@ -132,6 +141,11 @@ data class HomeViewState(
                 smokesPerMonth = smokesPerMonth,
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 latestSmokes = latestSmokes,
+                greetingTitle = greetingTitle,
+                greetingMessage = greetingMessage,
+                financialSummary = financialSummary,
+                gamificationSummary = gamificationSummary,
+                elapsedTone = elapsedTone,
                 intent = intent,
                 isLoading = displayLoading
             )
@@ -147,6 +161,11 @@ private fun HomeContent(
     smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
     latestSmokes: List<Smoke>?,
+    greetingTitle: String?,
+    greetingMessage: String?,
+    financialSummary: FinancialSummary?,
+    gamificationSummary: GamificationSummary?,
+    elapsedTone: ElapsedTone,
     isLoading: Boolean,
     intent: (HomeIntent) -> Unit
 ) {
@@ -155,6 +174,12 @@ private fun HomeContent(
             .padding(horizontal = 16.dp)
             .padding(top = 16.dp)
     ) {
+        GreetingSection(
+            greetingTitle = greetingTitle,
+            greetingMessage = greetingMessage,
+            financialSummary = financialSummary,
+            gamificationSummary = gamificationSummary,
+        )
         StatsSection(
             smokesPerDay = smokesPerDay,
             smokesPerWeek = smokesPerWeek,
@@ -165,7 +190,8 @@ private fun HomeContent(
 
         TimeSinceLastCigaretteSection(
             timeSinceLastCigarette = timeSinceLastCigarette,
-            isLoading = isLoading
+            isLoading = isLoading,
+            elapsedTone = elapsedTone,
         )
 
         LatestSmokesSection(
@@ -221,13 +247,14 @@ private fun StatsSection(
 @Composable
 private fun TimeSinceLastCigaretteSection(
     timeSinceLastCigarette: Pair<Long, Long>?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    elapsedTone: ElapsedTone,
 ) {
     Spacer(modifier = Modifier.height(16.dp))
     Box(
         modifier = Modifier
             .background(
-                color = MaterialTheme.colorScheme.surface,
+                color = elapsedTone.containerColor(),
                 shape = MaterialTheme.shapes.medium
             )
             .fillMaxWidth()
@@ -240,7 +267,8 @@ private fun TimeSinceLastCigaretteSection(
         ) {
             Text(
                 text = stringResource(id = R.string.home_since_your_last_cigarette),
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.labelSmall,
+                color = elapsedTone.contentColor(),
             )
 
             if (isLoading) {
@@ -265,7 +293,8 @@ private fun TimeSinceLastCigaretteSection(
                             )
                         ).joinToString(", ")
                     } ?: "--",
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    color = elapsedTone.contentColor(),
                 )
             }
         }
@@ -274,6 +303,60 @@ private fun TimeSinceLastCigaretteSection(
             contentDescription = null
         )
     }
+}
+
+@Composable
+private fun GreetingSection(
+    greetingTitle: String?,
+    greetingMessage: String?,
+    financialSummary: FinancialSummary?,
+    gamificationSummary: GamificationSummary?,
+) {
+    if (greetingTitle == null && financialSummary == null && gamificationSummary == null) return
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .padding(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            greetingTitle?.let {
+                Text(text = it, style = MaterialTheme.typography.titleMedium)
+            }
+            greetingMessage?.let {
+                Text(text = it, style = MaterialTheme.typography.bodyMedium)
+            }
+            financialSummary?.let {
+                Text(
+                    text = "Spent today ${"%.2f".format(it.spentToday)}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            gamificationSummary?.let {
+                Text(
+                    text = "Points ${it.points} · Streak ${it.currentStreakHours}h",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+}
+
+@Composable
+private fun ElapsedTone.containerColor(): Color = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
+}
+
+@Composable
+private fun ElapsedTone.contentColor(): Color = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onErrorContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
 }
 
 @Composable

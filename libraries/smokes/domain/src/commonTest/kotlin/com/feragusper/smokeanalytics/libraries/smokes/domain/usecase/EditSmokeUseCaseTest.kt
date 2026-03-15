@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -43,17 +44,17 @@ class EditSmokeUseCaseTest {
         var lastEditedSmokeDate: Instant? = null
             private set
 
-        override suspend fun editSmoke(id: String, date: Instant) {
+        override suspend fun editSmoke(id: String, timestamp: Instant, location: GeoPoint?) {
             editSmokeCalls++
             lastEditedSmokeId = id
-            lastEditedSmokeDate = date
+            lastEditedSmokeDate = timestamp
         }
 
-        override suspend fun addSmoke(date: Instant) = Unit
+        override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?) = Unit
         override suspend fun deleteSmoke(id: String) = Unit
-        override suspend fun fetchSmokes(startDate: Instant?, endDate: Instant?): List<Smoke> =
+        override suspend fun fetchSmokes(start: Instant?, end: Instant?): List<Smoke> =
             emptyList()
 
-        override suspend fun fetchSmokeCount() = error("Not needed for this test")
+        override suspend fun fetchSmokeCount(dayStartHour: Int) = error("Not needed for this test")
     }
 }

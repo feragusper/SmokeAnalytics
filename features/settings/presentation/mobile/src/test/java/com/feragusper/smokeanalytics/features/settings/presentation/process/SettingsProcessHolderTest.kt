@@ -6,6 +6,9 @@ import com.feragusper.smokeanalytics.features.settings.presentation.mvi.Settings
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,6 +29,8 @@ class SettingsProcessHolderTest {
 
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
     private val signOutUseCase: SignOutUseCase = mockk()
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
 
     /**
      * Sets up the test environment by initializing the process holder and configuring mock behaviors.
@@ -33,7 +38,12 @@ class SettingsProcessHolderTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
-        processHolder = SettingsProcessHolder(fetchSessionUseCase, signOutUseCase)
+        processHolder = SettingsProcessHolder(
+            fetchSessionUseCase = fetchSessionUseCase,
+            signOutUseCase = signOutUseCase,
+            fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = updateUserPreferencesUseCase,
+        )
     }
 
     /**
@@ -61,10 +71,11 @@ class SettingsProcessHolderTest {
             coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
                 Session.User(id = "123", email = email, displayName = "Fer")
             )
+            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
-                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedIn(email)
+                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedIn(email, UserPreferences())
                 awaitComplete()
             }
         }

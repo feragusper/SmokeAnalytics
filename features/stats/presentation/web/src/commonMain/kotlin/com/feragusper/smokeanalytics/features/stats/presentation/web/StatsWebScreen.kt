@@ -11,8 +11,11 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.datetime.Clock
@@ -26,7 +29,6 @@ import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -92,38 +94,50 @@ private fun StatsWebContent(
     onDateChange: (LocalDate) -> Unit,
     onReload: () -> Unit,
 ) {
-    Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
-
-        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Stats") }
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        PageSectionHeader(
+            title = "Trend overview",
+            eyebrow = "Stats",
+            badgeText = when {
+                state.displayLoading -> "Loading"
+                state.error != null -> "Error"
+                else -> currentPeriod.label()
+            },
+            badgeTone = when {
+                state.displayLoading -> StatusTone.Busy
+                state.error != null -> StatusTone.Error
+                else -> StatusTone.Default
+            },
+            actions = {
+                GhostButton(
+                    text = "Reload",
+                    onClick = onReload,
+                    enabled = !state.displayLoading,
+                )
+            }
+        )
 
         SurfaceCard {
             Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
-
                 Div(attrs = { classes(SmokeWebStyles.periodPills) }) {
                     StatsPeriod.entries.forEach { p ->
-                        val isSelected = p == currentPeriod
-                        val label = p.label()
-
-                        if (isSelected) {
+                        if (p == currentPeriod) {
                             PrimaryButton(
-                                text = label,
-                                onClick = { /* no-op */ },
-                                enabled = !state.displayLoading
+                                text = p.label(),
+                                onClick = { },
+                                enabled = !state.displayLoading,
                             )
                         } else {
                             GhostButton(
-                                text = label,
+                                text = p.label(),
                                 onClick = { onPeriodChange(p) },
-                                enabled = !state.displayLoading
+                                enabled = !state.displayLoading,
                             )
                         }
-
-                        Span { Text(" ") }
                     }
                 }
 
                 Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
-
                     GhostButton(
                         text = "←",
                         onClick = { onDateChange(selectedDate.shift(currentPeriod, -1)) },
@@ -152,64 +166,67 @@ private fun StatsWebContent(
                             classes(SmokeWebStyles.dateInput)
                         }
                     )
-
-                    GhostButton(
-                        text = "Reload",
-                        onClick = onReload,
-                        enabled = !state.displayLoading
-                    )
                 }
             }
         }
 
-        if (state.displayLoading) {
-            SurfaceCard { Text("Loading...") }
-        }
+        when {
+            state.error != null -> InlineErrorCard(
+                title = "Stats are unavailable",
+                message = "The chart could not be loaded for the selected period. Try reloading with the same filters.",
+                actionLabel = "Reload",
+                onAction = onReload,
+            )
 
-        if (state.error != null) {
-            SurfaceCard { Text("Something went wrong") }
-        }
-
-        state.stats?.let { stats ->
-            val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
-
-            SurfaceCard {
+            state.displayLoading || state.stats == null -> SurfaceCard {
                 Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
                     Text(currentPeriod.chartTitle())
                 }
+                Div(attrs = { classes(SmokeWebStyles.chartSkeleton) })
+            }
 
-                Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
-                    Canvas(attrs = {
-                        id(chartId)
-                        attr("width", "1200")
-                        attr("height", "420")
-                    })
-                }
+            else -> {
+                val stats = state.stats
+                val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
-                when (currentPeriod) {
-                    StatsPeriod.DAY -> LineChartJs(
-                        canvasId = chartId,
-                        title = "Today",
-                        data = stats.hourly.toCumulativeHourly()
-                    )
+                SurfaceCard {
+                    Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
+                        Text(currentPeriod.chartTitle())
+                    }
 
-                    StatsPeriod.WEEK -> BarChartJs(
-                        canvasId = chartId,
-                        title = "Week",
-                        data = stats.weekly
-                    )
+                    Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
+                        Canvas(attrs = {
+                            id(chartId)
+                            attr("width", "1200")
+                            attr("height", "420")
+                        })
+                    }
 
-                    StatsPeriod.MONTH -> BarChartJs(
-                        canvasId = chartId,
-                        title = "Month",
-                        data = stats.monthly
-                    )
+                    when (currentPeriod) {
+                        StatsPeriod.DAY -> LineChartJs(
+                            canvasId = chartId,
+                            title = "Today",
+                            data = stats.hourly.toCumulativeHourly()
+                        )
 
-                    StatsPeriod.YEAR -> BarChartJs(
-                        canvasId = chartId,
-                        title = "Year",
-                        data = stats.yearly
-                    )
+                        StatsPeriod.WEEK -> BarChartJs(
+                            canvasId = chartId,
+                            title = "Week",
+                            data = stats.weekly
+                        )
+
+                        StatsPeriod.MONTH -> BarChartJs(
+                            canvasId = chartId,
+                            title = "Month",
+                            data = stats.monthly
+                        )
+
+                        StatsPeriod.YEAR -> BarChartJs(
+                            canvasId = chartId,
+                            title = "Year",
+                            data = stats.yearly
+                        )
+                    }
                 }
             }
         }
@@ -317,7 +334,7 @@ private fun LocalDate.shift(period: StatsPeriod, amount: Int): LocalDate {
 private fun LocalDate.headerLabel(period: StatsPeriod): String = when (period) {
     StatsPeriod.DAY -> toUiDate()
     StatsPeriod.WEEK -> "Week of ${toUiDate()}"
-    StatsPeriod.MONTH -> "${monthNumber.toString().padStart(2, '0')}/${year}"
+    StatsPeriod.MONTH -> "${monthNumber.toString().padStart(2, '0')}/$year"
     StatsPeriod.YEAR -> year.toString()
 }
 
@@ -342,48 +359,41 @@ private fun String.toLocalDateOrNull(): LocalDate? {
     return runCatching { LocalDate(y, m, d) }.getOrNull()
 }
 
+private fun Map<String, Int>.toCumulativeHourly(): Map<String, Int> {
+    var runningTotal = 0
+    return entries.associate { (label, value) ->
+        runningTotal += value
+        label to runningTotal
+    }
+}
+
 private fun jsObject(): dynamic = js("({})")
 
-private fun lineDataset(
-    title: String,
-    values: List<Number>,
-): dynamic {
-    val ds = jsObject()
-    ds["label"] = title
-    ds["data"] = values.toTypedArray()
-    ds["tension"] = 0.25
-    ds["borderWidth"] = 2
-    ds["pointRadius"] = 2
-    ds["fill"] = false
-    return ds
+private fun lineDataset(title: String, values: List<Number>): dynamic {
+    val dataset = jsObject()
+    dataset["label"] = title
+    dataset["data"] = values.toTypedArray()
+    dataset["borderColor"] = "#006A6A"
+    dataset["backgroundColor"] = "rgba(0,106,106,0.18)"
+    dataset["tension"] = 0.3
+    dataset["fill"] = true
+    return dataset
 }
 
-private fun barDataset(
-    title: String,
-    values: List<Number>,
-): dynamic {
-    val ds = jsObject()
-    ds["label"] = title
-    ds["data"] = values.toTypedArray()
-    ds["borderWidth"] = 1
-    ds["fill"] = false
-    return ds
-}
-
-private fun Map<String, Int>.toCumulativeHourly(): Map<String, Int> {
-    fun hourKey(label: String): Int = label.substringBefore(":").toIntOrNull() ?: Int.MAX_VALUE
-
-    val byHour = this.entries
-        .sortedBy { hourKey(it.key) }
-        .associate { it.key to it.value }
-
-    val labels = (0..23).map { h -> h.toString().padStart(2, '0') + ":00" }
-
-    var acc = 0
-    val out = linkedMapOf<String, Int>()
-    labels.forEach { label ->
-        acc += byHour[label] ?: 0
-        out[label] = acc
-    }
-    return out
+private fun barDataset(title: String, values: List<Number>): dynamic {
+    val dataset = jsObject()
+    dataset["label"] = title
+    dataset["data"] = values.toTypedArray()
+    dataset["backgroundColor"] = arrayOf(
+        "#006A6A",
+        "#1D7B7B",
+        "#3A8C8C",
+        "#4A6363",
+        "#6D8686",
+        "#9AB0B0",
+        "#B0CCCB",
+    )
+    dataset["borderRadius"] = 10
+    dataset["maxBarThickness"] = 42
+    return dataset
 }

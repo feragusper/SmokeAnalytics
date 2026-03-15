@@ -9,7 +9,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class SmokeEntity(
-    val timestampMillis: Double = 0.0
+    val timestampMillis: Double = 0.0,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 ) {
 
     /**
@@ -17,5 +19,7 @@ data class SmokeEntity(
      */
     object Fields {
         const val TIMESTAMP_MILLIS = "timestampMillis"
+        const val LATITUDE = "latitude"
+        const val LONGITUDE = "longitude"
     }
 }

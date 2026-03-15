@@ -14,11 +14,17 @@ fun SmokeWebTheme(
     content: @Composable () -> Unit,
 ) {
     val prefersDark = remember { mutableStateOf(false) }
+    val prefersReducedMotion = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        val mql = window.matchMedia("(prefers-color-scheme: dark)")
-        prefersDark.value = mql.matches
-        mql.addEventListener("change", { _ -> prefersDark.value = mql.matches })
+        val darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)")
+        val reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+        prefersDark.value = darkModeQuery.matches
+        prefersReducedMotion.value = reducedMotionQuery.matches
+        darkModeQuery.addEventListener("change", { _ -> prefersDark.value = darkModeQuery.matches })
+        reducedMotionQuery.addEventListener("change", { _ ->
+            prefersReducedMotion.value = reducedMotionQuery.matches
+        })
     }
 
     val darkTheme = forceDarkTheme ?: prefersDark.value
@@ -31,6 +37,7 @@ fun SmokeWebTheme(
             classes(SmokeWebStyles.appRoot)
             attr("data-theme", themeAttr)
             if (darkTheme) classes(SmokeWebStyles.appRootDarkTokens)
+            if (prefersReducedMotion.value) classes(SmokeWebStyles.appRootReducedMotion)
         }
     ) {
         content()

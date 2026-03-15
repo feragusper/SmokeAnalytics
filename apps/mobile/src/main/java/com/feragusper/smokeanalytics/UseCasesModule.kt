@@ -6,6 +6,9 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -60,6 +63,16 @@ object UseCasesModule {
     fun provideFetchSmokeCountListUseCase(
         repo: SmokeRepository
     ) = FetchSmokeCountListUseCase(repo)
+
+    @Provides
+    fun provideFetchUserPreferencesUseCase(
+        repo: UserPreferencesRepository
+    ) = FetchUserPreferencesUseCase(repo)
+
+    @Provides
+    fun provideUpdateUserPreferencesUseCase(
+        repo: UserPreferencesRepository
+    ) = UpdateUserPreferencesUseCase(repo)
 
     @Provides
     fun provideChatbotUseCase(

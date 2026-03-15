@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.stats.presentation.web
 
 import com.feragusper.smokeanalytics.features.stats.presentation.web.process.StatsProcessHolder
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 
 /**
@@ -21,8 +22,9 @@ class StatsWebDependencies(
  */
 fun createStatsWebDependencies(
     fetchSmokeStatsUseCase: FetchSmokeStatsUseCase,
+    fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
 ): StatsWebDependencies {
     return StatsWebDependencies(
-        processHolder = StatsProcessHolder(fetchSmokeStatsUseCase),
+        processHolder = StatsProcessHolder(fetchSmokeStatsUseCase, fetchUserPreferencesUseCase),
     )
 }

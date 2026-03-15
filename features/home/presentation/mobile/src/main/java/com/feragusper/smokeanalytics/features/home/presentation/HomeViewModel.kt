@@ -13,6 +13,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.G
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
+import com.feragusper.smokeanalytics.features.home.domain.elapsedToneFrom
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
@@ -124,6 +125,14 @@ class HomeViewModel @Inject constructor(
                     smokesPerMonth = result.smokeCountListResult.countByMonth,
                     latestSmokes = result.smokeCountListResult.todaysSmokes,
                     timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
+                    greetingTitle = result.greetingState.title,
+                    greetingMessage = result.greetingState.message,
+                    financialSummary = result.financialSummary,
+                    gamificationSummary = result.gamificationSummary,
+                    elapsedTone = elapsedToneFrom(
+                        result.smokeCountListResult.timeSinceLastCigarette.first,
+                        result.smokeCountListResult.timeSinceLastCigarette.second,
+                    ),
                 )
             }
 

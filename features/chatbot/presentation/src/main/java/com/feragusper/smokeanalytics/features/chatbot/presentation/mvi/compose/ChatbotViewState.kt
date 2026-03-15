@@ -1,13 +1,18 @@
 package com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.compose
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -56,10 +61,32 @@ data class ChatbotViewState(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Your personal smoke-free coach",
+                text = "Coach",
                 style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Ask for help with cravings, slips, or today's pattern.",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "The coach is meant to be practical: short answers, one next step, no fluff.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             LazyColumn(
                 modifier = Modifier
@@ -78,7 +105,11 @@ data class ChatbotViewState(
                         Text(
                             text = message.text,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = if (message.isFromUser) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            },
                             textAlign = if (message.isFromUser) TextAlign.End else TextAlign.Start,
                             modifier = Modifier.padding(12.dp)
                         )
@@ -96,7 +127,7 @@ data class ChatbotViewState(
 
             if (error != null) {
                 Text(
-                    text = error,
+                    text = "Coach unavailable. Try again in a moment.",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -111,7 +142,7 @@ data class ChatbotViewState(
                 TextField(
                     value = input,
                     onValueChange = { input = it },
-                    placeholder = { Text("Decile algo al coach...") },
+                    placeholder = { Text("I have a craving right now. Help me delay the next one.") },
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 8.dp)
@@ -124,7 +155,24 @@ data class ChatbotViewState(
                         }
                     }
                 ) {
-                    Text("Enviar")
+                    Text("Send")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { intent(ChatbotIntent.SendMessage("How am I doing today?")) },
+                    enabled = !isLoading,
+                ) {
+                    Text("Progress")
+                }
+                Button(
+                    onClick = { intent(ChatbotIntent.SendMessage("I slipped and smoked. Help me reset.")) },
+                    enabled = !isLoading,
+                ) {
+                    Text("Reset")
                 }
             }
         }

@@ -13,6 +13,7 @@ kotlin {
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
                 implementation(project(":libraries:authentication:presentation:web"))
+                implementation(project(":libraries:design:web"))
 
                 implementation(compose.runtime)
                 implementation(compose.html.core)

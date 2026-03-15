@@ -1,19 +1,29 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.financialSummary
+import com.feragusper.smokeanalytics.features.home.domain.gamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
+import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 
 /**
@@ -34,7 +44,10 @@ class HomeProcessHolder @Inject constructor(
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
-    private val syncWithWearUseCase: SyncWithWearUseCase
+    private val syncWithWearUseCase: SyncWithWearUseCase,
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val locationCaptureService: LocationCaptureService,
+    private val widgetRefreshService: WidgetRefreshService,
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
 
     /**
@@ -65,7 +78,28 @@ class HomeProcessHolder @Inject constructor(
             is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
             is Session.LoggedIn -> {
                 emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
-                emit(HomeResult.FetchSmokesSuccess(fetchSmokeCountListUseCase.invoke()))
+                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val smokeCounts = fetchSmokeCountListUseCase.invoke(preferences.dayStartHour)
+                emit(
+                    HomeResult.FetchSmokesSuccess(
+                        smokeCountListResult = smokeCounts,
+                        preferences = preferences,
+                        greetingState = greetingStateFor(
+                            hourOfDay = kotlinx.datetime.Clock.System.now()
+                                .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
+                            todayCount = smokeCounts.countByToday,
+                            currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
+                        ),
+                        financialSummary = financialSummary(
+                            todayCount = smokeCounts.countByToday,
+                            weekCount = smokeCounts.countByWeek,
+                            monthCount = smokeCounts.countByMonth,
+                            preferences = preferences,
+                        ),
+                        gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
+                    )
+                )
+                widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
             }
         }
     }.catchAndLog {
@@ -81,6 +115,7 @@ class HomeProcessHolder @Inject constructor(
     private fun processDeleteSmoke(intent: HomeIntent.DeleteSmoke) = flow {
         emit(HomeResult.Loading)
         deleteSmokeUseCase.invoke(intent.id)
+        refreshWidgetSnapshot()
         emit(HomeResult.DeleteSmokeSuccess)
         syncWithWearUseCase.invoke()
     }.catchAndLog {
@@ -96,6 +131,7 @@ class HomeProcessHolder @Inject constructor(
     private fun processEditSmoke(intent: HomeIntent.EditSmoke) = flow {
         emit(HomeResult.Loading)
         editSmokeUseCase.invoke(intent.id, intent.date)
+        refreshWidgetSnapshot()
         emit(HomeResult.EditSmokeSuccess)
         syncWithWearUseCase.invoke()
     }.catchAndLog {
@@ -132,12 +168,27 @@ class HomeProcessHolder @Inject constructor(
 
             is Session.LoggedIn -> {
                 emit(HomeResult.Loading)
-                addSmokeUseCase.invoke()
+                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val location = if (preferences.locationTrackingEnabled) {
+                    locationCaptureService.captureCurrentLocation()?.let {
+                        GeoPoint(latitude = it.latitude, longitude = it.longitude)
+                    }
+                } else {
+                    null
+                }
+                addSmokeUseCase.invoke(location = location)
+                refreshWidgetSnapshot()
                 emit(HomeResult.AddSmokeSuccess)
                 syncWithWearUseCase.invoke()
             }
         }
     }.catchAndLog {
         emit(HomeResult.Error.Generic)
+    }
+
+    private suspend fun refreshWidgetSnapshot() {
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val smokeCounts = fetchSmokeCountListUseCase(preferences.dayStartHour)
+        widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
     }
 }

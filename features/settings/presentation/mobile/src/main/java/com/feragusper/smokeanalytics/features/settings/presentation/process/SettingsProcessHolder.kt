@@ -6,6 +6,9 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.process
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -23,6 +26,8 @@ import javax.inject.Inject
 class SettingsProcessHolder @Inject constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val signOutUseCase: SignOutUseCase,
+    private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
 ) : MVIProcessHolder<SettingsIntent, SettingsResult> {
 
     /**
@@ -34,6 +39,7 @@ class SettingsProcessHolder @Inject constructor(
     override fun processIntent(intent: SettingsIntent): Flow<SettingsResult> = when (intent) {
         SettingsIntent.FetchUser -> processFetchUser()
         SettingsIntent.SignOut -> processSignOut()
+        is SettingsIntent.UpdatePreferences -> processUpdatePreferences(intent.preferences)
     }
 
     /**
@@ -47,7 +53,12 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Loading)
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
-            is Session.LoggedIn -> emit(SettingsResult.UserLoggedIn(session.user.email))
+            is Session.LoggedIn -> emit(
+                SettingsResult.UserLoggedIn(
+                    email = session.user.email,
+                    preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences()),
+                )
+            )
         }
     }
 
@@ -62,5 +73,15 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Loading)
         signOutUseCase()
         emit(SettingsResult.UserLoggedOut)
+    }
+
+    private fun processUpdatePreferences(preferences: UserPreferences): Flow<SettingsResult> = flow {
+        emit(SettingsResult.Loading)
+        updateUserPreferencesUseCase(preferences)
+        when (val session = fetchSessionUseCase()) {
+            is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
+            is Session.LoggedIn -> emit(SettingsResult.UserLoggedIn(session.user.email, preferences))
+        }
+        emit(SettingsResult.PreferencesSaved)
     }
 }

@@ -2,11 +2,13 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.model
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.periodUntil
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
@@ -31,17 +33,15 @@ data class SmokeStats(
             day: Int?,  // 1..31 or null
             timeZone: TimeZone = TimeZone.currentSystemDefault(),
             now: Instant = Clock.System.now(),
+            dayStartHour: Int = 0,
         ): SmokeStats {
             val monthStart = LocalDate(year, month, 1)
             val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
             val daysInMonth = monthStart.daysUntil(nextMonthStart)
 
-            val monthStartInstant = monthStart.atStartOfDayIn(timeZone)
-            val nextMonthStartInstant = nextMonthStart.atStartOfDayIn(timeZone)
-
             val monthSmokes = smokes
                 .asSequence()
-                .map { it to it.date.toLocalDateTime(timeZone) }
+                .map { smoke -> smoke to smoke.date.minus(dayStartHour, DateTimeUnit.HOUR, timeZone).toLocalDateTime(timeZone) }
                 .filter { (_, dt) -> dt.date.year == year && dt.date.monthNumber == month }
                 .toList()
 
@@ -94,7 +94,7 @@ data class SmokeStats(
 
             // Hourly: "00:00".."23:00"
             val hourlyStats = (0..23).associate { hour ->
-                hour.toTwoDigits() + ":00" to 0
+                ((hour + dayStartHour) % 24).toTwoDigits() + ":00" to 0
             }.toMutableMap()
 
             val daySmokes = if (day != null) {
@@ -109,9 +109,13 @@ data class SmokeStats(
 
             // totalWeek: última semana “rolling” respecto a `now` (7 días hacia atrás)
             val totalWeek = run {
-                val nowDateTime = now.toLocalDateTime(timeZone)
-                val start = nowDateTime.date.plus(DatePeriod(days = -6)).atStartOfDayIn(timeZone)
-                val end = nowDateTime.date.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone)
+                val shiftedNow = now.minus(dayStartHour, DateTimeUnit.HOUR, timeZone).toLocalDateTime(timeZone)
+                val start = shiftedNow.date.plus(DatePeriod(days = -6))
+                    .atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                val end = shiftedNow.date.plus(DatePeriod(days = 1))
+                    .atStartOfDayIn(timeZone)
+                    .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
                 smokes.count { it.date >= start && it.date < end }
             }
 

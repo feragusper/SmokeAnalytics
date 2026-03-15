@@ -2,10 +2,14 @@ package com.feragusper.smokeanalytics
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.apps.web.AboutWebScreen
+import com.feragusper.smokeanalytics.apps.web.CoachWebScreen
+import com.feragusper.smokeanalytics.apps.web.MapWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebDependencies
@@ -17,14 +21,10 @@ import com.feragusper.smokeanalytics.features.settings.presentation.web.Settings
 import com.feragusper.smokeanalytics.features.settings.presentation.web.createSettingsWebDependencies
 import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
 import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
+import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.events.Event
 
-/**
- * The root composable for the web application.
- *
- * @param graph The dependency graph for the web application.
- */
 @Composable
 fun AppRoot(graph: WebAppGraph) {
     var route by remember {
@@ -39,6 +39,19 @@ fun AppRoot(graph: WebAppGraph) {
         onDispose { window.removeEventListener("hashchange", handler) }
     }
 
+    LaunchedEffect(route) {
+        document.title = when (route) {
+            WebRoute.Home -> "Smoke Analytics | Home"
+            WebRoute.History -> "Smoke Analytics | History"
+            WebRoute.Stats -> "Smoke Analytics | Stats"
+            WebRoute.Settings -> "Smoke Analytics | Settings"
+            WebRoute.Map -> "Smoke Analytics | Map"
+            WebRoute.Coach -> "Smoke Analytics | Coach"
+            WebRoute.About -> "Smoke Analytics | About"
+            WebRoute.Auth -> "Smoke Analytics | Sign in"
+        }
+    }
+
     val homeDeps = remember(graph) {
         HomeWebDependencies(homeProcessHolder = graph.homeProcessHolder)
     }
@@ -51,61 +64,68 @@ fun AppRoot(graph: WebAppGraph) {
                 deleteSmokeUseCase = graph.deleteSmokeUseCase,
                 fetchSmokesUseCase = graph.fetchSmokesUseCase,
                 fetchSessionUseCase = graph.fetchSessionUseCase,
+                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+                locationCaptureService = graph.locationCaptureService,
             )
         )
     }
 
-    when (route) {
-        WebRoute.Home, WebRoute.Stats, WebRoute.Settings -> {
-            WebScaffold(
-                route = route,
-                onNavigate = ::navigateTo,
-            ) {
-                when (route) {
-                    WebRoute.Home -> HomeWebScreen(
-                        deps = homeDeps,
-                        onNavigateToHistory = { navigateTo(WebRoute.History) },
-                    )
+    val authDeps = remember(graph) {
+        createAuthenticationWebDependencies(
+            fetchSessionUseCase = graph.fetchSessionUseCase,
+            signOutUseCase = graph.signOutUseCase,
+            signInWithGoogle = { }
+        )
+    }
 
-                    WebRoute.Stats -> {
-                        val statsDeps = remember(graph) {
-                            createStatsWebDependencies(fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase)
-                        }
-                        StatsWebScreen(deps = statsDeps)
-                    }
+    val statsDeps = remember(graph) {
+        createStatsWebDependencies(
+            fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+        )
+    }
 
-                    WebRoute.Settings -> {
-                        val settingsDeps = remember(graph) {
-                            createSettingsWebDependencies(
-                                fetchSessionUseCase = graph.fetchSessionUseCase,
-                                signOutUseCase = graph.signOutUseCase,
-                            )
-                        }
-                        SettingsWebScreen(deps = settingsDeps)
-                    }
+    val settingsDeps = remember(graph) {
+        createSettingsWebDependencies(
+            fetchSessionUseCase = graph.fetchSessionUseCase,
+            signOutUseCase = graph.signOutUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
+        )
+    }
 
-                    else -> Unit
-                }
-            }
-        }
+    WebScaffold(
+        route = route,
+        onNavigate = ::navigateTo,
+    ) {
+        when (route) {
+            WebRoute.Home -> HomeWebScreen(
+                deps = homeDeps,
+                onNavigateToHistory = { navigateTo(WebRoute.History) },
+            )
 
-        WebRoute.Auth -> {
-            val authDeps = remember(graph) {
-                createAuthenticationWebDependencies(
-                    fetchSessionUseCase = graph.fetchSessionUseCase,
-                    signOutUseCase = graph.signOutUseCase,
-                    signInWithGoogle = { /* handled by UI component */ }
-                )
-            }
+            WebRoute.Stats -> StatsWebScreen(deps = statsDeps)
 
-            AuthenticationWebScreen(
+            WebRoute.Settings -> SettingsWebScreen(deps = settingsDeps)
+
+            WebRoute.Map -> MapWebScreen(
+                fetchSmokesUseCase = graph.fetchSmokesUseCase,
+            )
+
+            WebRoute.Coach -> CoachWebScreen(
+                chatbotUseCase = graph.chatbotUseCase,
+            )
+
+            WebRoute.About -> AboutWebScreen(
+                onShare = { shareSmokeAnalytics() }
+            )
+
+            WebRoute.Auth -> AuthenticationWebScreen(
                 deps = authDeps,
                 onLoggedIn = { navigateTo(WebRoute.Home) }
             )
-        }
 
-        WebRoute.History -> {
-            HistoryWebScreen(
+            WebRoute.History -> HistoryWebScreen(
                 deps = historyDeps,
                 onNavigateUp = { navigateTo(WebRoute.Home) },
                 onNavigateToAuth = { navigateTo(WebRoute.Auth) },
@@ -118,5 +138,20 @@ private fun navigateTo(route: WebRoute) {
     val target = route.toHash()
     if (window.location.hash != target) {
         window.location.hash = target
+    }
+}
+
+private suspend fun shareSmokeAnalytics() {
+    val shareText = "Smoke Analytics helps you track smokes, streaks, and spending."
+    val shareUrl = window.location.origin
+    val nav = js("navigator")
+
+    try {
+        if (js("typeof navigator.share === 'function'") as Boolean) {
+            nav.share(js("{ title: 'Smoke Analytics', text: shareText, url: shareUrl }"))
+        } else if (js("navigator.clipboard && navigator.clipboard.writeText") as Boolean) {
+            nav.clipboard.writeText("$shareText $shareUrl")
+        }
+    } catch (_: Throwable) {
     }
 }

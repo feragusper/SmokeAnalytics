@@ -27,15 +27,17 @@ class ChatbotViewModel @Inject constructor(
 
         is ChatbotResult.UserMessage -> previous.copy(
             messages = previous.messages + result.message,
-            isLoading = true
+            isLoading = true,
+            error = null,
         )
 
         is ChatbotResult.CoachMessage -> previous.copy(
             messages = previous.messages + result.message,
-            isLoading = false
+            isLoading = false,
+            error = null,
         )
 
-        is ChatbotResult.Loading -> previous.copy(isLoading = true)
+        is ChatbotResult.Loading -> previous.copy(isLoading = true, error = null)
 
         is ChatbotResult.Failure -> previous.copy(
             error = result.reason,

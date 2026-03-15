@@ -9,10 +9,15 @@ import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
+import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonList
+import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeRow
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -28,8 +33,6 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -51,39 +54,21 @@ fun HistoryWebScreen(
     val selectedLocalDate = selectedDayStart.toLocalDateTime(tz).date
     val selectedDateLabel = selectedLocalDate.toUiDate()
 
-    Div(attrs = { classes(SmokeWebStyles.mainInner) }) {
-
-        // Title
-        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-            Text("History • $selectedDateLabel")
-        }
-
-        // Errors
-        state.error?.let { err ->
-            SurfaceCard {
-                Text(
-                    when (err) {
-                        HistoryResult.Error.NotLoggedIn -> "Not logged in"
-                        HistoryResult.Error.Generic -> "Something went wrong"
-                    }
-                )
-
-                if (err == HistoryResult.Error.NotLoggedIn) {
-                    Div {
-                        PrimaryButton(
-                            text = "Go to sign in",
-                            onClick = onNavigateToAuth,
-                            enabled = !state.displayLoading
-                        )
-                    }
-                }
-            }
-        }
-
-        // Top actions (Back / Add / Refresh)
-        Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
-
-            Div {
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        PageSectionHeader(
+            title = "History for $selectedDateLabel",
+            eyebrow = "History",
+            badgeText = when {
+                state.displayLoading -> "Loading day"
+                state.error != null -> "Error"
+                else -> "${state.smokes.size} entries"
+            },
+            badgeTone = when {
+                state.displayLoading -> StatusTone.Busy
+                state.error != null -> StatusTone.Error
+                else -> StatusTone.Default
+            },
+            actions = {
                 GhostButton(
                     text = "Back",
                     onClick = {
@@ -92,80 +77,89 @@ fun HistoryWebScreen(
                     },
                     enabled = !state.displayLoading
                 )
-            }
-
-            Div {
                 PrimaryButton(
                     text = "Add smoke",
                     onClick = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
                     enabled = !state.displayLoading
                 )
-                Span { Text(" ") }
                 GhostButton(
                     text = "Refresh",
                     onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart)) },
                     enabled = !state.displayLoading
                 )
             }
+        )
+
+        if (state.error != null) {
+            InlineErrorCard(
+                title = if (state.error == HistoryResult.Error.NotLoggedIn) "Sign in required" else "History could not be loaded",
+                message = when (state.error) {
+                    HistoryResult.Error.NotLoggedIn -> "Your session expired. Sign in again to browse and edit smoke history."
+                    HistoryResult.Error.Generic -> "The selected day's history could not be loaded. Try refreshing the day."
+                    else -> "The selected day's history could not be loaded. Try refreshing the day."
+                },
+                actionLabel = if (state.error == HistoryResult.Error.NotLoggedIn) "Go to sign in" else "Retry",
+                onAction = if (state.error == HistoryResult.Error.NotLoggedIn) {
+                    onNavigateToAuth
+                } else {
+                    { store.send(HistoryIntent.FetchSmokes(selectedDayStart)) }
+                },
+            )
         }
 
-        // Day navigation + picker
-        Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
-            Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+        SurfaceCard {
+            Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
+                Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+                    GhostButton(
+                        text = "←",
+                        onClick = {
+                            store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz)))
+                        },
+                        enabled = !state.displayLoading
+                    )
 
-                GhostButton(
-                    text = "←",
-                    onClick = {
-                        store.send(
-                            HistoryIntent.FetchSmokes(
-                                selectedDayStart.minusDays(1, tz)
-                            )
-                        )
-                    },
-                    enabled = !state.displayLoading
-                )
+                    Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
+                        Text(selectedDateLabel)
+                    }
 
-                Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
-                    Text(selectedDateLabel)
+                    GhostButton(
+                        text = "→",
+                        onClick = {
+                            store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz)))
+                        },
+                        enabled = !state.displayLoading
+                    )
+
+                    Input(
+                        type = InputType.Date,
+                        attrs = {
+                            classes(SmokeWebStyles.dateInput)
+                            value(selectedLocalDate.toHtmlDate())
+                            if (state.displayLoading) disabled()
+                            onInput { e ->
+                                val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                                store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+                            }
+                        }
+                    )
                 }
 
-                GhostButton(
-                    text = "→",
-                    onClick = {
-                        store.send(
-                            HistoryIntent.FetchSmokes(
-                                selectedDayStart.plusDays(1, tz)
-                            )
-                        )
-                    },
-                    enabled = !state.displayLoading
-                )
-
-                Input(
-                    type = InputType.Date,
-                    attrs = {
-                        classes(SmokeWebStyles.dateInput)
-                        value(selectedLocalDate.toHtmlDate())
-                        if (state.displayLoading) disabled()
-                        onInput { e ->
-                            val picked = e.value.toLocalDateOrNull() ?: return@onInput
-                            store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
-                        }
-                    }
-                )
-            }
-
-            Div {
-                Text("Smokes: ${state.smokes.size}")
+                Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
+                    Text("Smokes: ${state.smokes.size}")
+                }
             }
         }
 
-        if (state.displayLoading) {
-            SurfaceCard { Text("Loading...") }
-        } else if (state.smokes.isEmpty()) {
-            SurfaceCard { Text("No smokes for this day.") }
-        } else {
-            Div(attrs = { classes(SmokeWebStyles.list) }) {
+        when {
+            state.displayLoading -> LoadingSkeletonList(rows = 5)
+            state.smokes.isEmpty() -> EmptyStateCard(
+                title = "No smokes for this day",
+                message = "Shift the date, add a new smoke for this day, or reload if you expected entries here.",
+                actionLabel = "Add smoke",
+                onAction = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
+            )
+
+            else -> Div(attrs = { classes(SmokeWebStyles.list) }) {
                 state.smokes.forEach { smoke ->
                     val id = smoke.id
                     val isEditing = editing[id] == true
@@ -193,8 +187,9 @@ fun HistoryWebScreen(
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
                                 Text("Edit smoke")
                             }
-
-                            P { Text("Current: ${local.date.toUiDate()} ${local.toUiTime()}") }
+                            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                Text("${local.date.toUiDate()} ${local.toUiTime()}")
+                            }
 
                             Input(
                                 type = InputType.DateTimeLocal,
@@ -208,7 +203,7 @@ fun HistoryWebScreen(
                                 }
                             )
 
-                            Div {
+                            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                                 PrimaryButton(
                                     text = "Apply",
                                     enabled = !state.displayLoading,
@@ -220,7 +215,6 @@ fun HistoryWebScreen(
                                         editing[id] = false
                                     }
                                 )
-                                Span { Text(" ") }
                                 GhostButton(
                                     text = "Cancel",
                                     enabled = !state.displayLoading,

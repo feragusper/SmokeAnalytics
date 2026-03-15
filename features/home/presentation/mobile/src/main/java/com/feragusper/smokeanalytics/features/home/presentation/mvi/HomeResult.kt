@@ -1,7 +1,11 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
+import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
+import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.GreetingState
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
  * Represents the possible outcomes of processing [HomeIntent] actions.
@@ -73,7 +77,11 @@ sealed interface HomeResult : MVIResult {
      * @property smokeCountListResult The result containing counts of smokes and latest smokes.
      */
     data class FetchSmokesSuccess(
-        val smokeCountListResult: SmokeCountListResult
+        val smokeCountListResult: SmokeCountListResult,
+        val preferences: UserPreferences,
+        val greetingState: GreetingState,
+        val financialSummary: FinancialSummary,
+        val gamificationSummary: GamificationSummary,
     ) : HomeResult
 
     /**

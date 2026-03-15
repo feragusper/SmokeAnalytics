@@ -9,6 +9,11 @@ plugins {
 
 private val smokeEnv: String = providers.gradleProperty("smoke.env").orNull ?: "staging"
 
+val gitCode: Int by lazy { smokeGitCode(rootProject.projectDir) }
+val productVersionName = smokeProductVersion(rootProject.projectDir)
+val webVersionName = smokeWebVersionName(rootProject.projectDir, smokeEnv)
+val webReleaseTag = smokePlatformTag("web", webVersionName)
+
 private data class WebFirebaseConfig(
     val apiKey: String,
     val authDomain: String,
@@ -42,6 +47,7 @@ buildkonfig {
     packageName = "com.feragusper.smokeanalytics.apps.web"
 
     defaultConfigs {
+        buildConfigField(STRING, "APP_VERSION", webVersionName)
         buildConfigField(STRING, "SMOKE_ENV", smokeEnv)
         buildConfigField(STRING, "FIREBASE_API_KEY", cfg.apiKey)
         buildConfigField(STRING, "FIREBASE_AUTH_DOMAIN", cfg.authDomain)
@@ -65,9 +71,12 @@ kotlin {
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
                 implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:preferences:domain"))
+                implementation(project(":libraries:preferences:data:web"))
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":features:authentication:presentation:web"))
+                implementation(project(":features:chatbot:domain"))
                 implementation(project(":features:history:presentation:web"))
                 implementation(project(":features:home:domain"))
                 implementation(project(":features:home:presentation:web"))
@@ -94,4 +103,16 @@ val prepareFirebaseHosting by tasks.registering(Sync::class) {
     from(webpackOut)
     from(resourcesOut)
     into(firebaseOut)
+}
+
+tasks.register("printProductVersion") {
+    doLast { println(productVersionName) }
+}
+
+tasks.register("printWebVersionName") {
+    doLast { println(webVersionName) }
+}
+
+tasks.register("printWebReleaseTag") {
+    doLast { println(webReleaseTag) }
 }

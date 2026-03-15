@@ -14,6 +14,7 @@ kotlin {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:logging"))
+                implementation(project(":libraries:preferences:domain"))
                 implementation(project(":libraries:design:web"))
                 implementation(project(":features:home:domain"))
 

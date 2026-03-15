@@ -61,23 +61,31 @@ class SettingsWebStore(
             SettingsResult.Loading -> previous.copy(
                 displayLoading = true,
                 errorMessage = null,
+                infoMessage = null,
             )
 
             is SettingsResult.UserLoggedIn -> previous.copy(
                 displayLoading = false,
                 currentEmail = result.email,
+                preferences = result.preferences,
                 errorMessage = null,
             )
 
             SettingsResult.UserLoggedOut -> previous.copy(
                 displayLoading = false,
                 currentEmail = null,
+                preferences = previous.preferences,
                 errorMessage = null,
             )
 
-            SettingsResult.ErrorGeneric -> previous.copy(
+            is SettingsResult.ErrorGeneric -> previous.copy(
                 displayLoading = false,
-                errorMessage = "Something went wrong",
+                errorMessage = result.message,
+            )
+
+            SettingsResult.PreferencesSaved -> previous.copy(
+                displayLoading = false,
+                infoMessage = "Saved",
             )
         }
 

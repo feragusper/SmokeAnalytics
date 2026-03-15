@@ -135,6 +135,15 @@ class SmokeRepositoryImplTest {
 
             val documentRef = mockk<DocumentReference>()
             every { collectionReference.document(id) } returns documentRef
+            every { documentRef.get() } answers {
+                mockk<Task<DocumentSnapshot>>().apply {
+                    every { isComplete } returns true
+                    every { isSuccessful } returns true
+                    every { exception } returns null
+                    every { isCanceled } returns false
+                    every { result } returns mockDocumentSnapshot(id, date)
+                }
+            }
 
             every { documentRef.set(any<SmokeEntity>()) } answers {
                 mockk<Task<Void>>().apply {
@@ -212,6 +221,8 @@ class SmokeRepositoryImplTest {
                 every { this@apply.id } returns id
                 every { getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) } returns date.toEpochMilliseconds()
                     .toDouble()
+                every { getDouble(SmokeEntity.Fields.LATITUDE) } returns null
+                every { getDouble(SmokeEntity.Fields.LONGITUDE) } returns null
             }
         }
     }
