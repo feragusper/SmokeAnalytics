@@ -12,6 +12,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreference
 data class SettingsViewState(
     val displayLoading: Boolean = false,
     val currentEmail: String? = null,
+    val currentDisplayName: String? = null,
     val preferences: UserPreferences = UserPreferences(),
     val errorMessage: String? = null,
     val infoMessage: String? = null,

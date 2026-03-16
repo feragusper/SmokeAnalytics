@@ -44,6 +44,7 @@ class SettingsProcessHolder(
             is Session.LoggedIn -> emit(
                 SettingsResult.UserLoggedIn(
                     email = session.user.email,
+                    displayName = session.user.displayName,
                     preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences()),
                 )
             )
@@ -71,7 +72,13 @@ class SettingsProcessHolder(
         updateUserPreferencesUseCase(preferences)
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
-            is Session.LoggedIn -> emit(SettingsResult.UserLoggedIn(session.user.email, preferences))
+            is Session.LoggedIn -> emit(
+                SettingsResult.UserLoggedIn(
+                    email = session.user.email,
+                    displayName = session.user.displayName,
+                    preferences = preferences,
+                )
+            )
         }
         emit(SettingsResult.PreferencesSaved)
     }.catch {

@@ -67,6 +67,7 @@ class SettingsWebStore(
             is SettingsResult.UserLoggedIn -> previous.copy(
                 displayLoading = false,
                 currentEmail = result.email,
+                currentDisplayName = result.displayName,
                 preferences = result.preferences,
                 errorMessage = null,
             )
@@ -74,6 +75,7 @@ class SettingsWebStore(
             SettingsResult.UserLoggedOut -> previous.copy(
                 displayLoading = false,
                 currentEmail = null,
+                currentDisplayName = null,
                 preferences = previous.preferences,
                 errorMessage = null,
             )

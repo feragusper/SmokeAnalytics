@@ -64,6 +64,7 @@ class SettingsViewModel @Inject constructor(
         is SettingsResult.UserLoggedIn -> previous.copy(
             displayLoading = false,
             currentEmail = result.email,
+            currentDisplayName = result.displayName,
             preferences = result.preferences,
             infoMessage = null,
         )
@@ -74,6 +75,7 @@ class SettingsViewModel @Inject constructor(
         SettingsResult.UserLoggedOut -> previous.copy(
             displayLoading = false,
             currentEmail = null,
+            currentDisplayName = null,
             preferences = UserPreferences(),
             infoMessage = null,
         )

@@ -1,13 +1,14 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,23 +16,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -49,6 +60,7 @@ import com.valentinilk.shimmer.shimmer
 data class SettingsViewState(
     internal val displayLoading: Boolean = false,
     internal val currentEmail: String? = null,
+    internal val currentDisplayName: String? = null,
     internal val preferences: UserPreferences = UserPreferences(),
     internal val infoMessage: String? = null,
 ) : MVIViewState<SettingsIntent> {
@@ -65,6 +77,12 @@ data class SettingsViewState(
         intent: (SettingsIntent) -> Unit,
         onOpenAbout: () -> Unit,
     ) {
+        var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
+
+        LaunchedEffect(preferences, currentEmail) {
+            draftPreferences = preferences
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,15 +97,18 @@ data class SettingsViewState(
 
             SessionCard(
                 currentEmail = currentEmail,
+                currentDisplayName = currentDisplayName,
                 displayLoading = displayLoading,
                 onSignOut = { intent(SettingsIntent.SignOut) },
                 onSignInSuccess = { intent(SettingsIntent.FetchUser) },
             )
 
             PreferencesCard(
-                preferences = preferences,
+                preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
-                onSave = { intent(SettingsIntent.UpdatePreferences(it)) },
+                onPreferencesChange = { draftPreferences = it },
+                onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
+                onReset = { draftPreferences = preferences }
             )
 
             AccountTierCard(tier = preferences.accountTier)
@@ -116,51 +137,92 @@ private fun ActionsCard(
     onOpenAbout: () -> Unit,
     enabled: Boolean,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     SettingsCard(title = "More") {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = enabled, onClick = onOpenAbout),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("About", style = MaterialTheme.typography.bodyLarge)
+                Text("Current tier", style = MaterialTheme.typography.bodySmall)
                 Text(
-                    "Version, links, sharing and plan details.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = currentTier.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
-            TextButton(onClick = onOpenAbout, enabled = enabled) {
-                Text("Open")
+            Box {
+                OutlinedButton(
+                    onClick = { menuExpanded = true },
+                    enabled = enabled,
+                ) {
+                    Text("More")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("About") },
+                        onClick = {
+                            menuExpanded = false
+                            onOpenAbout()
+                        }
+                    )
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Current tier: ${currentTier.name}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
 @Composable
 private fun SessionCard(
     currentEmail: String?,
+    currentDisplayName: String?,
     displayLoading: Boolean,
     onSignOut: () -> Unit,
     onSignInSuccess: () -> Unit,
 ) {
     SettingsCard(title = "Session") {
         if (currentEmail != null) {
-            Text(
-                text = currentEmail,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = sessionInitials(currentDisplayName, currentEmail),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    currentDisplayName?.takeIf { it.isNotBlank() }?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Text(
+                        text = currentEmail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
+            OutlinedButton(
                 modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
                 onClick = onSignOut,
                 enabled = !displayLoading,
@@ -181,66 +243,47 @@ private fun SessionCard(
 private fun PreferencesCard(
     preferences: UserPreferences,
     enabled: Boolean,
-    onSave: (UserPreferences) -> Unit,
+    onPreferencesChange: (UserPreferences) -> Unit,
+    onSave: () -> Unit,
+    onReset: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        onPreferencesChange(preferences.copy(locationTrackingEnabled = hasPermission))
+    }
+
     SettingsCard(title = "Preferences") {
-        val context = LocalContext.current
-        val locationPermissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions(),
-        ) { granted ->
-            val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            onSave(preferences.copy(locationTrackingEnabled = hasPermission))
-        }
-
-        val packPriceText = if (preferences.packPrice == 0.0) "" else preferences.packPrice.toString()
-        OutlinedTextField(
-            value = packPriceText,
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        packPrice = value.toDoubleOrNull() ?: 0.0,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Pack price") },
+        PriceStepper(
+            label = "Pack price",
+            value = preferences.packPrice,
             enabled = enabled,
-            singleLine = true,
+            onValueChange = { onPreferencesChange(preferences.copy(packPrice = it.coerceAtLeast(0.0))) },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = preferences.cigarettesPerPack.toString(),
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        cigarettesPerPack = value.toIntOrNull()?.coerceAtLeast(1) ?: preferences.cigarettesPerPack,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Cigarettes per pack") },
+        IntegerStepper(
+            label = "Cigarettes per pack",
+            value = preferences.cigarettesPerPack,
             enabled = enabled,
-            singleLine = true,
+            minValue = 1,
+            step = 1,
+            onValueChange = { onPreferencesChange(preferences.copy(cigarettesPerPack = it)) },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = preferences.dayStartHour.toString().padStart(2, '0'),
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        dayStartHour = value.toIntOrNull()?.coerceIn(0, 23) ?: preferences.dayStartHour,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("First hour of the day") },
+        TimePreferenceRow(
+            label = "First hour of the day",
+            hour = preferences.dayStartHour,
             enabled = enabled,
-            singleLine = true,
+            onTimeSelected = { hour ->
+                onPreferencesChange(preferences.copy(dayStartHour = hour))
+            },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -248,6 +291,7 @@ private fun PreferencesCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Track location with smokes", style = MaterialTheme.typography.bodyLarge)
@@ -261,9 +305,9 @@ private fun PreferencesCard(
                 checked = preferences.locationTrackingEnabled,
                 onCheckedChange = { checked ->
                     if (!checked) {
-                        onSave(preferences.copy(locationTrackingEnabled = false))
+                        onPreferencesChange(preferences.copy(locationTrackingEnabled = false))
                     } else if (context.hasLocationPermission()) {
-                        onSave(preferences.copy(locationTrackingEnabled = true))
+                        onPreferencesChange(preferences.copy(locationTrackingEnabled = true))
                     } else {
                         locationPermissionLauncher.launch(
                             arrayOf(
@@ -275,6 +319,126 @@ private fun PreferencesCard(
                 },
                 enabled = enabled,
             )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = onReset,
+                enabled = enabled,
+            ) {
+                Text("Reset")
+            }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = onSave,
+                enabled = enabled,
+            ) {
+                Text("Save")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceStepper(
+    label: String,
+    value: Double,
+    enabled: Boolean,
+    onValueChange: (Double) -> Unit,
+) {
+    StepperRow(
+        label = label,
+        value = "€${"%.2f".format(value)}",
+        enabled = enabled,
+        onDecrease = { onValueChange((value - 0.5).coerceAtLeast(0.0)) },
+        onIncrease = { onValueChange(value + 0.5) },
+    )
+}
+
+@Composable
+private fun IntegerStepper(
+    label: String,
+    value: Int,
+    enabled: Boolean,
+    minValue: Int,
+    step: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    StepperRow(
+        label = label,
+        value = value.toString(),
+        enabled = enabled,
+        onDecrease = { onValueChange((value - step).coerceAtLeast(minValue)) },
+        onIncrease = { onValueChange(value + step) },
+    )
+}
+
+@Composable
+private fun StepperRow(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onDecrease, enabled = enabled) { Text("−") }
+            OutlinedButton(onClick = onIncrease, enabled = enabled) { Text("+") }
+        }
+    }
+}
+
+@Composable
+private fun TimePreferenceRow(
+    label: String,
+    hour: Int,
+    enabled: Boolean,
+    onTimeSelected: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "${hour.toString().padStart(2, '0')}:00",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        OutlinedButton(
+            onClick = {
+                TimePickerDialog(
+                    context,
+                    { _, selectedHour, _ -> onTimeSelected(selectedHour) },
+                    hour,
+                    0,
+                    true,
+                ).show()
+            },
+            enabled = enabled,
+        ) {
+            Text("Change")
         }
     }
 }
@@ -300,9 +464,7 @@ private fun SettingsCard(
     title: String,
     content: @Composable () -> Unit,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -348,6 +510,16 @@ private fun AppVersionFooter() {
     }
 }
 
+private fun sessionInitials(name: String?, email: String?): String {
+    val source = name?.takeIf { it.isNotBlank() } ?: email.orEmpty()
+    return source
+        .split(" ", ".", "@")
+        .filter { it.isNotBlank() }
+        .take(2)
+        .joinToString("") { it.take(1).uppercase() }
+        .ifBlank { "SA" }
+}
+
 @Composable
 private fun stringResourceSafe(id: Int, fallback: String): String = runCatching {
     androidx.compose.ui.res.stringResource(id = id)
@@ -363,7 +535,10 @@ private fun Context.hasLocationPermission(): Boolean {
 @Composable
 private fun SettingsPreview() {
     SmokeAnalyticsTheme {
-        SettingsViewState(currentEmail = "fer@gmail.com").Compose(
+        SettingsViewState(
+            currentEmail = "fer@gmail.com",
+            currentDisplayName = "Fernando Perez",
+        ).Compose(
             intent = {},
             onOpenAbout = {},
         )

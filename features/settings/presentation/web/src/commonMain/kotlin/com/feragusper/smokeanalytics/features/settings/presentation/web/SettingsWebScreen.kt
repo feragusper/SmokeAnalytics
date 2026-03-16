@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
@@ -34,28 +36,31 @@ fun SettingsWebScreen(
 
     val state by store.state.collectAsState()
 
-    state.Render(
-        onIntent = { store.send(it) }
-    )
+    state.Render(onIntent = { store.send(it) })
 }
 
 @Composable
 private fun SettingsViewState.Render(
     onIntent: (SettingsIntent) -> Unit,
 ) {
+    var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
+
+    LaunchedEffect(preferences, currentEmail) {
+        draftPreferences = preferences
+    }
+
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Session settings",
-            eyebrow = "Settings",
+            title = "Settings",
+            eyebrow = "Preferences",
             badgeText = when {
-                displayLoading -> "Loading"
+                displayLoading -> "Saving"
                 currentEmail != null -> "Signed in"
                 else -> "Guest"
             },
             badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
             actions = {
                 GhostButton(text = "About", onClick = { window.location.hash = "#about" }, enabled = !displayLoading)
-                GhostButton(text = "Refresh", onClick = { onIntent(SettingsIntent.FetchUser) }, enabled = !displayLoading)
             }
         )
 
@@ -77,37 +82,29 @@ private fun SettingsViewState.Render(
         }
 
         if (currentEmail != null) {
-            SurfaceCard {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Signed in") }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(currentEmail) }
-
-                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                    PrimaryButton(
-                        text = if (displayLoading) "Working..." else "Sign out",
-                        onClick = { onIntent(SettingsIntent.SignOut) },
-                        enabled = !displayLoading
-                    )
-                    GhostButton(
-                        text = "Refresh session",
-                        onClick = { onIntent(SettingsIntent.FetchUser) },
-                        enabled = !displayLoading
-                    )
-                }
-            }
+            SessionCard(
+                displayName = currentDisplayName,
+                email = currentEmail,
+                displayLoading = displayLoading,
+                onRefresh = { onIntent(SettingsIntent.FetchUser) },
+                onSignOut = { onIntent(SettingsIntent.SignOut) },
+            )
 
             PreferencesCard(
-                preferences = preferences,
+                preferences = draftPreferences,
                 displayLoading = displayLoading,
-                onSave = { prefs ->
+                onPreferencesChange = { draftPreferences = it },
+                onSave = {
                     onIntent(
                         SettingsIntent.UpdatePreferences(
-                            packPrice = prefs.packPrice,
-                            cigarettesPerPack = prefs.cigarettesPerPack,
-                            dayStartHour = prefs.dayStartHour,
-                            locationTrackingEnabled = prefs.locationTrackingEnabled,
+                            packPrice = draftPreferences.packPrice,
+                            cigarettesPerPack = draftPreferences.cigarettesPerPack,
+                            dayStartHour = draftPreferences.dayStartHour,
+                            locationTrackingEnabled = draftPreferences.locationTrackingEnabled,
                         )
                     )
-                }
+                },
+                onReset = { draftPreferences = preferences },
             )
 
             SurfaceCard {
@@ -117,9 +114,6 @@ private fun SettingsViewState.Render(
                 }
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                     Text("Premium is defined but not billable yet.")
-                }
-                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                    GhostButton(text = "Open About", onClick = { window.location.hash = "#about" })
                 }
             }
         } else {
@@ -139,72 +133,122 @@ private fun SettingsViewState.Render(
 }
 
 @Composable
+private fun SessionCard(
+    displayName: String?,
+    email: String,
+    displayLoading: Boolean,
+    onRefresh: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Signed in") }
+        displayName?.takeIf { it.isNotBlank() }?.let {
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(it) }
+        }
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(email) }
+
+        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+            GhostButton(
+                text = "Refresh session",
+                onClick = onRefresh,
+                enabled = !displayLoading
+            )
+            PrimaryButton(
+                text = if (displayLoading) "Working..." else "Sign out",
+                onClick = onSignOut,
+                enabled = !displayLoading
+            )
+        }
+    }
+}
+
+@Composable
 private fun PreferencesCard(
     preferences: UserPreferences,
     displayLoading: Boolean,
-    onSave: (UserPreferences) -> Unit,
+    onPreferencesChange: (UserPreferences) -> Unit,
+    onSave: () -> Unit,
+    onReset: () -> Unit,
 ) {
     SurfaceCard {
         Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
 
-        PreferenceField(
+        StepperField(
             label = "Pack price",
-            value = if (preferences.packPrice == 0.0) "" else preferences.packPrice.toString(),
+            value = "€${preferences.packPrice.formatMoney()}",
             displayLoading = displayLoading,
-            onChange = { raw ->
-                onSave(preferences.copy(packPrice = raw.toDoubleOrNull() ?: 0.0))
+            onDecrease = {
+                onPreferencesChange(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
+            },
+            onIncrease = {
+                onPreferencesChange(preferences.copy(packPrice = preferences.packPrice + 0.5))
             }
         )
 
-        PreferenceField(
+        StepperField(
             label = "Cigarettes per pack",
             value = preferences.cigarettesPerPack.toString(),
             displayLoading = displayLoading,
-            onChange = { raw ->
-                onSave(
-                    preferences.copy(
-                        cigarettesPerPack = raw.toIntOrNull()?.coerceAtLeast(1) ?: preferences.cigarettesPerPack
-                    )
+            onDecrease = {
+                onPreferencesChange(
+                    preferences.copy(cigarettesPerPack = (preferences.cigarettesPerPack - 1).coerceAtLeast(1))
                 )
+            },
+            onIncrease = {
+                onPreferencesChange(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
             }
         )
 
-        PreferenceField(
-            label = "First hour of the day",
-            value = preferences.dayStartHour.toString().padStart(2, '0'),
-            displayLoading = displayLoading,
-            onChange = { raw ->
-                onSave(preferences.copy(dayStartHour = raw.toIntOrNull()?.coerceIn(0, 23) ?: preferences.dayStartHour))
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("First hour of the day") }
+        Input(type = InputType.Time, attrs = {
+            classes(SmokeWebStyles.dateInput)
+            value("${preferences.dayStartHour.toString().padStart(2, '0')}:00")
+            if (displayLoading) disabled()
+            onInput {
+                val raw = it.value.substringBefore(":").toIntOrNull() ?: return@onInput
+                onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
             }
-        )
+        })
 
         Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
             Input(type = InputType.Checkbox, attrs = {
-                checked(preferences.locationTrackingEnabled)
+                if (preferences.locationTrackingEnabled) attr("checked", "true")
                 if (displayLoading) disabled()
                 onInput {
-                    onSave(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                    onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
                 }
             })
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                 Text("Track location with smokes")
             }
         }
+
+        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+            GhostButton(text = "Reset", onClick = onReset, enabled = !displayLoading)
+            PrimaryButton(text = "Save", onClick = onSave, enabled = !displayLoading)
+        }
     }
 }
 
 @Composable
-private fun PreferenceField(
+private fun StepperField(
     label: String,
     value: String,
     displayLoading: Boolean,
-    onChange: (String) -> Unit,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
 ) {
     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(label) }
-    Input(type = InputType.Text, attrs = {
-        classes(SmokeWebStyles.dateInput)
-        value(value)
-        if (displayLoading) disabled()
-        onInput { onChange(it.value) }
-    })
+    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+        GhostButton(text = "−", onClick = onDecrease, enabled = !displayLoading)
+        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(value) }
+        GhostButton(text = "+", onClick = onIncrease, enabled = !displayLoading)
+    }
+}
+
+private fun Double.formatMoney(): String {
+    val cents = (this * 100).toInt()
+    val whole = cents / 100
+    val fraction = (cents % 100).toString().padStart(2, '0')
+    return "$whole.$fraction"
 }
