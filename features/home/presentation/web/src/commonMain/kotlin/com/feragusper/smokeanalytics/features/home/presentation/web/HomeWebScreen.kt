@@ -63,11 +63,13 @@ fun HomeViewState.Render(
     val showingInitialSkeleton = displayLoading && latestSmokes == null
     val elapsedCardToneClass = when (elapsedTone) {
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.elapsedCardWarning
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
     }
     val addSmokeToneClass = when (elapsedTone) {
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.buttonPrimaryWarning
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
     }
@@ -79,7 +81,7 @@ fun HomeViewState.Render(
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
                 error != null -> "Needs attention"
-                else -> "Live"
+                else -> null
             },
             badgeTone = when {
                 displayRefreshLoading -> StatusTone.Busy
@@ -92,16 +94,6 @@ fun HomeViewState.Render(
                     onClick = { onIntent(HomeIntent.AddSmoke) },
                     enabled = !displayLoading,
                     extraClass = addSmokeToneClass,
-                )
-                GhostButton(
-                    text = "History",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) },
-                    enabled = !displayLoading,
-                )
-                GhostButton(
-                    text = "Refresh",
-                    onClick = { onIntent(HomeIntent.RefreshFetchSmokes) },
-                    enabled = !displayLoading,
                 )
             }
         )
@@ -199,6 +191,7 @@ fun HomeViewState.Render(
                     Text(
                         when (elapsedTone) {
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "Now $since"
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> "Careful at $since"
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "Holding $since"
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "Clear for $since"
                         }

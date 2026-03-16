@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 
 /**
  * Composable that displays the Home UI using the MVI architecture pattern.
@@ -14,7 +15,7 @@ import androidx.compose.runtime.remember
 @Composable
 fun HomeView(
     viewModel: HomeViewModel,
-    onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
+    onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
 ) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()

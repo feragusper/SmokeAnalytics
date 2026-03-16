@@ -50,6 +50,7 @@ import com.exyte.animatednavbar.animation.indendshape.Height
 import com.exyte.animatednavbar.animation.indendshape.shapeCornerRadius
 import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.ChatbotNavigator
 import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.chatbotNavigationGraph
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
@@ -122,6 +123,7 @@ private fun MainContainerScreen(
 
     var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showFab by remember { mutableStateOf(false) }
+    var fabTone by remember { mutableStateOf(ElapsedTone.Urgent) }
 
     Scaffold(
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
@@ -134,7 +136,9 @@ private fun MainContainerScreen(
             ) {
                 FloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
-                    onClick = { fabAction?.invoke() }
+                    onClick = { fabAction?.invoke() },
+                    containerColor = fabTone.containerColor(),
+                    contentColor = fabTone.contentColor(),
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -159,8 +163,9 @@ private fun MainContainerScreen(
             modifier = Modifier.padding(innerPadding),
             navigateToAuthentication = navigateToAuthentication,
             navigateToHistory = navigateToHistory,
-            onFabConfigChanged = { isVisible, action ->
+            onFabConfigChanged = { isVisible, tone, action ->
                 showFab = isVisible
+                fabTone = tone
                 fabAction = action
             },
         )
@@ -237,7 +242,7 @@ private fun MainScreenNavigationConfigurations(
     modifier: Modifier,
     navigateToAuthentication: () -> Unit,
     navigateToHistory: () -> Unit,
-    onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
+    onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
 ) {
     NavHost(
         modifier = modifier,
@@ -257,6 +262,22 @@ private fun MainScreenNavigationConfigurations(
         chatbotNavigationGraph(ChatbotNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
+}
+
+@Composable
+private fun ElapsedTone.containerColor() = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.error
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiary
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondary
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primary
+}
+
+@Composable
+private fun ElapsedTone.contentColor() = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onError
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiary
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondary
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimary
 }
 
 /**

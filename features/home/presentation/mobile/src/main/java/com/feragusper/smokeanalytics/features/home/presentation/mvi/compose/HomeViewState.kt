@@ -85,7 +85,7 @@ data class HomeViewState(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Compose(
-        onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
+        onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
         intent: (HomeIntent) -> Unit
     ) {
         val pullToRefreshState = remember {
@@ -110,13 +110,13 @@ data class HomeViewState(
         }
 
         LaunchedEffect(displayLoading) {
-            onFabConfigChanged.invoke(!displayLoading) { intent(HomeIntent.AddSmoke) }
+            onFabConfigChanged.invoke(!displayLoading, elapsedTone) { intent(HomeIntent.AddSmoke) }
         }
 
         val nestedScrollConnection = remember {
             object : NestedScrollConnection {
                 override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    onFabConfigChanged.invoke(available.y > 1) { intent(HomeIntent.AddSmoke) }
+                    onFabConfigChanged.invoke(available.y > 1, elapsedTone) { intent(HomeIntent.AddSmoke) }
                     return Offset.Zero
                 }
             }
@@ -348,6 +348,7 @@ private fun GreetingSection(
 @Composable
 private fun ElapsedTone.containerColor(): Color = when (this) {
     ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer
     ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer
     ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
 }
@@ -355,6 +356,7 @@ private fun ElapsedTone.containerColor(): Color = when (this) {
 @Composable
 private fun ElapsedTone.contentColor(): Color = when (this) {
     ElapsedTone.Urgent -> MaterialTheme.colorScheme.onErrorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiaryContainer
     ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
     ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
 }
@@ -421,7 +423,7 @@ private fun LatestSmokesSection(
 @Composable
 private fun HomeViewLoadingPreview() {
     SmokeAnalyticsTheme {
-        HomeViewState(displayLoading = true).Compose({ _, _ -> }, {})
+        HomeViewState(displayLoading = true).Compose({ _, _, _ -> }, {})
     }
 }
 
@@ -429,6 +431,6 @@ private fun HomeViewLoadingPreview() {
 @Composable
 private fun HomeViewPreview() {
     SmokeAnalyticsTheme {
-        HomeViewState().Compose({ _, _ -> }, {})
+        HomeViewState().Compose({ _, _, _ -> }, {})
     }
 }

@@ -7,6 +7,7 @@ import kotlin.math.max
 
 enum class ElapsedTone {
     Urgent,
+    Warning,
     Caution,
     Calm,
 }
@@ -31,8 +32,9 @@ data class FinancialSummary(
 )
 
 fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone = when {
-    hours >= 6 -> ElapsedTone.Calm
-    hours >= 2 || minutes >= 45 -> ElapsedTone.Caution
+    hours >= 4 -> ElapsedTone.Calm
+    hours >= 2 || minutes >= 30 -> ElapsedTone.Caution
+    hours >= 1 || minutes >= 30 -> ElapsedTone.Warning
     else -> ElapsedTone.Urgent
 }
 
