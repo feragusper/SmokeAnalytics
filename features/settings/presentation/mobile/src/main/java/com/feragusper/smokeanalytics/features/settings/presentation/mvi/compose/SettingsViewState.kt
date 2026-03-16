@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +29,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -257,8 +260,17 @@ private fun PreferencesCard(
     }
 
     SettingsCard(title = "Preferences") {
-        PriceStepper(
+        CurrencyField(
+            selected = preferences.currencySymbol,
+            enabled = enabled,
+            onCurrencySelected = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        PriceField(
             label = "Pack price",
+            currencySymbol = preferences.currencySymbol,
             value = preferences.packPrice,
             enabled = enabled,
             onValueChange = { onPreferencesChange(preferences.copy(packPrice = it.coerceAtLeast(0.0))) },
@@ -266,7 +278,7 @@ private fun PreferencesCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        IntegerStepper(
+        IntegerField(
             label = "Cigarettes per pack",
             value = preferences.cigarettesPerPack,
             enabled = enabled,
@@ -288,19 +300,11 @@ private fun PreferencesCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Track location with smokes", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "Optional. Used for map insights.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text("Track location with smokes", style = MaterialTheme.typography.bodySmall)
             Switch(
                 checked = preferences.locationTrackingEnabled,
                 onCheckedChange = { checked ->
@@ -318,6 +322,11 @@ private fun PreferencesCard(
                     }
                 },
                 enabled = enabled,
+            )
+            Text(
+                "Optional. Used for map insights.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -343,23 +352,75 @@ private fun PreferencesCard(
 }
 
 @Composable
-private fun PriceStepper(
+private fun CurrencyField(
+    selected: String,
+    enabled: Boolean,
+    onCurrencySelected: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "Currency", style = MaterialTheme.typography.bodySmall)
+        Box {
+            OutlinedButton(
+                onClick = { expanded = true },
+                enabled = enabled,
+            ) {
+                Text(selected)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                listOf("€", "$", "£").forEach { symbol ->
+                    DropdownMenuItem(
+                        text = { Text(symbol) },
+                        onClick = {
+                            expanded = false
+                            onCurrencySelected(symbol)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceField(
     label: String,
+    currencySymbol: String,
     value: Double,
     enabled: Boolean,
     onValueChange: (Double) -> Unit,
 ) {
-    StepperRow(
+    var text by remember(value) { mutableStateOf("%.2f".format(value)) }
+    LaunchedEffect(value) { text = "%.2f".format(value) }
+
+    FieldWithStepper(
         label = label,
-        value = "€${"%.2f".format(value)}",
         enabled = enabled,
+        field = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    it.toDoubleOrNull()?.let { parsed -> onValueChange(parsed.coerceAtLeast(0.0)) }
+                },
+                enabled = enabled,
+                prefix = { Text(currencySymbol) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        },
         onDecrease = { onValueChange((value - 0.5).coerceAtLeast(0.0)) },
         onIncrease = { onValueChange(value + 0.5) },
     )
 }
 
 @Composable
-private fun IntegerStepper(
+private fun IntegerField(
     label: String,
     value: Int,
     enabled: Boolean,
@@ -367,36 +428,44 @@ private fun IntegerStepper(
     step: Int,
     onValueChange: (Int) -> Unit,
 ) {
-    StepperRow(
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    LaunchedEffect(value) { text = value.toString() }
+
+    FieldWithStepper(
         label = label,
-        value = value.toString(),
         enabled = enabled,
+        field = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    it.toIntOrNull()?.let { parsed -> onValueChange(parsed.coerceAtLeast(minValue)) }
+                },
+                enabled = enabled,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        },
         onDecrease = { onValueChange((value - step).coerceAtLeast(minValue)) },
         onIncrease = { onValueChange(value + step) },
     )
 }
 
 @Composable
-private fun StepperRow(
+private fun FieldWithStepper(
     label: String,
-    value: String,
     enabled: Boolean,
+    field: @Composable () -> Unit,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, style = MaterialTheme.typography.bodySmall)
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
+        field()
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = onDecrease, enabled = enabled) { Text("−") }
             OutlinedButton(onClick = onIncrease, enabled = enabled) { Text("+") }

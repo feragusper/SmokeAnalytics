@@ -68,6 +68,7 @@ class SettingsProcessHolder(
             cigarettesPerPack = intent.cigarettesPerPack,
             dayStartHour = intent.dayStartHour,
             locationTrackingEnabled = intent.locationTrackingEnabled,
+            currencySymbol = intent.currencySymbol,
         )
         updateUserPreferencesUseCase(preferences)
         when (val session = fetchSessionUseCase()) {

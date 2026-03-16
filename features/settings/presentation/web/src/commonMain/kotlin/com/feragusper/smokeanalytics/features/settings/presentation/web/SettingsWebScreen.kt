@@ -24,6 +24,8 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Option
+import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -86,7 +88,6 @@ private fun SettingsViewState.Render(
                 displayName = currentDisplayName,
                 email = currentEmail,
                 displayLoading = displayLoading,
-                onRefresh = { onIntent(SettingsIntent.FetchUser) },
                 onSignOut = { onIntent(SettingsIntent.SignOut) },
             )
 
@@ -101,6 +102,7 @@ private fun SettingsViewState.Render(
                             cigarettesPerPack = draftPreferences.cigarettesPerPack,
                             dayStartHour = draftPreferences.dayStartHour,
                             locationTrackingEnabled = draftPreferences.locationTrackingEnabled,
+                            currencySymbol = draftPreferences.currencySymbol,
                         )
                     )
                 },
@@ -137,7 +139,6 @@ private fun SessionCard(
     displayName: String?,
     email: String,
     displayLoading: Boolean,
-    onRefresh: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     SurfaceCard {
@@ -148,11 +149,6 @@ private fun SessionCard(
         Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(email) }
 
         Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-            GhostButton(
-                text = "Refresh session",
-                onClick = onRefresh,
-                enabled = !displayLoading
-            )
             PrimaryButton(
                 text = if (displayLoading) "Working..." else "Sign out",
                 onClick = onSignOut,
@@ -173,21 +169,37 @@ private fun PreferencesCard(
     SurfaceCard {
         Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
 
-        StepperField(
+        ChoiceField(
+            label = "Currency",
+            displayLoading = displayLoading,
+            selected = preferences.currencySymbol,
+            options = listOf("€", "$", "£"),
+            onSelection = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
+        )
+
+        NumberField(
             label = "Pack price",
-            value = "€${preferences.packPrice.formatMoney()}",
+            value = preferences.packPrice,
+            prefix = preferences.currencySymbol,
+            step = 0.5,
             displayLoading = displayLoading,
             onDecrease = {
                 onPreferencesChange(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
             },
             onIncrease = {
                 onPreferencesChange(preferences.copy(packPrice = preferences.packPrice + 0.5))
-            }
+            },
+            onManualChange = { raw ->
+                raw.toDoubleOrNull()?.let { value ->
+                    onPreferencesChange(preferences.copy(packPrice = value.coerceAtLeast(0.0)))
+                }
+            },
         )
 
-        StepperField(
+        NumberField(
             label = "Cigarettes per pack",
-            value = preferences.cigarettesPerPack.toString(),
+            value = preferences.cigarettesPerPack.toDouble(),
+            step = 1.0,
             displayLoading = displayLoading,
             onDecrease = {
                 onPreferencesChange(
@@ -196,30 +208,36 @@ private fun PreferencesCard(
             },
             onIncrease = {
                 onPreferencesChange(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
-            }
+            },
+            onManualChange = { raw ->
+                raw.toIntOrNull()?.let { value ->
+                    onPreferencesChange(preferences.copy(cigarettesPerPack = value.coerceAtLeast(1)))
+                }
+            },
         )
 
-        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("First hour of the day") }
-        Input(type = InputType.Time, attrs = {
-            classes(SmokeWebStyles.dateInput)
-            value("${preferences.dayStartHour.toString().padStart(2, '0')}:00")
-            if (displayLoading) disabled()
-            onInput {
-                val raw = it.value.substringBefore(":").toIntOrNull() ?: return@onInput
+        TimeField(
+            label = "First hour of the day",
+            value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+            displayLoading = displayLoading,
+            onChange = {
+                val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
                 onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
-            }
-        })
+            },
+        )
 
-        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-            Input(type = InputType.Checkbox, attrs = {
-                if (preferences.locationTrackingEnabled) attr("checked", "true")
-                if (displayLoading) disabled()
-                onInput {
-                    onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+        LabeledField(label = "Track location with smokes") {
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                Input(type = InputType.Checkbox, attrs = {
+                    if (preferences.locationTrackingEnabled) attr("checked", "true")
+                    if (displayLoading) disabled()
+                    onInput {
+                        onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                    }
+                })
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Optional. Used for map insights.")
                 }
-            })
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Track location with smokes")
             }
         }
 
@@ -231,24 +249,92 @@ private fun PreferencesCard(
 }
 
 @Composable
-private fun StepperField(
+private fun NumberField(
     label: String,
-    value: String,
+    value: Double,
+    prefix: String = "",
+    step: Double,
     displayLoading: Boolean,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
+    onManualChange: (String) -> Unit,
 ) {
-    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(label) }
-    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-        GhostButton(text = "−", onClick = onDecrease, enabled = !displayLoading)
-        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(value) }
-        GhostButton(text = "+", onClick = onIncrease, enabled = !displayLoading)
+    LabeledField(label = label) {
+        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+            GhostButton(text = "−", onClick = onDecrease, enabled = !displayLoading)
+            Input(type = InputType.Number, attrs = {
+                classes(SmokeWebStyles.dateInput)
+                value(if (step < 1.0) value.asDecimalString() else value.toInt().toString())
+                attr("step", step.toString())
+                attr("inputmode", "decimal")
+                if (prefix.isNotEmpty()) attr("aria-label", "$label in $prefix")
+                if (displayLoading) disabled()
+                onInput { onManualChange(it.value.toString()) }
+            })
+            GhostButton(text = "+", onClick = onIncrease, enabled = !displayLoading)
+            if (prefix.isNotEmpty()) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(prefix) }
+            }
+        }
     }
 }
 
-private fun Double.formatMoney(): String {
-    val cents = (this * 100).toInt()
-    val whole = cents / 100
-    val fraction = (cents % 100).toString().padStart(2, '0')
+@Composable
+private fun TimeField(
+    label: String,
+    value: String,
+    displayLoading: Boolean,
+    onChange: (String) -> Unit,
+) {
+    LabeledField(label = label) {
+        Input(type = InputType.Time, attrs = {
+            classes(SmokeWebStyles.dateInput)
+            value(value)
+            if (displayLoading) disabled()
+            onInput { onChange(it.value) }
+        })
+    }
+}
+
+@Composable
+private fun ChoiceField(
+    label: String,
+    displayLoading: Boolean,
+    selected: String,
+    options: List<String>,
+    onSelection: (String) -> Unit,
+) {
+    LabeledField(label = label) {
+        Select(attrs = {
+            classes(SmokeWebStyles.dateInput)
+            if (displayLoading) disabled()
+            onChange { event -> onSelection(event.value ?: selected) }
+        }) {
+            options.forEach { symbol ->
+                Option(value = symbol, attrs = {
+                    if (selected == symbol) attr("selected", "selected")
+                }) {
+                    Text(symbol)
+                }
+            }
+        }
+    }
+}
+
+private fun Double.asDecimalString(): String {
+    val scaled = (this * 100).toInt()
+    val whole = scaled / 100
+    val fraction = (scaled % 100).toString().padStart(2, '0')
     return "$whole.$fraction"
+}
+
+@Composable
+private fun LabeledField(
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(label) }
+        content()
+    }
 }

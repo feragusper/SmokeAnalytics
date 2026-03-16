@@ -25,6 +25,7 @@ class UserPreferencesRepositoryImpl(
                 cigarettesPerPack = preferences.cigarettesPerPack,
                 dayStartHour = preferences.dayStartHour,
                 locationTrackingEnabled = preferences.locationTrackingEnabled,
+                currencySymbol = preferences.currencySymbol,
                 accountTier = preferences.accountTier.name,
             )
         )

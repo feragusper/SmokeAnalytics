@@ -15,6 +15,7 @@ sealed interface SettingsIntent {
         val cigarettesPerPack: Int,
         val dayStartHour: Int,
         val locationTrackingEnabled: Boolean,
+        val currencySymbol: String,
     ) : SettingsIntent
 
     /**

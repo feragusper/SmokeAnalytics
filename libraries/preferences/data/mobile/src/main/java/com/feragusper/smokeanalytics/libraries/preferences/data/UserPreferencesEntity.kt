@@ -8,6 +8,7 @@ data class UserPreferencesEntity(
     val cigarettesPerPack: Long = 20,
     val dayStartHour: Long = 6,
     val locationTrackingEnabled: Boolean = false,
+    val currencySymbol: String = "€",
     val accountTier: String = AccountTier.Free.name,
 ) {
     fun toDomain(): UserPreferences = UserPreferences(
@@ -15,6 +16,7 @@ data class UserPreferencesEntity(
         cigarettesPerPack = cigarettesPerPack.toInt(),
         dayStartHour = dayStartHour.toInt(),
         locationTrackingEnabled = locationTrackingEnabled,
+        currencySymbol = currencySymbol,
         accountTier = AccountTier.entries.firstOrNull { it.name == accountTier } ?: AccountTier.Free,
     )
 
