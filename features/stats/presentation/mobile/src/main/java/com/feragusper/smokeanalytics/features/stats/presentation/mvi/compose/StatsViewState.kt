@@ -3,9 +3,13 @@ package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -77,72 +81,99 @@ data class StatsViewState(
         ProvideVicoTheme(rememberSmokeAnalyticsVicoTheme()) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TabRow(
-                    modifier = Modifier.padding(vertical = 16.dp),
-                    selectedTabIndex = currentPeriod.ordinal,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = { tabPositions ->
-                        SecondaryIndicator(
-                            Modifier
-                                .tabIndicatorOffset(tabPositions[currentPeriod.ordinal]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 ) {
-                    StatsPeriod.entries.forEach { period ->
-                        val isSelected = currentPeriod == period
-                        Tab(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            selected = isSelected,
-                            onClick = {
-                                currentPeriod = period
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        TabRow(
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            selectedTabIndex = currentPeriod.ordinal,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            indicator = { tabPositions ->
+                                SecondaryIndicator(
+                                    Modifier
+                                        .tabIndicatorOffset(tabPositions[currentPeriod.ordinal]),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        ) {
+                            StatsPeriod.entries.forEach { period ->
+                                val isSelected = currentPeriod == period
+                                Tab(
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                    selected = isSelected,
+                                    onClick = {
+                                        currentPeriod = period
+                                        intent(
+                                            StatsIntent.LoadStats(
+                                                year = selectedDate.year,
+                                                month = selectedDate.month.value,
+                                                day = selectedDate.dayOfMonth,
+                                                period = period.toDomainPeriodType()
+                                            )
+                                        )
+                                    },
+                                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ) {
+                                    Text(
+                                        text = period.name.lowercase()
+                                            .replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                        }
+
+                        HeaderNavigation(
+                            currentPeriod = currentPeriod,
+                            selectedDate = selectedDate,
+                            onDateChange = { newDate ->
+                                selectedDate = newDate
                                 intent(
                                     StatsIntent.LoadStats(
-                                        year = selectedDate.year,
-                                        month = selectedDate.month.value,
-                                        day = selectedDate.dayOfMonth,
-                                        period = period.toDomainPeriodType()
+                                        year = newDate.year,
+                                        month = newDate.month.value,
+                                        day = newDate.dayOfMonth,
+                                        period = currentPeriod.toDomainPeriodType()
                                     )
                                 )
-                            },
-                            selectedContentColor = MaterialTheme.colorScheme.primary,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ) {
-                            Text(
-                                text = period.name.lowercase()
-                                    .replaceFirstChar { it.uppercase() },
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
+                            }
+                        )
                     }
                 }
 
-                HeaderNavigation(
-                    currentPeriod = currentPeriod,
-                    selectedDate = selectedDate,
-                    onDateChange = { newDate ->
-                        selectedDate = newDate
-                        intent(
-                            StatsIntent.LoadStats(
-                                year = newDate.year,
-                                month = newDate.month.value,
-                                day = newDate.dayOfMonth,
-                                period = currentPeriod.toDomainPeriodType()
-                            )
-                        )
-                    }
-                )
+                Spacer(modifier = Modifier.height(12.dp))
 
                 stats?.let {
-                    when (currentPeriod) {
-                        StatsPeriod.DAY -> LineChart(stats.hourly)
-                        StatsPeriod.WEEK -> BarChart(stats.weekly)
-                        StatsPeriod.MONTH -> BarChart(stats.monthly)
-                        StatsPeriod.YEAR -> BarChart(stats.yearly)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = when (currentPeriod) {
+                                    StatsPeriod.DAY -> "Daily pattern"
+                                    StatsPeriod.WEEK -> "Weekly distribution"
+                                    StatsPeriod.MONTH -> "Month overview"
+                                    StatsPeriod.YEAR -> "Year overview"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            when (currentPeriod) {
+                                StatsPeriod.DAY -> LineChart(stats.hourly)
+                                StatsPeriod.WEEK -> BarChart(stats.weekly)
+                                StatsPeriod.MONTH -> BarChart(stats.monthly)
+                                StatsPeriod.YEAR -> BarChart(stats.yearly)
+                            }
+                        }
                     }
                 }
             }
@@ -322,4 +353,3 @@ private fun StatsViewPreview() {
         StatsViewState().Compose {}
     }
 }
-
