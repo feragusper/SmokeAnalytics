@@ -425,6 +425,48 @@ object SmokeWebStyles : StyleSheet() {
         gap(16.px)
     }
 
+    val summaryMetricGrid by style {
+        display(DisplayStyle.Grid)
+        gridTemplateColumns("repeat(3, minmax(0, 1fr))")
+        gap(12.px)
+        marginTop(12.px)
+
+        media(mediaMaxWidth(960.px)) {
+            self { gridTemplateColumns("repeat(2, minmax(0, 1fr))") }
+        }
+        media(mediaMaxWidth(680.px)) {
+            self { gridTemplateColumns("1fr") }
+        }
+    }
+
+    val summaryMetricCard by style {
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
+        property("border-radius", "14px")
+        padding(14.px)
+        property("border", "1px solid var(--sa-color-outline)")
+    }
+
+    val summaryMetricLabel by style {
+        fontSize(12.px)
+        fontWeight(700)
+        color(Color("var(--sa-color-secondary)"))
+        property("letter-spacing", "0.02em")
+    }
+
+    val summaryMetricValue by style {
+        fontSize(22.px)
+        fontWeight(700)
+        lineHeight("1.15")
+        marginTop(10.px)
+    }
+
+    val summaryMetricMeta by style {
+        fontSize(12.px)
+        color(Color("var(--sa-color-secondary)"))
+        marginTop(6.px)
+        lineHeight("1.4")
+    }
+
     val statsRow by style {
         display(DisplayStyle.Grid)
         gridTemplateColumns("repeat(3, minmax(0, 1fr))")

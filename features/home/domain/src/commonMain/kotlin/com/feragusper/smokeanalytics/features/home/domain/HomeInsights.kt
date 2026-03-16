@@ -29,6 +29,7 @@ data class FinancialSummary(
     val spentToday: Double,
     val spentWeek: Double,
     val spentMonth: Double,
+    val currencySymbol: String,
 )
 
 fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone = when {
@@ -66,6 +67,7 @@ fun financialSummary(
         spentToday = todayCount * price,
         spentWeek = weekCount * price,
         spentMonth = monthCount * price,
+        currencySymbol = preferences.currencySymbol,
     )
 }
 

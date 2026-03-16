@@ -68,13 +68,12 @@ class HomeProcessHolder(
         repeat(5) { attempt ->
             when (fetchSessionUseCase()) {
                 is Session.Anonymous -> {
-                    emit(HomeResult.NotLoggedIn)
-
-                    // Auth restoration on JS can be async; retry a few times on initial load.
                     if (!isRefresh && attempt < 4) {
+                        if (attempt == 0) emit(HomeResult.Loading)
                         delay(300)
                         return@repeat
                     } else {
+                        emit(HomeResult.NotLoggedIn)
                         return@flow
                     }
                 }

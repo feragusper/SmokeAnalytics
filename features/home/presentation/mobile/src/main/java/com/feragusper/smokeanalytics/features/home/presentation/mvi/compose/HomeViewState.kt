@@ -50,6 +50,7 @@ import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
@@ -329,7 +330,7 @@ private fun GreetingSection(
             }
             financialSummary?.let {
                 Text(
-                    text = "Spent today ${"%.2f".format(it.spentToday)}",
+                    text = "Spent today ${it.spentToday.formatMoney(it.currencySymbol)}",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

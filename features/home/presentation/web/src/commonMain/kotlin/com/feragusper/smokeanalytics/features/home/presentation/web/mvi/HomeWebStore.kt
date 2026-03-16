@@ -78,6 +78,7 @@ class HomeWebStore(
                 greetingMessage = result.greetingState.message,
                 financialSummary = result.financialSummary,
                 gamificationSummary = result.gamificationSummary,
+                currencySymbol = result.preferences.currencySymbol,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
                     result.smokeCountListResult.timeSinceLastCigarette.second,
