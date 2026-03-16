@@ -140,10 +140,20 @@ object SmokeWebStyles : StyleSheet() {
         }
     }
 
+    val sidebarCollapsed by style {
+        property("width", "92px")
+        property("flex", "0 0 92px")
+        gap(14.px)
+    }
+
     val sidebarHeader by style {
         display(DisplayStyle.Flex)
         alignItems(AlignItems.Center)
         gap(12.px)
+    }
+
+    val sidebarHeaderCompact by style {
+        justifyContent(JustifyContent.Center)
     }
 
     val brandBadge by style {
@@ -180,6 +190,7 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         gap(8.px)
+        property("flex", "1 1 auto")
 
         media(mediaMaxWidth(900.px)) {
             self {
@@ -205,6 +216,7 @@ object SmokeWebStyles : StyleSheet() {
         backgroundColor(Color("transparent"))
         self + hover style {
             backgroundColor(Color("var(--sa-color-primary-soft)"))
+            color(Color("var(--sa-color-onSurface)"))
             property("transform", "translateY(-1px)")
         }
 
@@ -218,6 +230,10 @@ object SmokeWebStyles : StyleSheet() {
     val navItemActive by style {
         backgroundColor(Color("var(--sa-color-primary)"))
         color(Color("var(--sa-color-onPrimary)"))
+        self + hover style {
+            backgroundColor(Color("var(--sa-color-primary)"))
+            color(Color("var(--sa-color-onPrimary)"))
+        }
     }
 
     val navItemMeta by style {
@@ -225,13 +241,20 @@ object SmokeWebStyles : StyleSheet() {
         opacity(0.78)
     }
 
+    val navItemCollapsed by style {
+        justifyContent(JustifyContent.Center)
+        padding(12.px, 8.px)
+        fontWeight(700)
+    }
+
     val navFooter by style {
         marginTop(12.px)
-        padding(14.px)
-        property("border-radius", "16px")
-        backgroundColor(Color("var(--sa-color-surface)"))
+        padding(10.px, 12.px)
+        property("border-radius", "12px")
+        backgroundColor(Color("rgba(0,0,0,0.02)"))
         color(Color("var(--sa-color-onSurface)"))
-        property("border", "1px solid var(--sa-color-outline)")
+        property("border", "1px solid rgba(0,0,0,0.06)")
+        opacity(0.82)
     }
 
     val navFooterTitle by style {
@@ -241,9 +264,22 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val navFooterBody by style {
-        fontSize(13.px)
+        fontSize(12.px)
         lineHeight("1.45")
         color(Color("var(--sa-color-secondary)"))
+    }
+
+    val navFooterCompact by style {
+        padding(8.px)
+        property("text-align", "center")
+    }
+
+    val navSpacer by style {
+        property("flex", "1 1 auto")
+    }
+
+    val sidebarToggle by style {
+        property("margin-left", "auto")
     }
 
     val main by style {
@@ -549,6 +585,11 @@ object SmokeWebStyles : StyleSheet() {
         color(Color("#FFFFFF"))
     }
 
+    val buttonPrimaryWarning by style {
+        backgroundColor(Color("#9A5B00"))
+        color(Color("#FFFFFF"))
+    }
+
     val buttonPrimaryCaution by style {
         backgroundColor(Color("#B26A00"))
         color(Color("#FFFFFF"))
@@ -636,6 +677,87 @@ object SmokeWebStyles : StyleSheet() {
         property("overflow", "hidden")
     }
 
+    val calendarWeekdays by style {
+        display(DisplayStyle.Grid)
+        gridTemplateColumns("repeat(7, minmax(0, 1fr))")
+        gap(8.px)
+        marginTop(16.px)
+    }
+
+    val calendarWeekday by style {
+        fontSize(12.px)
+        fontWeight(700)
+        opacity(0.64)
+        property("text-align", "center")
+        padding(6.px)
+    }
+
+    val calendarGrid by style {
+        display(DisplayStyle.Grid)
+        gridTemplateColumns("repeat(7, minmax(0, 1fr))")
+        gap(8.px)
+        marginTop(8.px)
+    }
+
+    val calendarDaySpacer by style {
+        property("min-height", "78px")
+    }
+
+    val calendarDay by style {
+        property("min-height", "78px")
+        padding(12.px)
+        property("border-radius", "14px")
+        backgroundColor(Color("var(--sa-color-surface-strong)"))
+        property("border", "1px solid var(--sa-color-outline)")
+        display(DisplayStyle.Flex)
+        flexDirection(FlexDirection.Column)
+        justifyContent(JustifyContent.SpaceBetween)
+        gap(10.px)
+        cursor("pointer")
+        property(
+            "transition",
+            "transform var(--sa-transition-fast), background-color var(--sa-transition-fast), border-color var(--sa-transition-fast), box-shadow var(--sa-transition-fast)"
+        )
+        self + hover style {
+            property("transform", "translateY(-1px)")
+            property("box-shadow", "var(--sa-shadow-1)")
+            property("border-color", "var(--sa-color-outline-strong)")
+        }
+    }
+
+    val calendarDaySelected by style {
+        property("border-color", "var(--sa-color-primary)")
+        backgroundColor(Color("var(--sa-color-primary-soft)"))
+    }
+
+    val calendarDayLevel1 by style {
+        backgroundColor(Color("rgba(0,106,106,0.07)"))
+    }
+
+    val calendarDayLevel2 by style {
+        backgroundColor(Color("rgba(0,106,106,0.12)"))
+    }
+
+    val calendarDayLevel3 by style {
+        backgroundColor(Color("rgba(0,106,106,0.18)"))
+    }
+
+    val calendarDayLevel4 by style {
+        backgroundColor(Color("rgba(0,106,106,0.24)"))
+    }
+
+    val calendarDayNumber by style {
+        fontSize(16.px)
+        fontWeight(700)
+        lineHeight("1")
+    }
+
+    val calendarDayMeta by style {
+        fontSize(11.px)
+        lineHeight("1.3")
+        color(Color("var(--sa-color-secondary)"))
+    }
+
     val skeletonBlock by style {
         property("width", "100%")
         property("border-radius", "12px")
@@ -688,6 +810,11 @@ object SmokeWebStyles : StyleSheet() {
     val elapsedCardUrgent by style {
         backgroundColor(Color("rgba(186,26,26,0.08)"))
         property("border-color", "rgba(186,26,26,0.18)")
+    }
+
+    val elapsedCardWarning by style {
+        backgroundColor(Color("rgba(154,91,0,0.10)"))
+        property("border-color", "rgba(154,91,0,0.18)")
     }
 
     val elapsedCardCaution by style {

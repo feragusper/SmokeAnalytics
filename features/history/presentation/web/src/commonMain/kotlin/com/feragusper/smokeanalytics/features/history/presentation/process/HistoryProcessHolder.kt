@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.history.presentation.process
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.dayBucketDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.dayStartInstant
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -16,8 +17,11 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 
 class HistoryProcessHolder(
@@ -54,11 +58,29 @@ class HistoryProcessHolder(
                     start = dayStart,
                     end = nextDayStart,
                 )
+                val selectedBucketDate = dayStart.dayBucketDate(timeZone = tz, dayStartHour = preferences.dayStartHour)
+                val monthStart = LocalDate(
+                    year = selectedBucketDate.year,
+                    monthNumber = selectedBucketDate.monthNumber,
+                    dayOfMonth = 1,
+                ).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                val nextMonthStart = LocalDate(
+                    year = selectedBucketDate.year,
+                    monthNumber = selectedBucketDate.monthNumber,
+                    dayOfMonth = 1,
+                ).plus(DatePeriod(months = 1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                val monthCounts = fetchSmokesUseCase(
+                    start = monthStart,
+                    end = nextMonthStart,
+                ).groupingBy { smoke ->
+                    smoke.date.dayBucketDate(timeZone = tz, dayStartHour = preferences.dayStartHour).dayOfMonth
+                }.eachCount()
 
                 emit(
                     HistoryResult.FetchSmokesSuccess(
                         selectedDate = dayStart,
                         smokes = filtered,
+                        monthCounts = monthCounts,
                     )
                 )
             }
