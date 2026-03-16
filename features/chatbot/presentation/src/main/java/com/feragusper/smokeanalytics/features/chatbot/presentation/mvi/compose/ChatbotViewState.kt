@@ -74,12 +74,12 @@ data class ChatbotViewState(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Ask for help with cravings, slips, or today's pattern.",
+                        text = "Ask for help with cravings, slips, or reading today's pattern.",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "The coach is meant to be practical: short answers, one next step, no fluff.",
+                        text = "The coach uses your recent smoking data as context and should answer with short, practical guidance.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

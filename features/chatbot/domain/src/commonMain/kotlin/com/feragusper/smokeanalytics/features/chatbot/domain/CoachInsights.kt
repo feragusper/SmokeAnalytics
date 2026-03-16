@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.chatbot.domain
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentDayBucket
+import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentMonthBucket
+import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentWeekBucket
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlin.math.max
@@ -9,11 +11,14 @@ data class CoachContext(
     val name: String,
     val recentSmokes: List<Smoke>,
     val todayCount: Int,
+    val weekCount: Int,
+    val monthCount: Int,
     val totalCount: Int,
     val hoursSinceLastSmoke: Long,
     val minutesSinceLastSmoke: Long,
     val currentStreakHours: Long,
     val longestStreakHours: Long,
+    val averageGapMinutes: Int,
 )
 
 fun buildCoachContext(
@@ -25,21 +30,31 @@ fun buildCoachContext(
     val todayCount = recentSmokes.count { smoke ->
         smoke.date.isInCurrentDayBucket()
     }
+    val weekCount = recentSmokes.count { smoke ->
+        smoke.date.isInCurrentWeekBucket()
+    }
+    val monthCount = recentSmokes.count { smoke ->
+        smoke.date.isInCurrentMonthBucket()
+    }
     val intervals = recentSmokes.map { smoke ->
         val (hours, minutes) = smoke.timeElapsedSincePreviousSmoke
         max(0, (hours * 60 + minutes).toInt())
     }
     val longestMinutes = intervals.maxOrNull() ?: 0
+    val averageGapMinutes = intervals.filter { it > 0 }.average().takeIf { !it.isNaN() }?.toInt() ?: 0
 
     return CoachContext(
         name = name,
         recentSmokes = recentSmokes,
         todayCount = todayCount,
+        weekCount = weekCount,
+        monthCount = monthCount,
         totalCount = recentSmokes.size,
         hoursSinceLastSmoke = elapsed.first,
         minutesSinceLastSmoke = elapsed.second,
         currentStreakHours = elapsed.first,
         longestStreakHours = longestMinutes / 60L,
+        averageGapMinutes = averageGapMinutes,
     )
 }
 
@@ -74,7 +89,7 @@ fun fallbackCoachReply(
             "Cravings peak and fall. Delay the next cigarette by ten minutes, then decide again. The goal is not magic willpower, it's breaking the automatic loop."
 
         normalized.contains("progress") || normalized.contains("doing") || normalized.contains("how") ->
-            "Today you're at ${context.todayCount} smokes, with ${context.hoursSinceLastSmoke}h ${context.minutesSinceLastSmoke}m since the last one. The clean win is to make the next gap longer than the previous one."
+            "Today you're at ${context.todayCount} smokes, ${context.weekCount} this week, with ${context.hoursSinceLastSmoke}h ${context.minutesSinceLastSmoke}m since the last one. The clean win is to make the next gap longer than your recent average of ${context.averageGapMinutes}m."
 
         normalized.contains("slip") || normalized.contains("smoked") || normalized.contains("failed") ->
             "One cigarette is data, not defeat. Log it, reset cleanly, and focus on the next interval. The app is for recovery, not punishment."
