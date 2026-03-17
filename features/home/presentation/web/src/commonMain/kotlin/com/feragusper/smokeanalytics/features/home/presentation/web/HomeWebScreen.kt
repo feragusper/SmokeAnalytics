@@ -151,8 +151,18 @@ fun HomeViewState.Render(
                                     label = "Current streak",
                                     value = "${summary.currentStreakHours}h",
                                     meta = "Next milestone ${summary.nextMilestoneHours}h",
+                                    tooltip = "Streak is the time since the last logged cigarette in the current cycle.",
                                 )
                             }
+                        }
+                    }
+                    if (canStartNewDay) {
+                        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                            GhostButton(
+                                text = "Start new day",
+                                onClick = { onIntent(HomeIntent.StartNewDay) },
+                                enabled = !displayLoading && !displayRefreshLoading,
+                            )
                         }
                     }
                 }
@@ -323,8 +333,12 @@ private fun MetricSummary(
     label: String,
     value: String,
     meta: String? = null,
+    tooltip: String? = null,
 ) {
-    Div(attrs = { classes(SmokeWebStyles.summaryMetricCard) }) {
+    Div(attrs = {
+        classes(SmokeWebStyles.summaryMetricCard)
+        tooltip?.let { attr("title", it) }
+    }) {
         Div(attrs = { classes(SmokeWebStyles.summaryMetricLabel) }) { Text(label) }
         Div(attrs = { classes(SmokeWebStyles.summaryMetricValue) }) { Text(value) }
         meta?.let {

@@ -24,6 +24,11 @@ sealed interface HomeIntent {
     data object AddSmoke : HomeIntent
 
     /**
+     * Represents the intent to manually begin a new day.
+     */
+    data object StartNewDay : HomeIntent
+
+    /**
      * Represents the intent to edit a smoke.
      *
      * @property id The ID of the smoke to edit.

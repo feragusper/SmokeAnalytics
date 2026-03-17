@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -29,7 +30,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,6 +77,7 @@ data class HomeViewState(
     internal val greetingMessage: String? = null,
     internal val financialSummary: FinancialSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
+    internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
@@ -146,6 +151,7 @@ data class HomeViewState(
                 greetingMessage = greetingMessage,
                 financialSummary = financialSummary,
                 gamificationSummary = gamificationSummary,
+                canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
                 intent = intent,
                 isLoading = displayLoading
@@ -166,6 +172,7 @@ private fun HomeContent(
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
     gamificationSummary: GamificationSummary?,
+    canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
     intent: (HomeIntent) -> Unit
@@ -180,6 +187,9 @@ private fun HomeContent(
             greetingMessage = greetingMessage,
             financialSummary = financialSummary,
             gamificationSummary = gamificationSummary,
+            canStartNewDay = canStartNewDay,
+            onStartNewDay = { intent(HomeIntent.StartNewDay) },
+            isLoading = isLoading,
         )
         StatsSection(
             smokesPerDay = smokesPerDay,
@@ -312,8 +322,12 @@ private fun GreetingSection(
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
     gamificationSummary: GamificationSummary?,
+    canStartNewDay: Boolean,
+    onStartNewDay: () -> Unit,
+    isLoading: Boolean,
 ) {
     if (greetingTitle == null && financialSummary == null && gamificationSummary == null) return
+    var showStreakInfo by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -335,10 +349,39 @@ private fun GreetingSection(
                 )
             }
             gamificationSummary?.let {
-                Text(
-                    text = "Points ${it.points} · Streak ${it.currentStreakHours}h",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Points ${it.points} · Streak ${it.currentStreakHours}h",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    IconButton(
+                        onClick = { showStreakInfo = !showStreakInfo },
+                        modifier = Modifier.size(18.dp),
+                    ) {
+                        Text(
+                            text = "?",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+                if (showStreakInfo) {
+                    Text(
+                        text = "Streak is the time since the last logged cigarette in the current cycle.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (canStartNewDay) {
+                androidx.compose.material3.TextButton(
+                    onClick = onStartNewDay,
+                    enabled = !isLoading,
+                ) {
+                    Text(text = "Start new day")
+                }
             }
         }
     }

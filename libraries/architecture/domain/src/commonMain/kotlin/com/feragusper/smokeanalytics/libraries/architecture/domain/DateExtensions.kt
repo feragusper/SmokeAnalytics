@@ -21,7 +21,12 @@ private fun todayLocalDate(timeZone: TimeZone = defaultTimeZone): LocalDate =
 fun currentBucketDate(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
-): LocalDate = Clock.System.now().dayBucketDate(timeZone = timeZone, dayStartHour = dayStartHour)
+    manualDayStartEpochMillis: Long? = null,
+): LocalDate = activeCurrentDayStartInstant(
+    timeZone = timeZone,
+    dayStartHour = dayStartHour,
+    manualDayStartEpochMillis = manualDayStartEpochMillis,
+).toLocalDateTime(timeZone).date
 
 fun Instant.dayBucketDate(
     timeZone: TimeZone = defaultTimeZone,
@@ -42,13 +47,22 @@ fun Instant.dayStartInstant(
 fun currentDayStartInstant(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
-): Instant = Clock.System.now().dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+    manualDayStartEpochMillis: Long? = null,
+): Instant = activeCurrentDayStartInstant(
+    timeZone = timeZone,
+    dayStartHour = dayStartHour,
+    manualDayStartEpochMillis = manualDayStartEpochMillis,
+)
 
 fun nextDayStartInstant(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
-): Instant = currentDayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
-    .plus(1, DateTimeUnit.DAY, timeZone)
+    manualDayStartEpochMillis: Long? = null,
+): Instant = currentBucketDate(
+    timeZone = timeZone,
+    dayStartHour = dayStartHour,
+    manualDayStartEpochMillis = manualDayStartEpochMillis,
+).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
 
 fun lastInstantToday(timeZone: TimeZone = defaultTimeZone): Instant =
     todayLocalDate(timeZone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone)
@@ -121,17 +135,31 @@ private fun isBetweenInstants(instant: Instant, after: Instant, before: Instant)
 fun Instant.isInCurrentDayBucket(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
 ): Boolean {
-    val start = currentDayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
-    val end = nextDayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+    val start = currentDayStartInstant(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
+    val end = nextDayStartInstant(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
     return isBetweenInstants(this, start, end)
 }
 
 fun Instant.isInCurrentWeekBucket(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
 ): Boolean {
-    val today = currentBucketDate(timeZone = timeZone, dayStartHour = dayStartHour)
+    val today = currentBucketDate(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
     val monday = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
     val start = monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
     val end = start.plus(7, DateTimeUnit.DAY, timeZone)
@@ -141,9 +169,14 @@ fun Instant.isInCurrentWeekBucket(
 fun Instant.isInCurrentMonthBucket(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
 ): Boolean {
     val start = firstInstantThisMonth(timeZone = timeZone, dayStartHour = dayStartHour)
-    val current = currentBucketDate(timeZone = timeZone, dayStartHour = dayStartHour)
+    val current = currentBucketDate(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
     val nextMonth = LocalDate(
         year = if (current.monthNumber == 12) current.year + 1 else current.year,
         monthNumber = if (current.monthNumber == 12) 1 else current.monthNumber + 1,
@@ -151,4 +184,35 @@ fun Instant.isInCurrentMonthBucket(
     )
     val end = nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
     return isBetweenInstants(this, start, end)
+}
+
+fun shouldOfferStartNewDay(
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+    thresholdMinutes: Int = 120,
+): Boolean {
+    val scheduledStart = now.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+    val manualStart = manualDayStartEpochMillis?.let(Instant::fromEpochMilliseconds)
+    if (manualStart != null && manualStart in scheduledStart..now) return false
+    val localNow = now.toLocalDateTime(timeZone)
+    val boundary = localNow.date.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    val minutesToBoundary = kotlin.math.abs(now.until(boundary, DateTimeUnit.MINUTE, timeZone).toInt())
+    return minutesToBoundary <= thresholdMinutes
+}
+
+fun activeCurrentDayStartInstant(
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+): Instant {
+    val scheduledStart = now.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+    val manualStart = manualDayStartEpochMillis?.let(Instant::fromEpochMilliseconds)
+    return if (manualStart != null && manualStart in scheduledStart..now) {
+        manualStart
+    } else {
+        scheduledStart
+    }
 }

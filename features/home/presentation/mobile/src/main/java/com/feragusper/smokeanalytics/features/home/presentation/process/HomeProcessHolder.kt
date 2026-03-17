@@ -8,6 +8,7 @@ import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferStartNewDay
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
@@ -15,6 +16,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.process
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
@@ -46,6 +48,7 @@ class HomeProcessHolder @Inject constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val syncWithWearUseCase: SyncWithWearUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
     private val widgetRefreshService: WidgetRefreshService,
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
@@ -59,6 +62,7 @@ class HomeProcessHolder @Inject constructor(
     override fun processIntent(intent: HomeIntent): Flow<HomeResult> = when (intent) {
         HomeIntent.FetchSmokes, HomeIntent.RefreshFetchSmokes -> processFetchSmokes(intent is HomeIntent.RefreshFetchSmokes)
         HomeIntent.AddSmoke -> processAddSmoke()
+        HomeIntent.StartNewDay -> processStartNewDay()
         HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
@@ -79,7 +83,10 @@ class HomeProcessHolder @Inject constructor(
             is Session.LoggedIn -> {
                 emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
                 val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
-                val smokeCounts = fetchSmokeCountListUseCase.invoke(preferences.dayStartHour)
+                val smokeCounts = fetchSmokeCountListUseCase.invoke(
+                    dayStartHour = preferences.dayStartHour,
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                )
                 emit(
                     HomeResult.FetchSmokesSuccess(
                         smokeCountListResult = smokeCounts,
@@ -97,6 +104,10 @@ class HomeProcessHolder @Inject constructor(
                             preferences = preferences,
                         ),
                         gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
+                        canStartNewDay = shouldOfferStartNewDay(
+                            dayStartHour = preferences.dayStartHour,
+                            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                        ),
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
@@ -186,9 +197,23 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.Error.Generic)
     }
 
+    private fun processStartNewDay(): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        updateUserPreferencesUseCase(
+            preferences.copy(manualDayStartEpochMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
+        )
+        emit(HomeResult.StartNewDaySuccess)
+    }.catchAndLog {
+        emit(HomeResult.Error.Generic)
+    }
+
     private suspend fun refreshWidgetSnapshot() {
         val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
-        val smokeCounts = fetchSmokeCountListUseCase(preferences.dayStartHour)
+        val smokeCounts = fetchSmokeCountListUseCase(
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
         widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
     }
 }

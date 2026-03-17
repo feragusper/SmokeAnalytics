@@ -30,6 +30,7 @@ data class HomeViewState(
     val financialSummary: FinancialSummary? = null,
     val gamificationSummary: GamificationSummary? = null,
     val currencySymbol: String = "€",
+    val canStartNewDay: Boolean = false,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     val error: HomeError? = null,
 ) {

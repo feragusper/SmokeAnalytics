@@ -67,7 +67,7 @@ class AddSmokeUseCaseTest {
             end: Instant?
         ): List<Smoke> = emptyList()
 
-        override suspend fun fetchSmokeCount(dayStartHour: Int) =
+        override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?) =
             error("Not needed for this test")
     }
 }

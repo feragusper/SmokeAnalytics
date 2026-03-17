@@ -40,6 +40,11 @@ sealed class HomeIntent : MVIIntent {
     data object AddSmoke : HomeIntent()
 
     /**
+     * Represents an intent to manually begin a new day near the configured boundary.
+     */
+    data object StartNewDay : HomeIntent()
+
+    /**
      * Represents an intent to fetch smoke data and update the UI.
      */
     data object FetchSmokes : HomeIntent()

@@ -4,6 +4,7 @@ data class UserPreferences(
     val packPrice: Double = 0.0,
     val cigarettesPerPack: Int = 20,
     val dayStartHour: Int = 6,
+    val manualDayStartEpochMillis: Long? = null,
     val locationTrackingEnabled: Boolean = false,
     val currencySymbol: String = "€",
     val accountTier: AccountTier = AccountTier.Free,
