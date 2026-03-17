@@ -34,17 +34,25 @@ fun AboutWebScreen(
 
         SurfaceCard {
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Track less, notice more.") }
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Smoke Analytics tracks smokes, streaks, costs, and location patterns across mobile and web.")
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("Smoke Analytics is a personal smoking journal built to make patterns visible without turning the app into noise. It helps you review the day, follow longer trends, understand cost, and notice where or when smoking tends to cluster across mobile and web.")
             }
         }
 
         SurfaceCard {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Links") }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Contact") }
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("Built by Fernando Perez. If something feels off, the best path today is GitHub: check the repo, open a bug report, or start a discussion.")
+            }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                GhostButton(text = "Open site", onClick = { window.open(window.location.origin, "_blank") })
                 A("https://github.com/feragusper/SmokeAnalytics", attrs = { attr("target", "_blank") }) {
                     Text("GitHub")
+                }
+                A("https://github.com/feragusper/SmokeAnalytics/issues/new/choose", attrs = { attr("target", "_blank") }) {
+                    Text("Report bug")
+                }
+                A("mailto:feragusper@gmail.com", attrs = { attr("target", "_blank") }) {
+                    Text("Contact us")
                 }
             }
         }
@@ -53,6 +61,13 @@ fun AboutWebScreen(
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Plan") }
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                 Text("Free is the current live tier. Premium is defined as a future upgrade with richer insights and no ads.")
+            }
+        }
+
+        SurfaceCard {
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Copyright") }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("Smoke Analytics © Fernando Perez. All rights reserved.")
             }
         }
     }

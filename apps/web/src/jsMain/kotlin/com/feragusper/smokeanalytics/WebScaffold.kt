@@ -21,13 +21,12 @@ fun WebScaffold(
 ) {
     var isSidebarCollapsed by remember { mutableStateOf(false) }
     val items = listOf(
-        "Home" to WebRoute.Home,
-        "History" to WebRoute.History,
-        "Stats" to WebRoute.Stats,
-        "Coach" to WebRoute.Coach,
-        "Map" to WebRoute.Map,
-        "About" to WebRoute.About,
-        "Settings" to WebRoute.Settings,
+        Triple("⌂", "Home", WebRoute.Home),
+        Triple("◫", "History", WebRoute.History),
+        Triple("▤", "Stats", WebRoute.Stats),
+        Triple("◌", "Coach", WebRoute.Coach),
+        Triple("⌖", "Map", WebRoute.Map),
+        Triple("⚙", "Settings", WebRoute.Settings),
     )
 
     Div(attrs = { classes(SmokeWebStyles.shell) }) {
@@ -55,14 +54,14 @@ fun WebScaffold(
                 }
                 Div(attrs = { classes(SmokeWebStyles.sidebarToggle) }) {
                     GhostButton(
-                        text = if (isSidebarCollapsed) "→" else "←",
+                        text = if (isSidebarCollapsed) "›" else "‹",
                         onClick = { isSidebarCollapsed = !isSidebarCollapsed },
                     )
                 }
             }
 
             Div(attrs = { classes(SmokeWebStyles.navList) }) {
-                items.forEach { (label, target) ->
+                items.forEach { (icon, label, target) ->
                     Div(
                         attrs = {
                             classes(SmokeWebStyles.navItem)
@@ -71,12 +70,29 @@ fun WebScaffold(
                             onClick { onNavigate(target) }
                         }
                     ) {
-                        Text(if (isSidebarCollapsed) label.take(1) else label)
+                        Div(attrs = { classes(SmokeWebStyles.navIcon) }) { Text(icon) }
+                        if (!isSidebarCollapsed) {
+                            Div(attrs = { classes(SmokeWebStyles.navLabel) }) { Text(label) }
+                        }
                     }
                 }
             }
 
             Div(attrs = { classes(SmokeWebStyles.navSpacer) })
+
+            Div(
+                attrs = {
+                    classes(SmokeWebStyles.navItem)
+                    if (route == WebRoute.About) classes(SmokeWebStyles.navItemActive)
+                    if (isSidebarCollapsed) classes(SmokeWebStyles.navItemCollapsed)
+                    onClick { onNavigate(WebRoute.About) }
+                }
+            ) {
+                Div(attrs = { classes(SmokeWebStyles.navIcon) }) { Text("ⓘ") }
+                if (!isSidebarCollapsed) {
+                    Div(attrs = { classes(SmokeWebStyles.navLabel) }) { Text("About") }
+                }
+            }
 
             Div(attrs = {
                 classes(SmokeWebStyles.navFooter)

@@ -56,7 +56,7 @@ fun HistoryWebScreen(
     val draftDateTime = remember { mutableStateMapOf<String, String>() }
     var calendarMode by remember { mutableStateOf(false) }
 
-    val selectedDayStart = state.selectedDate.dayStart(tz)
+    val selectedDayStart = state.selectedDate
     val selectedLocalDate = selectedDayStart.toLocalDateTime(tz).date
     val selectedDateLabel = selectedLocalDate.toUiDate()
     val selectedMonthLabel = selectedLocalDate.toUiMonthYear()
@@ -337,9 +337,6 @@ private fun calendarDayLevelClass(count: Int, maxCount: Int): String {
         else -> SmokeWebStyles.calendarDayLevel1
     }
 }
-
-private fun Instant.dayStart(timeZone: TimeZone): Instant =
-    toLocalDateTime(timeZone).date.atStartOfDayIn(timeZone)
 
 private fun Instant.plusDays(days: Int, timeZone: TimeZone): Instant =
     this.plus(days, DateTimeUnit.DAY, timeZone)

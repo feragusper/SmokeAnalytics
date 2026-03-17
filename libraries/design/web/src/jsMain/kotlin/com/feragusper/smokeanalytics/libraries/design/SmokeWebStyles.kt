@@ -131,6 +131,7 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         gap(18.px)
+        property("transition", "width var(--sa-transition-page), flex-basis var(--sa-transition-page), gap var(--sa-transition-page)")
 
         media(mediaMaxWidth(900.px)) {
             self {
@@ -172,6 +173,7 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         gap(4.px)
+        property("transition", "opacity var(--sa-transition-fast)")
     }
 
     val sidebarTitle by style {
@@ -225,6 +227,18 @@ object SmokeWebStyles : StyleSheet() {
                 property("flex", "1 1 150px")
             }
         }
+    }
+
+    val navIcon by style {
+        fontSize(16.px)
+        fontWeight(700)
+        property("width", "18px")
+        property("text-align", "center")
+        property("flex", "0 0 18px")
+    }
+
+    val navLabel by style {
+        property("transition", "opacity var(--sa-transition-fast)")
     }
 
     val navItemActive by style {

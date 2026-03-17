@@ -14,7 +14,6 @@ import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import kotlinx.browser.window
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -86,7 +85,7 @@ fun MapWebScreen(
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("${activeCluster.count} smokes grouped around this area.")
+                        Text("${activeCluster.count} smokes grouped in this approximate area.")
                     }
                     Iframe(attrs = {
                         attr("src", googleEmbedUrl(activeCluster.point))
@@ -94,12 +93,6 @@ fun MapWebScreen(
                         attr("referrerpolicy", "no-referrer-when-downgrade")
                         attr("style", "width:100%;height:360px;border:0;border-radius:16px;margin-top:12px;background:#f5f8f8;")
                     })
-                    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                        PrimaryButton(
-                            text = "Open in Google Maps",
-                            onClick = { window.open(googleMapsUrl(activeCluster.point), "_blank") },
-                        )
-                    }
                 }
 
                 SurfaceCard {
@@ -146,19 +139,20 @@ private fun clusterSmokes(
 
     return smokes
         .mapNotNull { it.location }
-        .groupingBy { point ->
+        .groupBy { point ->
             val scale = 10.0.pow(precision.toDouble())
             val lat = round(point.latitude * scale) / scale
             val lon = round(point.longitude * scale) / scale
             lat to lon
         }
-        .eachCount()
         .entries
-        .sortedByDescending { it.value }
-        .mapIndexed { index, (key, count) ->
+        .sortedByDescending { it.value.size }
+        .mapIndexed { index, (_, points) ->
+            val centerLat = points.map { it.latitude }.average()
+            val centerLon = points.map { it.longitude }.average()
             MapCluster(
-                point = GeoPoint(key.first, key.second),
-                count = count,
+                point = GeoPoint(centerLat, centerLon),
+                count = points.size,
                 label = when (index) {
                     0 -> "Top area"
                     1 -> "Second area"
@@ -170,7 +164,4 @@ private fun clusterSmokes(
 }
 
 private fun googleEmbedUrl(point: GeoPoint): String =
-    "https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=15&output=embed"
-
-private fun googleMapsUrl(point: GeoPoint): String =
-    "https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}"
+    "https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=14&output=embed"

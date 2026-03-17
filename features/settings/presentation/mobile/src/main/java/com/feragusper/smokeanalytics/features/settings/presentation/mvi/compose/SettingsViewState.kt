@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
@@ -78,7 +79,6 @@ data class SettingsViewState(
     @Composable
     fun Compose(
         intent: (SettingsIntent) -> Unit,
-        onOpenAbout: () -> Unit,
     ) {
         var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
 
@@ -115,11 +115,7 @@ data class SettingsViewState(
             )
 
             AccountTierCard(tier = preferences.accountTier)
-            ActionsCard(
-                currentTier = preferences.accountTier,
-                onOpenAbout = onOpenAbout,
-                enabled = !displayLoading,
-            )
+            AboutSection()
 
             infoMessage?.let { message ->
                 Text(
@@ -130,52 +126,6 @@ data class SettingsViewState(
             }
 
             AppVersionFooter()
-        }
-    }
-}
-
-@Composable
-private fun ActionsCard(
-    currentTier: AccountTier,
-    onOpenAbout: () -> Unit,
-    enabled: Boolean,
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
-    SettingsCard(title = "More") {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Current tier", style = MaterialTheme.typography.bodySmall)
-                Text(
-                    text = currentTier.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            Box {
-                OutlinedButton(
-                    onClick = { menuExpanded = true },
-                    enabled = enabled,
-                ) {
-                    Text("More")
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("About") },
-                        onClick = {
-                            menuExpanded = false
-                            onOpenAbout()
-                        }
-                    )
-                }
-            }
         }
     }
 }
@@ -609,7 +559,6 @@ private fun SettingsPreview() {
             currentDisplayName = "Fernando Perez",
         ).Compose(
             intent = {},
-            onOpenAbout = {},
         )
     }
 }

@@ -23,6 +23,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
 class HistoryProcessHolder(
     private val addSmokeUseCase: AddSmokeUseCase,
@@ -45,7 +46,8 @@ class HistoryProcessHolder(
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
         val tz = TimeZone.Companion.currentSystemDefault()
         val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
-        val dayStart = intent.date.dayStartInstant(timeZone = tz, dayStartHour = preferences.dayStartHour)
+        val selectedDate = intent.date.toLocalDateTime(tz).date
+        val dayStart = selectedDate.atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
         val nextDayStart = dayStart.plus(1, DateTimeUnit.Companion.DAY, tz)
 
         when (fetchSessionUseCase()) {

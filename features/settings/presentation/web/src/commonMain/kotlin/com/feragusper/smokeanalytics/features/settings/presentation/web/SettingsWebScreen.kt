@@ -19,7 +19,6 @@ import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
@@ -61,9 +60,6 @@ private fun SettingsViewState.Render(
                 else -> "Guest"
             },
             badgeTone = if (displayLoading) StatusTone.Busy else StatusTone.Default,
-            actions = {
-                GhostButton(text = "About", onClick = { window.location.hash = "#about" }, enabled = !displayLoading)
-            }
         )
 
         errorMessage?.let { msg ->
@@ -260,20 +256,24 @@ private fun NumberField(
     onManualChange: (String) -> Unit,
 ) {
     LabeledField(label = label) {
-        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-            GhostButton(text = "−", onClick = onDecrease, enabled = !displayLoading)
-            Input(type = InputType.Number, attrs = {
-                classes(SmokeWebStyles.dateInput)
-                value(if (step < 1.0) value.asDecimalString() else value.toInt().toString())
-                attr("step", step.toString())
-                attr("inputmode", "decimal")
-                if (prefix.isNotEmpty()) attr("aria-label", "$label in $prefix")
-                if (displayLoading) disabled()
-                onInput { onManualChange(it.value.toString()) }
-            })
-            GhostButton(text = "+", onClick = onIncrease, enabled = !displayLoading)
-            if (prefix.isNotEmpty()) {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(prefix) }
+        Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                if (prefix.isNotEmpty()) {
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(prefix) }
+                }
+                Input(type = InputType.Number, attrs = {
+                    classes(SmokeWebStyles.dateInput)
+                    value(if (step < 1.0) value.asDecimalString() else value.toInt().toString())
+                    attr("step", step.toString())
+                    attr("inputmode", "decimal")
+                    if (prefix.isNotEmpty()) attr("aria-label", "$label in $prefix")
+                    if (displayLoading) disabled()
+                    onInput { onManualChange(it.value.toString()) }
+                })
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                GhostButton(text = "−", onClick = onDecrease, enabled = !displayLoading)
+                GhostButton(text = "+", onClick = onIncrease, enabled = !displayLoading)
             }
         }
     }
