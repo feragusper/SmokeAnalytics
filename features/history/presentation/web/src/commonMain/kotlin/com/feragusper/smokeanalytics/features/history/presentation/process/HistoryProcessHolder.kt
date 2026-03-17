@@ -3,8 +3,10 @@ package com.feragusper.smokeanalytics.features.history.presentation.process
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentBucketDate
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentDayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.dayBucketDate
-import com.feragusper.smokeanalytics.libraries.architecture.domain.dayStartInstant
+import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartInstant
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
@@ -47,8 +49,29 @@ class HistoryProcessHolder(
         val tz = TimeZone.Companion.currentSystemDefault()
         val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
         val selectedDate = intent.date.toLocalDateTime(tz).date
-        val dayStart = selectedDate.atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
-        val nextDayStart = dayStart.plus(1, DateTimeUnit.Companion.DAY, tz)
+        val currentBucketDate = currentBucketDate(
+            timeZone = tz,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        val dayStart = if (selectedDate == currentBucketDate) {
+            currentDayStartInstant(
+                timeZone = tz,
+                dayStartHour = preferences.dayStartHour,
+                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+            )
+        } else {
+            selectedDate.atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+        }
+        val nextDayStart = if (selectedDate == currentBucketDate) {
+            nextDayStartInstant(
+                timeZone = tz,
+                dayStartHour = preferences.dayStartHour,
+                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+            )
+        } else {
+            dayStart.plus(1, DateTimeUnit.Companion.DAY, tz)
+        }
 
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(dayStart))
@@ -60,7 +83,11 @@ class HistoryProcessHolder(
                     start = dayStart,
                     end = nextDayStart,
                 )
-                val selectedBucketDate = dayStart.dayBucketDate(timeZone = tz, dayStartHour = preferences.dayStartHour)
+                val selectedBucketDate = dayStart.dayBucketDate(
+                    timeZone = tz,
+                    dayStartHour = preferences.dayStartHour,
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                )
                 val monthStart = LocalDate(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
@@ -75,7 +102,11 @@ class HistoryProcessHolder(
                     start = monthStart,
                     end = nextMonthStart,
                 ).groupingBy { smoke ->
-                    smoke.date.dayBucketDate(timeZone = tz, dayStartHour = preferences.dayStartHour).dayOfMonth
+                    smoke.date.dayBucketDate(
+                        timeZone = tz,
+                        dayStartHour = preferences.dayStartHour,
+                        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    ).dayOfMonth
                 }.eachCount()
 
                 emit(

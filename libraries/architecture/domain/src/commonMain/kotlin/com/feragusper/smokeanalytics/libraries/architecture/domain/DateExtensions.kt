@@ -31,7 +31,12 @@ fun currentBucketDate(
 fun Instant.dayBucketDate(
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
 ): LocalDate {
+    val manualStart = manualDayStartEpochMillis?.let(Instant::fromEpochMilliseconds)
+    if (manualStart != null && isInManualDayWindow(manualStart, timeZone, dayStartHour)) {
+        return manualStart.toLocalDateTime(timeZone).date
+    }
     val shifted = this.minus(dayStartHour, DateTimeUnit.HOUR, timeZone)
     return shifted.toLocalDateTime(timeZone).date
 }
@@ -193,13 +198,12 @@ fun shouldOfferStartNewDay(
     manualDayStartEpochMillis: Long? = null,
     thresholdMinutes: Int = 120,
 ): Boolean {
-    val scheduledStart = now.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
     val manualStart = manualDayStartEpochMillis?.let(Instant::fromEpochMilliseconds)
-    if (manualStart != null && manualStart in scheduledStart..now) return false
-    val localNow = now.toLocalDateTime(timeZone)
-    val boundary = localNow.date.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
-    val minutesToBoundary = kotlin.math.abs(now.until(boundary, DateTimeUnit.MINUTE, timeZone).toInt())
-    return minutesToBoundary <= thresholdMinutes
+    if (manualStart != null && now.isInManualDayWindow(manualStart, timeZone, dayStartHour)) return false
+    val upcomingBoundary = now.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+        .plus(1, DateTimeUnit.DAY, timeZone)
+    val minutesToBoundary = now.until(upcomingBoundary, DateTimeUnit.MINUTE, timeZone).toInt()
+    return minutesToBoundary in 0..thresholdMinutes
 }
 
 fun activeCurrentDayStartInstant(
@@ -210,9 +214,19 @@ fun activeCurrentDayStartInstant(
 ): Instant {
     val scheduledStart = now.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
     val manualStart = manualDayStartEpochMillis?.let(Instant::fromEpochMilliseconds)
-    return if (manualStart != null && manualStart in scheduledStart..now) {
+    return if (manualStart != null && now.isInManualDayWindow(manualStart, timeZone, dayStartHour)) {
         manualStart
     } else {
         scheduledStart
     }
+}
+
+private fun Instant.isInManualDayWindow(
+    manualStart: Instant,
+    timeZone: TimeZone,
+    dayStartHour: Int,
+): Boolean {
+    val nextScheduledStart = manualStart.dayStartInstant(timeZone = timeZone, dayStartHour = dayStartHour)
+        .plus(1, DateTimeUnit.DAY, timeZone)
+    return this >= manualStart && this < nextScheduledStart
 }

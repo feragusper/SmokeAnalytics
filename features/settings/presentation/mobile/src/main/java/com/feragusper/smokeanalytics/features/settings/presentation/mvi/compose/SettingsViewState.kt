@@ -46,13 +46,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.R
 import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
-import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
@@ -115,6 +113,12 @@ data class SettingsViewState(
             )
 
             AccountTierCard(tier = preferences.accountTier)
+
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             AboutSection()
 
             infoMessage?.let { message ->
@@ -124,8 +128,6 @@ data class SettingsViewState(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-
-            AppVersionFooter()
         }
     }
 }
@@ -509,22 +511,6 @@ private fun SettingsShimmerContent() {
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
             }
-        }
-    }
-}
-
-@Composable
-private fun AppVersionFooter() {
-    val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxWidth()) {
-        context.versionName()?.let { versionName ->
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = versionName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
