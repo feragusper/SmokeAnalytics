@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.dayBucketDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.dayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
@@ -21,9 +22,13 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 
 /**
@@ -107,16 +112,35 @@ class HistoryProcessHolder @Inject constructor(
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
         val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
         val timeZone = TimeZone.currentSystemDefault()
-        val dayStart = intent.date.dayStartInstant(timeZone = timeZone, dayStartHour = preferences.dayStartHour)
+        val selectedDate = intent.date.toLocalDateTime(timeZone).date
+        val dayStart = selectedDate.atStartOfDayIn(timeZone).plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
         val nextDayStart = dayStart.plus(1, DateTimeUnit.DAY, timeZone)
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(dayStart))
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
+                val selectedBucketDate = dayStart.dayBucketDate(timeZone = timeZone, dayStartHour = preferences.dayStartHour)
+                val monthStart = LocalDate(
+                    year = selectedBucketDate.year,
+                    monthNumber = selectedBucketDate.monthNumber,
+                    dayOfMonth = 1,
+                ).atStartOfDayIn(timeZone).plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                val nextMonthStart = LocalDate(
+                    year = selectedBucketDate.year,
+                    monthNumber = selectedBucketDate.monthNumber,
+                    dayOfMonth = 1,
+                ).plus(DatePeriod(months = 1)).atStartOfDayIn(timeZone)
+                    .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                val monthCounts = fetchSmokesUseCase.invoke(monthStart, nextMonthStart)
+                    .groupingBy { smoke ->
+                        smoke.date.dayBucketDate(timeZone = timeZone, dayStartHour = preferences.dayStartHour).dayOfMonth
+                    }
+                    .eachCount()
                 emit(
                     HistoryResult.FetchSmokesSuccess(
                         selectedDate = dayStart,
-                        smokes = fetchSmokesUseCase.invoke(dayStart, nextDayStart)
+                        smokes = fetchSmokesUseCase.invoke(dayStart, nextDayStart),
+                        monthCounts = monthCounts,
                     )
                 )
             }
