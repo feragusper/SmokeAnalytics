@@ -63,6 +63,7 @@ class HomeWebStore(
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
                 latestSmokes = emptyList(),
+                canStartNewDay = false,
             )
 
             is HomeResult.FetchSmokesSuccess -> previous.copy(
@@ -78,6 +79,8 @@ class HomeWebStore(
                 greetingMessage = result.greetingState.message,
                 financialSummary = result.financialSummary,
                 gamificationSummary = result.gamificationSummary,
+                currencySymbol = result.preferences.currencySymbol,
+                canStartNewDay = result.canStartNewDay,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
                     result.smokeCountListResult.timeSinceLastCigarette.second,
@@ -89,6 +92,7 @@ class HomeWebStore(
             )
 
             HomeResult.AddSmokeSuccess,
+            HomeResult.StartNewDaySuccess,
             HomeResult.EditSmokeSuccess,
             HomeResult.DeleteSmokeSuccess -> {
                 send(HomeIntent.FetchSmokes)

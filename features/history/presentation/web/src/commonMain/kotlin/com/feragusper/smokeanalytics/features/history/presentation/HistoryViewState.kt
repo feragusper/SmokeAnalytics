@@ -8,6 +8,7 @@ import kotlinx.datetime.Instant
 data class HistoryViewState(
     val displayLoading: Boolean = false,
     val smokes: List<Smoke> = emptyList(),
+    val monthCounts: Map<Int, Int> = emptyMap(),
     val selectedDate: Instant = Clock.System.now(),
     val error: HistoryResult.Error? = null,
 )

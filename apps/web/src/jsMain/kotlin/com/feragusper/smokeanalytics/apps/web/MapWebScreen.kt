@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -15,8 +14,6 @@ import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import kotlinx.browser.window
-import kotlinx.coroutines.await
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -52,10 +49,7 @@ fun MapWebScreen(
         loading = true
         val end = Clock.System.now()
         val start = end.minus(period.days, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
-        val rawClusters = clusterSmokes(fetchSmokesUseCase(start, end), period)
-        clusters = rawClusters.map { cluster ->
-            cluster.copy(label = reverseGeocode(cluster.point))
-        }
+        clusters = clusterSmokes(fetchSmokesUseCase(start, end), period)
         selectedCluster = clusters.maxByOrNull { it.count }
         loading = false
     }
@@ -91,7 +85,7 @@ fun MapWebScreen(
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("${activeCluster.count} smokes in this area")
+                        Text("${activeCluster.count} smokes grouped in this approximate area.")
                     }
                     Iframe(attrs = {
                         attr("src", googleEmbedUrl(activeCluster.point))
@@ -99,22 +93,12 @@ fun MapWebScreen(
                         attr("referrerpolicy", "no-referrer-when-downgrade")
                         attr("style", "width:100%;height:360px;border:0;border-radius:16px;margin-top:12px;background:#f5f8f8;")
                     })
-                    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                        PrimaryButton(
-                            text = "Open in Google Maps",
-                            onClick = { window.open(googleMapsUrl(activeCluster.point), "_blank") },
-                        )
-                        GhostButton(
-                            text = "Open in OpenStreetMap",
-                            onClick = { window.open(osmUrl(activeCluster.point), "_blank") },
-                        )
-                    }
                 }
 
                 SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Clusters") }
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Areas") }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Choose an area to inspect. Labels use reverse geocoding instead of raw coordinates.")
+                        Text("Pick an area to inspect on Google Maps.")
                     }
                     clusters.forEach { cluster ->
                         Div(
@@ -127,10 +111,10 @@ fun MapWebScreen(
                             Div {
                                 Div(attrs = { classes(SmokeWebStyles.timeText) }) { Text(cluster.label) }
                                 Div(attrs = { classes(SmokeWebStyles.subText) }) {
-                                    Text("${cluster.count} smokes in this cluster")
+                                    Text("${cluster.count} smokes in this area")
                                 }
                             }
-                            GhostButton(
+                            PrimaryButton(
                                 text = if (cluster == activeCluster) "Viewing" else "View",
                                 onClick = { selectedCluster = cluster },
                                 enabled = cluster != activeCluster,
@@ -155,47 +139,29 @@ private fun clusterSmokes(
 
     return smokes
         .mapNotNull { it.location }
-        .groupingBy { point ->
+        .groupBy { point ->
             val scale = 10.0.pow(precision.toDouble())
             val lat = round(point.latitude * scale) / scale
             val lon = round(point.longitude * scale) / scale
             lat to lon
         }
-        .eachCount()
         .entries
-        .sortedByDescending { it.value }
-        .map { (key, count) ->
+        .sortedByDescending { it.value.size }
+        .mapIndexed { index, (_, points) ->
+            val centerLat = points.map { it.latitude }.average()
+            val centerLon = points.map { it.longitude }.average()
             MapCluster(
-                point = GeoPoint(key.first, key.second),
-                count = count,
-                label = "Loading location...",
+                point = GeoPoint(centerLat, centerLon),
+                count = points.size,
+                label = when (index) {
+                    0 -> "Top area"
+                    1 -> "Second area"
+                    2 -> "Third area"
+                    else -> "Area ${index + 1}"
+                },
             )
         }
 }
 
-private suspend fun reverseGeocode(point: GeoPoint): String {
-    val url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}&zoom=16&addressdetails=1"
-    return runCatching {
-        val response = window.fetch(url).await()
-        val payload = response.json().await().unsafeCast<dynamic>()
-        val address = payload.address
-        val road = address?.road as? String
-        val suburb = address?.suburb as? String ?: address?.neighbourhood as? String
-        val district = address?.city_district as? String
-        val city = address?.city as? String ?: address?.town as? String ?: address?.village as? String
-        listOfNotNull(road, suburb, district, city).distinct().take(3).joinToString(", ")
-            .ifBlank { payload.display_name as? String ?: fallbackLabel(point) }
-    }.getOrElse { fallbackLabel(point) }
-}
-
-private fun fallbackLabel(point: GeoPoint): String =
-    "Near ${round(point.latitude * 100.0) / 100.0}, ${round(point.longitude * 100.0) / 100.0}"
-
 private fun googleEmbedUrl(point: GeoPoint): String =
-    "https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=15&output=embed"
-
-private fun googleMapsUrl(point: GeoPoint): String =
-    "https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}"
-
-private fun osmUrl(point: GeoPoint): String =
-    "https://www.openstreetmap.org/?mlat=${point.latitude}&mlon=${point.longitude}#map=16/${point.latitude}/${point.longitude}"
+    "https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=14&output=embed"

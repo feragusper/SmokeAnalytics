@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 @Composable
 fun SettingsView(
     viewModel: SettingsViewModel,
-    onOpenAbout: () -> Unit,
 ) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
@@ -22,6 +21,5 @@ fun SettingsView(
     // Render the UI based on the current state and send user intents to the ViewModel.
     viewState.Compose(
         intent = { intent -> viewModel.intents().trySend(intent) },
-        onOpenAbout = onOpenAbout,
     )
 }

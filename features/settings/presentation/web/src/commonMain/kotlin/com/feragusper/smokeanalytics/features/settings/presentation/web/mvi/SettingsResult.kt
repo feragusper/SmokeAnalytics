@@ -18,6 +18,7 @@ sealed interface SettingsResult {
      */
     data class UserLoggedIn(
         val email: String?,
+        val displayName: String?,
         val preferences: UserPreferences,
     ) : SettingsResult
 

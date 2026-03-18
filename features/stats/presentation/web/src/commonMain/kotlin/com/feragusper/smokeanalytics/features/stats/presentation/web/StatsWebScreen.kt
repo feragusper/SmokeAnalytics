@@ -107,13 +107,6 @@ private fun StatsWebContent(
                 state.displayLoading -> StatusTone.Busy
                 state.error != null -> StatusTone.Error
                 else -> StatusTone.Default
-            },
-            actions = {
-                GhostButton(
-                    text = "Reload",
-                    onClick = onReload,
-                    enabled = !state.displayLoading,
-                )
             }
         )
 
@@ -173,8 +166,8 @@ private fun StatsWebContent(
         when {
             state.error != null -> InlineErrorCard(
                 title = "Stats are unavailable",
-                message = "The chart could not be loaded for the selected period. Try reloading with the same filters.",
-                actionLabel = "Reload",
+                message = "The chart could not be loaded for the selected period. Try changing the filters or refresh the browser.",
+                actionLabel = "Try again",
                 onAction = onReload,
             )
 

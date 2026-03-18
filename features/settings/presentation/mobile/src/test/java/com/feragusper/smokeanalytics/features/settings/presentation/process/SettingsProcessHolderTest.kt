@@ -68,14 +68,19 @@ class SettingsProcessHolderTest {
     fun `GIVEN session is logged in WHEN FetchUser intent is processed THEN emit loading and UserLoggedIn`() =
         runTest {
             val email = "fernancho@gmail.com"
+            val displayName = "Fer"
             coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
-                Session.User(id = "123", email = email, displayName = "Fer")
+                Session.User(id = "123", email = email, displayName = displayName)
             )
             coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
-                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedIn(email, UserPreferences())
+                awaitItem() shouldBeEqualTo SettingsResult.UserLoggedIn(
+                    email = email,
+                    displayName = displayName,
+                    preferences = UserPreferences(),
+                )
                 awaitComplete()
             }
         }

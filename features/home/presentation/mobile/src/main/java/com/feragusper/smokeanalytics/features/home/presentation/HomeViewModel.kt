@@ -12,6 +12,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.G
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.StartNewDaySuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
 import com.feragusper.smokeanalytics.features.home.domain.elapsedToneFrom
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
@@ -94,6 +95,7 @@ class HomeViewModel @Inject constructor(
                 smokesPerWeek = 0,
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
+                canStartNewDay = false,
             )
 
             GoToHistory -> {
@@ -129,6 +131,7 @@ class HomeViewModel @Inject constructor(
                     greetingMessage = result.greetingState.message,
                     financialSummary = result.financialSummary,
                     gamificationSummary = result.gamificationSummary,
+                    canStartNewDay = result.canStartNewDay,
                     elapsedTone = elapsedToneFrom(
                         result.smokeCountListResult.timeSinceLastCigarette.first,
                         result.smokeCountListResult.timeSinceLastCigarette.second,
@@ -142,7 +145,7 @@ class HomeViewModel @Inject constructor(
                 )
             }
 
-            DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
+            DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess, StartNewDaySuccess -> {
                 // Re-fetch smokes when adding, editing, or deleting a smoke.
                 intents().trySend(HomeIntent.FetchSmokes)
                 previous

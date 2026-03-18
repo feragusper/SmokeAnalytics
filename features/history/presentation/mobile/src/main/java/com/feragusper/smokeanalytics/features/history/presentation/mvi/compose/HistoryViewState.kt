@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -60,15 +63,20 @@ import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import com.valentinilk.shimmer.shimmer
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
 data class HistoryViewState(
     internal val displayLoading: Boolean = false,
     internal val smokes: List<Smoke>? = null,
+    internal val monthCounts: Map<Int, Int> = emptyMap(),
     internal val error: HistoryResult.Error? = null,
     internal val selectedDate: Instant = Clock.System.now(),
 ) : MVIViewState<HistoryIntent> {
@@ -143,6 +151,7 @@ data class HistoryViewState(
             }
         ) { contentPadding ->
             var showDatePicker by remember { mutableStateOf(false) }
+            var calendarMode by rememberSaveable { mutableStateOf(false) }
 
             if (showDatePicker) {
                 DatePickerDialog(
@@ -192,11 +201,34 @@ data class HistoryViewState(
                     }
                 }
 
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !calendarMode,
+                        onClick = { calendarMode = false },
+                        label = { Text("List") },
+                    )
+                    FilterChip(
+                        selected = calendarMode,
+                        onClick = { calendarMode = true },
+                        label = { Text("Calendar") },
+                    )
+                }
+
                 Stat(
                     titleResourceId = R.string.history_smoked,
                     count = smokes?.size ?: 0,
                     isLoading = displayLoading
                 )
+
+                if (calendarMode && !displayLoading) {
+                    CalendarMonthCard(
+                        selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date,
+                        monthCounts = monthCounts,
+                        onPickDay = { picked ->
+                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
+                        }
+                    )
+                }
 
                 if (displayLoading) {
                     LazyColumn(
@@ -256,4 +288,89 @@ private fun kotlinx.datetime.LocalDateTime.dateFormattedUi(): String {
     val day = "%02d".format(dayOfMonth)
     val month = "%02d".format(monthNumber)
     return "$day/$month/$year"
+}
+
+@Composable
+private fun CalendarMonthCard(
+    selectedLocalDate: LocalDate,
+    monthCounts: Map<Int, Int>,
+    onPickDay: (LocalDate) -> Unit,
+) {
+    val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
+    val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
+    val daysInMonth = nextMonthStart.plus(DatePeriod(days = -1)).dayOfMonth
+    val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber - 1
+    val maxCount = monthCounts.values.maxOrNull() ?: 0
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = selectedLocalDate.toUiMonthYear(),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
+                Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
+                    Text(text = label, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        val totalSlots = leadingEmptySlots + daysInMonth
+        val rows = (totalSlots + 6) / 7
+        for (row in 0 until rows) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                for (column in 0 until 7) {
+                    val slot = row * 7 + column
+                    val day = slot - leadingEmptySlots + 1
+                    if (day !in 1..daysInMonth) {
+                        Spacer(modifier = Modifier.width(42.dp))
+                    } else {
+                        val count = monthCounts[day] ?: 0
+                        val date = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, day)
+                        val background = when {
+                            date == selectedLocalDate -> MaterialTheme.colorScheme.primaryContainer
+                            count == 0 -> MaterialTheme.colorScheme.surface
+                            maxCount <= 1 -> MaterialTheme.colorScheme.secondaryContainer
+                            count >= maxCount -> MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                            else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(42.dp)
+                                .height(54.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(background)
+                                .clickable { onPickDay(date) }
+                                .padding(8.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(text = day.toString(), style = MaterialTheme.typography.labelLarge)
+                                if (count > 0) {
+                                    Text(
+                                        text = count.toString(),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun LocalDate.toUiMonthYear(): String {
+    val monthName = month.name.lowercase().replaceFirstChar { it.titlecase() }
+    return "$monthName $year"
 }

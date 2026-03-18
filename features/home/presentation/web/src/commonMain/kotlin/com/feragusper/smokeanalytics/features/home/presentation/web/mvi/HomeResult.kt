@@ -20,6 +20,8 @@ sealed interface HomeResult {
 
     data object AddSmokeSuccess : HomeResult
 
+    data object StartNewDaySuccess : HomeResult
+
     data object EditSmokeSuccess : HomeResult
 
     data object DeleteSmokeSuccess : HomeResult
@@ -35,6 +37,7 @@ sealed interface HomeResult {
         val greetingState: GreetingState,
         val financialSummary: FinancialSummary,
         val gamificationSummary: GamificationSummary,
+        val canStartNewDay: Boolean,
     ) : HomeResult
 
     data object FetchSmokesError : HomeResult

@@ -50,5 +50,5 @@ private class FakeSmokeRepository : SmokeRepository {
     override suspend fun fetchSmokes(start: Instant?, end: Instant?): List<Smoke> =
         emptyList()
 
-    override suspend fun fetchSmokeCount(dayStartHour: Int) = error("Not needed for this test")
+    override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?) = error("Not needed for this test")
 }

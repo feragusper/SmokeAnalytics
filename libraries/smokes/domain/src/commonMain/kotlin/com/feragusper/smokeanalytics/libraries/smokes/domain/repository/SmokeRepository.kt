@@ -35,7 +35,10 @@ interface SmokeRepository {
      *
      * @return The smoke count.
      */
-    suspend fun fetchSmokeCount(dayStartHour: Int = 0): SmokeCount
+    suspend fun fetchSmokeCount(
+        dayStartHour: Int = 0,
+        manualDayStartEpochMillis: Long? = null,
+    ): SmokeCount
 
     /**
      * Edits a smoke.

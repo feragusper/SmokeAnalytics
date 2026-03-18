@@ -96,7 +96,7 @@ data class WebAppGraph(
                         { _: dynamic ->
                             continuation.resume(null)
                         },
-                        js("{ enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }"),
+                        js("{ enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }"),
                     )
                 }
             }
@@ -127,6 +127,7 @@ data class WebAppGraph(
                 fetchSmokeCountListUseCase = fetchSmokeCounts,
                 fetchSessionUseCase = fetchSession,
                 fetchUserPreferencesUseCase = fetchPreferences,
+                updateUserPreferencesUseCase = updatePreferences,
                 locationCaptureService = locationCaptureService,
             )
 

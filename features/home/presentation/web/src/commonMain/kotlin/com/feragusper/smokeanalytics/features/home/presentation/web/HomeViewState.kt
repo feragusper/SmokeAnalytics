@@ -18,7 +18,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
  * @property error The error that occurred during the last operation.
  */
 data class HomeViewState(
-    val displayLoading: Boolean = false,
+    val displayLoading: Boolean = true,
     val displayRefreshLoading: Boolean = false,
     val smokesPerDay: Int? = null,
     val smokesPerWeek: Int? = null,
@@ -29,6 +29,8 @@ data class HomeViewState(
     val greetingMessage: String? = null,
     val financialSummary: FinancialSummary? = null,
     val gamificationSummary: GamificationSummary? = null,
+    val currencySymbol: String = "€",
+    val canStartNewDay: Boolean = false,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     val error: HomeError? = null,
 ) {

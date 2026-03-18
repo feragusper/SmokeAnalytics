@@ -7,7 +7,6 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -28,7 +27,6 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.feragusper.smokeanalytics.MainActivity
-import com.feragusper.smokeanalytics.R
 
 class HomeStatusWidget : GlanceAppWidget() {
 
@@ -54,31 +52,11 @@ private fun WidgetContent(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color(0xFFF8FBFA)))
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable(actionStartActivity<MainActivity>()),
         verticalAlignment = Alignment.Vertical.Top,
         horizontalAlignment = Alignment.Horizontal.Start,
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Vertical.CenterVertically,
-            horizontalAlignment = Alignment.Horizontal.Start,
-        ) {
-            androidx.glance.Image(
-                provider = ImageProvider(R.mipmap.ic_launcher_round),
-                contentDescription = "Smoke Analytics",
-            )
-            Spacer(GlanceModifier.width(8.dp))
-            Text(
-                text = "Smoke Analytics",
-                style = TextStyle(
-                    color = ColorProvider(Color(0xFF006A6A)),
-                    fontWeight = FontWeight.Bold,
-                ),
-            )
-        }
-
-        Spacer(GlanceModifier.height(16.dp))
-
         Text(
             text = "${snapshot.todayCount} today",
             style = TextStyle(
@@ -106,21 +84,6 @@ private fun WidgetContent(
             Spacer(GlanceModifier.width(16.dp))
             Metric("Spent", formatMoney(snapshot.spentToday))
         }
-
-        Spacer(GlanceModifier.height(16.dp))
-
-        Text(
-            text = "Open app",
-            modifier = GlanceModifier
-                .fillMaxWidth()
-                .background(ColorProvider(Color(0xFF006A6A)))
-                .padding(vertical = 10.dp, horizontal = 12.dp)
-                .clickable(actionStartActivity<MainActivity>()),
-            style = TextStyle(
-                color = ColorProvider(Color.White),
-                fontWeight = FontWeight.Medium,
-            ),
-        )
     }
 }
 

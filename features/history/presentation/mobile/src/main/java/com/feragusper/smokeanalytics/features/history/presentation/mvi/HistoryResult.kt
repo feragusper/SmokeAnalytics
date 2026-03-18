@@ -70,7 +70,8 @@ sealed interface HistoryResult : MVIResult {
      */
     data class FetchSmokesSuccess(
         val selectedDate: Instant,
-        val smokes: List<Smoke>
+        val smokes: List<Smoke>,
+        val monthCounts: Map<Int, Int>,
     ) : HistoryResult
 
     /**

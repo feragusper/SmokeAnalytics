@@ -47,6 +47,11 @@ sealed interface HomeResult : MVIResult {
     data object AddSmokeSuccess : HomeResult
 
     /**
+     * Indicates that the current day was manually restarted.
+     */
+    data object StartNewDaySuccess : HomeResult
+
+    /**
      * Indicates that a smoke event was successfully edited.
      */
     data object EditSmokeSuccess : HomeResult
@@ -82,6 +87,7 @@ sealed interface HomeResult : MVIResult {
         val greetingState: GreetingState,
         val financialSummary: FinancialSummary,
         val gamificationSummary: GamificationSummary,
+        val canStartNewDay: Boolean,
     ) : HomeResult
 
     /**

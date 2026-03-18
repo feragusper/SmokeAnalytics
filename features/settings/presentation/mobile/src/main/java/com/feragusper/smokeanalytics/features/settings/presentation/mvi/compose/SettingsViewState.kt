@@ -1,13 +1,14 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,29 +16,41 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
-import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.versionName
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
@@ -49,6 +62,7 @@ import com.valentinilk.shimmer.shimmer
 data class SettingsViewState(
     internal val displayLoading: Boolean = false,
     internal val currentEmail: String? = null,
+    internal val currentDisplayName: String? = null,
     internal val preferences: UserPreferences = UserPreferences(),
     internal val infoMessage: String? = null,
 ) : MVIViewState<SettingsIntent> {
@@ -63,8 +77,13 @@ data class SettingsViewState(
     @Composable
     fun Compose(
         intent: (SettingsIntent) -> Unit,
-        onOpenAbout: () -> Unit,
     ) {
+        var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
+
+        LaunchedEffect(preferences, currentEmail) {
+            draftPreferences = preferences
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,23 +98,28 @@ data class SettingsViewState(
 
             SessionCard(
                 currentEmail = currentEmail,
+                currentDisplayName = currentDisplayName,
                 displayLoading = displayLoading,
                 onSignOut = { intent(SettingsIntent.SignOut) },
                 onSignInSuccess = { intent(SettingsIntent.FetchUser) },
             )
 
             PreferencesCard(
-                preferences = preferences,
+                preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
-                onSave = { intent(SettingsIntent.UpdatePreferences(it)) },
+                onPreferencesChange = { draftPreferences = it },
+                onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
+                onReset = { draftPreferences = preferences }
             )
 
             AccountTierCard(tier = preferences.accountTier)
-            ActionsCard(
-                currentTier = preferences.accountTier,
-                onOpenAbout = onOpenAbout,
-                enabled = !displayLoading,
+
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
+            AboutSection()
 
             infoMessage?.let { message ->
                 Text(
@@ -104,63 +128,56 @@ data class SettingsViewState(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
-
-            AppVersionFooter()
         }
-    }
-}
-
-@Composable
-private fun ActionsCard(
-    currentTier: AccountTier,
-    onOpenAbout: () -> Unit,
-    enabled: Boolean,
-) {
-    SettingsCard(title = "More") {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = enabled, onClick = onOpenAbout),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("About", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "Version, links, sharing and plan details.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            TextButton(onClick = onOpenAbout, enabled = enabled) {
-                Text("Open")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Current tier: ${currentTier.name}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
 @Composable
 private fun SessionCard(
     currentEmail: String?,
+    currentDisplayName: String?,
     displayLoading: Boolean,
     onSignOut: () -> Unit,
     onSignInSuccess: () -> Unit,
 ) {
     SettingsCard(title = "Session") {
         if (currentEmail != null) {
-            Text(
-                text = currentEmail,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = sessionInitials(currentDisplayName, currentEmail),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    currentDisplayName?.takeIf { it.isNotBlank() }?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Text(
+                        text = currentEmail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
+            OutlinedButton(
                 modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
                 onClick = onSignOut,
                 enabled = !displayLoading,
@@ -181,89 +198,72 @@ private fun SessionCard(
 private fun PreferencesCard(
     preferences: UserPreferences,
     enabled: Boolean,
-    onSave: (UserPreferences) -> Unit,
+    onPreferencesChange: (UserPreferences) -> Unit,
+    onSave: () -> Unit,
+    onReset: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        onPreferencesChange(preferences.copy(locationTrackingEnabled = hasPermission))
+    }
+
     SettingsCard(title = "Preferences") {
-        val context = LocalContext.current
-        val locationPermissionLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestMultiplePermissions(),
-        ) { granted ->
-            val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-            onSave(preferences.copy(locationTrackingEnabled = hasPermission))
-        }
-
-        val packPriceText = if (preferences.packPrice == 0.0) "" else preferences.packPrice.toString()
-        OutlinedTextField(
-            value = packPriceText,
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        packPrice = value.toDoubleOrNull() ?: 0.0,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Pack price") },
+        CurrencyField(
+            selected = preferences.currencySymbol,
             enabled = enabled,
-            singleLine = true,
+            onCurrencySelected = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = preferences.cigarettesPerPack.toString(),
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        cigarettesPerPack = value.toIntOrNull()?.coerceAtLeast(1) ?: preferences.cigarettesPerPack,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Cigarettes per pack") },
+        PriceField(
+            label = "Pack price",
+            currencySymbol = preferences.currencySymbol,
+            value = preferences.packPrice,
             enabled = enabled,
-            singleLine = true,
+            onValueChange = { onPreferencesChange(preferences.copy(packPrice = it.coerceAtLeast(0.0))) },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = preferences.dayStartHour.toString().padStart(2, '0'),
-            onValueChange = { value ->
-                onSave(
-                    preferences.copy(
-                        dayStartHour = value.toIntOrNull()?.coerceIn(0, 23) ?: preferences.dayStartHour,
-                    )
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("First hour of the day") },
+        IntegerField(
+            label = "Cigarettes per pack",
+            value = preferences.cigarettesPerPack,
             enabled = enabled,
-            singleLine = true,
+            minValue = 1,
+            step = 1,
+            onValueChange = { onPreferencesChange(preferences.copy(cigarettesPerPack = it)) },
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
+        TimePreferenceRow(
+            label = "First hour of the day",
+            hour = preferences.dayStartHour,
+            enabled = enabled,
+            onTimeSelected = { hour ->
+                onPreferencesChange(preferences.copy(dayStartHour = hour))
+            },
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Track location with smokes", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "Optional. Used for map insights.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Text("Track location with smokes", style = MaterialTheme.typography.bodySmall)
             Switch(
                 checked = preferences.locationTrackingEnabled,
                 onCheckedChange = { checked ->
                     if (!checked) {
-                        onSave(preferences.copy(locationTrackingEnabled = false))
+                        onPreferencesChange(preferences.copy(locationTrackingEnabled = false))
                     } else if (context.hasLocationPermission()) {
-                        onSave(preferences.copy(locationTrackingEnabled = true))
+                        onPreferencesChange(preferences.copy(locationTrackingEnabled = true))
                     } else {
                         locationPermissionLauncher.launch(
                             arrayOf(
@@ -275,6 +275,191 @@ private fun PreferencesCard(
                 },
                 enabled = enabled,
             )
+            Text(
+                "Optional. Used for map insights.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = onReset,
+                enabled = enabled,
+            ) {
+                Text("Reset")
+            }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = onSave,
+                enabled = enabled,
+            ) {
+                Text("Save")
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyField(
+    selected: String,
+    enabled: Boolean,
+    onCurrencySelected: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = "Currency", style = MaterialTheme.typography.bodySmall)
+        Box {
+            OutlinedButton(
+                onClick = { expanded = true },
+                enabled = enabled,
+            ) {
+                Text(selected)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                listOf("€", "$", "£").forEach { symbol ->
+                    DropdownMenuItem(
+                        text = { Text(symbol) },
+                        onClick = {
+                            expanded = false
+                            onCurrencySelected(symbol)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceField(
+    label: String,
+    currencySymbol: String,
+    value: Double,
+    enabled: Boolean,
+    onValueChange: (Double) -> Unit,
+) {
+    var text by remember(value) { mutableStateOf("%.2f".format(value)) }
+    LaunchedEffect(value) { text = "%.2f".format(value) }
+
+    FieldWithStepper(
+        label = label,
+        enabled = enabled,
+        field = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    it.toDoubleOrNull()?.let { parsed -> onValueChange(parsed.coerceAtLeast(0.0)) }
+                },
+                enabled = enabled,
+                prefix = { Text(currencySymbol) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        },
+        onDecrease = { onValueChange((value - 0.5).coerceAtLeast(0.0)) },
+        onIncrease = { onValueChange(value + 0.5) },
+    )
+}
+
+@Composable
+private fun IntegerField(
+    label: String,
+    value: Int,
+    enabled: Boolean,
+    minValue: Int,
+    step: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    LaunchedEffect(value) { text = value.toString() }
+
+    FieldWithStepper(
+        label = label,
+        enabled = enabled,
+        field = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    it.toIntOrNull()?.let { parsed -> onValueChange(parsed.coerceAtLeast(minValue)) }
+                },
+                enabled = enabled,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        },
+        onDecrease = { onValueChange((value - step).coerceAtLeast(minValue)) },
+        onIncrease = { onValueChange(value + step) },
+    )
+}
+
+@Composable
+private fun FieldWithStepper(
+    label: String,
+    enabled: Boolean,
+    field: @Composable () -> Unit,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
+        field()
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onDecrease, enabled = enabled) { Text("−") }
+            OutlinedButton(onClick = onIncrease, enabled = enabled) { Text("+") }
+        }
+    }
+}
+
+@Composable
+private fun TimePreferenceRow(
+    label: String,
+    hour: Int,
+    enabled: Boolean,
+    onTimeSelected: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "${hour.toString().padStart(2, '0')}:00",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        OutlinedButton(
+            onClick = {
+                TimePickerDialog(
+                    context,
+                    { _, selectedHour, _ -> onTimeSelected(selectedHour) },
+                    hour,
+                    0,
+                    true,
+                ).show()
+            },
+            enabled = enabled,
+        ) {
+            Text("Change")
         }
     }
 }
@@ -300,9 +485,7 @@ private fun SettingsCard(
     title: String,
     content: @Composable () -> Unit,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -332,20 +515,14 @@ private fun SettingsShimmerContent() {
     }
 }
 
-@Composable
-private fun AppVersionFooter() {
-    val context = LocalContext.current
-    Column(modifier = Modifier.fillMaxWidth()) {
-        context.versionName()?.let { versionName ->
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = versionName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
+private fun sessionInitials(name: String?, email: String?): String {
+    val source = name?.takeIf { it.isNotBlank() } ?: email.orEmpty()
+    return source
+        .split(" ", ".", "@")
+        .filter { it.isNotBlank() }
+        .take(2)
+        .joinToString("") { it.take(1).uppercase() }
+        .ifBlank { "SA" }
 }
 
 @Composable
@@ -363,9 +540,11 @@ private fun Context.hasLocationPermission(): Boolean {
 @Composable
 private fun SettingsPreview() {
     SmokeAnalyticsTheme {
-        SettingsViewState(currentEmail = "fer@gmail.com").Compose(
+        SettingsViewState(
+            currentEmail = "fer@gmail.com",
+            currentDisplayName = "Fernando Perez",
+        ).Compose(
             intent = {},
-            onOpenAbout = {},
         )
     }
 }

@@ -69,14 +69,16 @@ class SettingsViewModelTest {
     fun `GIVEN a user logged in result WHEN emitted THEN it updates UI state`() =
         runTest {
             val email = "fernando@example.com"
+            val displayName = "Fernando Perez"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email, UserPreferences())
+                SettingsResult.UserLoggedIn(email, displayName, UserPreferences())
             )
 
             viewModel.states().test {
                 val state = awaitItem()
                 state.displayLoading shouldBeEqualTo false
                 state.currentEmail shouldBeEqualTo email
+                state.currentDisplayName shouldBeEqualTo displayName
             }
         }
 
@@ -84,8 +86,9 @@ class SettingsViewModelTest {
     fun `GIVEN a user logs in THEN signs out THEN it updates state correctly`() =
         runTest {
             val email = "fernando@example.com"
+            val displayName = "Fernando Perez"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email, UserPreferences())
+                SettingsResult.UserLoggedIn(email, displayName, UserPreferences())
             )
             every { processHolder.processIntent(SettingsIntent.SignOut) } returns flowOf(
                 SettingsResult.UserLoggedOut
@@ -96,6 +99,7 @@ class SettingsViewModelTest {
                 var state = awaitItem()
                 state.displayLoading shouldBeEqualTo false
                 state.currentEmail shouldBeEqualTo email
+                state.currentDisplayName shouldBeEqualTo displayName
 
                 // Simulating Sign Out
                 viewModel.intents().trySend(SettingsIntent.SignOut)
@@ -103,6 +107,7 @@ class SettingsViewModelTest {
                 state = awaitItem()
                 state.displayLoading shouldBeEqualTo false
                 state.currentEmail shouldBeEqualTo null
+                state.currentDisplayName shouldBeEqualTo null
             }
         }
 }
