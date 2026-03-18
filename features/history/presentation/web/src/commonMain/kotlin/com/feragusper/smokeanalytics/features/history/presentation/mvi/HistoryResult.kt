@@ -11,6 +11,7 @@ sealed interface HistoryResult {
     data class FetchSmokesSuccess(
         val selectedDate: Instant,
         val smokes: List<Smoke>,
+        val monthCounts: Map<Int, Int>,
     ) : HistoryResult
 
     data object FetchSmokesError : HistoryResult

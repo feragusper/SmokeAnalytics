@@ -4,6 +4,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.HomeView
 import com.feragusper.smokeanalytics.features.home.presentation.HomeViewModel
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator.Companion.ROUTE
@@ -19,7 +20,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeN
  */
 fun NavGraphBuilder.homeNavigationGraph(
     homeNavigator: HomeNavigator,
-    onFabConfigChanged: (Boolean, (() -> Unit)?) -> Unit,
+    onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
 ) {
     // Define the navigation graph for Home with a start destination.
     navigation(startDestination = START, route = ROUTE) {

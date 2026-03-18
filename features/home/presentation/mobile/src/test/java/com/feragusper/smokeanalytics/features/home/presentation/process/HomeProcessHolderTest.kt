@@ -10,6 +10,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefresh
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -49,6 +50,7 @@ class HomeProcessHolderTest {
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
     private val syncWithWearUseCase: SyncWithWearUseCase = mockk()
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
     private val locationCaptureService: LocationCaptureService = mockk()
     private val widgetRefreshService: WidgetRefreshService = mockk()
 
@@ -64,12 +66,14 @@ class HomeProcessHolderTest {
             fetchSessionUseCase = fetchSessionUseCase,
             syncWithWearUseCase = syncWithWearUseCase,
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = updateUserPreferencesUseCase,
             locationCaptureService = locationCaptureService,
             widgetRefreshService = widgetRefreshService,
         )
 
         coEvery { syncWithWearUseCase.invoke() } just Runs
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+        coEvery { updateUserPreferencesUseCase.invoke(any()) } just Runs
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
         coEvery { fetchSmokeCountListUseCase.invoke(any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
         coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs

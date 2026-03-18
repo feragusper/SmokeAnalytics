@@ -56,6 +56,7 @@ class HistoryViewModel @Inject constructor(
                 error = null,
                 smokes = result.smokes,
                 selectedDate = result.selectedDate,
+                monthCounts = result.monthCounts,
             )
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {

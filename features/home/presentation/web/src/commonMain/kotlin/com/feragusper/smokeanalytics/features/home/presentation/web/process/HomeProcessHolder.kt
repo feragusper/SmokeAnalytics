@@ -7,10 +7,12 @@ import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferStartNewDay
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.logging.AppLogger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
@@ -39,6 +41,7 @@ class HomeProcessHolder(
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
 ) {
 
@@ -52,6 +55,7 @@ class HomeProcessHolder(
         HomeIntent.FetchSmokes -> processFetchSmokes(isRefresh = false)
         HomeIntent.RefreshFetchSmokes -> processFetchSmokes(isRefresh = true)
         HomeIntent.AddSmoke -> processAddSmoke()
+        HomeIntent.StartNewDay -> processStartNewDay()
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
         HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
@@ -68,13 +72,12 @@ class HomeProcessHolder(
         repeat(5) { attempt ->
             when (fetchSessionUseCase()) {
                 is Session.Anonymous -> {
-                    emit(HomeResult.NotLoggedIn)
-
-                    // Auth restoration on JS can be async; retry a few times on initial load.
                     if (!isRefresh && attempt < 4) {
+                        if (attempt == 0) emit(HomeResult.Loading)
                         delay(300)
                         return@repeat
                     } else {
+                        emit(HomeResult.NotLoggedIn)
                         return@flow
                     }
                 }
@@ -82,7 +85,10 @@ class HomeProcessHolder(
                 is Session.LoggedIn -> {
                     emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
                     val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
-                    val smokeCounts = fetchSmokeCountListUseCase(preferences.dayStartHour)
+                    val smokeCounts = fetchSmokeCountListUseCase(
+                        dayStartHour = preferences.dayStartHour,
+                        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    )
                     emit(
                         HomeResult.FetchSmokesSuccess(
                             smokeCountListResult = smokeCounts,
@@ -100,6 +106,10 @@ class HomeProcessHolder(
                                 preferences = preferences,
                             ),
                             gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
+                            canStartNewDay = shouldOfferStartNewDay(
+                                dayStartHour = preferences.dayStartHour,
+                                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                            ),
                         )
                     )
                     return@flow
@@ -138,6 +148,17 @@ class HomeProcessHolder(
         }
     }.catch { e ->
         AppLogger.e { "Error adding smoke: ${e.message}" }
+        emit(HomeResult.Error.Generic)
+    }
+
+    private fun processStartNewDay(): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        updateUserPreferencesUseCase(
+            preferences.copy(manualDayStartEpochMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
+        )
+        emit(HomeResult.StartNewDaySuccess)
+    }.catch {
         emit(HomeResult.Error.Generic)
     }
 

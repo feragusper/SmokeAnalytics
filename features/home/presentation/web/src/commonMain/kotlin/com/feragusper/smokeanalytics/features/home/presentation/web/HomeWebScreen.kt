@@ -20,6 +20,7 @@ import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatCard
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -60,14 +61,23 @@ fun HomeViewState.Render(
     val tz = remember { TimeZone.currentSystemDefault() }
     val editing = remember { mutableStateMapOf<String, Boolean>() }
     val draftTime = remember { mutableStateMapOf<String, String>() }
-    val showingInitialSkeleton = displayLoading && latestSmokes == null
+    val showingInitialSkeleton = error == null && (
+        displayLoading ||
+            (latestSmokes == null &&
+                smokesPerDay == null &&
+                smokesPerWeek == null &&
+                smokesPerMonth == null &&
+                timeSinceLastCigarette == null)
+    )
     val elapsedCardToneClass = when (elapsedTone) {
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.elapsedCardWarning
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
     }
     val addSmokeToneClass = when (elapsedTone) {
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
+        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.buttonPrimaryWarning
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
         com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
     }
@@ -79,7 +89,7 @@ fun HomeViewState.Render(
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
                 error != null -> "Needs attention"
-                else -> "Live"
+                else -> null
             },
             badgeTone = when {
                 displayRefreshLoading -> StatusTone.Busy
@@ -92,16 +102,6 @@ fun HomeViewState.Render(
                     onClick = { onIntent(HomeIntent.AddSmoke) },
                     enabled = !displayLoading,
                     extraClass = addSmokeToneClass,
-                )
-                GhostButton(
-                    text = "History",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) },
-                    enabled = !displayLoading,
-                )
-                GhostButton(
-                    text = "Refresh",
-                    onClick = { onIntent(HomeIntent.RefreshFetchSmokes) },
-                    enabled = !displayLoading,
                 )
             }
         )
@@ -128,19 +128,41 @@ fun HomeViewState.Render(
             if (greetingTitle != null || financialSummary != null || gamificationSummary != null) {
                 SurfaceCard {
                     greetingTitle?.let { title ->
-                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(title) }
+                        Div(attrs = { classes(SmokeWebStyles.pageHeroTitle) }) { Text(title) }
                     }
                     greetingMessage?.let { message ->
-                        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(message) }
+                        Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(message) }
                     }
-                    financialSummary?.let { summary ->
-                        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                            Text("Spent today ${summary.spentToday.asMoney()}")
+                    if (financialSummary != null || gamificationSummary != null) {
+                        Div(attrs = { classes(SmokeWebStyles.summaryMetricGrid) }) {
+                            financialSummary?.let { summary ->
+                                MetricSummary(
+                                    label = "Spent today",
+                                    value = summary.spentToday.formatMoney(summary.currencySymbol),
+                                )
+                            }
+                            gamificationSummary?.let { summary ->
+                                MetricSummary(
+                                    label = "Recovery points",
+                                    value = summary.points.toString(),
+                                    meta = if (summary.points == 0) "Build them by delaying the next smoke." else null,
+                                )
+                                MetricSummary(
+                                    label = "Current streak",
+                                    value = "${summary.currentStreakHours}h",
+                                    meta = "Next milestone ${summary.nextMilestoneHours}h",
+                                    tooltip = "Streak is the time since the last logged cigarette in the current cycle.",
+                                )
+                            }
                         }
                     }
-                    gamificationSummary?.let { summary ->
-                        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                            Text("Points ${summary.points} · Streak ${summary.currentStreakHours}h")
+                    if (canStartNewDay) {
+                        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                            GhostButton(
+                                text = "Start new day",
+                                onClick = { onIntent(HomeIntent.StartNewDay) },
+                                enabled = !displayLoading && !displayRefreshLoading,
+                            )
                         }
                     }
                 }
@@ -199,6 +221,7 @@ fun HomeViewState.Render(
                     Text(
                         when (elapsedTone) {
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "Now $since"
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> "Careful at $since"
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "Holding $since"
                             com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "Clear for $since"
                         }
@@ -305,11 +328,23 @@ fun HomeViewState.Render(
     }
 }
 
-private fun Double.asMoney(): String {
-    val cents = (this * 100).toInt()
-    val whole = cents / 100
-    val fraction = (cents % 100).toString().padStart(2, '0')
-    return "$whole.$fraction"
+@Composable
+private fun MetricSummary(
+    label: String,
+    value: String,
+    meta: String? = null,
+    tooltip: String? = null,
+) {
+    Div(attrs = {
+        classes(SmokeWebStyles.summaryMetricCard)
+        tooltip?.let { attr("title", it) }
+    }) {
+        Div(attrs = { classes(SmokeWebStyles.summaryMetricLabel) }) { Text(label) }
+        Div(attrs = { classes(SmokeWebStyles.summaryMetricValue) }) { Text(value) }
+        meta?.let {
+            Div(attrs = { classes(SmokeWebStyles.summaryMetricMeta) }) { Text(it) }
+        }
+    }
 }
 
 internal fun Instant.toDateInputValue(timeZone: TimeZone): String {

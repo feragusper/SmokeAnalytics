@@ -100,28 +100,31 @@ class SmokeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun fetchSmokeCount(dayStartHour: Int): SmokeCount {
+    override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?): SmokeCount {
         return fetchSmokes(
             startDate = firstInstantThisMonth(dayStartHour = dayStartHour),
-            endDate = nextDayStartInstant(dayStartHour = dayStartHour),
-        ).toSmokeCountListResult(dayStartHour)
+            endDate = nextDayStartInstant(
+                dayStartHour = dayStartHour,
+                manualDayStartEpochMillis = manualDayStartEpochMillis,
+            ),
+        ).toSmokeCountListResult(dayStartHour, manualDayStartEpochMillis)
     }
 
-    private fun List<Smoke>.toSmokeCountListResult(dayStartHour: Int) = SmokeCount(
-        today = filterToday(dayStartHour),
-        week = filterThisWeek(dayStartHour).size,
-        month = filterThisMonth(dayStartHour).size,
+    private fun List<Smoke>.toSmokeCountListResult(dayStartHour: Int, manualDayStartEpochMillis: Long?) = SmokeCount(
+        today = filterToday(dayStartHour, manualDayStartEpochMillis),
+        week = filterThisWeek(dayStartHour, manualDayStartEpochMillis).size,
+        month = filterThisMonth(dayStartHour, manualDayStartEpochMillis).size,
         lastSmoke = firstOrNull(),
     )
 
-    private fun List<Smoke>.filterToday(dayStartHour: Int) =
-        filter { it.date.isInCurrentDayBucket(dayStartHour = dayStartHour) }
+    private fun List<Smoke>.filterToday(dayStartHour: Int, manualDayStartEpochMillis: Long?) =
+        filter { it.date.isInCurrentDayBucket(dayStartHour = dayStartHour, manualDayStartEpochMillis = manualDayStartEpochMillis) }
 
-    private fun List<Smoke>.filterThisWeek(dayStartHour: Int) =
-        filter { it.date.isInCurrentWeekBucket(dayStartHour = dayStartHour) }
+    private fun List<Smoke>.filterThisWeek(dayStartHour: Int, manualDayStartEpochMillis: Long?) =
+        filter { it.date.isInCurrentWeekBucket(dayStartHour = dayStartHour, manualDayStartEpochMillis = manualDayStartEpochMillis) }
 
-    private fun List<Smoke>.filterThisMonth(dayStartHour: Int) =
-        filter { it.date.isInCurrentMonthBucket(dayStartHour = dayStartHour) }
+    private fun List<Smoke>.filterThisMonth(dayStartHour: Int, manualDayStartEpochMillis: Long?) =
+        filter { it.date.isInCurrentMonthBucket(dayStartHour = dayStartHour, manualDayStartEpochMillis = manualDayStartEpochMillis) }
 
     private fun smokesQuery() = firebaseAuth.currentUser?.uid?.let { uid ->
         firebaseFirestore.collection("$USERS/$uid/$SMOKES")

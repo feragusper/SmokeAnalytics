@@ -63,6 +63,6 @@ class FetchSmokesUseCaseTest {
         override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?) = Unit
         override suspend fun editSmoke(id: String, timestamp: Instant, location: GeoPoint?) = Unit
         override suspend fun deleteSmoke(id: String) = Unit
-        override suspend fun fetchSmokeCount(dayStartHour: Int) = error("Not needed for this test")
+        override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?) = error("Not needed for this test")
     }
 }

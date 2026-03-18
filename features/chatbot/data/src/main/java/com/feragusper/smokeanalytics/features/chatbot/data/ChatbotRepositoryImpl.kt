@@ -41,15 +41,19 @@ class ChatbotRepositoryImpl @Inject constructor(
         User:
         - Name: ${context.name}
         - Smokes today: ${context.todayCount}
+        - Smokes this week: ${context.weekCount}
+        - Smokes this month: ${context.monthCount}
         - Logged smokes in context window: ${context.totalCount}
         - Time since last smoke: ${context.hoursSinceLastSmoke}h ${context.minutesSinceLastSmoke}m
         - Current streak hours: ${context.currentStreakHours}
         - Longest streak hours: ${context.longestStreakHours}
+        - Average gap between recent smokes: ${context.averageGapMinutes} minutes
 
         Write one compact opening message that:
-        - explains the coach's purpose in one sentence
-        - comments on the user's current pattern
+        - explains the coach's purpose in one short sentence
+        - comments on the user's current pattern using the provided data
         - gives one concrete next-step suggestion
+        - stays below 80 words
     """.trimIndent()
 
     private fun buildConversationPrompt(
@@ -63,16 +67,20 @@ class ChatbotRepositoryImpl @Inject constructor(
         User context:
         - Name: ${context.name}
         - Smokes today: ${context.todayCount}
+        - Smokes this week: ${context.weekCount}
+        - Smokes this month: ${context.monthCount}
         - Time since last smoke: ${context.hoursSinceLastSmoke}h ${context.minutesSinceLastSmoke}m
         - Current streak hours: ${context.currentStreakHours}
         - Longest streak hours: ${context.longestStreakHours}
+        - Average gap between recent smokes: ${context.averageGapMinutes} minutes
 
         User message:
         $message
 
         Reply with:
         - empathy first
-        - one practical suggestion
+        - one practical suggestion grounded in the user's data
         - no fluff
+        - under 120 words
     """.trimIndent()
 }
