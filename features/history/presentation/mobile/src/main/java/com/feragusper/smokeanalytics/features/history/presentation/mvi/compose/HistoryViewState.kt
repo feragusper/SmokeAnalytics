@@ -224,6 +224,11 @@ data class HistoryViewState(
                     CalendarMonthCard(
                         selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date,
                         monthCounts = monthCounts,
+                        onShiftMonth = { amount ->
+                            val current = selectedDate.toLocalDateTime(timeZone).date
+                            val shifted = current.plus(DatePeriod(months = amount))
+                            intent(HistoryIntent.FetchSmokes(LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)))
+                        },
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         }
@@ -294,6 +299,7 @@ private fun kotlinx.datetime.LocalDateTime.dateFormattedUi(): String {
 private fun CalendarMonthCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
+    onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
 ) {
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
@@ -309,10 +315,35 @@ private fun CalendarMonthCard(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = selectedLocalDate.toUiMonthYear(),
-            style = MaterialTheme.typography.titleSmall,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = { onShiftMonth(-1) }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = selectedLocalDate.toUiMonthYear(),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = "${monthCounts.values.sum()} smokes this month",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = { onShiftMonth(1) }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                )
+            }
+        }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
                 Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
