@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.libraries.wear.data.di
 
 import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManagerImpl
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
@@ -37,11 +38,13 @@ object WearSyncModule {
     fun provideWearSyncManager(
         @ApplicationContext context: Context,
         smokeRepository: SmokeRepository,
+        userPreferencesRepository: UserPreferencesRepository,
         dispatcherProvider: DispatcherProvider
     ): WearSyncManager.Mobile {
         return WearSyncManagerImpl(context, dispatcherProvider).Mobile(
             coroutineScope = CoroutineScope(SupervisorJob() + dispatcherProvider.default()),
-            smokeRepository = smokeRepository
+            smokeRepository = smokeRepository,
+            userPreferencesRepository = userPreferencesRepository,
         )
     }
 }

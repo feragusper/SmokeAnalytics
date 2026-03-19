@@ -41,6 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -62,6 +63,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.navigation.s
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.statsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.map.MapMobileRoute
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -116,6 +118,7 @@ private fun MainContainerScreen(
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Stats,
+        BottomNavigationScreens.Map,
         BottomNavigationScreens.Chatbot,
         BottomNavigationScreens.Settings,
     )
@@ -259,6 +262,9 @@ private fun MainScreenNavigationConfigurations(
             onFabConfigChanged = onFabConfigChanged,
         )
         statsNavigationGraph(StatsNavigator())
+        composable(route = BottomNavigationScreens.Map.route) {
+            MapMobileRoute()
+        }
         chatbotNavigationGraph(ChatbotNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
@@ -323,6 +329,11 @@ private sealed class BottomNavigationScreens(
     data object Chatbot : BottomNavigationScreens(
         ChatbotNavigator.ROUTE,
         R.drawable.ic_chatbot
+    )
+
+    data object Map : BottomNavigationScreens(
+        route = "map",
+        iconId = R.drawable.ic_map,
     )
 
     /**

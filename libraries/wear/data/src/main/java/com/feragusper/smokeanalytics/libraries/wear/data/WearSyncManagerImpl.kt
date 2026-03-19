@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.libraries.wear.data
 import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
 import com.feragusper.smokeanalytics.libraries.architecture.domain.utcMillis
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
@@ -41,6 +42,7 @@ class WearSyncManagerImpl(
      */
     inner class Mobile(
         private val smokeRepository: SmokeRepository,
+        private val userPreferencesRepository: UserPreferencesRepository,
         private val coroutineScope: CoroutineScope,
     ) : WearSyncManager.Mobile, MessageClient.OnMessageReceivedListener {
 
@@ -55,7 +57,13 @@ class WearSyncManagerImpl(
          * Synchronizes the smoke count data with the connected Wear OS device.
          */
         override suspend fun syncWithWear() {
-            respondToWearWithSmokeCount(smokeRepository.fetchSmokeCount())
+            val preferences = userPreferencesRepository.fetch()
+            respondToWearWithSmokeCount(
+                smokeRepository.fetchSmokeCount(
+                    dayStartHour = preferences.dayStartHour,
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                )
+            )
         }
 
         /**
@@ -68,7 +76,10 @@ class WearSyncManagerImpl(
             coroutineScope.launch(dispatcherProvider.io()) {
                 when (messageEvent.path) {
                     WearPaths.REQUEST_SMOKES -> syncWithWear()
-                    WearPaths.ADD_SMOKE -> smokeRepository.addSmoke(Clock.System.now())
+                    WearPaths.ADD_SMOKE -> {
+                        smokeRepository.addSmoke(Clock.System.now())
+                        syncWithWear()
+                    }
                 }
             }
         }
