@@ -95,6 +95,7 @@ class HomeViewModel @Inject constructor(
                 smokesPerWeek = 0,
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
+                lastSmoke = null,
                 canStartNewDay = false,
             )
 
@@ -126,10 +127,12 @@ class HomeViewModel @Inject constructor(
                     smokesPerWeek = result.smokeCountListResult.countByWeek,
                     smokesPerMonth = result.smokeCountListResult.countByMonth,
                     latestSmokes = result.smokeCountListResult.todaysSmokes,
+                    lastSmoke = result.smokeCountListResult.lastSmoke,
                     timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                     greetingTitle = result.greetingState.title,
                     greetingMessage = result.greetingState.message,
                     financialSummary = result.financialSummary,
+                    rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
                     canStartNewDay = result.canStartNewDay,
                     elapsedTone = elapsedToneFrom(
@@ -141,7 +144,12 @@ class HomeViewModel @Inject constructor(
 
             is UpdateTimeSinceLastCigarette -> {
                 previous.copy(
-                    timeSinceLastCigarette = result.timeSinceLastCigarette
+                    timeSinceLastCigarette = result.timeSinceLastCigarette,
+                    lastSmoke = result.lastSmoke,
+                    elapsedTone = elapsedToneFrom(
+                        result.timeSinceLastCigarette.first,
+                        result.timeSinceLastCigarette.second,
+                    ),
                 )
             }
 

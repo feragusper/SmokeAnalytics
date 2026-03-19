@@ -4,7 +4,9 @@ import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GreetingState
+import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 sealed interface HomeResult {
 
@@ -36,6 +38,7 @@ sealed interface HomeResult {
         val preferences: UserPreferences,
         val greetingState: GreetingState,
         val financialSummary: FinancialSummary,
+        val rateSummary: RateSummary,
         val gamificationSummary: GamificationSummary,
         val canStartNewDay: Boolean,
     ) : HomeResult
@@ -43,6 +46,7 @@ sealed interface HomeResult {
     data object FetchSmokesError : HomeResult
 
     data class UpdateTimeSinceLastCigarette(
-        val timeSinceLastCigarette: Pair<Long, Long>
+        val timeSinceLastCigarette: Pair<Long, Long>,
+        val lastSmoke: Smoke?,
     ) : HomeResult
 }

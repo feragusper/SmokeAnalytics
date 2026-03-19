@@ -85,10 +85,14 @@ fun DangerButton(
 fun SmokeRow(
     time: String,
     subtitle: String,
+    toneClass: String? = null,
     onEdit: (() -> Unit)?,
     onDelete: (() -> Unit)?,
 ) {
-    Div(attrs = { classes(SmokeWebStyles.listRow) }) {
+    Div(attrs = {
+        classes(SmokeWebStyles.listRow)
+        toneClass?.let { classes(it) }
+    }) {
         Div {
             Div(attrs = { classes(SmokeWebStyles.timeText) }) { Text(time) }
             Div(attrs = { classes(SmokeWebStyles.subText) }) { Text(subtitle) }

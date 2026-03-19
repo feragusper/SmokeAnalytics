@@ -4,8 +4,10 @@ import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GreetingState
+import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
  * Represents the possible outcomes of processing [HomeIntent] actions.
@@ -86,6 +88,7 @@ sealed interface HomeResult : MVIResult {
         val preferences: UserPreferences,
         val greetingState: GreetingState,
         val financialSummary: FinancialSummary,
+        val rateSummary: RateSummary,
         val gamificationSummary: GamificationSummary,
         val canStartNewDay: Boolean,
     ) : HomeResult
@@ -102,6 +105,7 @@ sealed interface HomeResult : MVIResult {
      * represented as a pair of hours and minutes.
      */
     data class UpdateTimeSinceLastCigarette(
-        val timeSinceLastCigarette: Pair<Long, Long>
+        val timeSinceLastCigarette: Pair<Long, Long>,
+        val lastSmoke: Smoke?,
     ) : HomeResult
 }

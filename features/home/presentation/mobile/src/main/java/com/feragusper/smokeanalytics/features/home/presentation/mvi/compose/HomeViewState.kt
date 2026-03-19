@@ -12,17 +12,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -50,16 +52,13 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
-import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
-import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
-import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import com.valentinilk.shimmer.shimmer
-import kotlinx.datetime.Instant
 
 /**
  * Represents the state of the Home screen in the application, encapsulating all UI-related data.
@@ -72,9 +71,11 @@ data class HomeViewState(
     internal val smokesPerMonth: Int? = null,
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
+    internal val lastSmoke: Smoke? = null,
     internal val greetingTitle: String? = null,
     internal val greetingMessage: String? = null,
     internal val financialSummary: FinancialSummary? = null,
+    internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
@@ -145,10 +146,10 @@ data class HomeViewState(
                 smokesPerWeek = smokesPerWeek,
                 smokesPerMonth = smokesPerMonth,
                 timeSinceLastCigarette = timeSinceLastCigarette,
-                latestSmokes = latestSmokes,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 financialSummary = financialSummary,
+                rateSummary = rateSummary,
                 gamificationSummary = gamificationSummary,
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
@@ -166,89 +167,51 @@ private fun HomeContent(
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
-    latestSmokes: List<Smoke>?,
     greetingTitle: String?,
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
+    rateSummary: RateSummary?,
     gamificationSummary: GamificationSummary?,
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
     intent: (HomeIntent) -> Unit
 ) {
-    Column(
+    LazyColumn(
         modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(nestedScrollConnection)
             .padding(horizontal = 16.dp)
-            .padding(top = 16.dp)
+            .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        GreetingSection(
-            greetingTitle = greetingTitle,
-            greetingMessage = greetingMessage,
-            financialSummary = financialSummary,
-            gamificationSummary = gamificationSummary,
-            canStartNewDay = canStartNewDay,
-            onStartNewDay = { intent(HomeIntent.StartNewDay) },
-            isLoading = isLoading,
-        )
-        StatsSection(
-            smokesPerDay = smokesPerDay,
-            smokesPerWeek = smokesPerWeek,
-            smokesPerMonth = smokesPerMonth,
-            isLoading = isLoading,
-            onHistoryClick = { intent(HomeIntent.OnClickHistory) }
-        )
-
-        TimeSinceLastCigaretteSection(
-            timeSinceLastCigarette = timeSinceLastCigarette,
-            isLoading = isLoading,
-            elapsedTone = elapsedTone,
-        )
-
-        LatestSmokesSection(
-            latestSmokes = latestSmokes,
-            nestedScrollConnection = nestedScrollConnection,
-            isLoading = isLoading,
-            onEdit = { id, instant -> intent(HomeIntent.EditSmoke(id, instant)) },
-            onDelete = { id -> intent(HomeIntent.DeleteSmoke(id)) }
-        )
-    }
-}
-
-@Composable
-private fun StatsSection(
-    smokesPerDay: Int?,
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
-    isLoading: Boolean,
-    onHistoryClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier.background(color = MaterialTheme.colorScheme.background)
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Stat(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onHistoryClick() },
-                titleResourceId = R.string.home_label_per_day,
-                count = smokesPerDay,
-                isLoading = isLoading
+        item {
+            GreetingSection(
+                greetingTitle = greetingTitle,
+                greetingMessage = greetingMessage,
+                canStartNewDay = canStartNewDay,
+                onStartNewDay = { intent(HomeIntent.StartNewDay) },
+                onHistoryClick = { intent(HomeIntent.OnClickHistory) },
+                isLoading = isLoading,
             )
-            Stat(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onHistoryClick() },
-                titleResourceId = R.string.home_label_per_week,
-                count = smokesPerWeek,
-                isLoading = isLoading
+        }
+        item {
+            TimeSinceLastCigaretteSection(
+                timeSinceLastCigarette = timeSinceLastCigarette,
+                isLoading = isLoading,
+                elapsedTone = elapsedTone,
             )
-            Stat(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onHistoryClick() },
-                titleResourceId = R.string.home_label_per_month,
-                count = smokesPerMonth,
-                isLoading = isLoading
+        }
+        item {
+            DashboardMetricGrid(
+                smokesPerDay = smokesPerDay,
+                smokesPerWeek = smokesPerWeek,
+                smokesPerMonth = smokesPerMonth,
+                financialSummary = financialSummary,
+                rateSummary = rateSummary,
+                gamificationSummary = gamificationSummary,
+                isLoading = isLoading,
+                onHistoryClick = { intent(HomeIntent.OnClickHistory) },
             )
         }
     }
@@ -309,6 +272,7 @@ private fun TimeSinceLastCigaretteSection(
             }
         }
         Image(
+            modifier = Modifier.size(96.dp),
             painter = painterResource(id = R.drawable.il_cigarette_background),
             contentDescription = null
         )
@@ -319,58 +283,58 @@ private fun TimeSinceLastCigaretteSection(
 private fun GreetingSection(
     greetingTitle: String?,
     greetingMessage: String?,
-    financialSummary: FinancialSummary?,
-    gamificationSummary: GamificationSummary?,
     canStartNewDay: Boolean,
     onStartNewDay: () -> Unit,
+    onHistoryClick: () -> Unit,
     isLoading: Boolean,
 ) {
-    if (greetingTitle == null && financialSummary == null && gamificationSummary == null) return
-    Box(
+    if (greetingTitle == null && greetingMessage == null && !canStartNewDay) return
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-            .padding(16.dp)
+            .clip(MaterialTheme.shapes.medium),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 1.dp,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             greetingTitle?.let {
                 Text(text = it, style = MaterialTheme.typography.titleMedium)
             }
             greetingMessage?.let {
                 Text(text = it, style = MaterialTheme.typography.bodyMedium)
             }
-            financialSummary?.let {
-                Text(
-                    text = "Spent today ${it.spentToday.formatMoney(it.currencySymbol)}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            gamificationSummary?.let {
-                Text(
-                    text = "Points ${it.points}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (canStartNewDay) {
-                androidx.compose.material3.TextButton(
-                    onClick = onStartNewDay,
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = onHistoryClick,
                     enabled = !isLoading,
                 ) {
-                    Text(text = "Start new day")
+                    Text(text = "Open history")
+                }
+                if (canStartNewDay) {
+                    TextButton(
+                        onClick = onStartNewDay,
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                    ) {
+                        Text(text = "Start new day")
+                    }
                 }
             }
         }
     }
-
-    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable
 private fun ElapsedTone.containerColor(): Color = when (this) {
-    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer
-    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer
-    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer
-    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.68f)
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.58f)
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.46f)
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
 }
 
 @Composable
@@ -382,61 +346,139 @@ private fun ElapsedTone.contentColor(): Color = when (this) {
 }
 
 @Composable
-private fun LatestSmokesSection(
-    latestSmokes: List<Smoke>?,
-    nestedScrollConnection: NestedScrollConnection,
+private fun DashboardMetricGrid(
+    smokesPerDay: Int?,
+    smokesPerWeek: Int?,
+    smokesPerMonth: Int?,
+    financialSummary: FinancialSummary?,
+    rateSummary: RateSummary?,
+    gamificationSummary: GamificationSummary?,
     isLoading: Boolean,
-    onEdit: (String, Instant) -> Unit,
-    onDelete: (String) -> Unit
+    onHistoryClick: () -> Unit,
 ) {
-    Text(
-        modifier = Modifier.padding(vertical = 12.dp),
-        text = stringResource(id = R.string.home_smoked_today),
-        style = MaterialTheme.typography.titleSmall,
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Today",
+                value = smokesPerDay?.toString(),
+                supporting = "Current day bucket",
+                isLoading = isLoading,
+                onClick = onHistoryClick,
+            )
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Week",
+                value = smokesPerWeek?.toString(),
+                supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayWeek) },
+                isLoading = isLoading,
+                onClick = onHistoryClick,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Month",
+                value = smokesPerMonth?.toString(),
+                supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayMonth) },
+                isLoading = isLoading,
+                onClick = onHistoryClick,
+            )
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Avg gap today",
+                value = rateSummary?.averageIntervalMinutesToday?.toGapLabel(),
+                supporting = rateSummary?.latestIntervalMinutes?.let { "Latest ${it.toGapLabel()}" },
+                isLoading = isLoading,
+                tone = rateSummary?.averageIntervalMinutesToday?.let(::elapsedToneFromMinutes),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Spent today",
+                value = financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol),
+                supporting = financialSummary?.let {
+                    "Week ${it.spentWeek.formatMoney(it.currencySymbol)}"
+                },
+                isLoading = isLoading,
+            )
+            DashboardMetricCard(
+                modifier = Modifier.weight(1f),
+                title = "Points",
+                value = gamificationSummary?.points?.toString(),
+                supporting = gamificationSummary?.let { "Next ${it.nextMilestoneHours}h" },
+                isLoading = isLoading,
+            )
+        }
+    }
+}
 
-    if (isLoading) {
-        LazyColumn(
+@Composable
+private fun DashboardMetricCard(
+    title: String,
+    value: String?,
+    supporting: String?,
+    modifier: Modifier = Modifier,
+    isLoading: Boolean,
+    tone: ElapsedTone? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    Surface(
+        modifier = modifier
+            .aspectRatio(1.15f)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+        color = tone?.containerColor()?.copy(alpha = 0.58f) ?: MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = 1.dp,
+    ) {
+        Column(
             modifier = Modifier
-                .padding(top = 32.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            items(3) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = tone?.contentColor()?.copy(alpha = 0.8f) ?: MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (isLoading) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
+                        .size(96.dp, 24.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .shimmer()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                )
+            } else {
+                Text(
+                    text = value ?: "--",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = tone?.contentColor() ?: MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            supporting?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = tone?.contentColor()?.copy(alpha = 0.8f) ?: MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-    } else if (!latestSmokes.isNullOrEmpty()) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .fillMaxSize()
-                .nestedScroll(nestedScrollConnection),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(latestSmokes) { smoke ->
-                SwipeToDismissRow(
-                    date = smoke.date,
-                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                    onDelete = { onDelete(smoke.id) },
-                    fullDateTimeEdit = false,
-                    onEdit = { editedInstant ->
-                        onEdit(smoke.id, editedInstant)
-                    }
-                )
-                HorizontalDivider()
-            }
-        }
-    } else {
-        EmptySmokes()
     }
+}
+
+private fun Int.toGapLabel(): String = when {
+    this >= 60 -> "${this / 60}h ${this % 60}m"
+    else -> "${this}m"
+}
+
+private fun elapsedToneFromMinutes(minutes: Int): ElapsedTone = when {
+    minutes >= 180 -> ElapsedTone.Calm
+    minutes >= 90 -> ElapsedTone.Caution
+    minutes >= 45 -> ElapsedTone.Warning
+    else -> ElapsedTone.Urgent
 }
 
 @CombinedPreviews

@@ -5,8 +5,10 @@ import com.feragusper.smokeanalytics.features.home.presentation.web.process.Home
 import com.feragusper.smokeanalytics.features.home.domain.elapsedToneFrom
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,12 +29,21 @@ class HomeWebStore(
         intents.trySend(intent)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun start() {
         scope.launch {
             intents
                 .receiveAsFlow()
                 .flatMapLatest { intent -> processHolder.processIntent(intent) }
                 .collect { result -> reduce(result) }
+        }
+
+        scope.launch {
+            while (true) {
+                delay(60_000)
+                val lastSmoke = _state.value.lastSmoke ?: continue
+                send(HomeIntent.TickTimeSinceLastCigarette(lastSmoke))
+            }
         }
 
         // bootstrap
@@ -63,6 +74,7 @@ class HomeWebStore(
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
                 latestSmokes = emptyList(),
+                lastSmoke = null,
                 canStartNewDay = false,
             )
 
@@ -74,10 +86,12 @@ class HomeWebStore(
                 smokesPerWeek = result.smokeCountListResult.countByWeek,
                 smokesPerMonth = result.smokeCountListResult.countByMonth,
                 latestSmokes = result.smokeCountListResult.todaysSmokes,
+                lastSmoke = result.smokeCountListResult.lastSmoke,
                 timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                 greetingTitle = result.greetingState.title,
                 greetingMessage = result.greetingState.message,
                 financialSummary = result.financialSummary,
+                rateSummary = result.rateSummary,
                 gamificationSummary = result.gamificationSummary,
                 currencySymbol = result.preferences.currencySymbol,
                 canStartNewDay = result.canStartNewDay,
@@ -88,7 +102,12 @@ class HomeWebStore(
             )
 
             is HomeResult.UpdateTimeSinceLastCigarette -> previous.copy(
-                timeSinceLastCigarette = result.timeSinceLastCigarette
+                timeSinceLastCigarette = result.timeSinceLastCigarette,
+                lastSmoke = result.lastSmoke,
+                elapsedTone = elapsedToneFrom(
+                    result.timeSinceLastCigarette.first,
+                    result.timeSinceLastCigarette.second,
+                ),
             )
 
             HomeResult.AddSmokeSuccess,
