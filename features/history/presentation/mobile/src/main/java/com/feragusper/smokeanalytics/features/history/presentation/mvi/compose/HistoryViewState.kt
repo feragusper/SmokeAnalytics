@@ -87,6 +87,8 @@ data class HistoryViewState(
         val snackbarHostState = remember { SnackbarHostState() }
         val isFABVisible = rememberSaveable { mutableStateOf(true) }
         val timeZone = remember { TimeZone.currentSystemDefault() }
+        var showDatePicker by remember { mutableStateOf(false) }
+        var calendarMode by rememberSaveable { mutableStateOf(false) }
 
         val nestedScrollConnection = remember {
             object : NestedScrollConnection {
@@ -102,7 +104,7 @@ data class HistoryViewState(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 AnimatedVisibility(
-                    visible = isFABVisible.value && !displayLoading,
+                    visible = isFABVisible.value && !displayLoading && !calendarMode,
                     enter = slideInVertically(initialOffsetY = { it * 2 }),
                     exit = slideOutVertically(targetOffsetY = { it * 2 }),
                 ) {
@@ -150,9 +152,6 @@ data class HistoryViewState(
                 )
             }
         ) { contentPadding ->
-            var showDatePicker by remember { mutableStateOf(false) }
-            var calendarMode by rememberSaveable { mutableStateOf(false) }
-
             if (showDatePicker) {
                 DatePickerDialog(
                     initialDate = selectedDate,
@@ -174,51 +173,58 @@ data class HistoryViewState(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    IconButton(onClick = {
-                        intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
-                        )
-                    }
-
-                    Text(
-                        modifier = Modifier.clickable { showDatePicker = true },
-                        text = selectedDate.toLocalDateTime(timeZone).dateFormattedUi(),
-                    )
-
-                    IconButton(onClick = {
-                        intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null
-                        )
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
+                        modifier = Modifier.weight(1f),
                         selected = !calendarMode,
                         onClick = { calendarMode = false },
                         label = { Text("List") },
                     )
                     FilterChip(
+                        modifier = Modifier.weight(1f),
                         selected = calendarMode,
                         onClick = { calendarMode = true },
                         label = { Text("Calendar") },
                     )
                 }
 
-                Stat(
-                    titleResourceId = R.string.history_smoked,
-                    count = smokes?.size ?: 0,
-                    isLoading = displayLoading
-                )
+                if (!calendarMode) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(onClick = {
+                            intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null
+                            )
+                        }
+
+                        Text(
+                            modifier = Modifier.clickable { showDatePicker = true },
+                            text = selectedDate.toLocalDateTime(timeZone).dateFormattedUi(),
+                        )
+
+                        IconButton(onClick = {
+                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null
+                            )
+                        }
+                    }
+
+                    Stat(
+                        titleResourceId = R.string.history_smoked,
+                        count = smokes?.size ?: 0,
+                        isLoading = displayLoading
+                    )
+                }
 
                 if (calendarMode && !displayLoading) {
                     CalendarMonthCard(
@@ -230,6 +236,7 @@ data class HistoryViewState(
                             intent(HistoryIntent.FetchSmokes(LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)))
                         },
                         onPickDay = { picked ->
+                            calendarMode = false
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         }
                     )
@@ -253,7 +260,7 @@ data class HistoryViewState(
                             )
                         }
                     }
-                } else if (!smokes.isNullOrEmpty()) {
+                } else if (!calendarMode && !smokes.isNullOrEmpty()) {
                     LazyColumn(
                         modifier = Modifier
                             .padding(top = 16.dp)
@@ -274,7 +281,7 @@ data class HistoryViewState(
                             HorizontalDivider()
                         }
                     }
-                } else {
+                } else if (!calendarMode) {
                     EmptySmokes()
                 }
             }
@@ -346,7 +353,7 @@ private fun CalendarMonthCard(
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
-                Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.width(48.dp), contentAlignment = Alignment.Center) {
                     Text(text = label, style = MaterialTheme.typography.labelSmall)
                 }
             }
@@ -363,7 +370,7 @@ private fun CalendarMonthCard(
                     val slot = row * 7 + column
                     val day = slot - leadingEmptySlots + 1
                     if (day !in 1..daysInMonth) {
-                        Spacer(modifier = Modifier.width(42.dp))
+                        Spacer(modifier = Modifier.width(48.dp))
                     } else {
                         val count = monthCounts[day] ?: 0
                         val date = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, day)
@@ -376,8 +383,8 @@ private fun CalendarMonthCard(
                         }
                         Box(
                             modifier = Modifier
-                                .width(42.dp)
-                                .height(54.dp)
+                                .width(48.dp)
+                                .height(64.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(background)
                                 .clickable { onPickDay(date) }

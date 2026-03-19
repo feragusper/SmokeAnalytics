@@ -244,8 +244,8 @@ private fun SummaryCards(
         SummaryCard(
             modifier = Modifier.weight(1f),
             title = "Daily average",
-            value = String.format(Locale.getDefault(), "%.1f", stats.dailyAverage),
-            supporting = "Smokes per day this month",
+            value = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
+            supporting = averageLabelFor(currentPeriod),
         )
     }
 }
@@ -437,6 +437,23 @@ private fun chartCaptionFor(period: StatsViewState.StatsPeriod): String = when (
     StatsViewState.StatsPeriod.WEEK -> "How smoking volume is distributed across weekdays."
     StatsViewState.StatsPeriod.MONTH -> "Weekly buckets for the selected month."
     StatsViewState.StatsPeriod.YEAR -> "Month-by-month totals for the selected year."
+}
+
+private fun averageFor(period: StatsViewState.StatsPeriod, stats: SmokeStats): Float {
+    val values = when (period) {
+        StatsViewState.StatsPeriod.DAY -> stats.hourly.values
+        StatsViewState.StatsPeriod.WEEK -> stats.weekly.values
+        StatsViewState.StatsPeriod.MONTH -> stats.monthly.values
+        StatsViewState.StatsPeriod.YEAR -> stats.yearly.values
+    }
+    return values.takeIf { it.isNotEmpty() }?.average()?.toFloat() ?: 0f
+}
+
+private fun averageLabelFor(period: StatsViewState.StatsPeriod): String = when (period) {
+    StatsViewState.StatsPeriod.DAY -> "Average per hour"
+    StatsViewState.StatsPeriod.WEEK -> "Average per weekday"
+    StatsViewState.StatsPeriod.MONTH -> "Average per week bucket"
+    StatsViewState.StatsPeriod.YEAR -> "Average per month"
 }
 
 @Composable
