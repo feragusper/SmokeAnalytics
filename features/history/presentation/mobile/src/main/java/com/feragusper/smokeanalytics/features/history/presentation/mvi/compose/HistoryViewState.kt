@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -179,12 +181,24 @@ data class HistoryViewState(
                         modifier = Modifier.weight(1f),
                         selected = !calendarMode,
                         onClick = { calendarMode = false },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = null
+                            )
+                        },
                         label = { Text("List") },
                     )
                     FilterChip(
                         modifier = Modifier.weight(1f),
                         selected = calendarMode,
                         onClick = { calendarMode = true },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.CalendarMonth,
+                                contentDescription = null
+                            )
+                        },
                         label = { Text("Calendar") },
                     )
                 }
