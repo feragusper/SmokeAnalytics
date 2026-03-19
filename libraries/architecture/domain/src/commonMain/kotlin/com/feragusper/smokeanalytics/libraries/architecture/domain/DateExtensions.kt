@@ -69,6 +69,65 @@ fun nextDayStartInstant(
     manualDayStartEpochMillis = manualDayStartEpochMillis,
 ).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
 
+fun currentWeekStartInstant(
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+): Instant {
+    val today = currentBucketDate(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
+    val monday = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
+    return monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+}
+
+fun nextWeekStartInstant(
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+): Instant = currentWeekStartInstant(
+    timeZone = timeZone,
+    dayStartHour = dayStartHour,
+    manualDayStartEpochMillis = manualDayStartEpochMillis,
+).plus(7, DateTimeUnit.DAY, timeZone)
+
+fun currentMonthStartInstant(
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+): Instant {
+    val current = currentBucketDate(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
+    return LocalDate(
+        year = current.year,
+        monthNumber = current.monthNumber,
+        dayOfMonth = 1,
+    ).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+}
+
+fun nextMonthStartInstant(
+    timeZone: TimeZone = defaultTimeZone,
+    dayStartHour: Int = 0,
+    manualDayStartEpochMillis: Long? = null,
+): Instant {
+    val current = currentBucketDate(
+        timeZone = timeZone,
+        dayStartHour = dayStartHour,
+        manualDayStartEpochMillis = manualDayStartEpochMillis,
+    )
+    val nextMonth = LocalDate(
+        year = if (current.monthNumber == 12) current.year + 1 else current.year,
+        monthNumber = if (current.monthNumber == 12) 1 else current.monthNumber + 1,
+        dayOfMonth = 1,
+    )
+    return nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+}
+
 fun lastInstantToday(timeZone: TimeZone = defaultTimeZone): Instant =
     todayLocalDate(timeZone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone)
 

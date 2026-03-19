@@ -10,6 +10,7 @@ android {
 
 dependencies {
     implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:preferences:domain"))
     implementation(project(":libraries:architecture:domain"))
     implementation(project(":libraries:architecture:common"))
     implementation(project(":libraries:wear:domain"))
