@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.map
 
+import android.os.Bundle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,21 +21,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.feragusper.smokeanalytics.BuildConfig
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
-import android.annotation.SuppressLint
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.CircleOptions
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 @Composable
 fun MapMobileRoute(
@@ -130,7 +139,9 @@ private fun LoadedState(
 
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -145,7 +156,15 @@ private fun LoadedState(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    AreaPreview(cluster = activeCluster)
+                    if (BuildConfig.GOOGLE_MAPS_API_KEY.isBlank()) {
+                        Text(
+                            text = "Google Maps key missing for this build. Add google.maps.android.api.key.staging or google.maps.android.api.key.production to local.properties.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else {
+                        GoogleMapPreview(cluster = activeCluster)
+                    }
                 }
             }
         }
@@ -272,108 +291,77 @@ private fun ErrorState(
 }
 
 @Composable
-private fun AreaPreview(cluster: SmokeMapCluster) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+private fun GoogleMapPreview(cluster: SmokeMapCluster) {
+    val mapView = rememberMapView()
+    AndroidView(
+        factory = { mapView },
+        update = {
+            it.getMapAsync { googleMap ->
+                googleMap.applyCluster(cluster)
+            }
+        },
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = "Approximate area · ${cluster.radiusMeters} m radius",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "Center ${cluster.point.latitude.roundedCoordinate()} / ${cluster.point.longitude.roundedCoordinate()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OsmMapEmbed(cluster = cluster)
-        }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-private fun OsmMapEmbed(cluster: SmokeMapCluster) {
-    AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                webViewClient = WebViewClient()
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.cacheMode = WebSettings.LOAD_DEFAULT
-                loadDataWithBaseURL(
-                    "https://www.openstreetmap.org",
-                    cluster.osmHtml(),
-                    "text/html",
-                    "utf-8",
-                    null,
-                )
-            }
-        },
-        update = { webView ->
-            webView.loadDataWithBaseURL(
-                "https://www.openstreetmap.org",
-                cluster.osmHtml(),
-                "text/html",
-                "utf-8",
-                null,
-            )
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp),
     )
 }
 
-private fun Double.roundedCoordinate(): String = String.format("%.4f", this)
+@Composable
+private fun rememberMapView(): MapView {
+    val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val mapView = remember {
+        MapView(context).apply {
+            onCreate(Bundle())
+        }
+    }
 
-private fun SmokeMapCluster.osmHtml(): String = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-      <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #f5f8f8; }
-        .leaflet-control-container { display: none; }
-      </style>
-    </head>
-    <body>
-      <div id="map"></div>
-      <script>
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${
-            point.latitude
-        }, ${point.longitude}], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19
-        }).addTo(map);
-        L.circle([${point.latitude}, ${point.longitude}], {
-          color: '#006A6A',
-          fillColor: '#6AD2D8',
-          fillOpacity: 0.2,
-          radius: $radiusMeters
-        }).addTo(map);
-        L.circleMarker([${point.latitude}, ${point.longitude}], {
-          radius: 6,
-          color: '#006A6A',
-          fillColor: '#006A6A',
-          fillOpacity: 1
-        }).addTo(map);
-      </script>
-    </body>
-    </html>
-""".trimIndent()
+    DisposableEffect(lifecycle, mapView) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
+
+    return mapView
+}
+
+private fun GoogleMap.applyCluster(cluster: SmokeMapCluster) {
+    val center = LatLng(cluster.point.latitude, cluster.point.longitude)
+    clear()
+    uiSettings.apply {
+        isMapToolbarEnabled = false
+        isMyLocationButtonEnabled = false
+        isZoomControlsEnabled = false
+        isCompassEnabled = false
+    }
+    moveCamera(CameraUpdateFactory.newLatLngZoom(center, zoomForRadius(cluster.radiusMeters)))
+    addCircle(
+        CircleOptions()
+            .center(center)
+            .radius(cluster.radiusMeters.toDouble())
+            .strokeWidth(3f)
+            .strokeColor(0xFF006A6A.toInt())
+            .fillColor(0x336AD2D8)
+    )
+    addMarker(MarkerOptions().position(center).title(cluster.label))
+}
+
+private fun zoomForRadius(radiusMeters: Int): Float = when {
+    radiusMeters <= 150 -> 15.5f
+    radiusMeters <= 400 -> 14.2f
+    radiusMeters <= 1000 -> 12.7f
+    else -> 11.5f
+}
 
 private fun UserPreferences?.orDefault(): UserPreferences = this ?: UserPreferences()

@@ -1,4 +1,5 @@
 import com.google.common.base.Charsets
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.FileInputStream
 import java.io.InputStreamReader
@@ -23,6 +24,7 @@ val gitCode: Int by lazy { smokeGitCode(rootProject.projectDir) }
 val productVersionName = smokeProductVersion(rootProject.projectDir)
 val androidVersionName = smokeAndroidVersionName(rootProject.projectDir)
 val androidReleaseTag = smokePlatformTag("android", androidVersionName)
+val localProperties = gradleLocalProperties(rootDir, providers)
 
 android {
     // Set the application namespace.
@@ -86,10 +88,36 @@ android {
             versionNameSuffix = "-staging"
             isDefault = true
             resValue("string", "app_name", "$applicationName (Staging)")
+            buildConfigField(
+                "String",
+                "GOOGLE_MAPS_API_KEY",
+                (
+                    localProperties.getProperty("google.maps.android.api.key.staging")
+                        ?: localProperties.getProperty("google.maps.android.api.key")
+                        ?: ""
+                    ).asBuildConfigString(),
+            )
+            manifestPlaceholders["googleMapsApiKey"] =
+                localProperties.getProperty("google.maps.android.api.key.staging")
+                    ?: localProperties.getProperty("google.maps.android.api.key")
+                    ?: ""
         }
         create("production") {
             dimension = "environment"
             resValue("string", "app_name", applicationName)
+            buildConfigField(
+                "String",
+                "GOOGLE_MAPS_API_KEY",
+                (
+                    localProperties.getProperty("google.maps.android.api.key.production")
+                        ?: localProperties.getProperty("google.maps.android.api.key")
+                        ?: ""
+                    ).asBuildConfigString(),
+            )
+            manifestPlaceholders["googleMapsApiKey"] =
+                localProperties.getProperty("google.maps.android.api.key.production")
+                    ?: localProperties.getProperty("google.maps.android.api.key")
+                    ?: ""
         }
     }
 
@@ -169,6 +197,7 @@ dependencies {
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.material3)
     implementation(libs.play.review.ktx)
+    implementation(libs.play.services.maps)
 
     debugImplementation(project(":features:devtools:presentation"))
 
