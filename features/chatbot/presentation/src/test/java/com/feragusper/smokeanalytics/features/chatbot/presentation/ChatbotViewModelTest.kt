@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.chatbot.presentation
 
 import app.cash.turbine.test
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotIntent
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotResult
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.compose.ChatbotViewState
@@ -35,7 +36,13 @@ class ChatbotViewModelTest {
 
             every { processHolder.processIntent(intent) } returns flowOf(
                 ChatbotResult.Loading,
-                ChatbotResult.CoachMessage(ChatbotViewState.Message(reply, isFromUser = false))
+                ChatbotResult.CoachMessage(
+                    ChatbotViewState.Message(
+                        text = reply,
+                        isFromUser = false,
+                        source = CoachReplySource.Fallback,
+                    )
+                )
             )
 
             // When & Then
@@ -45,7 +52,13 @@ class ChatbotViewModelTest {
                 awaitItem() shouldBeEqualTo ChatbotViewState() // initial state
                 awaitItem() shouldBeEqualTo ChatbotViewState(isLoading = true)
                 awaitItem() shouldBeEqualTo ChatbotViewState(
-                    messages = listOf(ChatbotViewState.Message(reply, isFromUser = false)),
+                    messages = listOf(
+                        ChatbotViewState.Message(
+                            text = reply,
+                            isFromUser = false,
+                            source = CoachReplySource.Fallback,
+                        )
+                    ),
                     isLoading = false
                 )
 
@@ -62,7 +75,13 @@ class ChatbotViewModelTest {
 
         every { processHolder.processIntent(intent) } returns flowOf(
             ChatbotResult.UserMessage(ChatbotViewState.Message(userMessage, isFromUser = true)),
-            ChatbotResult.CoachMessage(ChatbotViewState.Message(coachReply, isFromUser = false))
+            ChatbotResult.CoachMessage(
+                ChatbotViewState.Message(
+                    text = coachReply,
+                    isFromUser = false,
+                    source = CoachReplySource.Live,
+                )
+            )
         )
 
         // When & Then
@@ -77,7 +96,11 @@ class ChatbotViewModelTest {
             awaitItem() shouldBeEqualTo ChatbotViewState(
                 messages = listOf(
                     ChatbotViewState.Message(userMessage, isFromUser = true),
-                    ChatbotViewState.Message(coachReply, isFromUser = false)
+                    ChatbotViewState.Message(
+                        text = coachReply,
+                        isFromUser = false,
+                        source = CoachReplySource.Live,
+                    )
                 ),
                 isLoading = false
             )

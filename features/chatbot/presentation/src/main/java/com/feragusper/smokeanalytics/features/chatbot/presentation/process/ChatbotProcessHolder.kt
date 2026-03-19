@@ -26,7 +26,15 @@ class ChatbotProcessHolder @Inject constructor(
 
         val reply = chatbotUseCase.sendMessage(userText)
 
-        emit(ChatbotResult.CoachMessage(ChatbotViewState.Message(reply, isFromUser = false)))
+        emit(
+            ChatbotResult.CoachMessage(
+                ChatbotViewState.Message(
+                    text = reply.text,
+                    isFromUser = false,
+                    source = reply.source,
+                )
+            )
+        )
     }.catchAndLog { e ->
         emit(ChatbotResult.Failure(e.message ?: "Unknown error"))
     }
@@ -36,7 +44,15 @@ class ChatbotProcessHolder @Inject constructor(
 
         val reply = chatbotUseCase.sendInitialMessageWithContext()
 
-        emit(ChatbotResult.CoachMessage(ChatbotViewState.Message(reply, isFromUser = false)))
+        emit(
+            ChatbotResult.CoachMessage(
+                ChatbotViewState.Message(
+                    text = reply.text,
+                    isFromUser = false,
+                    source = reply.source,
+                )
+            )
+        )
     }.catchAndLog { e ->
         emit(ChatbotResult.Failure(e.message ?: "Unknown error"))
     }

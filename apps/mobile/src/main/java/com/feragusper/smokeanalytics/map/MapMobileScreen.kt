@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.map
 import android.annotation.SuppressLint
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -278,6 +279,7 @@ private fun MapEmbed(point: GeoPoint) {
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.cacheMode = WebSettings.LOAD_DEFAULT
+                webViewClient = WebViewClient()
                 loadUrl(point.googleEmbedUrl())
             }
         },

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotIntent
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -37,6 +38,7 @@ data class ChatbotViewState(
     data class Message(
         val text: String,
         val isFromUser: Boolean,
+        val source: CoachReplySource = CoachReplySource.Live,
     )
 
     @Composable
@@ -83,6 +85,13 @@ data class ChatbotViewState(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (messages.any { !it.isFromUser && it.source == CoachReplySource.Fallback }) {
+                        Text(
+                            text = "Offline guidance is active. Check the Gemini API key if you expected a live model reply.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
 
@@ -146,6 +155,21 @@ data class ChatbotViewState(
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                         },
                                     )
+                                    if (!message.isFromUser) {
+                                        Text(
+                                            text = if (message.source == CoachReplySource.Live) {
+                                                "Live model"
+                                            } else {
+                                                "Offline guidance"
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (message.source == CoachReplySource.Live) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.error
+                                            },
+                                        )
+                                    }
                                     Text(
                                         text = message.text,
                                         style = MaterialTheme.typography.bodyLarge,
@@ -203,9 +227,9 @@ data class ChatbotViewState(
 
     private companion object {
         private val quickActions = listOf(
-            QuickAction("Why today?", "Why does today look heavy, and where should I intervene first?"),
-            QuickAction("Delay next", "Help me delay the next cigarette based on my current pattern."),
-            QuickAction("What improved?", "What improved this week compared with my recent pattern?"),
+            QuickAction("Stress", "I feel stressed right now and I want to smoke."),
+            QuickAction("Craving", "I have a craving right now and need help delaying the next cigarette."),
+            QuickAction("Progress", "How am I doing this week, and what improved?"),
         )
     }
 }

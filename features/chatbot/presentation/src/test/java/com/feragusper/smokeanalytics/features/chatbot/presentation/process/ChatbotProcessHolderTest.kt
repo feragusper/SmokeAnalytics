@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.chatbot.presentation.process
 
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReply
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotIntent
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotResult
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.compose.ChatbotViewState
@@ -29,7 +31,10 @@ class ChatbotProcessHolderTest {
         // Given
         val userMessage = "I need help"
         val coachReply = "Of course, I'm here for you"
-        coEvery { chatbotUseCase.sendMessage(userMessage) } returns coachReply
+        coEvery { chatbotUseCase.sendMessage(userMessage) } returns CoachReply(
+            text = coachReply,
+            source = CoachReplySource.Live,
+        )
 
         // When
         val results = processHolder.processIntent(ChatbotIntent.SendMessage(userMessage)).toList()
@@ -37,7 +42,13 @@ class ChatbotProcessHolderTest {
         // Then
         results shouldBeEqualTo listOf(
             ChatbotResult.UserMessage(ChatbotViewState.Message(userMessage, isFromUser = true)),
-            ChatbotResult.CoachMessage(ChatbotViewState.Message(coachReply, isFromUser = false))
+            ChatbotResult.CoachMessage(
+                ChatbotViewState.Message(
+                    text = coachReply,
+                    isFromUser = false,
+                    source = CoachReplySource.Live,
+                )
+            )
         )
     }
 
@@ -46,7 +57,10 @@ class ChatbotProcessHolderTest {
         runTest {
             // Given
             val reply = "Let's talk about your progress"
-            coEvery { chatbotUseCase.sendInitialMessageWithContext() } returns reply
+            coEvery { chatbotUseCase.sendInitialMessageWithContext() } returns CoachReply(
+                text = reply,
+                source = CoachReplySource.Fallback,
+            )
 
             // When
             val results =
@@ -55,7 +69,13 @@ class ChatbotProcessHolderTest {
             // Then
             results shouldBeEqualTo listOf(
                 ChatbotResult.Loading,
-                ChatbotResult.CoachMessage(ChatbotViewState.Message(reply, isFromUser = false))
+                ChatbotResult.CoachMessage(
+                    ChatbotViewState.Message(
+                        text = reply,
+                        isFromUser = false,
+                        source = CoachReplySource.Fallback,
+                    )
+                )
             )
         }
 
