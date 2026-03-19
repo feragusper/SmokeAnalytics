@@ -1,8 +1,6 @@
 package com.feragusper.smokeanalytics.map
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,16 +23,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
+import android.annotation.SuppressLint
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 
 @Composable
 fun MapMobileRoute(
@@ -273,73 +273,107 @@ private fun ErrorState(
 
 @Composable
 private fun AreaPreview(cluster: SmokeMapCluster) {
-    val primary = MaterialTheme.colorScheme.primary
-    val surface = MaterialTheme.colorScheme.surface
-    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = surface,
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val radius = size.minDimension * 0.32f
-                drawCircle(
-                    color = primary.copy(alpha = 0.14f),
-                    radius = radius,
-                    center = center,
-                )
-                drawCircle(
-                    color = primary.copy(alpha = 0.55f),
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round),
-                )
-                drawCircle(
-                    color = primary,
-                    radius = 8.dp.toPx(),
-                    center = center,
-                )
-            }
-
-            Column(
-                modifier = Modifier.align(Alignment.TopStart),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = "Approximate area",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = onSurfaceVariant,
-                )
-                Text(
-                    text = "${cluster.radiusMeters} m radius",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "Center ${cluster.point.latitude.roundedCoordinate()} / ${cluster.point.longitude.roundedCoordinate()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = onSurfaceVariant,
-                )
-            }
-
             Text(
-                modifier = Modifier.align(Alignment.BottomStart),
-                text = "This preview stays in-app and avoids a billed map SDK.",
-                style = MaterialTheme.typography.bodySmall,
-                color = onSurfaceVariant,
+                text = "Approximate area · ${cluster.radiusMeters} m radius",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Text(
+                text = "Center ${cluster.point.latitude.roundedCoordinate()} / ${cluster.point.longitude.roundedCoordinate()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OsmMapEmbed(cluster = cluster)
         }
     }
 }
 
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun OsmMapEmbed(cluster: SmokeMapCluster) {
+    AndroidView(
+        factory = { context ->
+            WebView(context).apply {
+                webViewClient = WebViewClient()
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.cacheMode = WebSettings.LOAD_DEFAULT
+                loadDataWithBaseURL(
+                    "https://www.openstreetmap.org",
+                    cluster.osmHtml(),
+                    "text/html",
+                    "utf-8",
+                    null,
+                )
+            }
+        },
+        update = { webView ->
+            webView.loadDataWithBaseURL(
+                "https://www.openstreetmap.org",
+                cluster.osmHtml(),
+                "text/html",
+                "utf-8",
+                null,
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
+    )
+}
+
 private fun Double.roundedCoordinate(): String = String.format("%.4f", this)
+
+private fun SmokeMapCluster.osmHtml(): String = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <style>
+        html, body, #map { height: 100%; margin: 0; padding: 0; background: #f5f8f8; }
+        .leaflet-control-container { display: none; }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script>
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${
+            point.latitude
+        }, ${point.longitude}], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(map);
+        L.circle([${point.latitude}, ${point.longitude}], {
+          color: '#006A6A',
+          fillColor: '#6AD2D8',
+          fillOpacity: 0.2,
+          radius: $radiusMeters
+        }).addTo(map);
+        L.circleMarker([${point.latitude}, ${point.longitude}], {
+          radius: 6,
+          color: '#006A6A',
+          fillColor: '#006A6A',
+          fillOpacity: 1
+        }).addTo(map);
+      </script>
+    </body>
+    </html>
+""".trimIndent()
 
 private fun UserPreferences?.orDefault(): UserPreferences = this ?: UserPreferences()
