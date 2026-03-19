@@ -266,18 +266,18 @@ private fun MainScreenNavigationConfigurations(
 
 @Composable
 private fun ElapsedTone.containerColor() = when (this) {
-    ElapsedTone.Urgent -> MaterialTheme.colorScheme.error
-    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiary
-    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondary
-    ElapsedTone.Calm -> MaterialTheme.colorScheme.primary
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.72f)
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.64f)
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f)
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
 }
 
 @Composable
 private fun ElapsedTone.contentColor() = when (this) {
-    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onError
-    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiary
-    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondary
-    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimary
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onErrorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiaryContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
 }
 
 /**

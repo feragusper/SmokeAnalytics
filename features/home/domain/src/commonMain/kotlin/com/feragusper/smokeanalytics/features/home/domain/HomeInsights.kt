@@ -32,10 +32,20 @@ data class FinancialSummary(
     val currencySymbol: String,
 )
 
-fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone = when {
-    hours >= 4 -> ElapsedTone.Calm
-    hours >= 2 || minutes >= 30 -> ElapsedTone.Caution
-    hours >= 1 || minutes >= 30 -> ElapsedTone.Warning
+data class RateSummary(
+    val latestIntervalMinutes: Int?,
+    val averageIntervalMinutesToday: Int?,
+    val averageSmokesPerDayWeek: Double,
+    val averageSmokesPerDayMonth: Double,
+)
+
+fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone =
+    elapsedToneFromMinutes((hours * 60L + minutes).toInt())
+
+fun elapsedToneFromMinutes(totalMinutes: Int): ElapsedTone = when {
+    totalMinutes >= 180 -> ElapsedTone.Calm
+    totalMinutes >= 90 -> ElapsedTone.Caution
+    totalMinutes >= 45 -> ElapsedTone.Warning
     else -> ElapsedTone.Urgent
 }
 
@@ -68,6 +78,22 @@ fun financialSummary(
         spentWeek = weekCount * price,
         spentMonth = monthCount * price,
         currencySymbol = preferences.currencySymbol,
+    )
+}
+
+fun rateSummary(smokeCountListResult: SmokeCountListResult): RateSummary {
+    val intervals = smokeCountListResult.todaysSmokes
+        .map { smoke -> smoke.timeElapsedSincePreviousSmoke.totalMinutes() }
+        .filter { it > 0 }
+
+    return RateSummary(
+        latestIntervalMinutes = smokeCountListResult.lastSmoke
+            ?.timeElapsedSincePreviousSmoke
+            ?.totalMinutes()
+            ?.takeIf { it > 0 },
+        averageIntervalMinutesToday = intervals.takeIf { it.isNotEmpty() }?.average()?.toInt(),
+        averageSmokesPerDayWeek = smokeCountListResult.countByWeek / 7.0,
+        averageSmokesPerDayMonth = smokeCountListResult.countByMonth / 30.0,
     )
 }
 
@@ -127,3 +153,5 @@ fun SmokeCountListResult.toWidgetSnapshot(preferences: UserPreferences): WidgetS
         spentToday = financial.spentToday,
     )
 }
+
+private fun Pair<Long, Long>.totalMinutes(): Int = (first * 60L + second).toInt()

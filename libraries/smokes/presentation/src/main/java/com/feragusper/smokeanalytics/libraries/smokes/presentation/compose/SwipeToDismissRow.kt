@@ -127,6 +127,10 @@ fun SwipeToDismissRow(
             date = date,
             timeZone = timeZone,
             timeAfterPrevious = timeElapsedSincePreviousSmoke,
+            tone = elapsedToneFrom(
+                timeElapsedSincePreviousSmoke.first,
+                timeElapsedSincePreviousSmoke.second,
+            ),
         )
     }
 
@@ -182,12 +186,14 @@ private fun SmokeItem(
     date: Instant,
     timeZone: TimeZone,
     timeAfterPrevious: Pair<Long, Long>,
+    tone: ElapsedTone,
 ) {
     val local = date.toLocalDateTime(timeZone)
 
     Row(
         modifier = Modifier
-            .background(color = MaterialTheme.colorScheme.background)
+            .background(color = tone.rowContainerColor(), shape = MaterialTheme.shapes.medium)
+            .padding(horizontal = 12.dp)
             .height(72.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -198,7 +204,7 @@ private fun SmokeItem(
             Text(
                 text = "%02d:%02d".format(local.hour, local.minute),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
+                color = tone.rowContentColor()
             )
 
             val (hours, minutes) = timeAfterPrevious
@@ -218,9 +224,42 @@ private fun SmokeItem(
                     ).joinToString(" and ")
                 }",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground
+                color = tone.rowContentColor()
             )
         }
+    }
+}
+
+@Composable
+private fun ElapsedTone.rowContainerColor(): Color = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.48f)
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.42f)
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.34f)
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.30f)
+}
+
+@Composable
+private fun ElapsedTone.rowContentColor(): Color = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onErrorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiaryContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
+}
+
+private enum class ElapsedTone {
+    Urgent,
+    Warning,
+    Caution,
+    Calm,
+}
+
+private fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone {
+    val totalMinutes = (hours * 60L + minutes).toInt()
+    return when {
+        totalMinutes >= 180 -> ElapsedTone.Calm
+        totalMinutes >= 90 -> ElapsedTone.Caution
+        totalMinutes >= 45 -> ElapsedTone.Warning
+        else -> ElapsedTone.Urgent
     }
 }
 

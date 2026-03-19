@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.domain.financialSummary
 import com.feragusper.smokeanalytics.features.home.domain.gamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
+import com.feragusper.smokeanalytics.features.home.domain.rateSummary
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
@@ -103,6 +104,7 @@ class HomeProcessHolder @Inject constructor(
                             monthCount = smokeCounts.countByMonth,
                             preferences = preferences,
                         ),
+                        rateSummary = rateSummary(smokeCounts),
                         gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
                         canStartNewDay = shouldOfferStartNewDay(
                             dayStartHour = preferences.dayStartHour,
@@ -159,7 +161,8 @@ class HomeProcessHolder @Inject constructor(
         flow {
             emit(
                 HomeResult.UpdateTimeSinceLastCigarette(
-                    intent.lastCigarette?.date?.timeElapsedSinceNow() ?: (0L to 0L)
+                    timeSinceLastCigarette = intent.lastCigarette?.date?.timeElapsedSinceNow() ?: (0L to 0L),
+                    lastSmoke = intent.lastCigarette,
                 )
             )
         }
