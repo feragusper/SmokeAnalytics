@@ -1,10 +1,8 @@
 package com.feragusper.smokeanalytics.map
 
-import android.annotation.SuppressLint
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,8 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
@@ -145,7 +145,7 @@ private fun LoadedState(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    MapEmbed(point = activeCluster.point)
+                    AreaPreview(cluster = activeCluster)
                 }
             }
         }
@@ -271,26 +271,75 @@ private fun ErrorState(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun MapEmbed(point: GeoPoint) {
-    AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.cacheMode = WebSettings.LOAD_DEFAULT
-                webViewClient = WebViewClient()
-                loadUrl(point.googleEmbedUrl())
-            }
-        },
-        update = { it.loadUrl(point.googleEmbedUrl()) },
+private fun AreaPreview(cluster: SmokeMapCluster) {
+    val primary = MaterialTheme.colorScheme.primary
+    val surface = MaterialTheme.colorScheme.surface
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = surface,
+        ),
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
-    )
+            .height(220.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val radius = size.minDimension * 0.32f
+                drawCircle(
+                    color = primary.copy(alpha = 0.14f),
+                    radius = radius,
+                    center = center,
+                )
+                drawCircle(
+                    color = primary.copy(alpha = 0.55f),
+                    radius = radius,
+                    center = center,
+                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round),
+                )
+                drawCircle(
+                    color = primary,
+                    radius = 8.dp.toPx(),
+                    center = center,
+                )
+            }
+
+            Column(
+                modifier = Modifier.align(Alignment.TopStart),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "Approximate area",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = onSurfaceVariant,
+                )
+                Text(
+                    text = "${cluster.radiusMeters} m radius",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = "Center ${cluster.point.latitude.roundedCoordinate()} / ${cluster.point.longitude.roundedCoordinate()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = onSurfaceVariant,
+                )
+            }
+
+            Text(
+                modifier = Modifier.align(Alignment.BottomStart),
+                text = "This preview stays in-app and avoids a billed map SDK.",
+                style = MaterialTheme.typography.bodySmall,
+                color = onSurfaceVariant,
+            )
+        }
+    }
 }
 
-private fun GeoPoint.googleEmbedUrl(): String =
-    "https://www.google.com/maps?q=$latitude,$longitude&z=14&output=embed"
+private fun Double.roundedCoordinate(): String = String.format("%.4f", this)
 
 private fun UserPreferences?.orDefault(): UserPreferences = this ?: UserPreferences()

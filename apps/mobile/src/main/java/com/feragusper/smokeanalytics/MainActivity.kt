@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -137,27 +138,24 @@ private fun MainContainerScreen(
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
                     onClick = { fabAction?.invoke() },
                     containerColor = fabTone.containerColor(),
                     contentColor = fabTone.contentColor(),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    icon = {
                         Icon(
                             imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
                             contentDescription = ""
                         )
+                    },
+                    text = {
                         Text(
                             text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
                             style = MaterialTheme.typography.labelLarge
                         )
-                    }
-                }
+                    },
+                )
             }
         }
     ) { innerPadding ->
