@@ -86,7 +86,7 @@ class SettingsViewModel @Inject constructor(
         SettingsResult.Loading -> previous.copy(displayLoading = true, infoMessage = null)
         SettingsResult.PreferencesSaved -> previous.copy(
             displayLoading = false,
-            infoMessage = "Saved",
+            infoMessage = null,
         )
         is SettingsResult.Error -> previous.copy(
             displayLoading = false,
