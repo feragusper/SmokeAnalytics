@@ -23,6 +23,7 @@
 - Release or CI work: validate the nearest real task or workflow path, not only a lightweight development compile.
 
 ## Repo-Specific Agent Assets
+- Subtree-specific overrides live in `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`, and `.github/workflows/AGENTS.md`.
 - Repository skills live in `.agents/skills/`.
 - Project-scoped custom agents live in `.codex/agents/`.
 - Opt-in examples for project-scoped Codex config and MCP setup live in `.codex/`.

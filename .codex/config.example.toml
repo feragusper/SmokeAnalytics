@@ -6,6 +6,11 @@ model_reasoning_effort = "medium"
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
+# Optional instruction discovery settings.
+# project_doc_fallback_filenames = [".agents.md"]
+# project_doc_max_bytes = 65536
+# project_root_markers = [".git", "settings.gradle.kts"]
+
 [agents]
 max_threads = 4
 max_depth = 1
@@ -21,6 +26,10 @@ writable_roots = []
 # required = false
 # tool_timeout_sec = 60
 
+# Example skill override.
+# [[skills.config]]
+# path = "/absolute/path/to/skill/SKILL.md"
+# enabled = false
+
 # Example project-scoped trust note:
 # project-scoped `.codex/` settings only apply when the project is trusted.
-
