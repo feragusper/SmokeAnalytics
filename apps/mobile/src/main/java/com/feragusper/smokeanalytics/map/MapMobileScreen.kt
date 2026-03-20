@@ -1,6 +1,10 @@
 package com.feragusper.smokeanalytics.map
 
+import android.content.Context
+import android.location.Address
+import android.location.Geocoder
 import android.os.Bundle
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +48,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.CircleOptions
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import java.util.Locale
+import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MapMobileRoute(
@@ -101,6 +110,7 @@ private fun LoadedState(
     onSelectCluster: (SmokeMapCluster) -> Unit,
 ) {
     val activeCluster = state.selectedCluster ?: state.clusters.first()
+    val areaName = rememberAreaName(activeCluster)
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -151,6 +161,13 @@ private fun LoadedState(
                         text = activeCluster.label,
                         style = MaterialTheme.typography.titleMedium,
                     )
+                    areaName?.let { name ->
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
                         text = "${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -354,7 +371,6 @@ private fun GoogleMap.applyCluster(cluster: SmokeMapCluster) {
             .strokeColor(0xFF006A6A.toInt())
             .fillColor(0x336AD2D8)
     )
-    addMarker(MarkerOptions().position(center).title(cluster.label))
 }
 
 private fun zoomForRadius(radiusMeters: Int): Float = when {
@@ -362,6 +378,67 @@ private fun zoomForRadius(radiusMeters: Int): Float = when {
     radiusMeters <= 400 -> 14.2f
     radiusMeters <= 1000 -> 12.7f
     else -> 11.5f
+}
+
+@Composable
+private fun rememberAreaName(cluster: SmokeMapCluster): String? {
+    val context = LocalContext.current
+    val areaName by produceState<String?>(initialValue = null, cluster.point.latitude, cluster.point.longitude) {
+        value = resolveAreaName(
+            context = context,
+            latitude = cluster.point.latitude,
+            longitude = cluster.point.longitude,
+        )
+    }
+    return areaName
+}
+
+private suspend fun resolveAreaName(
+    context: Context,
+    latitude: Double,
+    longitude: Double,
+): String? {
+    val address = reverseGeocode(context, latitude, longitude) ?: return null
+    val parts = listOfNotNull(
+        address.subLocality,
+        address.locality,
+        address.adminArea,
+    ).distinct()
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(", ")
+        ?: address.featureName
+        ?: address.thoroughfare
+}
+
+private suspend fun reverseGeocode(
+    context: Context,
+    latitude: Double,
+    longitude: Double,
+): Address? {
+    if (!Geocoder.isPresent()) return null
+    val geocoder = Geocoder(context, Locale.getDefault())
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        suspendCancellableCoroutine { continuation ->
+            geocoder.getFromLocation(
+                latitude,
+                longitude,
+                1,
+                object : Geocoder.GeocodeListener {
+                    override fun onGeocode(addresses: MutableList<Address>) {
+                        continuation.resume(addresses.firstOrNull())
+                    }
+
+                    override fun onError(errorMessage: String?) {
+                        continuation.resume(null)
+                    }
+                },
+            )
+        }
+    } else {
+        withContext(Dispatchers.IO) {
+            @Suppress("DEPRECATION")
+            geocoder.getFromLocation(latitude, longitude, 1)?.firstOrNull()
+        }
+    }
 }
 
 private fun UserPreferences?.orDefault(): UserPreferences = this ?: UserPreferences()
