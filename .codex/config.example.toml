@@ -1,0 +1,26 @@
+# Project-scoped Codex configuration example for SmokeAnalytics.
+# Copy or adapt this into `.codex/config.toml` only if you want trusted, repo-local overrides.
+
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[agents]
+max_threads = 4
+max_depth = 1
+
+[sandbox_workspace_write]
+network_access = false
+writable_roots = []
+
+# Example MCP wiring. Prefer enabling only the servers you actually use.
+# [mcp_servers.openaiDeveloperDocs]
+# url = "https://developers.openai.com/mcp"
+# enabled = true
+# required = false
+# tool_timeout_sec = 60
+
+# Example project-scoped trust note:
+# project-scoped `.codex/` settings only apply when the project is trusted.
+

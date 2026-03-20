@@ -1,17 +1,29 @@
 # Agent Workflow
 
-## When changing web UI
-1. Read the matching mobile screen and mobile theme tokens.
-2. Update shared web primitives first.
-3. Reduce explanatory copy unless the screen truly needs it for clarity.
-4. Keep icons and brand marks simple enough to read in the browser tab and sidebar.
+## Automatic Vs Companion Context
+- `AGENTS.md` is the primary repository instruction file Codex reads automatically.
+- `RULES.md`, `SKILLS.md`, and the files under `.codex/` and `.agents/` are companion assets that clarify structure, reusable workflows, and opt-in local setup.
+- Keep critical repository expectations in `AGENTS.md`. Do not hide mandatory guidance only in companion files.
 
-## When changing shared design
-1. Check every web route that imports the shared primitive.
-2. Verify light and dark tokens still map cleanly.
-3. Re-run the web build after asset changes and after style changes.
+## Repository Layout For Codex
+- `AGENTS.md`
+  - durable repository expectations
+- `.agents/skills/`
+  - repository-scoped skills discoverable by Codex
+- `.codex/agents/`
+  - project-scoped custom agents for subagent workflows
+- `.codex/config.example.toml`
+  - example project-scoped configuration, intended to be copied or adapted rather than assumed
+- `codex/rules/*.rules.example`
+  - example approval-policy rules, not auto-enforced by this repository alone
 
-## Useful commands
-- `./gradlew :apps:web:jsBrowserDevelopmentWebpack`
-- `./gradlew :apps:web:jsBrowserTest`
-- `rg -n "old-token|old-copy|old-asset" apps/web features libraries`
+## When To Reach For Each Tooling Layer
+- Use `AGENTS.md` for stable repo expectations that should apply to almost every task.
+- Use repo skills for repeated, focused workflows such as web polish, KMP feature passes, and release hygiene.
+- Use custom agents when a task benefits from clearly scoped delegation such as exploration or release verification.
+- Use MCP when external context or tools materially improve correctness, especially for current docs, product metadata, or remote systems.
+
+## Repository-Specific Defaults
+- Check the matching mobile surface before pushing web design changes.
+- Prefer shared derivation logic for date ranges, summaries, cadence, and other product-wide calculations.
+- Keep release workflows and GitHub project state synchronized with implemented work.
