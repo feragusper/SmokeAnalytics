@@ -265,12 +265,24 @@ private fun HistorySmokeList(
             val hh = local.hour.toString().padStart(2, '0')
             val mm = local.minute.toString().padStart(2, '0')
             val timeLabel = "$hh:$mm"
-            val subtitle = local.date.toUiDate()
+            val subtitle = smoke.timeElapsedSincePreviousSmoke.let { (h, m) ->
+                if (h > 0) "After ${h}h ${m}m" else "After ${m}m"
+            }
+            val toneClass = when (elapsedToneFrom(
+                smoke.timeElapsedSincePreviousSmoke.first,
+                smoke.timeElapsedSincePreviousSmoke.second,
+            )) {
+                ElapsedTone.Urgent -> SmokeWebStyles.listRowUrgent
+                ElapsedTone.Warning -> SmokeWebStyles.listRowWarning
+                ElapsedTone.Caution -> SmokeWebStyles.listRowCaution
+                ElapsedTone.Calm -> SmokeWebStyles.listRowCalm
+            }
 
             if (!isEditing) {
                 SmokeRow(
                     time = timeLabel,
                     subtitle = subtitle,
+                    toneClass = toneClass,
                     onEdit = {
                         editing[id] = true
                         draftDateTime[id] = smoke.date.toHtmlDateTimeLocal(tz)
@@ -324,6 +336,23 @@ private fun HistorySmokeList(
                 }
             }
         }
+    }
+}
+
+private enum class ElapsedTone {
+    Urgent,
+    Warning,
+    Caution,
+    Calm,
+}
+
+private fun elapsedToneFrom(hours: Long, minutes: Long): ElapsedTone {
+    val totalMinutes = (hours * 60L + minutes).toInt()
+    return when {
+        totalMinutes >= 180 -> ElapsedTone.Calm
+        totalMinutes >= 90 -> ElapsedTone.Caution
+        totalMinutes >= 45 -> ElapsedTone.Warning
+        else -> ElapsedTone.Urgent
     }
 }
 

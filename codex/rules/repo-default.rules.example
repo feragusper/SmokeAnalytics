@@ -1,0 +1,20 @@
+# Example Codex exec-policy rules for this repository.
+# These examples are not automatically enforced by the repo on their own.
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Merging pull requests changes shared repository state and should stay explicit.",
+    match = [
+        "gh pr merge 156 --merge",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin"],
+    decision = "prompt",
+    justification = "Pushing changes to the remote should remain an explicit approval step.",
+    match = [
+        "git push origin codex/example-branch",
+    ],
+)

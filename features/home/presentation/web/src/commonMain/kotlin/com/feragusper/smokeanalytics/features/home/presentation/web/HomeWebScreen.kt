@@ -4,18 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
-import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonList
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
-import com.feragusper.smokeanalytics.libraries.design.SmokeRow
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatCard
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
@@ -28,9 +25,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -58,9 +53,6 @@ fun HomeWebScreen(
 fun HomeViewState.Render(
     onIntent: (HomeIntent) -> Unit,
 ) {
-    val tz = remember { TimeZone.currentSystemDefault() }
-    val editing = remember { mutableStateMapOf<String, Boolean>() }
-    val draftTime = remember { mutableStateMapOf<String, String>() }
     val showingInitialSkeleton = error == null && (
         displayLoading ||
             (latestSmokes == null &&
@@ -125,7 +117,7 @@ fun HomeViewState.Render(
             LoadingSkeletonCard(heightPx = 110, lineWidths = listOf("28%", "42%"))
             LoadingSkeletonList(rows = 4)
         } else {
-            if (greetingTitle != null || financialSummary != null || gamificationSummary != null) {
+            if (greetingTitle != null || financialSummary != null || rateSummary != null || gamificationSummary != null) {
                 SurfaceCard {
                     greetingTitle?.let { title ->
                         Div(attrs = { classes(SmokeWebStyles.pageHeroTitle) }) { Text(title) }
@@ -133,25 +125,32 @@ fun HomeViewState.Render(
                     greetingMessage?.let { message ->
                         Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(message) }
                     }
-                    if (financialSummary != null || gamificationSummary != null) {
+                    if (financialSummary != null || rateSummary != null || gamificationSummary != null) {
                         Div(attrs = { classes(SmokeWebStyles.summaryMetricGrid) }) {
                             financialSummary?.let { summary ->
                                 MetricSummary(
                                     label = "Spent today",
                                     value = summary.spentToday.formatMoney(summary.currencySymbol),
+                                    meta = "Week ${summary.spentWeek.formatMoney(summary.currencySymbol)}",
+                                )
+                            }
+                            rateSummary?.let { summary ->
+                                MetricSummary(
+                                    label = "Average gap today",
+                                    value = summary.averageIntervalMinutesToday?.toGapLabel() ?: "--",
+                                    meta = summary.latestIntervalMinutes?.let { "Latest ${it.toGapLabel()}" },
+                                )
+                                MetricSummary(
+                                    label = "Average pace",
+                                    value = "${summary.averageSmokesPerDayWeek.formatOneDecimal()} / day",
+                                    meta = "Month ${summary.averageSmokesPerDayMonth.formatOneDecimal()} / day",
                                 )
                             }
                             gamificationSummary?.let { summary ->
                                 MetricSummary(
                                     label = "Recovery points",
                                     value = summary.points.toString(),
-                                    meta = if (summary.points == 0) "Build them by delaying the next smoke." else null,
-                                )
-                                MetricSummary(
-                                    label = "Current streak",
-                                    value = "${summary.currentStreakHours}h",
                                     meta = "Next milestone ${summary.nextMilestoneHours}h",
-                                    tooltip = "Streak is the time since the last logged cigarette in the current cycle.",
                                 )
                             }
                         }
@@ -189,6 +188,10 @@ fun HomeViewState.Render(
                     value = smokesPerMonth?.toString() ?: "--",
                     onClick = { onIntent(HomeIntent.OnClickHistory) }
                 )
+                StatCard(
+                    title = "Avg gap today",
+                    value = rateSummary?.averageIntervalMinutesToday?.toGapLabel() ?: "--",
+                )
             }
 
             Div(
@@ -218,110 +221,35 @@ fun HomeViewState.Render(
                 } ?: "--"
 
                 Div(attrs = { classes(SmokeWebStyles.sinceValue) }) {
+                    Text(since)
+                }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                     Text(
                         when (elapsedTone) {
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "Now $since"
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> "Careful at $since"
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "Holding $since"
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "Clear for $since"
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "The last interval is still fresh."
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> "You are close to the recent pace."
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "The cadence is opening up."
+                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "This gap is comfortably above the recent pace."
                         }
                     )
                 }
-                if (displayRefreshLoading) {
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Refreshing...") }
-                }
             }
 
-            Div(attrs = { classes(SmokeWebStyles.sectionHeader) }) {
-                Div(attrs = { classes(SmokeWebStyles.sectionHeaderText) }) {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Smoked today") }
+            SurfaceCard {
+                Div(attrs = { classes(SmokeWebStyles.sectionHeader) }) {
+                    Div(attrs = { classes(SmokeWebStyles.sectionHeaderText) }) {
+                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("History holds the full log") }
+                        Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                            Text("Use History for the full list, edits, and cadence-colored smoke entries.")
+                        }
+                    }
                 }
-            }
-
-            when {
-                latestSmokes.isNullOrEmpty() -> EmptyStateCard(
-                    title = "No smokes logged today",
-                    message = "When you add the next entry it will appear here immediately, with quick edit and delete controls.",
-                    actionLabel = "Add smoke",
-                    onAction = { onIntent(HomeIntent.AddSmoke) },
-                )
-
-                else -> Div(
-                    attrs = {
-                        classes(SmokeWebStyles.list)
-                        if (displayRefreshLoading) classes(SmokeWebStyles.surfaceMuted)
-                    }
-                ) {
-                    latestSmokes.forEach { smoke ->
-                        val id = smoke.id
-                        val isEditing = editing[id] == true
-                        val local = smoke.date.toLocalDateTime(tz)
-                        val hh = local.hour.toString().padStart(2, '0')
-                        val mm = local.minute.toString().padStart(2, '0')
-                        val timeLabel = "$hh:$mm"
-                        val subtitle = smoke.timeElapsedSincePreviousSmoke.let { (h, m) ->
-                            if (h > 0) "After $h hours and $m minutes" else "After $m minutes"
-                        }
-
-                        if (!isEditing) {
-                            SmokeRow(
-                                time = timeLabel,
-                                subtitle = subtitle,
-                                onEdit = {
-                                    editing[id] = true
-                                    draftTime[id] = smoke.date.toTimeInputValue(tz)
-                                },
-                                onDelete = { onIntent(HomeIntent.DeleteSmoke(id)) }
-                            )
-                        } else {
-                            val draft = draftTime[id] ?: smoke.date.toTimeInputValue(tz)
-
-                            SurfaceCard {
-                                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                                    Text("Edit smoke time")
-                                }
-
-                                Input(
-                                    type = org.jetbrains.compose.web.attributes.InputType.Time,
-                                    attrs = {
-                                        classes(SmokeWebStyles.dateInput)
-                                        value(draft)
-                                        if (displayLoading || displayRefreshLoading) disabled()
-                                        onInput { ev -> draftTime[id] = ev.value }
-                                    }
-                                )
-
-                                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                                    PrimaryButton(
-                                        text = "Apply",
-                                        enabled = !displayLoading && !displayRefreshLoading,
-                                        onClick = {
-                                            val newTime = draftTime[id] ?: return@PrimaryButton
-                                            val dateValue = smoke.date.toDateInputValue(tz)
-
-                                            val newInstant = dateTimeInputsToInstant(
-                                                dateValue = dateValue,
-                                                timeValue = newTime,
-                                                timeZone = tz,
-                                            )
-
-                                            onIntent(HomeIntent.EditSmoke(id, newInstant))
-                                            editing[id] = false
-                                            draftTime.remove(id)
-                                        }
-                                    )
-                                    GhostButton(
-                                        text = "Cancel",
-                                        enabled = !displayLoading && !displayRefreshLoading,
-                                        onClick = {
-                                            editing[id] = false
-                                            draftTime.remove(id)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                    GhostButton(
+                        text = "Open history",
+                        onClick = { onIntent(HomeIntent.OnClickHistory) },
+                        enabled = !displayLoading && !displayRefreshLoading,
+                    )
                 }
             }
         }
@@ -378,4 +306,16 @@ internal fun dateTimeInputsToInstant(
         nanosecond = 0,
     )
     return ldt.toInstant(timeZone)
+}
+
+private fun Int.toGapLabel(): String = when {
+    this >= 60 -> "${this / 60}h ${this % 60}m"
+    else -> "${this}m"
+}
+
+private fun Double.formatOneDecimal(): String {
+    val rounded = (this * 10).toInt() / 10.0
+    val whole = rounded.toInt()
+    val decimal = ((rounded - whole) * 10).toInt()
+    return "$whole.$decimal"
 }

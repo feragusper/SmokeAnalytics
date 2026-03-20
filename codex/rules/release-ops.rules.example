@@ -1,0 +1,18 @@
+# Example release-oriented Codex exec-policy rules.
+
+prefix_rule(
+    pattern = ["gh", "workflow", "run"],
+    decision = "prompt",
+    justification = "Triggering a remote workflow should stay explicit because it can deploy or publish artifacts.",
+    match = [
+        "gh workflow run deploy-web-hosting.yml",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", "release", "list"],
+    decision = "allow",
+    match = [
+        "gh release list",
+    ],
+)

@@ -113,6 +113,7 @@ data class SettingsViewState(
             )
 
             AccountTierCard(tier = preferences.accountTier)
+            ProgressCard()
 
             Text(
                 text = "About",
@@ -474,6 +475,23 @@ private fun AccountTierCard(tier: AccountTier) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Premium removes ads and unlocks richer insights. Billing is not enabled yet.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ProgressCard() {
+    SettingsCard(title = "Points") {
+        Text(
+            text = "Points are earned from smoke-free gaps. Longer gaps increase progress, and the score is meant to reflect pace rather than perfection.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Streak details stay out of Home for now until the progress model is clearer and easier to trust.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

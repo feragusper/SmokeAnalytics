@@ -11,45 +11,36 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.clusterSmokesForMap
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeMapRange
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Iframe
 import org.jetbrains.compose.web.dom.Text
-import kotlin.math.pow
-import kotlin.math.round
-
-private enum class MapPeriod(val label: String, val days: Int) {
-    Day("Day", 1),
-    Week("Week", 7),
-    Month("Month", 31),
-}
-
-private data class MapCluster(
-    val point: GeoPoint,
-    val count: Int,
-    val label: String,
-)
 
 @Composable
 fun MapWebScreen(
     fetchSmokesUseCase: FetchSmokesUseCase,
+    fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
 ) {
-    var period by remember { mutableStateOf(MapPeriod.Week) }
-    var clusters by remember { mutableStateOf<List<MapCluster>>(emptyList()) }
-    var selectedCluster by remember { mutableStateOf<MapCluster?>(null) }
+    var period by remember { mutableStateOf(SmokeMapPeriod.Week) }
+    var clusters by remember { mutableStateOf<List<SmokeMapCluster>>(emptyList()) }
+    var selectedCluster by remember { mutableStateOf<SmokeMapCluster?>(null) }
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(period) {
         loading = true
-        val end = Clock.System.now()
-        val start = end.minus(period.days, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
-        clusters = clusterSmokes(fetchSmokesUseCase(start, end), period)
+        val preferences = fetchUserPreferencesUseCase()
+        val (start, end) = smokeMapRange(
+            period = period,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), period)
         selectedCluster = clusters.maxByOrNull { it.count }
         loading = false
     }
@@ -60,9 +51,9 @@ fun MapWebScreen(
             eyebrow = "Locations",
             badgeText = "${clusters.sumOf { it.count }} smokes",
             actions = {
-                MapPeriod.entries.forEach { candidate ->
+                SmokeMapPeriod.entries.forEach { candidate ->
                     PrimaryButton(
-                        text = candidate.label,
+                        text = candidate.name,
                         onClick = { period = candidate },
                         enabled = !loading && candidate != period,
                     )
@@ -85,7 +76,7 @@ fun MapWebScreen(
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("${activeCluster.count} smokes grouped in this approximate area.")
+                        Text("${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.")
                     }
                     Iframe(attrs = {
                         attr("src", googleEmbedUrl(activeCluster.point))
@@ -125,42 +116,6 @@ fun MapWebScreen(
             }
         }
     }
-}
-
-private fun clusterSmokes(
-    smokes: List<Smoke>,
-    period: MapPeriod,
-): List<MapCluster> {
-    val precision = when (period) {
-        MapPeriod.Day -> 2
-        MapPeriod.Week -> 1
-        MapPeriod.Month -> 0
-    }
-
-    return smokes
-        .mapNotNull { it.location }
-        .groupBy { point ->
-            val scale = 10.0.pow(precision.toDouble())
-            val lat = round(point.latitude * scale) / scale
-            val lon = round(point.longitude * scale) / scale
-            lat to lon
-        }
-        .entries
-        .sortedByDescending { it.value.size }
-        .mapIndexed { index, (_, points) ->
-            val centerLat = points.map { it.latitude }.average()
-            val centerLon = points.map { it.longitude }.average()
-            MapCluster(
-                point = GeoPoint(centerLat, centerLon),
-                count = points.size,
-                label = when (index) {
-                    0 -> "Top area"
-                    1 -> "Second area"
-                    2 -> "Third area"
-                    else -> "Area ${index + 1}"
-                },
-            )
-        }
 }
 
 private fun googleEmbedUrl(point: GeoPoint): String =

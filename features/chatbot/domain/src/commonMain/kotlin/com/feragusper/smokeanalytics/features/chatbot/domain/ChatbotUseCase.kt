@@ -10,12 +10,12 @@ class ChatbotUseCase constructor(
     private val chatbotRepository: ChatbotRepository
 ) {
 
-    suspend fun sendMessage(message: String): String {
+    suspend fun sendMessage(message: String): CoachReply {
         val context = loadContext()
         return chatbotRepository.sendMessage(message, context)
     }
 
-    suspend fun sendInitialMessageWithContext(): String {
+    suspend fun sendInitialMessageWithContext(): CoachReply {
         return chatbotRepository.sendInitialMessage(loadContext())
     }
 

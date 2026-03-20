@@ -51,7 +51,12 @@ class MainTileService : SuspendingTileService() {
         // Observe the state changes and request a tile update on state changes
         lifecycleScope.launch {
             viewModel.states()
-                .distinctUntilChanged { old, new -> old.smokesPerDay == new.smokesPerDay }
+                .distinctUntilChanged { old, new ->
+                    old.smokesPerDay == new.smokesPerDay &&
+                        old.smokesPerWeek == new.smokesPerWeek &&
+                        old.smokesPerMonth == new.smokesPerMonth &&
+                        old.lastSmokeTimestamp == new.lastSmokeTimestamp
+                }
                 .collect {
                     Timber.d("onCreate: collect: $it")
                     tileUpdateRequester.requestUpdate(MainTileService::class.java)
@@ -115,18 +120,22 @@ class MainTileService : SuspendingTileService() {
 
         // Format last smoke time
         val lastSmokeText = formatLastSmokeTime(state.lastSmokeTimestamp)
+        val summaryText = getString(
+            R.string.stats_summary,
+            state.smokesPerWeek ?: 0,
+            state.smokesPerMonth ?: 0,
+        )
 
-        // Create text elements for displaying statistics and last smoke time
-        val statsText = Text.Builder(this, getString(R.string.stats_today, state.smokesPerDay ?: 0))
+        val statsText = Text.Builder(this, getString(R.string.stats_today_short, state.smokesPerDay ?: 0))
             .setTypography(Typography.TYPOGRAPHY_TITLE3)
             .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
             .setMaxLines(1)
             .build()
 
-        val lastSmoke = Text.Builder(this, lastSmokeText)
+        val content = Text.Builder(this, "$summaryText\n$lastSmokeText")
             .setTypography(Typography.TYPOGRAPHY_BODY2)
             .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
-            .setMaxLines(1)
+            .setMaxLines(3)
             .build()
 
         // Create the "Add Smoke" chip button
@@ -147,7 +156,7 @@ class MainTileService : SuspendingTileService() {
             .setRoot(
                 PrimaryLayout.Builder(deviceParameters)
                     .setPrimaryLabelTextContent(statsText)
-                    .setContent(lastSmoke)
+                    .setContent(content)
                     .setPrimaryChipContent(addSmokeChip)
                     .setResponsiveContentInsetEnabled(true)
                     .build()

@@ -20,7 +20,7 @@ class ChatbotRepositoryModule {
     @Provides
     @Singleton
     fun provideGemini(): GenerativeModel = GenerativeModel(
-        modelName = "gemini-2.0-flash",
+        modelName = "gemini-2.5-flash-lite",
         apiKey = BuildConfig.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY
     )
 }

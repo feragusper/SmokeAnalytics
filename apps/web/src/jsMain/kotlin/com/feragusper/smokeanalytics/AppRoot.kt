@@ -110,6 +110,7 @@ fun AppRoot(graph: WebAppGraph) {
 
             WebRoute.Map -> MapWebScreen(
                 fetchSmokesUseCase = graph.fetchSmokesUseCase,
+                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
             )
 
             WebRoute.Coach -> CoachWebScreen(

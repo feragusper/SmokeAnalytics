@@ -590,6 +590,26 @@ object SmokeWebStyles : StyleSheet() {
         }
     }
 
+    val listRowUrgent by style {
+        backgroundColor(Color("rgba(186,26,26,0.05)"))
+        property("border-color", "rgba(186,26,26,0.12)")
+    }
+
+    val listRowWarning by style {
+        backgroundColor(Color("rgba(154,91,0,0.05)"))
+        property("border-color", "rgba(154,91,0,0.12)")
+    }
+
+    val listRowCaution by style {
+        backgroundColor(Color("rgba(0,106,106,0.045)"))
+        property("border-color", "rgba(0,106,106,0.10)")
+    }
+
+    val listRowCalm by style {
+        backgroundColor(Color("rgba(0,106,106,0.06)"))
+        property("border-color", "rgba(0,106,106,0.14)")
+    }
+
     val timeText by style {
         fontSize(15.px)
         fontWeight(700)
@@ -637,23 +657,27 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val buttonPrimaryUrgent by style {
-        backgroundColor(Color("#BA1A1A"))
-        color(Color("#FFFFFF"))
+        backgroundColor(Color("rgba(186,26,26,0.14)"))
+        color(Color("#7D1212"))
+        property("border", "1px solid rgba(186,26,26,0.16)")
     }
 
     val buttonPrimaryWarning by style {
-        backgroundColor(Color("#9A5B00"))
-        color(Color("#FFFFFF"))
+        backgroundColor(Color("rgba(154,91,0,0.12)"))
+        color(Color("#764700"))
+        property("border", "1px solid rgba(154,91,0,0.14)")
     }
 
     val buttonPrimaryCaution by style {
-        backgroundColor(Color("#B26A00"))
-        color(Color("#FFFFFF"))
+        backgroundColor(Color("rgba(0,106,106,0.10)"))
+        color(Color("var(--sa-color-primary)"))
+        property("border", "1px solid rgba(0,106,106,0.14)")
     }
 
     val buttonPrimaryCalm by style {
-        backgroundColor(Color("var(--sa-color-primary)"))
-        color(Color("var(--sa-color-onPrimary)"))
+        backgroundColor(Color("rgba(0,106,106,0.12)"))
+        color(Color("var(--sa-color-primary)"))
+        property("border", "1px solid rgba(0,106,106,0.16)")
     }
 
     val buttonDanger by style {
@@ -864,23 +888,23 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val elapsedCardUrgent by style {
-        backgroundColor(Color("rgba(186,26,26,0.08)"))
-        property("border-color", "rgba(186,26,26,0.18)")
+        backgroundColor(Color("rgba(186,26,26,0.06)"))
+        property("border-color", "rgba(186,26,26,0.14)")
     }
 
     val elapsedCardWarning by style {
-        backgroundColor(Color("rgba(154,91,0,0.10)"))
-        property("border-color", "rgba(154,91,0,0.18)")
+        backgroundColor(Color("rgba(154,91,0,0.07)"))
+        property("border-color", "rgba(154,91,0,0.14)")
     }
 
     val elapsedCardCaution by style {
-        backgroundColor(Color("rgba(178,106,0,0.10)"))
-        property("border-color", "rgba(178,106,0,0.18)")
+        backgroundColor(Color("rgba(0,106,106,0.06)"))
+        property("border-color", "rgba(0,106,106,0.12)")
     }
 
     val elapsedCardCalm by style {
-        backgroundColor(Color("var(--sa-color-success-soft)"))
-        property("border-color", "rgba(0,106,106,0.18)")
+        backgroundColor(Color("rgba(0,106,106,0.08)"))
+        property("border-color", "rgba(0,106,106,0.16)")
     }
 
     init {

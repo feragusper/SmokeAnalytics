@@ -14,11 +14,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -62,6 +64,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.navigation.s
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.statsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.map.MapMobileRoute
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -116,6 +119,7 @@ private fun MainContainerScreen(
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Stats,
+        BottomNavigationScreens.Map,
         BottomNavigationScreens.Chatbot,
         BottomNavigationScreens.Settings,
     )
@@ -134,27 +138,30 @@ private fun MainContainerScreen(
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
                     onClick = { fabAction?.invoke() },
-                    containerColor = fabTone.containerColor(),
+                    containerColor = fabTone.buttonContainerColor(),
                     contentColor = fabTone.contentColor(),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 6.dp,
+                        pressedElevation = 8.dp,
+                        focusedElevation = 6.dp,
+                        hoveredElevation = 6.dp,
+                    ),
+                    icon = {
                         Icon(
                             imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
-                            contentDescription = ""
+                            contentDescription = null,
                         )
+                    },
+                    text = {
                         Text(
                             text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
                             style = MaterialTheme.typography.labelLarge
                         )
-                    }
-                }
+                    },
+                )
             }
         }
     ) { innerPadding ->
@@ -259,6 +266,9 @@ private fun MainScreenNavigationConfigurations(
             onFabConfigChanged = onFabConfigChanged,
         )
         statsNavigationGraph(StatsNavigator())
+        composable(route = BottomNavigationScreens.Map.route) {
+            MapMobileRoute()
+        }
         chatbotNavigationGraph(ChatbotNavigator())
         settingsNavigationGraph(settingsNavigator)
     }
@@ -266,18 +276,26 @@ private fun MainScreenNavigationConfigurations(
 
 @Composable
 private fun ElapsedTone.containerColor() = when (this) {
-    ElapsedTone.Urgent -> MaterialTheme.colorScheme.error
-    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiary
-    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondary
-    ElapsedTone.Calm -> MaterialTheme.colorScheme.primary
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.72f)
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.64f)
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.56f)
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
 }
 
 @Composable
 private fun ElapsedTone.contentColor() = when (this) {
-    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onError
-    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiary
-    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondary
-    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimary
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.onErrorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiaryContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
+}
+
+@Composable
+private fun ElapsedTone.buttonContainerColor() = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
 }
 
 /**
@@ -323,6 +341,11 @@ private sealed class BottomNavigationScreens(
     data object Chatbot : BottomNavigationScreens(
         ChatbotNavigator.ROUTE,
         R.drawable.ic_chatbot
+    )
+
+    data object Map : BottomNavigationScreens(
+        route = "map",
+        iconId = R.drawable.ic_map,
     )
 
     /**
