@@ -14,12 +14,12 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -138,26 +138,28 @@ private fun MainContainerScreen(
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
-                FloatingActionButton(
+                ExtendedFloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
                     onClick = { fabAction?.invoke() },
-                    containerColor = fabTone.containerColor(),
+                    containerColor = fabTone.buttonContainerColor(),
                     contentColor = fabTone.contentColor(),
-                    content = {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
-                                contentDescription = null,
-                            )
-                            Text(
-                                text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 6.dp,
+                        pressedElevation = 8.dp,
+                        focusedElevation = 6.dp,
+                        hoveredElevation = 6.dp,
+                    ),
+                    icon = {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
+                            contentDescription = null,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     },
                 )
             }
@@ -286,6 +288,14 @@ private fun ElapsedTone.contentColor() = when (this) {
     ElapsedTone.Warning -> MaterialTheme.colorScheme.onTertiaryContainer
     ElapsedTone.Caution -> MaterialTheme.colorScheme.onSecondaryContainer
     ElapsedTone.Calm -> MaterialTheme.colorScheme.onPrimaryContainer
+}
+
+@Composable
+private fun ElapsedTone.buttonContainerColor() = when (this) {
+    ElapsedTone.Urgent -> MaterialTheme.colorScheme.errorContainer
+    ElapsedTone.Warning -> MaterialTheme.colorScheme.tertiaryContainer
+    ElapsedTone.Caution -> MaterialTheme.colorScheme.secondaryContainer
+    ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
 }
 
 /**
