@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,10 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -143,13 +140,7 @@ private fun MainContainerScreen(
                     onClick = { fabAction?.invoke() },
                     containerColor = fabTone.containerColor(),
                     contentColor = fabTone.contentColor(),
-                    icon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
-                            contentDescription = ""
-                        )
-                    },
-                    text = {
+                    content = {
                         Text(
                             text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
                             style = MaterialTheme.typography.labelLarge
