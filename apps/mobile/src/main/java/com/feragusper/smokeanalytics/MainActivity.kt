@@ -14,12 +14,13 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -33,8 +34,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -135,16 +138,26 @@ private fun MainContainerScreen(
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
-                ExtendedFloatingActionButton(
+                FloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
                     onClick = { fabAction?.invoke() },
                     containerColor = fabTone.containerColor(),
                     contentColor = fabTone.contentColor(),
                     content = {
-                        Text(
-                            text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
-                            style = MaterialTheme.typography.labelLarge
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(com.feragusper.smokeanalytics.features.home.presentation.R.drawable.ic_cigarette),
+                                contentDescription = null,
+                            )
+                            Text(
+                                text = stringResource(com.feragusper.smokeanalytics.features.home.presentation.R.string.home_button_track),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
                     },
                 )
             }
