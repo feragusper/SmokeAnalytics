@@ -1,20 +1,30 @@
 package com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.compose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.chatbot.presentation.mvi.ChatbotIntent
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -22,16 +32,23 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 data class ChatbotViewState(
     val messages: List<Message> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 ) : MVIViewState<ChatbotIntent> {
 
     data class Message(
         val text: String,
-        val isFromUser: Boolean
+        val isFromUser: Boolean,
+        val source: CoachReplySource = CoachReplySource.Live,
     )
 
     @Composable
     fun Compose(intent: (ChatbotIntent) -> Unit) {
+        LaunchedEffect(messages.isEmpty()) {
+            if (messages.isEmpty()) {
+                intent(ChatbotIntent.SendInitialMessageWithContext)
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -41,6 +58,12 @@ data class ChatbotViewState(
             Text(
                 text = "Coach",
                 style = MaterialTheme.typography.headlineSmall,
+            )
+
+            Text(
+                text = "Short guidance based on your recent smoking pattern.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Card(
@@ -54,23 +77,160 @@ data class ChatbotViewState(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "Coming soon",
+                        text = "How to use it",
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = "The coach is paused until it is connected to a real model instead of placeholder replies. The next version should use your recent smoking context and provide practical guidance grounded in your data.",
+                        text = "The coach opens with one summary and keeps follow-ups focused. Use the quick actions instead of free chat to stay inside the free tier.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "For now, use Home, History, and Stats to track patterns directly.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (messages.any { !it.isFromUser && it.source == CoachReplySource.Fallback }) {
+                        Text(
+                            text = "Offline guidance is active. Check the Gemini API key if you expected a live model reply.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                quickActions.forEach { action ->
+                    AssistChip(
+                        onClick = { intent(ChatbotIntent.SendMessage(action.prompt)) },
+                        label = { Text(action.label) },
+                        enabled = !isLoading,
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                     )
                 }
             }
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        messages.forEach { message ->
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (message.isFromUser) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    },
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Text(
+                                        text = if (message.isFromUser) "You" else "Coach",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (message.isFromUser) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    )
+                                    if (!message.isFromUser) {
+                                        Text(
+                                            text = if (message.source == CoachReplySource.Live) {
+                                                "Live model"
+                                            } else {
+                                                "Offline guidance"
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (message.source == CoachReplySource.Live) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.error
+                                            },
+                                        )
+                                    }
+                                    Text(
+                                        text = message.text,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = if (message.isFromUser) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                    )
+                                }
+                            }
+                        }
+
+                        error?.let { errorMessage ->
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    modifier = Modifier.padding(14.dp),
+                                    text = errorMessage,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                            }
+                        }
+
+                        if (messages.isEmpty() && !isLoading && error == null) {
+                            Text(
+                                text = "Loading your coaching summary...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp),
+                        )
+                    }
+                }
+            }
         }
+    }
+
+    private data class QuickAction(
+        val label: String,
+        val prompt: String,
+    )
+
+    private companion object {
+        private val quickActions = listOf(
+            QuickAction("Stress", "I feel stressed right now and I want to smoke."),
+            QuickAction("Craving", "I have a craving right now and need help delaying the next cigarette."),
+            QuickAction("Progress", "How am I doing this week, and what improved?"),
+        )
     }
 }
 

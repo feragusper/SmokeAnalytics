@@ -15,14 +15,26 @@ android {
     // Set the namespace for the Android library.
     namespace = "com.feragusper.smokeanalytics.features.chatbot.data"
 
+    val localProperties = gradleLocalProperties(rootDir, providers)
+    val requestedTasks = gradle.startParameter.taskNames.joinToString(" ").lowercase()
+    val coachApiKey = when {
+        "production" in requestedTasks -> {
+            localProperties.getProperty("google.ai.client.generativeai.api.key.production")
+                ?: localProperties.getProperty("google.ai.client.generativeai.api.key")
+        }
+
+        else -> {
+            localProperties.getProperty("google.ai.client.generativeai.api.key.staging")
+                ?: localProperties.getProperty("google.ai.client.generativeai.api.key")
+        }
+    }.orEmpty()
+
     defaultConfig {
         // Add a BuildConfig field for Google Auth Server Client ID, loaded from local properties.
         buildConfigField(
             "String",
             "GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY",
-            gradleLocalProperties(rootDir, providers)
-                .getProperty("google.ai.client.generativeai.api.key")
-                .asBuildConfigString(),
+            coachApiKey.asBuildConfigString(),
         )
     }
 }

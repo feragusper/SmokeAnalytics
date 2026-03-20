@@ -191,7 +191,6 @@ private fun HomeContent(
                 greetingMessage = greetingMessage,
                 canStartNewDay = canStartNewDay,
                 onStartNewDay = { intent(HomeIntent.StartNewDay) },
-                onHistoryClick = { intent(HomeIntent.OnClickHistory) },
                 isLoading = isLoading,
             )
         }
@@ -285,7 +284,6 @@ private fun GreetingSection(
     greetingMessage: String?,
     canStartNewDay: Boolean,
     onStartNewDay: () -> Unit,
-    onHistoryClick: () -> Unit,
     isLoading: Boolean,
 ) {
     if (greetingTitle == null && greetingMessage == null && !canStartNewDay) return
@@ -306,14 +304,8 @@ private fun GreetingSection(
             greetingMessage?.let {
                 Text(text = it, style = MaterialTheme.typography.bodyMedium)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(
-                    onClick = onHistoryClick,
-                    enabled = !isLoading,
-                ) {
-                    Text(text = "Open history")
-                }
-                if (canStartNewDay) {
+            if (canStartNewDay) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(
                         onClick = onStartNewDay,
                         enabled = !isLoading,

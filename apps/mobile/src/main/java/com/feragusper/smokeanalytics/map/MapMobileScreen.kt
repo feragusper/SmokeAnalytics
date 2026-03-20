@@ -1,8 +1,10 @@
 package com.feragusper.smokeanalytics.map
 
-import android.annotation.SuppressLint
-import android.webkit.WebSettings
-import android.webkit.WebView
+import android.content.Context
+import android.location.Address
+import android.location.Geocoder
+import android.os.Bundle
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,17 +25,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.feragusper.smokeanalytics.BuildConfig
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.CircleOptions
+import com.google.android.gms.maps.model.LatLng
+import java.util.Locale
+import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 @Composable
 fun MapMobileRoute(
@@ -91,6 +110,7 @@ private fun LoadedState(
     onSelectCluster: (SmokeMapCluster) -> Unit,
 ) {
     val activeCluster = state.selectedCluster ?: state.clusters.first()
+    val areaName = rememberAreaName(activeCluster)
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -129,7 +149,9 @@ private fun LoadedState(
 
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -139,12 +161,27 @@ private fun LoadedState(
                         text = activeCluster.label,
                         style = MaterialTheme.typography.titleMedium,
                     )
+                    areaName?.let { name ->
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
                         text = "${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    MapEmbed(point = activeCluster.point)
+                    if (BuildConfig.GOOGLE_MAPS_API_KEY.isBlank()) {
+                        Text(
+                            text = "Google Maps key missing for this build. Add google.maps.android.api.key.staging or google.maps.android.api.key.production to local.properties.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    } else {
+                        GoogleMapPreview(cluster = activeCluster)
+                    }
                 }
             }
         }
@@ -270,25 +307,138 @@ private fun ErrorState(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun MapEmbed(point: GeoPoint) {
+private fun GoogleMapPreview(cluster: SmokeMapCluster) {
+    val mapView = rememberMapView()
     AndroidView(
-        factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.cacheMode = WebSettings.LOAD_DEFAULT
-                loadUrl(point.googleEmbedUrl())
+        factory = { mapView },
+        update = {
+            it.getMapAsync { googleMap ->
+                googleMap.applyCluster(cluster)
             }
         },
-        update = { it.loadUrl(point.googleEmbedUrl()) },
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(220.dp),
     )
 }
 
-private fun GeoPoint.googleEmbedUrl(): String =
-    "https://www.google.com/maps?q=$latitude,$longitude&z=14&output=embed"
+@Composable
+private fun rememberMapView(): MapView {
+    val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val mapView = remember {
+        MapView(context).apply {
+            onCreate(Bundle())
+        }
+    }
+
+    DisposableEffect(lifecycle, mapView) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
+
+    return mapView
+}
+
+private fun GoogleMap.applyCluster(cluster: SmokeMapCluster) {
+    val center = LatLng(cluster.point.latitude, cluster.point.longitude)
+    clear()
+    uiSettings.apply {
+        isMapToolbarEnabled = false
+        isMyLocationButtonEnabled = false
+        isZoomControlsEnabled = false
+        isCompassEnabled = false
+    }
+    moveCamera(CameraUpdateFactory.newLatLngZoom(center, zoomForRadius(cluster.radiusMeters)))
+    addCircle(
+        CircleOptions()
+            .center(center)
+            .radius(cluster.radiusMeters.toDouble())
+            .strokeWidth(3f)
+            .strokeColor(0xFF006A6A.toInt())
+            .fillColor(0x336AD2D8)
+    )
+}
+
+private fun zoomForRadius(radiusMeters: Int): Float = when {
+    radiusMeters <= 150 -> 15.5f
+    radiusMeters <= 400 -> 14.2f
+    radiusMeters <= 1000 -> 12.7f
+    else -> 11.5f
+}
+
+@Composable
+private fun rememberAreaName(cluster: SmokeMapCluster): String? {
+    val context = LocalContext.current
+    val areaName by produceState<String?>(initialValue = null, cluster.point.latitude, cluster.point.longitude) {
+        value = resolveAreaName(
+            context = context,
+            latitude = cluster.point.latitude,
+            longitude = cluster.point.longitude,
+        )
+    }
+    return areaName
+}
+
+private suspend fun resolveAreaName(
+    context: Context,
+    latitude: Double,
+    longitude: Double,
+): String? {
+    val address = reverseGeocode(context, latitude, longitude) ?: return null
+    val parts = listOfNotNull(
+        address.subLocality,
+        address.locality,
+        address.adminArea,
+    ).distinct()
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(", ")
+        ?: address.featureName
+        ?: address.thoroughfare
+}
+
+private suspend fun reverseGeocode(
+    context: Context,
+    latitude: Double,
+    longitude: Double,
+): Address? {
+    if (!Geocoder.isPresent()) return null
+    val geocoder = Geocoder(context, Locale.getDefault())
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        suspendCancellableCoroutine { continuation ->
+            geocoder.getFromLocation(
+                latitude,
+                longitude,
+                1,
+                object : Geocoder.GeocodeListener {
+                    override fun onGeocode(addresses: MutableList<Address>) {
+                        continuation.resume(addresses.firstOrNull())
+                    }
+
+                    override fun onError(errorMessage: String?) {
+                        continuation.resume(null)
+                    }
+                },
+            )
+        }
+    } else {
+        withContext(Dispatchers.IO) {
+            @Suppress("DEPRECATION")
+            geocoder.getFromLocation(latitude, longitude, 1)?.firstOrNull()
+        }
+    }
+}
 
 private fun UserPreferences?.orDefault(): UserPreferences = this ?: UserPreferences()

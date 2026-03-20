@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.chatbot.data
 
 import com.feragusper.smokeanalytics.features.chatbot.domain.buildCoachContext
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReply
+import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.GenerateContentResponse
@@ -42,7 +44,10 @@ class ChatbotRepositoryImplTest {
 
         val result = repository.sendMessage(userPrompt, context)
 
-        result shouldBeEqualTo responseText
+        result shouldBeEqualTo CoachReply(
+            text = responseText,
+            source = CoachReplySource.Live,
+        )
     }
 
     @Test
@@ -68,7 +73,10 @@ class ChatbotRepositoryImplTest {
 
         val result = repository.sendInitialMessage(context)
 
-        result shouldBeEqualTo expectedResponse
+        result shouldBeEqualTo CoachReply(
+            text = expectedResponse,
+            source = CoachReplySource.Live,
+        )
     }
 
 }
