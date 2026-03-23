@@ -76,6 +76,6 @@ fun SettingsAboutWebScreen(
 }
 
 private enum class AnalyticsTab(val label: String) {
-    Trends("Trends"),
-    Map("Map"),
+    Trends("Frequency"),
+    Map("Clusters"),
 }

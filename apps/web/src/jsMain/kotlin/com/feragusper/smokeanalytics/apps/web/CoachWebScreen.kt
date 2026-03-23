@@ -77,8 +77,8 @@ fun CoachWebScreen(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "AI Coach",
-            eyebrow = "The Guide",
+            title = "The Guide",
+            eyebrow = "AI Coach",
             subtitle = "Pattern-aware prompts, quiet fallback support, and a calmer coaching surface built around recent smoking behavior.",
             badgeText = when {
                 loading -> "Refreshing"

@@ -67,7 +67,7 @@ fun HomeViewState.Render(
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = greetingTitle ?: "The Pulse",
-            eyebrow = "Home",
+            eyebrow = "The Pulse",
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
                 error != null -> "Needs attention"
