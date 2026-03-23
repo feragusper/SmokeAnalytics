@@ -12,12 +12,15 @@ import androidx.compose.runtime.remember
  * @param viewModel The [HistoryViewModel] that manages the state and business logic for the History feature.
  */
 @Composable
-fun HistoryView(viewModel: HistoryViewModel) {
+fun HistoryView(
+    viewModel: HistoryViewModel,
+    showNavigationIcon: Boolean = true,
+) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
 
     // Render the UI based on the current state and send user intents to the ViewModel.
-    viewState.Compose { intent ->
+    viewState.Compose(showNavigationIcon = showNavigationIcon) { intent ->
         viewModel.intents().trySend(intent)
     }
 }

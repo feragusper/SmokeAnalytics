@@ -13,7 +13,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -53,18 +52,8 @@ import com.exyte.animatednavbar.animation.indendshape.shapeCornerRadius
 import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
-import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.ChatbotNavigator
-import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.chatbotNavigationGraph
-import com.feragusper.smokeanalytics.features.history.presentation.HistoryActivity
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
-import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
-import com.feragusper.smokeanalytics.features.home.presentation.navigation.homeNavigationGraph
-import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
-import com.feragusper.smokeanalytics.features.settings.presentation.navigation.settingsNavigationGraph
-import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
-import com.feragusper.smokeanalytics.features.stats.presentation.navigation.statsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.map.MapMobileRoute
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -92,9 +81,6 @@ class MainActivity : ComponentActivity() {
                     MainContainerScreen(
                         navigateToAuthentication = {
                             startActivity(Intent(this, AuthenticationActivity::class.java))
-                        },
-                        navigateToHistory = {
-                            startActivity(Intent(this, HistoryActivity::class.java))
                         }
                     )
                 }
@@ -107,20 +93,18 @@ class MainActivity : ComponentActivity() {
  * Composable function that sets up the main screen with bottom navigation and a snackbar host.
  *
  * @param navigateToAuthentication Lambda function to navigate to the AuthenticationActivity.
- * @param navigateToHistory Lambda function to navigate to the HistoryActivity.
  */
 @Composable
 private fun MainContainerScreen(
     navigateToAuthentication: () -> Unit,
-    navigateToHistory: () -> Unit
 ) {
     val navController = rememberNavController()
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
-        BottomNavigationScreens.Stats,
-        BottomNavigationScreens.Map,
-        BottomNavigationScreens.Chatbot,
+        BottomNavigationScreens.Analytics,
+        BottomNavigationScreens.History,
+        BottomNavigationScreens.Coach,
         BottomNavigationScreens.Settings,
     )
     val snackbarHostState = remember { SnackbarHostState() }
@@ -169,7 +153,6 @@ private fun MainContainerScreen(
             navController = navController,
             modifier = Modifier.padding(innerPadding),
             navigateToAuthentication = navigateToAuthentication,
-            navigateToHistory = navigateToHistory,
             onFabConfigChanged = { isVisible, tone, action ->
                 showFab = isVisible
                 fabTone = tone
@@ -190,7 +173,8 @@ private fun BottomNavigation(
     navController: NavHostController,
     items: List<BottomNavigationScreens>
 ) {
-    var selectedIndex by remember { mutableStateOf(0) }
+    val route = currentRoute(navController)
+    val selectedIndex = items.indexOfFirst { it.route == route }.takeIf { it >= 0 } ?: 0
 
     AnimatedNavigationBar(
         selectedIndex = selectedIndex,
@@ -220,7 +204,6 @@ private fun BottomNavigation(
                 animationSpec = tween(durationMillis = 500, easing = LinearEasing),
                 size = 24.dp,
                 onClick = {
-                    selectedIndex = index
                     navController.navigate(screen.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
@@ -241,14 +224,12 @@ private fun BottomNavigation(
  * @param navController The [NavHostController] used for navigation.
  * @param modifier A [Modifier] applied to the [NavHost] composable.
  * @param navigateToAuthentication Lambda function to navigate to the AuthenticationActivity.
- * @param navigateToHistory Lambda function to navigate to the HistoryActivity.
  */
 @Composable
 private fun MainScreenNavigationConfigurations(
     navController: NavHostController,
     modifier: Modifier,
     navigateToAuthentication: () -> Unit,
-    navigateToHistory: () -> Unit,
     onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
 ) {
     NavHost(
@@ -256,21 +237,48 @@ private fun MainScreenNavigationConfigurations(
         navController = navController,
         startDestination = BottomNavigationScreens.Home.route
     ) {
-        val settingsNavigator = SettingsNavigator(navController)
-        homeNavigationGraph(
-            HomeNavigator(
+        composable(route = BottomNavigationScreens.Home.route) {
+            HomeMobileDestination(
                 navigateToAuthentication = navigateToAuthentication,
-                navigateToSettings = settingsNavigator.navigateToSettings,
-                navigateToHistory = navigateToHistory
-            ),
-            onFabConfigChanged = onFabConfigChanged,
-        )
-        statsNavigationGraph(StatsNavigator())
-        composable(route = BottomNavigationScreens.Map.route) {
-            MapMobileRoute()
+                navigateToSettings = {
+                    navController.navigate(BottomNavigationScreens.Settings.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                navigateToHistory = {
+                    navController.navigate(BottomNavigationScreens.History.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onFabConfigChanged = onFabConfigChanged,
+            )
         }
-        chatbotNavigationGraph(ChatbotNavigator())
-        settingsNavigationGraph(settingsNavigator)
+        composable(route = BottomNavigationScreens.Analytics.route) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            AnalyticsMobileDestination()
+        }
+        composable(route = BottomNavigationScreens.History.route) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            HistoryMobileDestination(
+                navigateToAuthentication = navigateToAuthentication,
+            )
+        }
+        composable(route = BottomNavigationScreens.Coach.route) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            CoachMobileDestination()
+        }
+        composable(route = BottomNavigationScreens.Settings.route) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            SettingsMobileDestination()
+        }
     }
 }
 
@@ -307,7 +315,7 @@ private fun ElapsedTone.buttonContainerColor() = when (this) {
 @Composable
 private fun currentRoute(navController: NavHostController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    return navBackStackEntry?.destination?.parent?.route
+    return navBackStackEntry?.destination?.route
 }
 
 /**
@@ -322,39 +330,27 @@ private sealed class BottomNavigationScreens(
     /**
      * The Home screen, representing the main view of the app.
      */
-    data object Home : BottomNavigationScreens(
-        HomeNavigator.ROUTE,
-        R.drawable.ic_home
-    )
+    data object Home : BottomNavigationScreens(route = "home", iconId = R.drawable.ic_home)
 
     /**
-     * The Stats screen, showing statistics and analytics related to user activity.
+     * The Analytics screen, combining trend analysis and map insights.
      */
-    data object Stats : BottomNavigationScreens(
-        StatsNavigator.ROUTE,
-        R.drawable.ic_stats
+    data object Analytics : BottomNavigationScreens(
+        route = "analytics",
+        iconId = R.drawable.ic_stats
     )
 
-    /**
-     * The Chatbot screen, allowing users to interact with the AI assistant.
-     */
-    data object Chatbot : BottomNavigationScreens(
-        ChatbotNavigator.ROUTE,
-        R.drawable.ic_chatbot
+    data object History : BottomNavigationScreens(
+        route = "history",
+        iconId = R.drawable.ic_history,
     )
 
-    data object Map : BottomNavigationScreens(
-        route = "map",
-        iconId = R.drawable.ic_map,
-    )
+    data object Coach : BottomNavigationScreens(route = "coach", iconId = R.drawable.ic_chatbot)
 
     /**
      * The Settings screen, allowing users to configure app settings and preferences.
      */
-    data object Settings : BottomNavigationScreens(
-        SettingsNavigator.ROUTE,
-        R.drawable.ic_settings
-    )
+    data object Settings : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_settings)
 }
 
 @Preview(showBackground = true)
@@ -363,7 +359,6 @@ private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
         MainContainerScreen(
             navigateToAuthentication = {},
-            navigateToHistory = {}
         )
     }
 }

@@ -96,8 +96,8 @@ private fun StatsWebContent(
 ) {
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Trend overview",
-            eyebrow = "Stats",
+            title = "Patterns in motion",
+            eyebrow = "Trends",
             badgeText = when {
                 state.displayLoading -> "Loading"
                 state.error != null -> "Error"
@@ -182,9 +182,54 @@ private fun StatsWebContent(
                 val stats = state.stats
                 val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
+                Div(attrs = {
+                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;")
+                }) {
+                    SurfaceCard {
+                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;min-height:180px;justify-content:space-between;") }) {
+                            Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                                Text("Total Frequency")
+                            }
+                            Div(attrs = { attr("style", "display:flex;align-items:flex-end;gap:10px;") }) {
+                                Div(attrs = { attr("style", "font-size:56px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
+                                    Text(currentPeriod.totalLabel(stats))
+                                }
+                                Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);margin-bottom:6px;") }) {
+                                    Text("Cigarettes")
+                                }
+                            }
+                            Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
+                                Text(selectedDate.summaryLabel(currentPeriod))
+                            }
+                        }
+                    }
+
+                    SurfaceCard {
+                        Div(attrs = {
+                            attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:180px;background:var(--sa-color-primary);border-radius:22px;padding:24px;color:var(--sa-color-onPrimary);")
+                        }) {
+                            Div {
+                                Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
+                                    Text("Daily Average")
+                                }
+                                Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;margin-top:10px;") }) {
+                                    Text(averageFor(currentPeriod, stats).formatOneDecimal())
+                                }
+                            }
+                            Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
+                                Text(averageLabelFor(currentPeriod))
+                            }
+                        }
+                    }
+                }
+
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
-                        Text(currentPeriod.chartTitle())
+                        Text("Smoking Frequency")
+                    }
+
+                    Div(attrs = { attr("style", "font-size:12px;color:var(--sa-color-secondary);margin-bottom:14px;") }) {
+                        Text(selectedDate.headerLabel(currentPeriod))
                     }
 
                     Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
@@ -238,6 +283,13 @@ private fun StatsPeriod.chartTitle(): String = when (this) {
     StatsPeriod.WEEK -> "This week"
     StatsPeriod.MONTH -> "This month"
     StatsPeriod.YEAR -> "This year"
+}
+
+private fun StatsPeriod.totalLabel(stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats): String = when (this) {
+    StatsPeriod.DAY -> stats.totalDay.toString()
+    StatsPeriod.WEEK -> stats.totalWeek.toString()
+    StatsPeriod.MONTH -> stats.totalMonth.toString()
+    StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
 }
 
 @Composable
@@ -331,6 +383,13 @@ private fun LocalDate.headerLabel(period: StatsPeriod): String = when (period) {
     StatsPeriod.YEAR -> year.toString()
 }
 
+private fun LocalDate.summaryLabel(period: StatsPeriod): String = when (period) {
+    StatsPeriod.DAY -> "Selected day"
+    StatsPeriod.WEEK -> "Week of ${toUiDate()}"
+    StatsPeriod.MONTH -> "Month overview"
+    StatsPeriod.YEAR -> "Year to date"
+}
+
 private fun LocalDate.toHtmlDate(): String {
     val y = year.toString().padStart(4, '0')
     val m = monthNumber.toString().padStart(2, '0')
@@ -358,6 +417,30 @@ private fun Map<String, Int>.toCumulativeHourly(): Map<String, Int> {
         runningTotal += value
         label to runningTotal
     }
+}
+
+private fun averageFor(period: StatsPeriod, stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats): Double {
+    val values = when (period) {
+        StatsPeriod.DAY -> stats.hourly.values
+        StatsPeriod.WEEK -> stats.weekly.values
+        StatsPeriod.MONTH -> stats.monthly.values
+        StatsPeriod.YEAR -> stats.yearly.values
+    }
+    return values.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+}
+
+private fun averageLabelFor(period: StatsPeriod): String = when (period) {
+    StatsPeriod.DAY -> "Average per hour"
+    StatsPeriod.WEEK -> "Average per weekday"
+    StatsPeriod.MONTH -> "Average per week bucket"
+    StatsPeriod.YEAR -> "Average per month"
+}
+
+private fun Double.formatOneDecimal(): String {
+    val rounded = (this * 10).toInt() / 10.0
+    val whole = rounded.toInt()
+    val decimal = ((rounded - whole) * 10).toInt()
+    return "$whole.$decimal"
 }
 
 private fun jsObject(): dynamic = js("({})")

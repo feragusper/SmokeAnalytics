@@ -5,16 +5,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
+import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
+import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
-import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonList
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
-import com.feragusper.smokeanalytics.libraries.design.StatCard
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
@@ -45,7 +47,7 @@ fun HomeWebScreen(
                 HomeIntent.OnClickHistory -> onNavigateToHistory()
                 else -> store.send(intent)
             }
-        }
+        },
     )
 }
 
@@ -61,22 +63,10 @@ fun HomeViewState.Render(
                 smokesPerMonth == null &&
                 timeSinceLastCigarette == null)
     )
-    val elapsedCardToneClass = when (elapsedTone) {
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.elapsedCardWarning
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
-    }
-    val addSmokeToneClass = when (elapsedTone) {
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> SmokeWebStyles.buttonPrimaryWarning
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
-        com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
-    }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Daily snapshot",
+            title = greetingTitle ?: "The Pulse",
             eyebrow = "Home",
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
@@ -89,14 +79,17 @@ fun HomeViewState.Render(
                 else -> StatusTone.Default
             },
             actions = {
-                PrimaryButton(
-                    text = "Add smoke",
-                    onClick = { onIntent(HomeIntent.AddSmoke) },
+                GhostButton(
+                    text = "Open archive",
+                    onClick = { onIntent(HomeIntent.OnClickHistory) },
                     enabled = !displayLoading,
-                    extraClass = addSmokeToneClass,
                 )
-            }
+            },
         )
+
+        greetingMessage?.let { message ->
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(message) }
+        }
 
         if (error != null) {
             InlineErrorCard(
@@ -111,147 +104,317 @@ fun HomeViewState.Render(
         }
 
         if (showingInitialSkeleton) {
-            Div(attrs = { classes(SmokeWebStyles.skeletonGrid) }) {
-                repeat(3) { LoadingSkeletonCard(heightPx = 96, lineWidths = listOf("36%", "64%")) }
+            LoadingSkeletonCard(heightPx = 300, lineWidths = listOf("42%", "28%", "68%"))
+            LoadingSkeletonCard(heightPx = 70, lineWidths = listOf("36%"))
+            Div(attrs = {
+                attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+            }) {
+                repeat(2) { LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("34%", "52%")) }
             }
-            LoadingSkeletonCard(heightPx = 110, lineWidths = listOf("28%", "42%"))
-            LoadingSkeletonList(rows = 4)
+            LoadingSkeletonCard(heightPx = 160, lineWidths = listOf("24%", "48%", "64%"))
+            LoadingSkeletonCard(heightPx = 150, lineWidths = listOf("24%", "48%", "64%"))
         } else {
-            if (greetingTitle != null || financialSummary != null || rateSummary != null || gamificationSummary != null) {
-                SurfaceCard {
-                    greetingTitle?.let { title ->
-                        Div(attrs = { classes(SmokeWebStyles.pageHeroTitle) }) { Text(title) }
-                    }
-                    greetingMessage?.let { message ->
-                        Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(message) }
-                    }
-                    if (financialSummary != null || rateSummary != null || gamificationSummary != null) {
-                        Div(attrs = { classes(SmokeWebStyles.summaryMetricGrid) }) {
-                            financialSummary?.let { summary ->
-                                MetricSummary(
-                                    label = "Spent today",
-                                    value = summary.spentToday.formatMoney(summary.currencySymbol),
-                                    meta = "Week ${summary.spentWeek.formatMoney(summary.currencySymbol)}",
-                                )
-                            }
-                            rateSummary?.let { summary ->
-                                MetricSummary(
-                                    label = "Average gap today",
-                                    value = summary.averageIntervalMinutesToday?.toGapLabel() ?: "--",
-                                    meta = summary.latestIntervalMinutes?.let { "Latest ${it.toGapLabel()}" },
-                                )
-                                MetricSummary(
-                                    label = "Average pace",
-                                    value = "${summary.averageSmokesPerDayWeek.formatOneDecimal()} / day",
-                                    meta = "Month ${summary.averageSmokesPerDayMonth.formatOneDecimal()} / day",
-                                )
-                            }
-                            gamificationSummary?.let { summary ->
-                                MetricSummary(
-                                    label = "Recovery points",
-                                    value = summary.points.toString(),
-                                    meta = "Next milestone ${summary.nextMilestoneHours}h",
-                                )
-                            }
-                        }
-                    }
-                    if (canStartNewDay) {
-                        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                            GhostButton(
-                                text = "Start new day",
-                                onClick = { onIntent(HomeIntent.StartNewDay) },
-                                enabled = !displayLoading && !displayRefreshLoading,
-                            )
-                        }
-                    }
-                }
+            PulseHeroCard(
+                elapsedTone = elapsedTone,
+                timeSinceLastCigarette = timeSinceLastCigarette,
+                rateSummary = rateSummary,
+            )
+
+            Div(attrs = { attr("style", "display:flex;justify-content:center;") }) {
+                PrimaryButton(
+                    text = "Log a smoke",
+                    onClick = { onIntent(HomeIntent.AddSmoke) },
+                    enabled = !displayLoading,
+                    extraClass = elapsedTone.buttonClass(),
+                )
             }
 
-            Div(
-                attrs = {
-                    classes(SmokeWebStyles.statsRow)
-                    if (displayRefreshLoading) classes(SmokeWebStyles.surfaceMuted)
-                }
-            ) {
-                StatCard(
-                    title = "Today",
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;") }) {
+                HomeHighlightCard(
+                    eyebrow = "Today's Count",
                     value = smokesPerDay?.toString() ?: "--",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) }
+                    supporting = "Cigarettes",
+                    onClick = { onIntent(HomeIntent.OnClickHistory) },
                 )
-                StatCard(
-                    title = "This week",
+                HomeHighlightCard(
+                    eyebrow = "Recovery Points",
+                    value = gamificationSummary?.points?.toString() ?: "--",
+                    supporting = gamificationSummary?.let { "Next ${it.nextMilestoneHours}h" } ?: "Momentum",
+                )
+            }
+
+            RecoveryStatusCard(
+                elapsedTone = elapsedTone,
+                timeSinceLastCigarette = timeSinceLastCigarette,
+                gamificationSummary = gamificationSummary,
+            )
+
+            FinancialInsightCard(
+                financialSummary = financialSummary,
+                rateSummary = rateSummary,
+            )
+
+            ArchiveSnapshotCard(
+                smokesPerWeek = smokesPerWeek,
+                smokesPerMonth = smokesPerMonth,
+                rateSummary = rateSummary,
+                onNavigateToHistory = { onIntent(HomeIntent.OnClickHistory) },
+            )
+
+            if (canStartNewDay) {
+                EveningResetCard(
+                    greetingMessage = greetingMessage,
+                    onStartNewDay = { onIntent(HomeIntent.StartNewDay) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PulseHeroCard(
+    elapsedTone: ElapsedTone,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    rateSummary: RateSummary?,
+) {
+    val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
+    val averageGapMinutes = rateSummary?.averageIntervalMinutesToday
+    val progress = when {
+        elapsedMinutes == null || averageGapMinutes == null || averageGapMinutes <= 0 -> 18
+        else -> ((elapsedMinutes.toFloat() / (averageGapMinutes * 1.5f)).coerceIn(0.08f, 1f) * 100).toInt()
+    }
+
+    SurfaceCard {
+        Div(attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;align-items:center;gap:20px;padding:12px 8px 4px;"
+            )
+        }) {
+            Div(attrs = {
+                attr(
+                    "style",
+                    "width:260px;height:260px;border-radius:999px;background:conic-gradient(${elapsedTone.ringColor()} ${progress}%, rgba(20,32,34,0.08) ${progress}% 100%);display:flex;align-items:center;justify-content:center;"
+                )
+            }) {
+                Div(attrs = {
+                    attr(
+                        "style",
+                        "width:216px;height:216px;border-radius:999px;background:var(--sa-color-surface);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--sa-color-outline);"
+                    )
+                }) {
+                    Div(attrs = {
+                        attr(
+                            "style",
+                            "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;"
+                        )
+                    }) {
+                        Div(attrs = {
+                            attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);")
+                        }) {
+                            Text("Mindful Gap")
+                        }
+                        Div(attrs = {
+                            attr("style", "font-size:56px;font-weight:800;line-height:1;color:var(--sa-color-primary);")
+                        }) {
+                            Text(timeSinceLastCigarette.toPulseValue())
+                        }
+                        Div(attrs = {
+                            attr("style", "font-size:13px;color:var(--sa-color-secondary);")
+                        }) {
+                            Text("Minutes ago")
+                        }
+                    }
+                }
+            }
+
+            Div(attrs = {
+                attr(
+                    "style",
+                    "padding:12px 18px;border-radius:999px;background:${elapsedTone.pillBackground()};color:${elapsedTone.pillForeground()};text-align:center;max-width:640px;"
+                )
+            }) {
+                Text(
+                    pulseSummaryText(
+                        elapsedMinutes = elapsedMinutes,
+                        averageGapMinutes = averageGapMinutes,
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeHighlightCard(
+    eyebrow: String,
+    value: String,
+    supporting: String,
+    onClick: (() -> Unit)? = null,
+) {
+    SurfaceCard {
+        Div(attrs = {
+            onClick?.let { onClick { it() } }
+            attr("style", "display:flex;flex-direction:column;gap:18px;min-height:176px;justify-content:space-between;")
+        }) {
+            Div(attrs = {
+                attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);")
+            }) {
+                Text(eyebrow)
+            }
+            Div(attrs = {
+                attr("style", "font-size:52px;font-weight:800;line-height:1;color:var(--sa-color-primary);")
+            }) {
+                Text(value)
+            }
+            Div(attrs = {
+                attr("style", "font-size:14px;color:var(--sa-color-secondary);")
+            }) {
+                Text(supporting)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecoveryStatusCard(
+    elapsedTone: ElapsedTone,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    gamificationSummary: GamificationSummary?,
+) {
+    val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
+    val targetMinutes = (gamificationSummary?.nextMilestoneHours ?: 1).coerceAtLeast(1) * 60
+    val progress = if (elapsedMinutes == null) 0 else ((elapsedMinutes.toFloat() / targetMinutes.toFloat()).coerceIn(0f, 1f) * 100).toInt()
+
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-end;gap:16px;") }) {
+                Div {
+                    Div(attrs = {
+                        attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
+                    }) {
+                        Text("Recovery Status")
+                    }
+                    Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
+                        Text(elapsedTone.recoveryTitle())
+                    }
+                }
+                Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
+                    Text("$progress% to next reset")
+                }
+            }
+            ProgressTrack(progress = progress, color = elapsedTone.ringColor())
+            Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
+                Text(
+                    gamificationSummary?.let { "You are working toward the next ${it.nextMilestoneHours}h milestone." }
+                        ?: "Each longer gap compounds into steadier recovery."
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinancialInsightCard(
+    financialSummary: FinancialSummary?,
+    rateSummary: RateSummary?,
+) {
+    val monthTarget = financialSummary?.let { (it.spentWeek * 4).coerceAtLeast(it.spentToday) }
+    val progress = if (financialSummary == null || monthTarget == null || monthTarget <= 0.0) 0
+    else ((financialSummary.spentToday / monthTarget).coerceIn(0.0, 1.0) * 100).toInt()
+
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+            Div {
+                Div(attrs = {
+                    attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
+                }) {
+                    Text("Financial Insight")
+                }
+                Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
+                    Text("Budget Mindfulness")
+                }
+            }
+
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;") }) {
+                MetricSummary(
+                    label = "Spent today",
+                    value = financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol) ?: "--",
+                )
+                MetricSummary(
+                    label = "Week",
+                    value = financialSummary?.spentWeek?.formatMoney(financialSummary.currencySymbol) ?: "--",
+                )
+                MetricSummary(
+                    label = "Month",
+                    value = financialSummary?.spentMonth?.formatMoney(financialSummary.currencySymbol) ?: "--",
+                    meta = rateSummary?.latestIntervalMinutes?.let { "Latest interval ${it.toGapLabel()}" },
+                )
+            }
+
+            ProgressTrack(progress = progress, color = "var(--sa-color-primary)")
+        }
+    }
+}
+
+@Composable
+private fun ArchiveSnapshotCard(
+    smokesPerWeek: Int?,
+    smokesPerMonth: Int?,
+    rateSummary: RateSummary?,
+    onNavigateToHistory: () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-start;gap:16px;") }) {
+                Div {
+                    Div(attrs = {
+                        attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
+                    }) {
+                        Text("Archive Snapshot")
+                    }
+                    Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
+                        Text("History holds the full log")
+                    }
+                }
+                GhostButton(text = "Open history", onClick = onNavigateToHistory)
+            }
+
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;") }) {
+                MetricSummary(
+                    label = "Week",
                     value = smokesPerWeek?.toString() ?: "--",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) }
+                    meta = rateSummary?.let { "${it.averageSmokesPerDayWeek.formatOneDecimal()} / day" },
                 )
-                StatCard(
-                    title = "This month",
+                MetricSummary(
+                    label = "Month",
                     value = smokesPerMonth?.toString() ?: "--",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) }
-                )
-                StatCard(
-                    title = "Avg gap today",
-                    value = rateSummary?.averageIntervalMinutesToday?.toGapLabel() ?: "--",
+                    meta = rateSummary?.let { "${it.averageSmokesPerDayMonth.formatOneDecimal()} / day" },
                 )
             }
+        }
+    }
+}
 
-            Div(
-                attrs = {
-                    classes(SmokeWebStyles.sectionHeader)
-                    if (displayRefreshLoading) classes(SmokeWebStyles.surfaceMuted)
-                }
-            ) {
-                Div(attrs = { classes(SmokeWebStyles.sectionHeaderText) }) {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                        Text("Since your last cigarette")
-                    }
-                }
+@Composable
+private fun EveningResetCard(
+    greetingMessage: String?,
+    onStartNewDay: () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;background:rgba(121,80,21,0.06);border-radius:22px;padding:28px;"
+            )
+        }) {
+            Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
+                Text("Ready to Reset?")
             }
-
-            SurfaceCard(
-                *buildList {
-                    add(elapsedCardToneClass)
-                    if (displayRefreshLoading) add(SmokeWebStyles.surfaceMuted)
-                }.toTypedArray()
-            ) {
-                val since = timeSinceLastCigarette?.let { (h, m) ->
-                    buildString {
-                        if (h > 0) append("${h}h, ")
-                        append("${m}m")
-                    }
-                } ?: "--"
-
-                Div(attrs = { classes(SmokeWebStyles.sinceValue) }) {
-                    Text(since)
-                }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text(
-                        when (elapsedTone) {
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Urgent -> "The last interval is still fresh."
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Warning -> "You are close to the recent pace."
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Caution -> "The cadence is opening up."
-                            com.feragusper.smokeanalytics.features.home.domain.ElapsedTone.Calm -> "This gap is comfortably above the recent pace."
-                        }
-                    )
-                }
+            Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);max-width:480px;") }) {
+                Text(greetingMessage ?: "Your day boundary is close. Reset the day when you want to start the next reflection window cleanly.")
             }
-
-            SurfaceCard {
-                Div(attrs = { classes(SmokeWebStyles.sectionHeader) }) {
-                    Div(attrs = { classes(SmokeWebStyles.sectionHeaderText) }) {
-                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("History holds the full log") }
-                        Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                            Text("Use History for the full list, edits, and cadence-colored smoke entries.")
-                        }
-                    }
-                }
-                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                    GhostButton(
-                        text = "Open history",
-                        onClick = { onIntent(HomeIntent.OnClickHistory) },
-                        enabled = !displayLoading && !displayRefreshLoading,
-                    )
-                }
-            }
+            PrimaryButton(text = "Start New Day", onClick = onStartNewDay)
         }
     }
 }
@@ -261,11 +424,10 @@ private fun MetricSummary(
     label: String,
     value: String,
     meta: String? = null,
-    tooltip: String? = null,
 ) {
     Div(attrs = {
         classes(SmokeWebStyles.summaryMetricCard)
-        tooltip?.let { attr("title", it) }
+        attr("style", "min-height:118px;justify-content:space-between;")
     }) {
         Div(attrs = { classes(SmokeWebStyles.summaryMetricLabel) }) { Text(label) }
         Div(attrs = { classes(SmokeWebStyles.summaryMetricValue) }) { Text(value) }
@@ -273,6 +435,90 @@ private fun MetricSummary(
             Div(attrs = { classes(SmokeWebStyles.summaryMetricMeta) }) { Text(it) }
         }
     }
+}
+
+@Composable
+private fun ProgressTrack(
+    progress: Int,
+    color: String,
+) {
+    Div(attrs = {
+        attr(
+            "style",
+            "height:10px;border-radius:999px;background:rgba(20,32,34,0.08);overflow:hidden;"
+        )
+    }) {
+        Div(attrs = {
+            attr(
+                "style",
+                "height:100%;width:${progress.coerceIn(0, 100)}%;border-radius:999px;background:$color;"
+            )
+        })
+    }
+}
+
+private fun Pair<Long, Long>?.toPulseValue(): String = this?.let { (hours, minutes) ->
+    val totalMinutes = hours * 60 + minutes
+    val displayHours = totalMinutes / 60
+    val displayMinutes = totalMinutes % 60
+    "${displayHours.toString().padStart(2, '0')}:${displayMinutes.toString().padStart(2, '0')}"
+} ?: "--:--"
+
+private fun pulseSummaryText(
+    elapsedMinutes: Long?,
+    averageGapMinutes: Int?,
+): String = when {
+    elapsedMinutes == null -> "Log a smoke or refresh to rebuild today's pulse."
+    averageGapMinutes == null || averageGapMinutes <= 0 -> "Stay with this gap and watch the daily pulse settle."
+    elapsedMinutes >= averageGapMinutes -> "You are ${elapsedMinutes - averageGapMinutes} minutes beyond your average gap today."
+    else -> "${averageGapMinutes - elapsedMinutes} minutes until you meet today's average gap."
+}
+
+private fun Int.toGapLabel(): String = when {
+    this >= 60 -> "${this / 60}h ${this % 60}m"
+    else -> "${this}m"
+}
+
+private fun Double.formatOneDecimal(): String {
+    val rounded = (this * 10).toInt() / 10.0
+    val whole = rounded.toInt()
+    val decimal = ((rounded - whole) * 10).toInt()
+    return "$whole.$decimal"
+}
+
+private fun ElapsedTone.recoveryTitle(): String = when (this) {
+    ElapsedTone.Urgent -> "Level 1 Reset"
+    ElapsedTone.Warning -> "Level 2 Recovery"
+    ElapsedTone.Caution -> "Level 3 Recovery"
+    ElapsedTone.Calm -> "Level 4 Vitality"
+}
+
+private fun ElapsedTone.buttonClass(): String = when (this) {
+    ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
+    ElapsedTone.Warning -> SmokeWebStyles.buttonPrimaryWarning
+    ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
+    ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
+}
+
+private fun ElapsedTone.ringColor(): String = when (this) {
+    ElapsedTone.Urgent -> "var(--sa-color-danger)"
+    ElapsedTone.Warning -> "#B2791F"
+    ElapsedTone.Caution -> "#4D7A83"
+    ElapsedTone.Calm -> "var(--sa-color-primary)"
+}
+
+private fun ElapsedTone.pillBackground(): String = when (this) {
+    ElapsedTone.Urgent -> "rgba(186,26,26,0.10)"
+    ElapsedTone.Warning -> "rgba(178,121,31,0.12)"
+    ElapsedTone.Caution -> "rgba(77,122,131,0.12)"
+    ElapsedTone.Calm -> "rgba(46,122,132,0.12)"
+}
+
+private fun ElapsedTone.pillForeground(): String = when (this) {
+    ElapsedTone.Urgent -> "var(--sa-color-danger)"
+    ElapsedTone.Warning -> "#7A4A04"
+    ElapsedTone.Caution -> "#2D5D63"
+    ElapsedTone.Calm -> "var(--sa-color-primary)"
 }
 
 internal fun Instant.toDateInputValue(timeZone: TimeZone): String {
@@ -306,16 +552,4 @@ internal fun dateTimeInputsToInstant(
         nanosecond = 0,
     )
     return ldt.toInstant(timeZone)
-}
-
-private fun Int.toGapLabel(): String = when {
-    this >= 60 -> "${this / 60}h ${this % 60}m"
-    else -> "${this}m"
-}
-
-private fun Double.formatOneDecimal(): String {
-    val rounded = (this * 10).toInt() / 10.0
-    val whole = rounded.toInt()
-    val decimal = ((rounded - whole) * 10).toInt()
-    return "$whole.$decimal"
 }

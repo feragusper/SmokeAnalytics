@@ -47,9 +47,10 @@ fun MapWebScreen(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Map",
+            title = "Geographic Clusters",
             eyebrow = "Locations",
             badgeText = "${clusters.sumOf { it.count }} smokes",
+            subtitle = "Inspect repeated smoking areas and the places that dominate the current map period.",
             actions = {
                 SmokeMapPeriod.entries.forEach { candidate ->
                     PrimaryButton(
@@ -87,7 +88,7 @@ fun MapWebScreen(
                 }
 
                 SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Areas") }
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Top Clusters") }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                         Text("Pick an area to inspect on Google Maps.")
                     }
@@ -111,6 +112,13 @@ fun MapWebScreen(
                                 enabled = cluster != activeCluster,
                             )
                         }
+                    }
+                }
+
+                SurfaceCard {
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text("\"Clusters suggest higher usage during transition periods.\"")
                     }
                 }
             }
