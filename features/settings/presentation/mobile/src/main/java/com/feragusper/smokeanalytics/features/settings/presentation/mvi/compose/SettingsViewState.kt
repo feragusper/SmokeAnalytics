@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -29,8 +29,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,8 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.feragusper.smokeanalytics.features.settings.presentation.R
 import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
+import com.feragusper.smokeanalytics.features.settings.presentation.R
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
@@ -71,6 +71,7 @@ data class SettingsViewState(
         companion object {
             const val BUTTON_SIGN_OUT = "buttonSignOut"
             const val BUTTON_SIGN_IN = "buttonSignIn"
+            const val VIEW_PROGRESS = "viewProgress"
         }
     }
 
@@ -87,14 +88,21 @@ data class SettingsViewState(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             if (displayLoading && currentEmail == null) {
                 SettingsShimmerContent()
                 return@Column
             }
+
+            SettingsHeroCard(
+                displayLoading = displayLoading,
+                currentEmail = currentEmail,
+                currentDisplayName = currentDisplayName,
+            )
 
             SessionCard(
                 currentEmail = currentEmail,
@@ -104,23 +112,22 @@ data class SettingsViewState(
                 onSignInSuccess = { intent(SettingsIntent.FetchUser) },
             )
 
+            HighlightsRow(tier = preferences.accountTier)
+
             PreferencesCard(
                 preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
                 onPreferencesChange = { draftPreferences = it },
                 onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
-                onReset = { draftPreferences = preferences }
+                onReset = { draftPreferences = preferences },
             )
 
-            AccountTierCard(tier = preferences.accountTier)
-            ProgressCard()
-
-            Text(
-                text = "About",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            AboutSection()
+            SettingsCard(
+                title = "About & Support",
+                subtitle = "Share the app, reach support, and review plan metadata in one calmer section.",
+            ) {
+                AboutSection()
+            }
 
             infoMessage?.let { message ->
                 Text(
@@ -134,6 +141,117 @@ data class SettingsViewState(
 }
 
 @Composable
+private fun SettingsHeroCard(
+    displayLoading: Boolean,
+    currentEmail: String?,
+    currentDisplayName: String?,
+) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "Settings & About",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = if (currentDisplayName.isNullOrBlank()) {
+                    "Keep the app aligned with your routine."
+                } else {
+                    "Keep $currentDisplayName's setup aligned with the routine."
+                },
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = if (currentEmail == null) {
+                    "Sign in to sync preferences, preserve progress, and unlock the full product shell across devices."
+                } else {
+                    "Review session state, tune how the app interprets your day, and keep support details in one destination."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            StatusBadge(
+                text = when {
+                    displayLoading -> "Refreshing"
+                    currentEmail != null -> "Signed in"
+                    else -> "Guest mode"
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun HighlightsRow(
+    tier: AccountTier,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        HighlightCard(
+            modifier = Modifier.weight(1f),
+            title = "Plan",
+            value = tier.name,
+            body = "Premium stays defined as a future upgrade with richer insights and no ads.",
+        )
+        HighlightCard(
+            modifier = Modifier.weight(1f),
+            title = "Points",
+            value = "Recovery",
+            body = "Progress is tied to smoke-free gaps, not perfection. Longer gaps keep the score moving.",
+        )
+    }
+}
+
+@Composable
+private fun HighlightCard(
+    modifier: Modifier,
+    title: String,
+    value: String,
+    body: String,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
 private fun SessionCard(
     currentEmail: String?,
     currentDisplayName: String?,
@@ -141,7 +259,10 @@ private fun SessionCard(
     onSignOut: () -> Unit,
     onSignInSuccess: () -> Unit,
 ) {
-    SettingsCard(title = "Session") {
+    SettingsCard(
+        title = "Session",
+        subtitle = "Authentication and sync state.",
+    ) {
         if (currentEmail != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -179,7 +300,9 @@ private fun SessionCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
-                modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
                 onClick = onSignOut,
                 enabled = !displayLoading,
             ) {
@@ -187,7 +310,9 @@ private fun SessionCard(
             }
         } else {
             GoogleSignInComponent(
-                modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
                 onSignInSuccess = onSignInSuccess,
                 onSignInError = {},
             )
@@ -212,7 +337,10 @@ private fun PreferencesCard(
         onPreferencesChange(preferences.copy(locationTrackingEnabled = hasPermission))
     }
 
-    SettingsCard(title = "Preferences") {
+    SettingsCard(
+        title = "Preferences",
+        subtitle = "Values that shape cost calculations, day buckets, and map behavior.",
+    ) {
         CurrencyField(
             selected = preferences.currencySymbol,
             enabled = enabled,
@@ -466,50 +594,35 @@ private fun TimePreferenceRow(
 }
 
 @Composable
-private fun AccountTierCard(tier: AccountTier) {
-    SettingsCard(title = "Plan") {
-        Text(
-            text = "Current tier: ${tier.name}",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Premium removes ads and unlocks richer insights. Billing is not enabled yet.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ProgressCard() {
-    SettingsCard(title = "Points") {
-        Text(
-            text = "Points are earned from smoke-free gaps. Longer gaps increase progress, and the score is meant to reflect pace rather than perfection.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Streak details stay out of Home for now until the progress model is clearer and easier to trust.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
 private fun SettingsCard(
     title: String,
+    subtitle: String? = null,
     content: @Composable () -> Unit,
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             content()
         }
     }
@@ -521,6 +634,7 @@ private fun SettingsShimmerContent() {
         repeat(3) {
             Column(
                 modifier = Modifier
+                    .testTag(SettingsViewState.TestTags.VIEW_PROGRESS)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .shimmer()
@@ -530,6 +644,22 @@ private fun SettingsShimmerContent() {
                 Spacer(modifier = Modifier.height(48.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun StatusBadge(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 
@@ -545,7 +675,7 @@ private fun sessionInitials(name: String?, email: String?): String {
 
 @Composable
 private fun stringResourceSafe(id: Int, fallback: String): String = runCatching {
-    androidx.compose.ui.res.stringResource(id = id)
+    androidx.compose.ui.res.stringResource(id)
 }.getOrDefault(fallback)
 
 private fun Context.hasLocationPermission(): Boolean {
