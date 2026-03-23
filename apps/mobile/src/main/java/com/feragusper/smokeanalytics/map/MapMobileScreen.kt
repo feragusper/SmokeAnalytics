@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -120,29 +122,40 @@ private fun LoadedState(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Map",
+                    text = "Geographic Clusters",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Approximate smoking areas based on tracked locations.",
+                    text = "See where repeated smoking clusters show up across the selected period.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SmokeMapPeriod.entries.forEach { period ->
-                        AssistChip(
-                            onClick = { onPeriodChange(period) },
-                            label = { Text(period.name) },
-                            colors = if (period == state.period) {
-                                AssistChipDefaults.assistChipColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                )
-                            } else {
-                                AssistChipDefaults.assistChipColors()
-                            }
-                        )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SmokeMapPeriod.entries.forEach { period ->
+                            AssistChip(
+                                onClick = { onPeriodChange(period) },
+                                label = { Text(period.name) },
+                                colors = if (period == state.period) {
+                                    AssistChipDefaults.assistChipColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    )
+                                } else {
+                                    AssistChipDefaults.assistChipColors()
+                                }
+                            )
+                        }
                     }
+                    Text(
+                        text = "Active tracking",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
             }
         }
@@ -150,8 +163,9 @@ private fun LoadedState(
         item {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
+                shape = RoundedCornerShape(28.dp),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -187,8 +201,63 @@ private fun LoadedState(
         }
 
         item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                shape = RoundedCornerShape(24.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = "Top clusters",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    state.clusters.take(3).forEachIndexed { index, cluster ->
+                        ClusterLegendRow(
+                            index = index,
+                            cluster = cluster,
+                            isActive = cluster == activeCluster,
+                            onSelectCluster = onSelectCluster,
+                        )
+                        if (index < state.clusters.take(3).lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f)
+                ),
+                shape = RoundedCornerShape(24.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Observation",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = "\"Clusters suggest higher usage during transition periods.\"",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+            }
+        }
+
+        item {
             Text(
-                text = "Areas",
+                text = "All clusters",
                 style = MaterialTheme.typography.titleMedium,
             )
         }
@@ -203,6 +272,7 @@ private fun LoadedState(
                     }
                 ),
                 onClick = { onSelectCluster(cluster) },
+                shape = RoundedCornerShape(22.dp),
             ) {
                 Row(
                     modifier = Modifier
@@ -233,6 +303,52 @@ private fun LoadedState(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ClusterLegendRow(
+    index: Int,
+    cluster: SmokeMapCluster,
+    isActive: Boolean,
+    onSelectCluster: (SmokeMapCluster) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Card(
+                shape = RoundedCornerShape(999.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = when (index) {
+                        0 -> MaterialTheme.colorScheme.primary
+                        1 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    }
+                ),
+            ) {
+                Spacer(modifier = Modifier.size(12.dp))
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = cluster.label, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "${cluster.count} events",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        TextButton(onClick = { onSelectCluster(cluster) }) {
+            Text(if (isActive) "Viewing" else "View")
         }
     }
 }

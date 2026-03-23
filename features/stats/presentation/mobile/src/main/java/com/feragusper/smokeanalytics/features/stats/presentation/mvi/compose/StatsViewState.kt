@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -87,24 +88,28 @@ data class StatsViewState(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Text(
+                    text = "Patterns in motion",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Compare period totals, pacing, and chart movement without leaving Analytics.",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                    ),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Smoking patterns",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "A calmer view of how the current period is moving.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
                         TabRow(
                             modifier = Modifier.padding(bottom = 8.dp),
                             selectedTabIndex = currentPeriod.ordinal,
@@ -170,6 +175,7 @@ data class StatsViewState(
                     SummaryCards(
                         currentPeriod = currentPeriod,
                         stats = stats,
+                        selectedDate = selectedDate,
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -180,16 +186,22 @@ data class StatsViewState(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = when (currentPeriod) {
-                                    StatsPeriod.DAY -> "Daily pattern"
-                                    StatsPeriod.WEEK -> "Weekly distribution"
-                                    StatsPeriod.MONTH -> "Month overview"
-                                    StatsPeriod.YEAR -> "Year overview"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "Smoking Frequency",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = selectedDate.analyticsLabel(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = chartCaptionFor(currentPeriod),
@@ -215,38 +227,43 @@ data class StatsViewState(
 private fun SummaryCards(
     currentPeriod: StatsViewState.StatsPeriod,
     stats: SmokeStats,
+    selectedDate: LocalDate,
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         SummaryCard(
-            modifier = Modifier.weight(1f),
-            title = when (currentPeriod) {
-                StatsViewState.StatsPeriod.DAY -> "Today"
-                StatsViewState.StatsPeriod.WEEK -> "This week"
-                StatsViewState.StatsPeriod.MONTH -> "This month"
-                StatsViewState.StatsPeriod.YEAR -> "This year"
-            },
-            value = when (currentPeriod) {
+            modifier = Modifier.fillMaxWidth(),
+            title = "Total Frequency",
+            headline = when (currentPeriod) {
                 StatsViewState.StatsPeriod.DAY -> stats.totalDay.toString()
                 StatsViewState.StatsPeriod.WEEK -> stats.totalWeek.toString()
                 StatsViewState.StatsPeriod.MONTH -> stats.totalMonth.toString()
                 StatsViewState.StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
             },
-            supporting = when (currentPeriod) {
-                StatsViewState.StatsPeriod.DAY -> "Tracked so far"
-                StatsViewState.StatsPeriod.WEEK -> "Rolling seven days"
-                StatsViewState.StatsPeriod.MONTH -> "Current month total"
-                StatsViewState.StatsPeriod.YEAR -> "Current year total"
-            },
+            supporting = "Cigarettes",
+            meta = selectedDate.summaryMeta(currentPeriod),
+            prominent = true,
         )
-        SummaryCard(
-            modifier = Modifier.weight(1f),
-            title = "Daily average",
-            value = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
-            supporting = averageLabelFor(currentPeriod),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SummaryCard(
+                modifier = Modifier.weight(1f),
+                title = "Daily Average",
+                headline = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
+                supporting = averageLabelFor(currentPeriod),
+                highlighted = true,
+            )
+            SummaryCard(
+                modifier = Modifier.weight(1f),
+                title = "Peak Window",
+                headline = peakBucketFor(currentPeriod, stats),
+                supporting = "Highest activity",
+            )
+        }
     }
 }
 
@@ -254,36 +271,61 @@ private fun SummaryCards(
 private fun SummaryCard(
     modifier: Modifier = Modifier,
     title: String,
-    value: String,
+    headline: String,
     supporting: String,
+    meta: String? = null,
+    prominent: Boolean = false,
+    highlighted: Boolean = false,
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(if (prominent) 28.dp else 24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)
+            containerColor = when {
+                highlighted -> MaterialTheme.colorScheme.primary
+                prominent -> MaterialTheme.colorScheme.surface
+                else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)
+            }
         ),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (prominent) Modifier.height(144.dp) else Modifier)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (highlighted) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f)
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
             Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = headline,
+                style = if (prominent) MaterialTheme.typography.displaySmall else MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (highlighted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = supporting,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (highlighted) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f)
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
+            meta?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
         }
     }
 }
@@ -439,6 +481,16 @@ private fun chartCaptionFor(period: StatsViewState.StatsPeriod): String = when (
     StatsViewState.StatsPeriod.YEAR -> "Month-by-month totals for the selected year."
 }
 
+private fun LocalDate.analyticsLabel(): String =
+    "${month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} $dayOfMonth, $year"
+
+private fun LocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
+    StatsViewState.StatsPeriod.DAY -> "Selected day"
+    StatsViewState.StatsPeriod.WEEK -> "Week of ${analyticsLabel()}"
+    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+    StatsViewState.StatsPeriod.YEAR -> "Year to date"
+}
+
 private fun averageFor(period: StatsViewState.StatsPeriod, stats: SmokeStats): Float {
     val values = when (period) {
         StatsViewState.StatsPeriod.DAY -> stats.hourly.values
@@ -454,6 +506,16 @@ private fun averageLabelFor(period: StatsViewState.StatsPeriod): String = when (
     StatsViewState.StatsPeriod.WEEK -> "Average per weekday"
     StatsViewState.StatsPeriod.MONTH -> "Average per week bucket"
     StatsViewState.StatsPeriod.YEAR -> "Average per month"
+}
+
+private fun peakBucketFor(
+    period: StatsViewState.StatsPeriod,
+    stats: SmokeStats,
+): String = when (period) {
+    StatsViewState.StatsPeriod.DAY -> stats.hourly.maxByOrNull { it.value }?.key ?: "--"
+    StatsViewState.StatsPeriod.WEEK -> stats.weekly.maxByOrNull { it.value }?.key ?: "--"
+    StatsViewState.StatsPeriod.MONTH -> stats.monthly.maxByOrNull { it.value }?.key ?: "--"
+    StatsViewState.StatsPeriod.YEAR -> stats.yearly.maxByOrNull { it.value }?.key ?: "--"
 }
 
 @Composable

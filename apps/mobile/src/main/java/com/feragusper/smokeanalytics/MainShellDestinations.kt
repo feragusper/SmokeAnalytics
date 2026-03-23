@@ -92,7 +92,7 @@ fun AnalyticsMobileDestination() {
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
-                text = "Review your trends and the places where smoking clusters show up.",
+                text = "Review smoking frequency and the places where smoking clusters show up.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -142,6 +142,6 @@ private fun StatsMobileDestination(
 }
 
 private enum class AnalyticsTab(val label: String) {
-    Trends("Trends"),
-    Map("Map"),
+    Trends("Frequency"),
+    Map("Clusters"),
 }
