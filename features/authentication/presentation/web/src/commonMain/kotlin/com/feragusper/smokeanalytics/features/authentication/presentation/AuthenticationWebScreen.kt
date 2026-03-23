@@ -70,24 +70,80 @@ fun AuthenticationViewState.Render(
         }
 
         SurfaceCard {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Continue with Google") }
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:18px;") }) {
+                Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;max-width:720px;") }) {
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Restore the product shell") }
+                    Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                        Text("Sign in with Google to recover synced history, settings, coach context, and the full multi-device product flow.")
+                    }
+                }
 
-            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                GoogleSignInComponentWeb(
-                    onSignInSuccess = { onIntent(AuthenticationIntent.FetchUser) },
-                    onSignInError = { onIntent(AuthenticationIntent.FetchUser) }
-                )
-                PrimaryButton(
-                    text = "Refresh session",
-                    onClick = { onIntent(AuthenticationIntent.FetchUser) },
-                    enabled = !displayLoading,
-                )
-                GhostButton(
-                    text = "Sign out",
-                    onClick = { onIntent(AuthenticationIntent.SignOut) },
-                    enabled = !displayLoading,
-                )
+                Div(attrs = {
+                    attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+                }) {
+                    AuthValueCard(
+                        title = "History",
+                        value = "Archive sync",
+                        body = "Keep edits, date buckets, and older entries tied to the same account."
+                    )
+                    AuthValueCard(
+                        title = "Routine",
+                        value = "Stable day model",
+                        body = "Restore preferences like day-start hour, pack price, and location tracking."
+                    )
+                    AuthValueCard(
+                        title = "Coach",
+                        value = "Context-aware",
+                        body = "Give the guide enough recent behavior to produce relevant prompts and fallback insight."
+                    )
+                }
+
+                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                    GoogleSignInComponentWeb(
+                        onSignInSuccess = { onIntent(AuthenticationIntent.FetchUser) },
+                        onSignInError = { onIntent(AuthenticationIntent.FetchUser) }
+                    )
+                    PrimaryButton(
+                        text = "Refresh session",
+                        onClick = { onIntent(AuthenticationIntent.FetchUser) },
+                        enabled = !displayLoading,
+                    )
+                    GhostButton(
+                        text = "Clear session",
+                        onClick = { onIntent(AuthenticationIntent.SignOut) },
+                        enabled = !displayLoading,
+                    )
+                }
             }
         }
+
+        SurfaceCard {
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Before you continue") }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text("The redesign keeps the same product capabilities: fast smoke logging, analytics and map insights, archive editing, coach guidance, and settings sync.")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthValueCard(
+    title: String,
+    value: String,
+    body: String,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:8px;min-height:168px;padding:18px;border-radius:22px;background:var(--sa-color-surface-strong);border:1px solid var(--sa-color-outline);"
+            )
+        }
+    ) {
+        Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text(title) }
+        Div(attrs = { attr("style", "font-size:24px;font-weight:800;color:var(--sa-color-primary);") }) { Text(value) }
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(body) }
     }
 }

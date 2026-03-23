@@ -211,16 +211,64 @@ private fun SignInCard(
     onRefresh: () -> Unit,
 ) {
     SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Session") }
-            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("Sign in to sync preferences, preserve progress, and keep a stable account context across devices.")
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:18px;") }) {
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;max-width:720px;") }) {
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Session") }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text("Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and the right context for coach insights.")
+                }
+            }
+
+            Div(attrs = {
+                attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;")
+            }) {
+                SessionValueCard(
+                    title = "Preferences",
+                    value = "Routine sync",
+                    body = "Carry pack price, day-start hour, and location settings across devices."
+                )
+                SessionValueCard(
+                    title = "History",
+                    value = "Stable archive",
+                    body = "Keep edits and older smoke entries connected to the same account."
+                )
+                SessionValueCard(
+                    title = "Coach",
+                    value = "Relevant context",
+                    body = "Give the guide enough recent behavior to stay grounded instead of generic."
+                )
             }
 
             GoogleSignInComponentWeb(
                 onSignInSuccess = onRefresh,
                 onSignInError = { _ -> onRefresh() },
             )
+        }
+    }
+}
+
+@Composable
+private fun SessionValueCard(
+    title: String,
+    value: String,
+    body: String,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:8px;min-height:164px;padding:18px;border-radius:22px;background:var(--sa-color-surface-strong);border:1px solid var(--sa-color-outline);"
+            )
+        }
+    ) {
+        Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+            Text(title)
+        }
+        Div(attrs = { attr("style", "font-size:24px;font-weight:800;color:var(--sa-color-primary);") }) {
+            Text(value)
+        }
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+            Text(body)
         }
     }
 }
