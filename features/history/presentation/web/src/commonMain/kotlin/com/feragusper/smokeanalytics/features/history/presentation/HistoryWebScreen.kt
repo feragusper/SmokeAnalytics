@@ -81,7 +81,7 @@ fun HistoryWebScreen(
             InlineErrorCard(
                 title = if (state.error == HistoryResult.Error.NotLoggedIn) "Sign in required" else "History could not be loaded",
                 message = when (state.error) {
-                    HistoryResult.Error.NotLoggedIn -> "Your session expired. Sign in again to browse and edit smoke history."
+                    HistoryResult.Error.NotLoggedIn -> "Archive access needs an active session so edits, dates, and older smoke entries stay tied to the same account."
                     HistoryResult.Error.Generic -> "The selected day's history could not be loaded. Try refreshing the day."
                     else -> "The selected day's history could not be loaded. Try refreshing the day."
                 },
@@ -180,8 +180,8 @@ fun HistoryWebScreen(
             }
 
             state.smokes.isEmpty() -> EmptyStateCard(
-                title = "No smokes for this day",
-                message = "Shift the date or add a smoke for the selected day.",
+                title = "Quiet day in the archive",
+                message = "This date has no smoke entries yet. Shift the archive window or add one for the selected day.",
                 actionLabel = "Add smoke",
                 onAction = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
             )
