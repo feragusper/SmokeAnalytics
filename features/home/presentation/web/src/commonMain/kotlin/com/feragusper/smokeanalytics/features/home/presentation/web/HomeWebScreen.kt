@@ -95,11 +95,15 @@ fun HomeViewState.Render(
             InlineErrorCard(
                 title = if (error == HomeViewState.HomeError.NotLoggedIn) "Session required" else "Could not refresh home",
                 message = when (error) {
-                    HomeViewState.HomeError.NotLoggedIn -> "Sign in from Settings to sync the latest smoke entries on the web."
+                    HomeViewState.HomeError.NotLoggedIn -> "The Pulse needs an active session to sync the latest smoke entries and keep the dashboard aligned with your real archive."
                     HomeViewState.HomeError.Generic -> "The home dashboard could not be refreshed. Try again in a moment."
                 },
-                actionLabel = "Retry",
-                onAction = { onIntent(HomeIntent.RefreshFetchSmokes) },
+                actionLabel = if (error == HomeViewState.HomeError.NotLoggedIn) "Open archive" else "Retry",
+                onAction = if (error == HomeViewState.HomeError.NotLoggedIn) {
+                    { onIntent(HomeIntent.OnClickHistory) }
+                } else {
+                    { onIntent(HomeIntent.RefreshFetchSmokes) }
+                },
             )
         }
 
