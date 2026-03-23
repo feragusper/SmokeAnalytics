@@ -32,6 +32,13 @@ fun AboutWebScreen(
             }
         )
 
+        AboutWebSections()
+    }
+}
+
+@Composable
+fun AboutWebSections() {
+    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         SurfaceCard {
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Track less, notice more.") }
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {

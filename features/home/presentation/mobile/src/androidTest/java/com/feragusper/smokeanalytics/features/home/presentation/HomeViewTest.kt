@@ -45,7 +45,7 @@ class HomeViewTest {
             )
         )
         composeTestRule.setContent {
-            HomeView(viewModel) { _, _ -> }
+            HomeView(viewModel) { _, _, _ -> }
         }
     }
 }

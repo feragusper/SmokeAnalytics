@@ -7,9 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.feragusper.smokeanalytics.apps.web.AboutWebScreen
+import com.feragusper.smokeanalytics.apps.web.AnalyticsWebScreen
 import com.feragusper.smokeanalytics.apps.web.CoachWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
+import com.feragusper.smokeanalytics.apps.web.SettingsAboutWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebDependencies
@@ -17,9 +18,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebScr
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebDependencies
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebScreen
-import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebScreen
 import com.feragusper.smokeanalytics.features.settings.presentation.web.createSettingsWebDependencies
-import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
 import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -42,12 +41,10 @@ fun AppRoot(graph: WebAppGraph) {
     LaunchedEffect(route) {
         document.title = when (route) {
             WebRoute.Home -> "Smoke Analytics | Home"
+            WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
-            WebRoute.Stats -> "Smoke Analytics | Stats"
-            WebRoute.Settings -> "Smoke Analytics | Settings"
-            WebRoute.Map -> "Smoke Analytics | Map"
-            WebRoute.Coach -> "Smoke Analytics | Coach"
-            WebRoute.About -> "Smoke Analytics | About"
+            WebRoute.Coach -> "Smoke Analytics | AI Coach"
+            WebRoute.Settings -> "Smoke Analytics | Settings & About"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
     }
@@ -104,21 +101,23 @@ fun AppRoot(graph: WebAppGraph) {
                 onNavigateToHistory = { navigateTo(WebRoute.History) },
             )
 
-            WebRoute.Stats -> StatsWebScreen(deps = statsDeps)
-
-            WebRoute.Settings -> SettingsWebScreen(deps = settingsDeps)
-
-            WebRoute.Map -> MapWebScreen(
-                fetchSmokesUseCase = graph.fetchSmokesUseCase,
-                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+            WebRoute.Analytics -> AnalyticsWebScreen(
+                statsDeps = statsDeps,
+                mapContent = {
+                    MapWebScreen(
+                        fetchSmokesUseCase = graph.fetchSmokesUseCase,
+                        fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+                    )
+                },
             )
 
             WebRoute.Coach -> CoachWebScreen(
                 chatbotUseCase = graph.chatbotUseCase,
             )
 
-            WebRoute.About -> AboutWebScreen(
-                onShare = { shareSmokeAnalytics() }
+            WebRoute.Settings -> SettingsAboutWebScreen(
+                settingsDeps = settingsDeps,
+                onShare = { shareSmokeAnalytics() },
             )
 
             WebRoute.Auth -> AuthenticationWebScreen(
