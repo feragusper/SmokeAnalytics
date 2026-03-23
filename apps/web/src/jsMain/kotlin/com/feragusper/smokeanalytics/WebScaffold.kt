@@ -22,10 +22,10 @@ fun WebScaffold(
     var isSidebarCollapsed by remember { mutableStateOf(false) }
     val items = listOf(
         Triple("⌂", "Home", WebRoute.Home),
-        Triple("▤", "Analytics", WebRoute.Analytics),
+        Triple("▤", "Analytics & Map", WebRoute.Analytics),
         Triple("◫", "History", WebRoute.History),
-        Triple("◌", "Coach", WebRoute.Coach),
-        Triple("⚙", "Settings", WebRoute.Settings),
+        Triple("◌", "AI Coach", WebRoute.Coach),
+        Triple("⚙", "Settings & About", WebRoute.Settings),
     )
 
     Div(attrs = { classes(SmokeWebStyles.shell) }) {

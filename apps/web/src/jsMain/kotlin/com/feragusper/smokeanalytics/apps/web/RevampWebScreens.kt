@@ -71,7 +71,7 @@ fun SettingsAboutWebScreen(
         )
 
         SettingsWebScreen(deps = settingsDeps)
-        AboutWebSections()
+        AboutWebSections(onShare = onShare)
     }
 }
 
