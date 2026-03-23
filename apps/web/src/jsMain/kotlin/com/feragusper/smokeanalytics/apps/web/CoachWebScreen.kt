@@ -10,10 +10,11 @@ import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
 import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
-import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
@@ -82,8 +83,14 @@ fun CoachWebScreen(
             subtitle = "Pattern-aware prompts, quiet fallback support, and a calmer coaching surface built around recent smoking behavior.",
             badgeText = when {
                 loading -> "Refreshing"
+                error != null -> "Needs attention"
                 hasFallback -> "Fallback guidance"
                 else -> "Context-aware"
+            },
+            badgeTone = when {
+                loading -> StatusTone.Busy
+                error != null -> StatusTone.Error
+                else -> StatusTone.Default
             },
             actions = {
                 GhostButton(
@@ -95,10 +102,10 @@ fun CoachWebScreen(
         )
 
         when {
-            loading && primaryInsight == null -> EmptyStateCard(
-                title = "Preparing your guide",
-                message = "The coach is loading recent smoking context so the next insight lands on a real pattern instead of generic advice.",
-            )
+            loading && primaryInsight == null -> {
+                LoadingSkeletonCard(heightPx = 220, lineWidths = listOf("28%", "76%", "62%"))
+                LoadingSkeletonCard(heightPx = 140, lineWidths = listOf("22%", "58%"))
+            }
 
             primaryInsight == null -> EmptyStateCard(
                 title = "No guide insight yet",
@@ -177,8 +184,8 @@ fun CoachWebScreen(
         }
 
         error?.let { message ->
-            InlineErrorCard(
-                title = "Coach unavailable",
+            EmptyStateCard(
+                title = "Guide temporarily unavailable",
                 message = message,
                 actionLabel = "Refresh guide",
                 onAction = { GlobalScope.promise { loadInitialInsight() } },
