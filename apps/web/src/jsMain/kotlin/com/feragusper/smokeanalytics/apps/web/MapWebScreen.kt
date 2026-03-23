@@ -132,7 +132,7 @@ fun MapWebScreen(
                         SurfaceCard {
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("\"Clusters suggest higher usage during transition periods.\"")
+                                Text("Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.")
                             }
                         }
                     }
