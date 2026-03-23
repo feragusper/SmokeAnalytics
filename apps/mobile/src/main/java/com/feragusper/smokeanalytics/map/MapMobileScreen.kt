@@ -303,7 +303,7 @@ private fun LoadedState(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "\"Clusters suggest higher usage during transition periods.\"",
+                        text = "Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
@@ -467,11 +467,11 @@ private fun EmptyState(modifier: Modifier) {
             ) {
                 StatusChip(text = "Quiet map")
                 Text(
-                    text = "No mapped smokes yet",
+                    text = "No mapped areas yet",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "There is not enough location-linked history for this period yet. Track a few smokes with location enabled to start seeing areas here.",
+                    text = "There is not enough location-linked history for this period yet. Track a few smokes with location enabled to start building repeated areas here.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -508,11 +508,11 @@ private fun ErrorState(
             ) {
                 StatusChip(text = "Needs attention")
                 Text(
-                    text = "Map could not be loaded",
+                    text = "Map view unavailable",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "The geographic clusters could not be refreshed right now. Try again in a moment.",
+                    text = "The geographic clusters could not be refreshed right now. Keep the selected period and try again in a moment.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
