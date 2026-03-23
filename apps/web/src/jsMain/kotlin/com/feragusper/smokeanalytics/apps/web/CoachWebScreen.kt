@@ -97,12 +97,12 @@ fun CoachWebScreen(
         when {
             loading && primaryInsight == null -> EmptyStateCard(
                 title = "Preparing your guide",
-                message = "The coach is loading your recent smoking context.",
+                message = "The coach is loading recent smoking context so the next insight lands on a real pattern instead of generic advice.",
             )
 
             primaryInsight == null -> EmptyStateCard(
-                title = "No coach insight yet",
-                message = "Refresh the coach to load a new insight based on your recent smoking pattern.",
+                title = "No guide insight yet",
+                message = "Refresh the coach to rebuild a new insight from your recent smoking pattern and current session context.",
                 actionLabel = "Refresh",
                 onAction = { GlobalScope.promise { loadInitialInsight() } },
             )
@@ -180,7 +180,7 @@ fun CoachWebScreen(
             InlineErrorCard(
                 title = "Coach unavailable",
                 message = message,
-                actionLabel = "Retry",
+                actionLabel = "Refresh guide",
                 onAction = { GlobalScope.promise { loadInitialInsight() } },
             )
         }
