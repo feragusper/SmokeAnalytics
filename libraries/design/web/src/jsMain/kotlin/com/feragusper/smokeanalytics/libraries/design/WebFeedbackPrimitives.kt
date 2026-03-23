@@ -116,6 +116,7 @@ fun EmptyStateCard(
 ) {
     SurfaceCard {
         Div(attrs = { classes(SmokeWebStyles.emptyState) }) {
+            Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text("Quiet state") }
             Div(attrs = { classes(SmokeWebStyles.emptyStateTitle) }) { Text(title) }
             Div(attrs = { classes(SmokeWebStyles.emptyStateBody) }) { Text(message) }
             if (actionLabel != null && onAction != null) {
@@ -133,6 +134,7 @@ fun InlineErrorCard(
     onAction: (() -> Unit)? = null,
 ) {
     SurfaceCard(SmokeWebStyles.inlineError) {
+        Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text("Needs attention") }
         Div(attrs = { classes(SmokeWebStyles.inlineErrorTitle) }) { Text(title) }
         Div(attrs = { classes(SmokeWebStyles.inlineErrorBody) }) { Text(message) }
         if (actionLabel != null && onAction != null) {

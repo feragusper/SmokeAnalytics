@@ -183,7 +183,7 @@ private fun StatsWebContent(
                 val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
                 Div(attrs = {
-                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;")
+                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:stretch;")
                 }) {
                     SurfaceCard {
                         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;min-height:180px;justify-content:space-between;") }) {
@@ -204,20 +204,36 @@ private fun StatsWebContent(
                         }
                     }
 
-                    SurfaceCard {
-                        Div(attrs = {
-                            attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:180px;background:var(--sa-color-primary);border-radius:22px;padding:24px;color:var(--sa-color-onPrimary);")
-                        }) {
-                            Div {
-                                Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
-                                    Text("Daily Average")
+                    Div(attrs = { attr("style", "display:grid;grid-template-rows:1fr 1fr;gap:16px;") }) {
+                        SurfaceCard {
+                            Div(attrs = {
+                                attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:180px;background:var(--sa-color-primary);border-radius:22px;padding:24px;color:var(--sa-color-onPrimary);")
+                            }) {
+                                Div {
+                                    Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
+                                        Text("Daily Average")
+                                    }
+                                    Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;margin-top:10px;") }) {
+                                        Text(averageFor(currentPeriod, stats).formatOneDecimal())
+                                    }
                                 }
-                                Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;margin-top:10px;") }) {
-                                    Text(averageFor(currentPeriod, stats).formatOneDecimal())
+                                Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
+                                    Text(averageLabelFor(currentPeriod))
                                 }
                             }
-                            Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
-                                Text(averageLabelFor(currentPeriod))
+                        }
+
+                        SurfaceCard {
+                            Div(attrs = { attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:160px;") }) {
+                                Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                                    Text("Peak Window")
+                                }
+                                Div(attrs = { attr("style", "font-size:36px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);") }) {
+                                    Text(peakBucketFor(currentPeriod, stats))
+                                }
+                                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                    Text("Highest activity bucket for the selected range.")
+                                }
                             }
                         }
                     }
@@ -229,7 +245,7 @@ private fun StatsWebContent(
                     }
 
                     Div(attrs = { attr("style", "font-size:12px;color:var(--sa-color-secondary);margin-bottom:14px;") }) {
-                        Text(selectedDate.headerLabel(currentPeriod))
+                        Text("${selectedDate.headerLabel(currentPeriod)} • ${currentPeriod.chartTitle()}")
                     }
 
                     Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
@@ -434,6 +450,16 @@ private fun averageLabelFor(period: StatsPeriod): String = when (period) {
     StatsPeriod.WEEK -> "Average per weekday"
     StatsPeriod.MONTH -> "Average per week bucket"
     StatsPeriod.YEAR -> "Average per month"
+}
+
+private fun peakBucketFor(
+    period: StatsPeriod,
+    stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
+): String = when (period) {
+    StatsPeriod.DAY -> stats.hourly.maxByOrNull { it.value }?.key ?: "--"
+    StatsPeriod.WEEK -> stats.weekly.maxByOrNull { it.value }?.key ?: "--"
+    StatsPeriod.MONTH -> stats.monthly.maxByOrNull { it.value }?.key ?: "--"
+    StatsPeriod.YEAR -> stats.yearly.maxByOrNull { it.value }?.key ?: "--"
 }
 
 private fun Double.formatOneDecimal(): String {

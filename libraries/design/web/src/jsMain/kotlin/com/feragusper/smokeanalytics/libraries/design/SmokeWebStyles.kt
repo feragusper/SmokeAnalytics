@@ -319,8 +319,8 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         justifyContent(JustifyContent.SpaceBetween)
         alignItems(AlignItems.Center)
-        gap(12.px)
-        padding(18.px)
+        gap(16.px)
+        padding(22.px)
         property("border-radius", "var(--sa-radius-lg)")
         backgroundColor(Color("var(--sa-color-surface-strong)"))
         property("border", "1px solid var(--sa-color-outline)")
@@ -337,7 +337,7 @@ object SmokeWebStyles : StyleSheet() {
     val pageHeroText by style {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
-        gap(4.px)
+        gap(6.px)
     }
 
     val pageHeroEyebrow by style {
@@ -349,8 +349,8 @@ object SmokeWebStyles : StyleSheet() {
     }
 
     val pageHeroTitle by style {
-        fontSize(24.px)
-        fontWeight(700)
+        fontSize(30.px)
+        fontWeight(800)
         lineHeight("1.1")
     }
 
@@ -403,6 +403,7 @@ object SmokeWebStyles : StyleSheet() {
             self {
                 flexDirection(FlexDirection.Column)
                 alignItems(AlignItems.Start)
+                justifyContent(JustifyContent.FlexStart)
             }
         }
     }
@@ -853,7 +854,7 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         alignItems(AlignItems.Start)
-        gap(10.px)
+        gap(12.px)
     }
 
     val emptyStateTitle by style {

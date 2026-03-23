@@ -62,7 +62,7 @@ fun HistoryWebScreen(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "History",
+            title = "The Archive",
             eyebrow = "The Archive",
             subtitle = "Browse the calendar, inspect a single day, and edit the full smoking log without leaving the main shell.",
             badgeText = when {
@@ -74,9 +74,6 @@ fun HistoryWebScreen(
                 state.displayLoading -> StatusTone.Busy
                 state.error != null -> StatusTone.Error
                 else -> StatusTone.Default
-            },
-            actions = {
-                GhostButton(text = "Back", onClick = onNavigateUp)
             },
         )
 
@@ -95,64 +92,68 @@ fun HistoryWebScreen(
             )
         }
 
-        Div(attrs = {
-            attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:420px;")
-        }) {
-            HistoryModeChip(
-                label = "Calendar",
-                selected = calendarMode,
-                onClick = { calendarMode = true },
-            )
-            HistoryModeChip(
-                label = "List",
-                selected = !calendarMode,
-                onClick = { calendarMode = false },
-            )
-        }
-
-        Div(attrs = { attr("style", "display:flex;justify-content:center;") }) {
-            PrimaryButton(
-                text = "Add for Date",
-                onClick = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
-                enabled = !state.displayLoading,
-            )
-        }
-
-        Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;") }) {
-            Div {
-                Div(attrs = { attr("style", "font-size:30px;font-weight:800;color:var(--sa-color-primary);") }) {
-                    Text(selectedLocalDate.toUiMonthYear())
+        SurfaceCard {
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+                Div(attrs = {
+                    attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:420px;")
+                }) {
+                    HistoryModeChip(
+                        label = "Calendar",
+                        selected = calendarMode,
+                        onClick = { calendarMode = true },
+                    )
+                    HistoryModeChip(
+                        label = "List",
+                        selected = !calendarMode,
+                        onClick = { calendarMode = false },
+                    )
                 }
-                Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
-                    Text(selectedLocalDate.toUiMonthDay())
-                }
-            }
 
-            Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
-                GhostButton(
-                    text = "←",
-                    onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz))) },
-                    enabled = !state.displayLoading,
-                )
-
-                Input(
-                    type = InputType.Date,
-                    attrs = {
-                        classes(SmokeWebStyles.dateInput)
-                        value(selectedLocalDate.toHtmlDate())
-                        if (state.displayLoading) disabled()
-                        onInput { e ->
-                            val picked = e.value.toLocalDateOrNull() ?: return@onInput
-                            store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+                Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;") }) {
+                    Div {
+                        Div(attrs = { attr("style", "font-size:30px;font-weight:800;color:var(--sa-color-primary);") }) {
+                            Text(selectedLocalDate.toUiMonthYear())
                         }
-                    },
-                )
+                        Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
+                            Text(selectedLocalDate.toUiMonthDay())
+                        }
+                    }
 
-                GhostButton(
-                    text = "→",
-                    onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz))) },
-                    enabled = !state.displayLoading,
-                )
+                    Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+                        GhostButton(
+                            text = "←",
+                            onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz))) },
+                            enabled = !state.displayLoading,
+                        )
+
+                        Input(
+                            type = InputType.Date,
+                            attrs = {
+                                classes(SmokeWebStyles.dateInput)
+                                value(selectedLocalDate.toHtmlDate())
+                                if (state.displayLoading) disabled()
+                                onInput { e ->
+                                    val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+                                }
+                            },
+                        )
+
+                        GhostButton(
+                            text = "→",
+                            onClick = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz))) },
+                            enabled = !state.displayLoading,
+                        )
+                    }
+                }
+
+                Div(attrs = { attr("style", "display:flex;justify-content:flex-start;") }) {
+                    PrimaryButton(
+                        text = "Add for Date",
+                        onClick = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
+                        enabled = !state.displayLoading,
+                    )
+                }
             }
         }
 
@@ -211,7 +212,9 @@ fun HistoryWebScreen(
             }
         }
 
-        TrendCard(trendValue = trendValue)
+        if (!state.displayLoading) {
+            TrendCard(trendValue = trendValue)
+        }
     }
 }
 
