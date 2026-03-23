@@ -96,6 +96,15 @@ private fun SettingsViewState.Render(
                 value = "Recovery",
                 body = "Progress is tied to smoke-free gaps, not perfection. Longer gaps keep the score moving.",
             )
+            HighlightCard(
+                title = "Day model",
+                value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                body = if (preferences.locationTrackingEnabled) {
+                    "Location tracking is enabled, so map insights can learn from repeated areas."
+                } else {
+                    "Location tracking is off, so map insights stay unavailable until the setting changes."
+                },
+            )
         }
 
         if (currentEmail != null) {

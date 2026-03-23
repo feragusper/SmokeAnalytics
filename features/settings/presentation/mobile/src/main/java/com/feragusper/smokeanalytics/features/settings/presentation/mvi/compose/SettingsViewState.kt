@@ -114,6 +114,8 @@ data class SettingsViewState(
 
             HighlightsRow(tier = preferences.accountTier)
 
+            RoutineSnapshotCard(preferences = preferences)
+
             PreferencesCard(
                 preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
@@ -247,6 +249,36 @@ private fun HighlightCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun RoutineSnapshotCard(
+    preferences: UserPreferences,
+) {
+    SettingsCard(
+        title = "Routine model",
+        subtitle = "The app's daily interpretation depends on these values before any chart or map is computed.",
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                HighlightCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Day starts",
+                    value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                    body = "Custom day boundary for Home, History, and Analytics.",
+                )
+                HighlightCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Location",
+                    value = if (preferences.locationTrackingEnabled) "On" else "Off",
+                    body = "Controls whether the map can learn from repeated smoking areas.",
+                )
+            }
         }
     }
 }
