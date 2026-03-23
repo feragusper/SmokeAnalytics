@@ -31,14 +31,16 @@ fun MapWebScreen(
     var clusters by remember { mutableStateOf<List<SmokeMapCluster>>(emptyList()) }
     var selectedCluster by remember { mutableStateOf<SmokeMapCluster?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var preferences by remember { mutableStateOf<com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences?>(null) }
 
     LaunchedEffect(period) {
         loading = true
-        val preferences = fetchUserPreferencesUseCase()
+        val fetchedPreferences = fetchUserPreferencesUseCase()
+        preferences = fetchedPreferences
         val (start, end) = smokeMapRange(
             period = period,
-            dayStartHour = preferences.dayStartHour,
-            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+            dayStartHour = fetchedPreferences.dayStartHour,
+            manualDayStartEpochMillis = fetchedPreferences.manualDayStartEpochMillis,
         )
         clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), period)
         selectedCluster = clusters.maxByOrNull { it.count }
@@ -64,6 +66,12 @@ fun MapWebScreen(
 
         when {
             loading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
+            preferences?.locationTrackingEnabled == false -> SurfaceCard {
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Location tracking is off") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Enable location tracking in Settings to unlock map insights and cluster detection.")
+                }
+            }
             clusters.isEmpty() -> SurfaceCard {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("No mapped smokes yet") }
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
@@ -74,51 +82,62 @@ fun MapWebScreen(
             else -> {
                 val activeCluster = selectedCluster ?: clusters.first()
 
-                SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.")
-                    }
-                    Iframe(attrs = {
-                        attr("src", googleEmbedUrl(activeCluster.point))
-                        attr("loading", "lazy")
-                        attr("referrerpolicy", "no-referrer-when-downgrade")
-                        attr("style", "width:100%;height:360px;border:0;border-radius:16px;margin-top:12px;background:#f5f8f8;")
-                    })
-                }
-
-                SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Top Clusters") }
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Pick an area to inspect on Google Maps.")
-                    }
-                    clusters.forEach { cluster ->
-                        Div(
-                            attrs = {
-                                classes(SmokeWebStyles.listRow)
-                                onClick { selectedCluster = cluster }
-                                attr("style", "cursor:pointer;margin-top:10px;")
+                Div(attrs = {
+                    attr("style", "display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);gap:16px;align-items:start;")
+                }) {
+                    SurfaceCard {
+                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
+                            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                Text("${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.")
                             }
-                        ) {
-                            Div {
-                                Div(attrs = { classes(SmokeWebStyles.timeText) }) { Text(cluster.label) }
-                                Div(attrs = { classes(SmokeWebStyles.subText) }) {
-                                    Text("${cluster.count} smokes in this area")
-                                }
+                            Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
+                                Text("Most frequent area for the selected period")
                             }
-                            PrimaryButton(
-                                text = if (cluster == activeCluster) "Viewing" else "View",
-                                onClick = { selectedCluster = cluster },
-                                enabled = cluster != activeCluster,
-                            )
+                            Iframe(attrs = {
+                                attr("src", googleEmbedUrl(activeCluster.point))
+                                attr("loading", "lazy")
+                                attr("referrerpolicy", "no-referrer-when-downgrade")
+                                attr("style", "width:100%;height:400px;border:0;border-radius:24px;background:#f5f8f8;")
+                            })
                         }
                     }
-                }
 
-                SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("\"Clusters suggest higher usage during transition periods.\"")
+                    Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+                        SurfaceCard {
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Top Clusters") }
+                            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                Text("Pick an area to inspect on Google Maps.")
+                            }
+                            clusters.take(4).forEach { cluster ->
+                                Div(
+                                    attrs = {
+                                        classes(SmokeWebStyles.listRow)
+                                        onClick { selectedCluster = cluster }
+                                        attr("style", "cursor:pointer;margin-top:10px;")
+                                    }
+                                ) {
+                                    Div {
+                                        Div(attrs = { classes(SmokeWebStyles.timeText) }) { Text(cluster.label) }
+                                        Div(attrs = { classes(SmokeWebStyles.subText) }) {
+                                            Text("${cluster.count} smokes in this area")
+                                        }
+                                    }
+                                    PrimaryButton(
+                                        text = if (cluster == activeCluster) "Viewing" else "View",
+                                        onClick = { selectedCluster = cluster },
+                                        enabled = cluster != activeCluster,
+                                    )
+                                }
+                            }
+                        }
+
+                        SurfaceCard {
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
+                            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                Text("\"Clusters suggest higher usage during transition periods.\"")
+                            }
+                        }
                     }
                 }
             }

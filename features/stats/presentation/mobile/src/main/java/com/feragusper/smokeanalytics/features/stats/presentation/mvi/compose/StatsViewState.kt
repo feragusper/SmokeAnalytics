@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -86,22 +86,9 @@ data class StatsViewState(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = "Patterns in motion",
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Compare period totals, pacing, and chart movement without leaving Analytics.",
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
@@ -110,6 +97,40 @@ data class StatsViewState(
                     ),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "Trends",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    text = "Patterns in motion",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                            Card(
+                                shape = RoundedCornerShape(999.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                ),
+                            ) {
+                                Text(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    text = selectedDate.summaryMeta(currentPeriod),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            }
+                        }
+
                         TabRow(
                             modifier = Modifier.padding(bottom = 8.dp),
                             selectedTabIndex = currentPeriod.ordinal,
@@ -169,8 +190,6 @@ data class StatsViewState(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
                 stats?.let {
                     SummaryCards(
                         currentPeriod = currentPeriod,
@@ -178,12 +197,12 @@ data class StatsViewState(
                         selectedDate = selectedDate,
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Row(
@@ -233,36 +252,41 @@ private fun SummaryCards(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SummaryCard(
-            modifier = Modifier.fillMaxWidth(),
-            title = "Total Frequency",
-            headline = when (currentPeriod) {
-                StatsViewState.StatsPeriod.DAY -> stats.totalDay.toString()
-                StatsViewState.StatsPeriod.WEEK -> stats.totalWeek.toString()
-                StatsViewState.StatsPeriod.MONTH -> stats.totalMonth.toString()
-                StatsViewState.StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
-            },
-            supporting = "Cigarettes",
-            meta = selectedDate.summaryMeta(currentPeriod),
-            prominent = true,
-        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SummaryCard(
-                modifier = Modifier.weight(1f),
-                title = "Daily Average",
-                headline = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
-                supporting = averageLabelFor(currentPeriod),
-                highlighted = true,
+                modifier = Modifier.weight(1.6f),
+                title = "Total Frequency",
+                headline = when (currentPeriod) {
+                    StatsViewState.StatsPeriod.DAY -> stats.totalDay.toString()
+                    StatsViewState.StatsPeriod.WEEK -> stats.totalWeek.toString()
+                    StatsViewState.StatsPeriod.MONTH -> stats.totalMonth.toString()
+                    StatsViewState.StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
+                },
+                supporting = "Cigarettes",
+                meta = selectedDate.summaryMeta(currentPeriod),
+                prominent = true,
             )
-            SummaryCard(
+            Column(
                 modifier = Modifier.weight(1f),
-                title = "Peak Window",
-                headline = peakBucketFor(currentPeriod, stats),
-                supporting = "Highest activity",
-            )
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SummaryCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = "Daily Average",
+                    headline = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
+                    supporting = averageLabelFor(currentPeriod),
+                    highlighted = true,
+                )
+                SummaryCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = "Peak Window",
+                    headline = peakBucketFor(currentPeriod, stats),
+                    supporting = "Highest activity",
+                )
+            }
         }
     }
 }
@@ -291,7 +315,7 @@ private fun SummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (prominent) Modifier.height(144.dp) else Modifier)
+                .then(if (prominent) Modifier.height(176.dp) else Modifier)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -320,11 +344,20 @@ private fun SummaryCard(
                 },
             )
             meta?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
+                Spacer(modifier = Modifier.weight(1f))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
             }
         }
     }
