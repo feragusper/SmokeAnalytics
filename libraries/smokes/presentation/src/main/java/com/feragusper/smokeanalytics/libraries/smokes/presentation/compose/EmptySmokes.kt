@@ -43,7 +43,7 @@ fun EmptySmokes() {
                 )
             }
             Text(
-                text = "No smoke entries yet",
+                text = "No archive entries for this day",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -53,7 +53,7 @@ fun EmptySmokes() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "Use Add for Date to fill the archive without leaving this view.",
+                text = "Use Add for Date to keep the archive complete without leaving this view.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
