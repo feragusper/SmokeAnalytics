@@ -10,8 +10,8 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
+import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
-import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
@@ -58,7 +58,8 @@ private fun SettingsViewState.Render(
         )
 
         errorMessage?.let { msg ->
-            InlineErrorCard(
+            EmptyStateCard(
+                title = "Settings unavailable",
                 message = msg,
                 actionLabel = "Try again",
                 onAction = { onIntent(SettingsIntent.FetchUser) },

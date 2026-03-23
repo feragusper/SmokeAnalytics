@@ -8,8 +8,8 @@ import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationIntent
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
+import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
-import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -57,7 +57,7 @@ fun AuthenticationViewState.Render(
         )
 
         error?.let {
-            InlineErrorCard(
+            EmptyStateCard(
                 title = "Authentication failed",
                 message = "The session could not be restored. Try signing in again.",
                 actionLabel = "Retry session check",
