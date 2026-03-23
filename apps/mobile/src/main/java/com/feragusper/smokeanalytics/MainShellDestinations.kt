@@ -70,7 +70,10 @@ fun HistoryMobileDestination(
         )
     }
 
-    HistoryView(viewModel = viewModel)
+    HistoryView(
+        viewModel = viewModel,
+        showNavigationIcon = false,
+    )
 }
 
 @Composable

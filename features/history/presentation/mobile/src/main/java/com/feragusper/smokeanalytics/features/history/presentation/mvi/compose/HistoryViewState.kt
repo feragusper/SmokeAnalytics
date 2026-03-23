@@ -1,8 +1,5 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi.compose
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,9 +21,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,9 +33,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,14 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
@@ -61,7 +54,6 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
-import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.Stat
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import com.valentinilk.shimmer.shimmer
 import kotlinx.datetime.Clock
@@ -83,76 +75,23 @@ data class HistoryViewState(
     internal val selectedDate: Instant = Clock.System.now(),
 ) : MVIViewState<HistoryIntent> {
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Compose(intent: (HistoryIntent) -> Unit) {
+    fun Compose(
+        showNavigationIcon: Boolean = true,
+        intent: (HistoryIntent) -> Unit,
+    ) {
         val snackbarHostState = remember { SnackbarHostState() }
-        val isFABVisible = rememberSaveable { mutableStateOf(true) }
         val timeZone = remember { TimeZone.currentSystemDefault() }
         var showDatePicker by remember { mutableStateOf(false) }
-        var calendarMode by rememberSaveable { mutableStateOf(false) }
+        var calendarMode by rememberSaveable { mutableStateOf(true) }
 
-        val nestedScrollConnection = remember {
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    if (available.y < -1) isFABVisible.value = false
-                    if (available.y > 1) isFABVisible.value = true
-                    return Offset.Zero
-                }
-            }
-        }
+        val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
+        val dateLabel = selectedLocalDate.toUiMonthDay()
+        val entriesCount = smokes?.size ?: 0
+        val trendValue = remember(monthCounts) { monthTrendPercent(monthCounts) }
 
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            floatingActionButton = {
-                AnimatedVisibility(
-                    visible = isFABVisible.value && !displayLoading && !calendarMode,
-                    enter = slideInVertically(initialOffsetY = { it * 2 }),
-                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
-                ) {
-                    FloatingActionButton(
-                        onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
-                                contentDescription = null
-                            )
-                            Text(
-                                text = stringResource(R.string.history_button_track),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                }
-            },
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(id = R.string.history_smoked),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { intent(HistoryIntent.NavigateUp) }) {
-                            Icon(
-                                painter = rememberVectorPainter(image = Icons.AutoMirrored.Default.ArrowBack),
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.mediumTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                )
-            }
         ) { contentPadding ->
             if (showDatePicker) {
                 DatePickerDialog(
@@ -161,163 +100,279 @@ data class HistoryViewState(
                         showDatePicker = false
                         intent(HistoryIntent.FetchSmokes(dateInstant))
                     },
-                    onDismiss = { showDatePicker = false }
+                    onDismiss = { showDatePicker = false },
                 )
             }
 
-            Column(
+            LazyColumn(
                 modifier = Modifier
-                    .padding(contentPadding)
-                    .padding(horizontal = 16.dp)
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(contentPadding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected = !calendarMode,
-                        onClick = { calendarMode = false },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ViewList,
-                                contentDescription = null
-                            )
-                        },
-                        label = { Text("List") },
-                    )
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected = calendarMode,
-                        onClick = { calendarMode = true },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.CalendarMonth,
-                                contentDescription = null
-                            )
-                        },
-                        label = { Text("Calendar") },
+                item {
+                    ArchiveHeader(
+                        showNavigationIcon = showNavigationIcon,
+                        onNavigateUp = { intent(HistoryIntent.NavigateUp) },
                     )
                 }
 
-                if (!calendarMode) {
+                item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        IconButton(onClick = {
-                            intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-
-                        Text(
-                            modifier = Modifier.clickable { showDatePicker = true },
-                            text = selectedDate.toLocalDateTime(timeZone).dateFormattedUi(),
+                        FilterChip(
+                            modifier = Modifier.weight(1f),
+                            selected = calendarMode,
+                            onClick = { calendarMode = true },
+                            leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+                            label = { Text("Calendar") },
                         )
-
-                        IconButton(onClick = {
-                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null
-                            )
-                        }
+                        FilterChip(
+                            modifier = Modifier.weight(1f),
+                            selected = !calendarMode,
+                            onClick = { calendarMode = false },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
+                            label = { Text("List") },
+                        )
                     }
-
-                    Stat(
-                        titleResourceId = R.string.history_smoked,
-                        count = smokes?.size ?: 0,
-                        isLoading = displayLoading
-                    )
                 }
 
-                if (calendarMode && !displayLoading) {
-                    CalendarMonthCard(
-                        selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date,
-                        monthCounts = monthCounts,
-                        onShiftMonth = { amount ->
-                            val current = selectedDate.toLocalDateTime(timeZone).date
-                            val shifted = current.plus(DatePeriod(months = amount))
-                            intent(HistoryIntent.FetchSmokes(LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)))
-                        },
-                        onPickDay = { picked ->
-                            calendarMode = false
-                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
-                        }
-                    )
-                }
-
-                if (displayLoading) {
-                    LazyColumn(
+                item {
+                    Button(
+                        onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
+                        enabled = !displayLoading,
                         modifier = Modifier
-                            .padding(top = 32.dp)
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
                     ) {
-                        items(3) {
+                        Text(
+                            text = "Add for Date",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+
+                item {
+                    HistoryDateBar(
+                        selectedLocalDate = selectedLocalDate,
+                        onPrevious = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
+                        onNext = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
+                        onPickDate = { showDatePicker = true },
+                    )
+                }
+
+                item {
+                    if (calendarMode) {
+                        ArchiveCalendarCard(
+                            selectedLocalDate = selectedLocalDate,
+                            monthCounts = monthCounts,
+                            onShiftMonth = { amount ->
+                                val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
+                                intent(
+                                    HistoryIntent.FetchSmokes(
+                                        LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)
+                                    )
+                                )
+                            },
+                            onPickDay = { picked ->
+                                intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
+                            },
+                        )
+                    } else {
+                        ArchiveDaySummaryCard(
+                            selectedLocalDate = selectedLocalDate,
+                            entriesCount = entriesCount,
+                        )
+                    }
+                }
+
+                when {
+                    displayLoading -> {
+                        items(4) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(58.dp)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .height(72.dp)
+                                    .clip(RoundedCornerShape(20.dp))
                                     .shimmer()
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
                         }
                     }
-                } else if (!calendarMode && !smokes.isNullOrEmpty()) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(top = 16.dp)
-                            .fillMaxSize()
-                            .nestedScroll(nestedScrollConnection),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(smokes) { smoke ->
-                            SwipeToDismissRow(
-                                date = smoke.date,
-                                timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                                onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
-                                fullDateTimeEdit = true,
-                                onEdit = { editedInstant ->
-                                    intent(HistoryIntent.EditSmoke(smoke.id, editedInstant))
+
+                    !smokes.isNullOrEmpty() -> {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = dateLabel,
+                                        style = MaterialTheme.typography.titleLarge,
+                                    )
+                                    Text(
+                                        text = "Daily archive",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
-                            )
-                            HorizontalDivider()
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(999.dp),
+                                ) {
+                                    Text(
+                                        text = "$entriesCount entries",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
+                            }
+                        }
+
+                        items(smokes) { smoke ->
+                            Card(
+                                shape = RoundedCornerShape(22.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                ),
+                            ) {
+                                SwipeToDismissRow(
+                                    date = smoke.date,
+                                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                    onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
+                                    fullDateTimeEdit = true,
+                                    onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },
+                                )
+                            }
                         }
                     }
-                } else if (!calendarMode) {
-                    EmptySmokes()
+
+                    else -> {
+                        item { EmptySmokes() }
+                    }
+                }
+
+                item {
+                    TrendCard(trendValue = trendValue)
                 }
             }
         }
     }
 }
 
-private fun Instant.plusDays(days: Int, timeZone: TimeZone): Instant =
-    this.plus(days, DateTimeUnit.DAY, timeZone)
-
-private fun Instant.minusDays(days: Int, timeZone: TimeZone): Instant =
-    this.plus(-days, DateTimeUnit.DAY, timeZone)
-
-private fun kotlinx.datetime.LocalDateTime.dateFormattedUi(): String {
-    // Cambiá el formato si querés. Esto evita depender de tu extension vieja de java.time.
-    val day = "%02d".format(dayOfMonth)
-    val month = "%02d".format(monthNumber)
-    return "$day/$month/$year"
+@Composable
+private fun ArchiveHeader(
+    showNavigationIcon: Boolean,
+    onNavigateUp: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (showNavigationIcon) {
+            IconButton(onClick = onNavigateUp) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+        }
+        Text(
+            text = "History",
+            style = MaterialTheme.typography.headlineSmall,
+        )
+    }
 }
 
 @Composable
-private fun CalendarMonthCard(
+private fun HistoryDateBar(
+    selectedLocalDate: LocalDate,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onPickDate: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = selectedLocalDate.toUiMonthYear(),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPrevious) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+            Text(
+                text = selectedLocalDate.toUiMonthDay(),
+                modifier = Modifier.clickable(onClick = onPickDate),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            IconButton(onClick = onNext) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveDaySummaryCard(
+    selectedLocalDate: LocalDate,
+    entriesCount: Int,
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = selectedLocalDate.toUiMonthDay(),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = "Daily archive",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(999.dp),
+            ) {
+                Text(
+                    text = "$entriesCount entries",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveCalendarCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
     onShiftMonth: (Int) -> Unit,
@@ -329,90 +384,91 @@ private fun CalendarMonthCard(
     val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber - 1
     val maxCount = monthCounts.values.maxOrNull() ?: 0
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            IconButton(onClick = { onShiftMonth(-1) }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                )
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = selectedLocalDate.toUiMonthYear(),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Text(
-                    text = "${monthCounts.values.sum()} smokes this month",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = { onShiftMonth(1) }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
-                Box(modifier = Modifier.width(48.dp), contentAlignment = Alignment.Center) {
-                    Text(text = label, style = MaterialTheme.typography.labelSmall)
-                }
-            }
-        }
-
-        val totalSlots = leadingEmptySlots + daysInMonth
-        val rows = (totalSlots + 6) / 7
-        for (row in 0 until rows) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                for (column in 0 until 7) {
-                    val slot = row * 7 + column
-                    val day = slot - leadingEmptySlots + 1
-                    if (day !in 1..daysInMonth) {
-                        Spacer(modifier = Modifier.width(48.dp))
-                    } else {
-                        val count = monthCounts[day] ?: 0
-                        val date = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, day)
-                        val background = when {
-                            date == selectedLocalDate -> MaterialTheme.colorScheme.primaryContainer
-                            count == 0 -> MaterialTheme.colorScheme.surface
-                            maxCount <= 1 -> MaterialTheme.colorScheme.secondaryContainer
-                            count >= maxCount -> MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                            else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .width(48.dp)
-                                .height(64.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(background)
-                                .clickable { onPickDay(date) }
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = selectedLocalDate.toUiMonthYear(),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = "Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row {
+                    IconButton(onClick = { onShiftMonth(-1) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                    IconButton(onClick = { onShiftMonth(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                    }
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { label ->
+                    Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            val totalSlots = leadingEmptySlots + daysInMonth
+            val rows = (totalSlots + 6) / 7
+            for (row in 0 until rows) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    for (column in 0 until 7) {
+                        val slot = row * 7 + column
+                        val day = slot - leadingEmptySlots + 1
+                        if (day !in 1..daysInMonth) {
+                            Spacer(modifier = Modifier.width(42.dp))
+                        } else {
+                            val count = monthCounts[day] ?: 0
+                            val date = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, day)
+                            val background = when {
+                                date == selectedLocalDate -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                count == 0 -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                                maxCount <= 1 -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                                count >= maxCount -> MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                                else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .width(42.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(background)
+                                    .clickable { onPickDay(date) }
+                                    .padding(vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
                                 Text(text = day.toString(), style = MaterialTheme.typography.labelLarge)
-                                if (count > 0) {
-                                    Text(
-                                        text = count.toString(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                                Text(
+                                    text = if (count > 0) count.toString() else "",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
@@ -422,7 +478,83 @@ private fun CalendarMonthCard(
     }
 }
 
+@Composable
+private fun TrendCard(
+    trendValue: Int,
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Trend",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                )
+                Text(
+                    text = "${if (trendValue > 0) "+" else ""}$trendValue%",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Text(
+                    text = "Reduction vs last month",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(999.dp),
+            ) {
+                Text(
+                    text = "↘",
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+    }
+}
+
+private fun Map<Int, Int>.averageOrZero(): Double = values.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+
+private fun monthTrendPercent(monthCounts: Map<Int, Int>): Int {
+    if (monthCounts.isEmpty()) return 0
+    val midpoint = monthCounts.keys.maxOrNull()?.div(2)?.coerceAtLeast(1) ?: return 0
+    val firstHalf = monthCounts.filterKeys { it <= midpoint }.values.sum()
+    val secondHalf = monthCounts.filterKeys { it > midpoint }.values.sum()
+    if (firstHalf == 0) return 0
+    return (((secondHalf - firstHalf).toDouble() / firstHalf.toDouble()) * 100).toInt()
+}
+
+private fun Double.formatOneDecimal(): String {
+    val rounded = (this * 10).toInt() / 10.0
+    val whole = rounded.toInt()
+    val decimal = ((rounded - whole) * 10).toInt()
+    return "$whole.$decimal"
+}
+
+private fun Instant.plusDays(days: Int, timeZone: TimeZone): Instant =
+    plus(days, DateTimeUnit.DAY, timeZone)
+
+private fun Instant.minusDays(days: Int, timeZone: TimeZone): Instant =
+    plus(-days, DateTimeUnit.DAY, timeZone)
+
 private fun LocalDate.toUiMonthYear(): String {
     val monthName = month.name.lowercase().replaceFirstChar { it.titlecase() }
     return "$monthName $year"
+}
+
+private fun LocalDate.toUiMonthDay(): String {
+    val monthName = month.name.lowercase().replaceFirstChar { it.titlecase() }
+    return "$monthName $dayOfMonth"
 }
