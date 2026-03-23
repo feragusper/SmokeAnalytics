@@ -13,7 +13,6 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
-import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -78,7 +77,7 @@ fun HistoryWebScreen(
         )
 
         if (state.error != null) {
-            InlineErrorCard(
+            EmptyStateCard(
                 title = if (state.error == HistoryResult.Error.NotLoggedIn) "Sign in required" else "History could not be loaded",
                 message = when (state.error) {
                     HistoryResult.Error.NotLoggedIn -> "Archive access needs an active session so edits, dates, and older smoke entries stay tied to the same account."
