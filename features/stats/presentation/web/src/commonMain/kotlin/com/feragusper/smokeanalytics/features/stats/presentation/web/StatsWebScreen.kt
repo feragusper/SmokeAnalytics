@@ -11,7 +11,8 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
-import com.feragusper.smokeanalytics.libraries.design.InlineErrorCard
+import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
+import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
@@ -164,19 +165,17 @@ private fun StatsWebContent(
         }
 
         when {
-            state.error != null -> InlineErrorCard(
-                title = "Stats are unavailable",
-                message = "The chart could not be loaded for the selected period. Try changing the filters or refresh the browser.",
+            state.error != null -> EmptyStateCard(
+                title = "Pattern view unavailable",
+                message = "The selected range could not be assembled right now. Keep the period and date, then refresh to try this view again.",
                 actionLabel = "Try again",
                 onAction = onReload,
             )
 
-            state.displayLoading || state.stats == null -> SurfaceCard {
-                Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
-                    Text(currentPeriod.chartTitle())
-                }
-                Div(attrs = { classes(SmokeWebStyles.chartSkeleton) })
-            }
+            state.displayLoading || state.stats == null -> LoadingSkeletonCard(
+                heightPx = 240,
+                lineWidths = listOf("24%", "64%", "42%")
+            )
 
             else -> {
                 val stats = state.stats
