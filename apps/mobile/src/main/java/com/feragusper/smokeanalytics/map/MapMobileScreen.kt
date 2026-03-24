@@ -303,10 +303,10 @@ private fun LoadedState(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
+                            text = "Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
                 }
             }
         }
@@ -559,7 +559,7 @@ private fun GoogleMapPreview(cluster: SmokeMapCluster) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .height(176.dp),
     )
 }
 
