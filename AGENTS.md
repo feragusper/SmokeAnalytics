@@ -22,6 +22,14 @@
 - Mobile work: run the closest feature compile/test task and at least one app-level build when the UI shell changes materially.
 - Release or CI work: validate the nearest real task or workflow path, not only a lightweight development compile.
 
+## Branch Flow
+- The repository branch model is `master <- develop <- feature branch`.
+- Start new work from `develop`, not from `master`.
+- Open feature/tranche PRs into `develop`.
+- Merge `develop` into `master` only when preparing a release.
+- Tags and deploys happen from the release state on `master`, not from feature branches.
+- If work is merged to `master` by mistake, bring `develop` forward before starting the next branch.
+
 ## Repo-Specific Agent Assets
 - Subtree-specific overrides live in `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`, and `.github/workflows/AGENTS.md`.
 - Repository skills live in `.agents/skills/`.

@@ -287,7 +287,7 @@ private fun PulseHeroSection(
     val progress = when {
         isLoading -> 0f
         elapsedMinutes == null || averageGap == null || averageGap <= 0 -> 0.22f
-        else -> (elapsedMinutes.toFloat() / (averageGap * 1.5f)).coerceIn(0.08f, 1f)
+        else -> (elapsedMinutes.toFloat() / averageGap.toFloat()).coerceIn(0.08f, 1f)
     }
 
     Column(

@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -113,13 +114,14 @@ private fun LoadingState(modifier: Modifier) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                StatusChip(text = "Refreshing")
                 CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 Text(
                     text = "Loading geographic clusters",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "Pulling the latest smoking areas for the selected period.",
+                    text = "Pulling repeated smoking areas for the selected period and rebuilding the geographic side of Analytics.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -301,10 +303,10 @@ private fun LoadedState(
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "\"Clusters suggest higher usage during transition periods.\"",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
+                            text = "Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
                 }
             }
         }
@@ -423,15 +425,21 @@ private fun DisabledState(modifier: Modifier) {
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                StatusChip(text = "Settings required")
                 Text(
                     text = "Location tracking is off",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Enable location tracking in Settings to unlock map insights.",
+                    text = "Enable location tracking in Settings to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "The rest of the product still works, but this destination needs location-linked history to become useful.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -455,15 +463,21 @@ private fun EmptyState(modifier: Modifier) {
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                StatusChip(text = "Quiet map")
                 Text(
-                    text = "No mapped smokes yet",
+                    text = "No mapped areas yet",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Track a few smokes with location enabled to start seeing areas here.",
+                    text = "There is not enough location-linked history for this period yet. Track a few smokes with location enabled to start building repeated areas here.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Once enough entries accumulate, the app will cluster repeated areas automatically.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -490,15 +504,21 @@ private fun ErrorState(
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                StatusChip(text = "Needs attention")
                 Text(
-                    text = "Map could not be loaded",
+                    text = "Map view unavailable",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Try refreshing in a moment.",
+                    text = "The geographic clusters could not be refreshed right now. Keep the selected period and try again in a moment.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "This does not affect the rest of your tracked history or analytics.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -507,6 +527,23 @@ private fun ErrorState(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatusChip(
+    text: String,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(999.dp),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 
@@ -522,7 +559,7 @@ private fun GoogleMapPreview(cluster: SmokeMapCluster) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp),
+            .height(176.dp),
     )
 }
 

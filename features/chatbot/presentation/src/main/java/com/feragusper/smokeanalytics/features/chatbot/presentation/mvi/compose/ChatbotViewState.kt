@@ -266,15 +266,37 @@ private fun PrimaryInsightCard(
 
             when {
                 isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        strokeWidth = 3.dp,
-                    )
-                    Text(
-                        text = "Preparing your guide...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 3.dp,
+                            )
+                            Text(
+                                text = "Preparing your guide",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Text(
+                            text = "Reviewing your recent rhythm, recovery gap, and prompts before the next insight lands.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            LoadingTag(label = "Recent rhythm")
+                            LoadingTag(label = "Recovery gap")
+                            LoadingTag(label = "Coach context")
+                        }
+                    }
                 }
 
                 insight != null -> {
@@ -328,6 +350,27 @@ private fun PrimaryInsightCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LoadingTag(
+    label: String,
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(999.dp),
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 

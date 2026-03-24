@@ -79,7 +79,7 @@ class HomeProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the fetch operation.
      */
     private fun processFetchSmokes(isRefresh: Boolean) = flow {
-        when (fetchSessionUseCase()) {
+        when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
             is Session.LoggedIn -> {
                 emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
@@ -88,15 +88,21 @@ class HomeProcessHolder @Inject constructor(
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 )
+                val greetingState = greetingStateFor(
+                    hourOfDay = kotlinx.datetime.Clock.System.now()
+                        .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
+                    todayCount = smokeCounts.countByToday,
+                    currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
+                )
                 emit(
                     HomeResult.FetchSmokesSuccess(
                         smokeCountListResult = smokeCounts,
                         preferences = preferences,
-                        greetingState = greetingStateFor(
-                            hourOfDay = kotlinx.datetime.Clock.System.now()
-                                .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
-                            todayCount = smokeCounts.countByToday,
-                            currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
+                        greetingState = greetingState.copy(
+                            title = personalizeGreetingTitle(
+                                greetingTitle = greetingState.title,
+                                displayName = session.user.displayName,
+                            )
                         ),
                         financialSummary = financialSummary(
                             todayCount = smokeCounts.countByToday,
@@ -219,4 +225,17 @@ class HomeProcessHolder @Inject constructor(
         )
         widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
     }
+}
+
+private fun personalizeGreetingTitle(
+    greetingTitle: String,
+    displayName: String?,
+): String {
+    val firstName = displayName
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?.substringBefore(" ")
+        ?.takeIf { it.isNotBlank() }
+
+    return if (firstName != null) "$greetingTitle $firstName" else greetingTitle
 }

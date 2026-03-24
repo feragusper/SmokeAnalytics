@@ -341,12 +341,82 @@ private fun SessionCard(
                 Text(text = stringResourceSafe(R.string.settings_logout, "Logout"))
             }
         } else {
-            GoogleSignInComponent(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-                onSignInSuccess = onSignInSuccess,
-                onSignInError = {},
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = "Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and the right context for coach insights.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SessionBenefitCard(
+                        modifier = Modifier.weight(1f),
+                        title = "Routine",
+                        value = "Sync",
+                        body = "Carry pack price, day-start hour, and location settings across devices.",
+                    )
+                    SessionBenefitCard(
+                        modifier = Modifier.weight(1f),
+                        title = "History",
+                        value = "Archive",
+                        body = "Keep edits and older smoke entries tied to the same account.",
+                    )
+                }
+
+                SessionBenefitCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = "Coach",
+                    value = "Context",
+                    body = "Give the guide enough recent behavior to stay grounded instead of generic.",
+                )
+
+                GoogleSignInComponent(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+                    onSignInSuccess = onSignInSuccess,
+                    onSignInError = {},
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionBenefitCard(
+    modifier: Modifier,
+    title: String,
+    value: String,
+    body: String,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

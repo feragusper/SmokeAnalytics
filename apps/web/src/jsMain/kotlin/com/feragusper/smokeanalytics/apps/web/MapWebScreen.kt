@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -66,18 +67,14 @@ fun MapWebScreen(
 
         when {
             loading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
-            preferences?.locationTrackingEnabled == false -> SurfaceCard {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Location tracking is off") }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Enable location tracking in Settings to unlock map insights and cluster detection.")
-                }
-            }
-            clusters.isEmpty() -> SurfaceCard {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("No mapped smokes yet") }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Enable location tracking in Settings and add more smoke entries.")
-                }
-            }
+            preferences?.locationTrackingEnabled == false -> EmptyStateCard(
+                title = "Location tracking is off",
+                message = "Enable location tracking in Settings to unlock map insights, repeated-area detection, and the geographic side of Analytics.",
+            )
+            clusters.isEmpty() -> EmptyStateCard(
+                title = "No mapped smokes yet",
+                message = "There is not enough location-linked history for this period yet. Add more smoke entries with location tracking enabled to build clusters.",
+            )
 
             else -> {
                 val activeCluster = selectedCluster ?: clusters.first()
@@ -135,7 +132,7 @@ fun MapWebScreen(
                         SurfaceCard {
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("\"Clusters suggest higher usage during transition periods.\"")
+                                Text("Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.")
                             }
                         }
                     }

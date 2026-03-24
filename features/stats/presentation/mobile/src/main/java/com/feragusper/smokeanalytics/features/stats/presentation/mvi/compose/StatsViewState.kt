@@ -1,14 +1,17 @@
 package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -85,6 +88,7 @@ data class StatsViewState(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -434,20 +438,26 @@ private fun BarChart(stats: Map<String, Int>) {
         }
     }
 
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberColumnCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = xAxisFormatter
-            ),
-        ),
-        modelProducer = modelProducer,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.55f)
+            .horizontalScroll(rememberScrollState())
             .padding(16.dp)
-    )
+    ) {
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberColumnCartesianLayer(),
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    valueFormatter = xAxisFormatter
+                ),
+            ),
+            modelProducer = modelProducer,
+            modifier = Modifier
+                .widthIn(min = 560.dp)
+                .height(260.dp)
+        )
+    }
 }
 
 
@@ -467,20 +477,26 @@ private fun LineChart(stats: Map<String, Int>) {
         }
     }
 
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberLineCartesianLayer(),
-            startAxis = VerticalAxis.rememberStart(),
-            bottomAxis = HorizontalAxis.rememberBottom(
-                valueFormatter = xAxisFormatter
-            ),
-        ),
-        modelProducer = modelProducer,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.55f)
+            .horizontalScroll(rememberScrollState())
             .padding(16.dp)
-    )
+    ) {
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberLineCartesianLayer(),
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    valueFormatter = xAxisFormatter
+                ),
+            ),
+            modelProducer = modelProducer,
+            modifier = Modifier
+                .widthIn(min = 560.dp)
+                .height(260.dp)
+        )
+    }
 }
 
 @Composable
