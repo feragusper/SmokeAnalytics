@@ -110,7 +110,10 @@ class HomeProcessHolder @Inject constructor(
                             monthCount = smokeCounts.countByMonth,
                             preferences = preferences,
                         ),
-                        rateSummary = rateSummary(smokeCounts),
+                        rateSummary = rateSummary(
+                            smokeCountListResult = smokeCounts,
+                            preferences = preferences,
+                        ),
                         gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
                         canStartNewDay = shouldOfferStartNewDay(
                             dayStartHour = preferences.dayStartHour,

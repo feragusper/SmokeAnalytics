@@ -182,15 +182,15 @@ private fun StatsWebContent(
                 val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
                 Div(attrs = {
-                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:stretch;")
+                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;")
                 }) {
                     SurfaceCard {
-                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;min-height:180px;justify-content:space-between;") }) {
+                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                             Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
                                 Text("Total Frequency")
                             }
                             Div(attrs = { attr("style", "display:flex;align-items:flex-end;gap:10px;") }) {
-                                Div(attrs = { attr("style", "font-size:56px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
+                                Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
                                     Text(currentPeriod.totalLabel(stats))
                                 }
                                 Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);margin-bottom:6px;") }) {
@@ -203,16 +203,16 @@ private fun StatsWebContent(
                         }
                     }
 
-                    Div(attrs = { attr("style", "display:grid;grid-template-rows:1fr 1fr;gap:16px;") }) {
+                    Div(attrs = { attr("style", "display:grid;grid-template-rows:auto auto;gap:16px;align-content:start;") }) {
                         SurfaceCard {
                             Div(attrs = {
-                                attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:180px;background:var(--sa-color-primary);border-radius:22px;padding:24px;color:var(--sa-color-onPrimary);")
+                                attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;background:var(--sa-color-primary);border-radius:22px;padding:20px;color:var(--sa-color-onPrimary);")
                             }) {
                                 Div {
                                     Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
                                         Text("Daily Average")
                                     }
-                                    Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;margin-top:10px;") }) {
+                                    Div(attrs = { attr("style", "font-size:40px;font-weight:800;line-height:1;margin-top:8px;") }) {
                                         Text(averageFor(currentPeriod, stats).formatOneDecimal())
                                     }
                                 }
@@ -223,11 +223,11 @@ private fun StatsWebContent(
                         }
 
                         SurfaceCard {
-                            Div(attrs = { attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:160px;") }) {
+                            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                                 Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
                                     Text("Peak Window")
                                 }
-                                Div(attrs = { attr("style", "font-size:36px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);") }) {
+                                Div(attrs = { attr("style", "font-size:32px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);") }) {
                                     Text(peakBucketFor(currentPeriod, stats))
                                 }
                                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {

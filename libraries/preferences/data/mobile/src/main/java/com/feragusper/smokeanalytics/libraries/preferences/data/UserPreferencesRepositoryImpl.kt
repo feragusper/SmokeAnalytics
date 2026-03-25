@@ -25,6 +25,7 @@ class UserPreferencesRepositoryImpl @Inject constructor(
                 packPrice = preferences.packPrice,
                 cigarettesPerPack = preferences.cigarettesPerPack.toLong(),
                 dayStartHour = preferences.dayStartHour.toLong(),
+                bedtimeHour = preferences.bedtimeHour.toLong(),
                 manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 locationTrackingEnabled = preferences.locationTrackingEnabled,
                 currencySymbol = preferences.currencySymbol,

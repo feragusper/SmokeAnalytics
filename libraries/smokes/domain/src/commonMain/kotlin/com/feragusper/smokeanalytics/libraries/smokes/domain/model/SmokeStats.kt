@@ -34,6 +34,7 @@ data class SmokeStats(
             timeZone: TimeZone = TimeZone.currentSystemDefault(),
             now: Instant = Clock.System.now(),
             dayStartHour: Int = 0,
+            bedtimeHour: Int = 22,
         ): SmokeStats {
             val monthStart = LocalDate(year, month, 1)
             val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
@@ -93,17 +94,24 @@ data class SmokeStats(
                 }
 
             // Hourly: "00:00".."23:00"
-            val hourlyStats = (0..23).associate { hour ->
-                ((hour + dayStartHour) % 24).toTwoDigits() + ":00" to 0
-            }.toMutableMap()
+            val hourlyLabels = awakeHoursSequence(
+                dayStartHour = dayStartHour,
+                bedtimeHour = bedtimeHour,
+            )
+                .map { hour -> "${hour.toTwoDigits()}:00" }
+            val hourlyStats = hourlyLabels.associateWith { 0 }.toMutableMap()
 
             val daySmokes = if (day != null) {
                 monthSmokes.filter { (_, dt) -> dt.date.dayOfMonth == day }
             } else emptyList()
 
             daySmokes
-                .groupBy { (_, dt) -> dt.time.hour.toTwoDigits() + ":00" }
-                .forEach { (k, v) -> hourlyStats[k] = v.size }
+                .groupBy { (smoke, _) -> smoke.date.toLocalDateTime(timeZone).time.hour.toTwoDigits() + ":00" }
+                .forEach { (k, v) ->
+                    if (hourlyStats.containsKey(k)) {
+                        hourlyStats[k] = v.size
+                    }
+                }
 
             val totalMonth = monthSmokes.size
 
@@ -150,5 +158,15 @@ data class SmokeStats(
         }
 
         private fun Int.toTwoDigits(): String = if (this < 10) "0$this" else this.toString()
+
+        private fun awakeHoursSequence(
+            dayStartHour: Int,
+            bedtimeHour: Int,
+        ): List<Int> {
+            val normalizedStart = dayStartHour.mod(24)
+            val normalizedEnd = bedtimeHour.mod(24)
+            val duration = (normalizedEnd - normalizedStart).mod(24).takeIf { it > 0 } ?: 16
+            return (0 until duration).map { offset -> (normalizedStart + offset).mod(24) }
+        }
     }
 }

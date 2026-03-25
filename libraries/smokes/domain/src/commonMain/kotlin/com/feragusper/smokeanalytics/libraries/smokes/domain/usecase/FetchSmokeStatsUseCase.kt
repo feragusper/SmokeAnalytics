@@ -20,6 +20,7 @@ class FetchSmokeStatsUseCase(
         day: Int?,
         periodType: PeriodType,
         dayStartHour: Int = 0,
+        bedtimeHour: Int = 22,
     ): SmokeStats {
         val (start, endExclusive) = when (periodType) {
             PeriodType.DAY -> {
@@ -69,6 +70,7 @@ class FetchSmokeStatsUseCase(
             day = day,
             timeZone = timeZone,
             dayStartHour = dayStartHour,
+            bedtimeHour = bedtimeHour,
         )
     }
 
