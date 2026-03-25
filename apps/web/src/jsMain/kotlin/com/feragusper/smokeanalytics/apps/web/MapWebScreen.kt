@@ -91,12 +91,22 @@ fun MapWebScreen(
                             Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
                                 Text("Most frequent area for the selected period")
                             }
-                            Iframe(attrs = {
-                                attr("src", googleEmbedUrl(activeCluster.point))
-                                attr("loading", "lazy")
-                                attr("referrerpolicy", "no-referrer-when-downgrade")
-                                attr("style", "width:100%;height:400px;border:0;border-radius:24px;background:#f5f8f8;")
-                            })
+                            Div(attrs = {
+                                attr("style", "position:relative;width:100%;height:400px;border-radius:24px;overflow:hidden;background:#f5f8f8;")
+                            }) {
+                                Iframe(attrs = {
+                                    attr("src", googleEmbedUrl(activeCluster.point))
+                                    attr("loading", "lazy")
+                                    attr("referrerpolicy", "no-referrer-when-downgrade")
+                                    attr("style", "position:absolute;inset:0;width:100%;height:100%;border:0;")
+                                })
+                                Div(attrs = {
+                                    attr("style", "position:absolute;left:50%;top:50%;width:150px;height:150px;border-radius:999px;border:3px solid rgba(0,106,106,0.82);background:rgba(0,106,106,0.12);transform:translate(-50%,-50%);box-shadow:0 0 0 16px rgba(0,106,106,0.08);pointer-events:none;")
+                                })
+                                Div(attrs = {
+                                    attr("style", "position:absolute;left:50%;top:50%;width:16px;height:16px;border-radius:999px;background:#006A6A;transform:translate(-50%,-50%);box-shadow:0 0 0 6px rgba(255,255,255,0.92);pointer-events:none;")
+                                })
+                            }
                         }
                     }
 
@@ -143,4 +153,4 @@ fun MapWebScreen(
 }
 
 private fun googleEmbedUrl(point: GeoPoint): String =
-    "https://www.google.com/maps?q=${point.latitude},${point.longitude}&z=14&output=embed"
+    "https://maps.google.com/maps?ll=${point.latitude},${point.longitude}&z=14&output=embed"

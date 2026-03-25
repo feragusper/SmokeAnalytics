@@ -27,6 +27,7 @@ class StatsProcessHolder(
             day = intent.day,
             periodType = intent.period,
             dayStartHour = preferences.dayStartHour,
+            bedtimeHour = preferences.bedtimeHour,
         )
         emit(StatsResult.Success(stats))
     }.catch { e ->

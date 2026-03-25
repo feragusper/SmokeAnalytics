@@ -150,4 +150,29 @@ class SmokeStatsTest {
 
         assertEquals(1, stats.totalDay)
     }
+
+    @Test
+    fun `GIVEN bedtime is configured WHEN from is called for day THEN hourly stats exclude sleep hours`() {
+        val smokes = listOf(
+            Smoke("1", Instant.parse("2023-03-01T07:00:00Z"), 0L to 0L),
+            Smoke("2", Instant.parse("2023-03-01T21:00:00Z"), 0L to 0L),
+            Smoke("3", Instant.parse("2023-03-01T23:00:00Z"), 0L to 0L),
+        )
+
+        val stats = SmokeStats.from(
+            smokes = smokes,
+            year = 2023,
+            month = 3,
+            day = 1,
+            timeZone = tz,
+            now = Instant.parse("2023-03-01T23:30:00Z"),
+            dayStartHour = 6,
+            bedtimeHour = 22,
+        )
+
+        assertEquals(16, stats.hourly.size)
+        assertEquals(1, stats.hourly["07:00"])
+        assertEquals(1, stats.hourly["21:00"])
+        assertEquals(null, stats.hourly["23:00"])
+    }
 }

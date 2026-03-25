@@ -100,6 +100,16 @@ private fun SettingsViewState.Render(
             HighlightCard(
                 title = "Day model",
                 value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                body = "Wake-up hour used as the main bucket boundary across Home, History, and Analytics.",
+            )
+            HighlightCard(
+                title = "Sleep starts",
+                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                body = "Sleep hours are excluded from the mindful gap target and the daily hourly average.",
+            )
+            HighlightCard(
+                title = "Location",
+                value = if (preferences.locationTrackingEnabled) "On" else "Off",
                 body = if (preferences.locationTrackingEnabled) {
                     "Location tracking is enabled, so map insights can learn from repeated areas."
                 } else {
@@ -119,6 +129,7 @@ private fun SettingsViewState.Render(
                             packPrice = draftPreferences.packPrice,
                             cigarettesPerPack = draftPreferences.cigarettesPerPack,
                             dayStartHour = draftPreferences.dayStartHour,
+                            bedtimeHour = draftPreferences.bedtimeHour,
                             locationTrackingEnabled = draftPreferences.locationTrackingEnabled,
                             currencySymbol = draftPreferences.currencySymbol,
                         )
@@ -364,6 +375,16 @@ private fun PreferencesCard(
                 onChange = {
                     val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
                     onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
+                },
+            )
+
+            TimeField(
+                label = "Bedtime",
+                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                displayLoading = displayLoading,
+                onChange = {
+                    val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
+                    onPreferencesChange(preferences.copy(bedtimeHour = raw.coerceIn(0, 23)))
                 },
             )
 

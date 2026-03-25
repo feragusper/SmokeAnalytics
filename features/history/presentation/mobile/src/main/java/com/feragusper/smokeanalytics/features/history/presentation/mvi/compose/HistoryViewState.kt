@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -422,10 +423,11 @@ private fun ArchiveCalendarCard(
     onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
 ) {
+    val calendarCellWidth = 42.dp
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
     val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
     val daysInMonth = nextMonthStart.plus(DatePeriod(days = -1)).dayOfMonth
-    val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber % 7
+    val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber - 1
     val maxCount = monthCounts.values.maxOrNull() ?: 0
 
     Card(
@@ -463,8 +465,8 @@ private fun ArchiveCalendarCard(
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT").forEach { label ->
-                    Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
+                listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { label ->
+                    CalendarCell(width = calendarCellWidth) {
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
@@ -479,13 +481,13 @@ private fun ArchiveCalendarCard(
             for (row in 0 until rows) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     for (column in 0 until 7) {
                         val slot = row * 7 + column
                         val day = slot - leadingEmptySlots + 1
                         if (day !in 1..daysInMonth) {
-                            Spacer(modifier = Modifier.width(42.dp))
+                            CalendarCell(width = calendarCellWidth) {}
                         } else {
                             val count = monthCounts[day] ?: 0
                             val date = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, day)
@@ -499,7 +501,7 @@ private fun ArchiveCalendarCard(
 
                             Column(
                                 modifier = Modifier
-                                    .width(42.dp)
+                                    .width(calendarCellWidth)
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(background)
                                     .clickable { onPickDay(date) }
@@ -520,6 +522,18 @@ private fun ArchiveCalendarCard(
             }
         }
     }
+}
+
+@Composable
+private fun CalendarCell(
+    width: androidx.compose.ui.unit.Dp,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier = Modifier.width(width),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
 }
 
 @Composable

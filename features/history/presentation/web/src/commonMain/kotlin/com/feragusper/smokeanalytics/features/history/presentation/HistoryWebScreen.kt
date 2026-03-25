@@ -173,10 +173,14 @@ fun HistoryWebScreen(
 
         when {
             state.displayLoading -> {
-                repeat(4) {
-                    LoadingSkeletonCard(heightPx = 74, lineWidths = listOf("32%", "48%"))
+                if (!calendarMode) {
+                    repeat(4) {
+                        LoadingSkeletonCard(heightPx = 74, lineWidths = listOf("32%", "48%"))
+                    }
                 }
             }
+
+            calendarMode -> Unit
 
             state.smokes.isEmpty() -> EmptyStateCard(
                 title = "Quiet day in the archive",

@@ -81,17 +81,21 @@ fun financialSummary(
     )
 }
 
-fun rateSummary(smokeCountListResult: SmokeCountListResult): RateSummary {
-    val intervals = smokeCountListResult.todaysSmokes
-        .map { smoke -> smoke.timeElapsedSincePreviousSmoke.totalMinutes() }
-        .filter { it > 0 }
+fun rateSummary(
+    smokeCountListResult: SmokeCountListResult,
+    preferences: UserPreferences,
+): RateSummary {
+    val targetGapMinutes = when (val count = smokeCountListResult.countByToday) {
+        0 -> preferences.awakeMinutesPerDay
+        else -> (preferences.awakeMinutesPerDay / count).coerceAtLeast(1)
+    }
 
     return RateSummary(
         latestIntervalMinutes = smokeCountListResult.lastSmoke
             ?.timeElapsedSincePreviousSmoke
             ?.totalMinutes()
             ?.takeIf { it > 0 },
-        averageIntervalMinutesToday = intervals.takeIf { it.isNotEmpty() }?.average()?.toInt(),
+        averageIntervalMinutesToday = targetGapMinutes,
         averageSmokesPerDayWeek = smokeCountListResult.countByWeek / 7.0,
         averageSmokesPerDayMonth = smokeCountListResult.countByMonth / 30.0,
     )
