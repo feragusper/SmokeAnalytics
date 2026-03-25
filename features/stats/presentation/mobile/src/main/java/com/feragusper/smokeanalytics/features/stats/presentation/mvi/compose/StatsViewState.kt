@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,6 +57,7 @@ import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import java.time.LocalDate
 import java.util.Locale
+import kotlin.math.max
 
 /**
  * Represents the state of the Stats screen, encapsulating all UI-related data.
@@ -283,12 +283,14 @@ private fun SummaryCards(
                     headline = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
                     supporting = averageLabelFor(currentPeriod),
                     highlighted = true,
+                    compact = true,
                 )
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     title = "Peak Window",
                     headline = peakBucketFor(currentPeriod, stats),
                     supporting = "Highest activity",
+                    compact = true,
                 )
             }
         }
@@ -304,6 +306,7 @@ private fun SummaryCard(
     meta: String? = null,
     prominent: Boolean = false,
     highlighted: Boolean = false,
+    compact: Boolean = false,
 ) {
     Card(
         modifier = modifier,
@@ -319,7 +322,13 @@ private fun SummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (prominent) Modifier.height(176.dp) else Modifier)
+                .then(
+                    when {
+                        prominent -> Modifier.height(176.dp)
+                        compact -> Modifier.height(132.dp)
+                        else -> Modifier
+                    }
+                )
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -438,6 +447,8 @@ private fun BarChart(stats: Map<String, Int>) {
         }
     }
 
+    val chartWidth = max(560, stats.size * 72).dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -454,7 +465,7 @@ private fun BarChart(stats: Map<String, Int>) {
             ),
             modelProducer = modelProducer,
             modifier = Modifier
-                .widthIn(min = 560.dp)
+                .width(chartWidth)
                 .height(260.dp)
         )
     }
@@ -477,6 +488,8 @@ private fun LineChart(stats: Map<String, Int>) {
         }
     }
 
+    val chartWidth = max(560, stats.size * 72).dp
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -493,7 +506,7 @@ private fun LineChart(stats: Map<String, Int>) {
             ),
             modelProducer = modelProducer,
             modifier = Modifier
-                .widthIn(min = 560.dp)
+                .width(chartWidth)
                 .height(260.dp)
         )
     }

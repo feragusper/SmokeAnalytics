@@ -425,7 +425,7 @@ private fun ArchiveCalendarCard(
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
     val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
     val daysInMonth = nextMonthStart.plus(DatePeriod(days = -1)).dayOfMonth
-    val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber % 7
+    val leadingEmptySlots = monthStart.dayOfWeek.isoDayNumber - 1
     val maxCount = monthCounts.values.maxOrNull() ?: 0
 
     Card(
@@ -463,7 +463,7 @@ private fun ArchiveCalendarCard(
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT").forEach { label ->
+                listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { label ->
                     Box(modifier = Modifier.width(42.dp), contentAlignment = Alignment.Center) {
                         Text(
                             text = label,

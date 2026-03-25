@@ -12,7 +12,6 @@ import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
-import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -77,14 +76,7 @@ fun HomeViewState.Render(
                 displayRefreshLoading -> StatusTone.Busy
                 error != null -> StatusTone.Error
                 else -> StatusTone.Default
-            },
-            actions = {
-                GhostButton(
-                    text = "Open archive",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) },
-                    enabled = !displayLoading,
-                )
-            },
+            }
         )
 
         greetingMessage?.let { message ->
@@ -126,7 +118,7 @@ fun HomeViewState.Render(
 
             Div(attrs = { attr("style", "display:flex;justify-content:center;") }) {
                 PrimaryButton(
-                    text = "Log a smoke",
+                    text = "Track",
                     onClick = { onIntent(HomeIntent.AddSmoke) },
                     enabled = !displayLoading,
                     extraClass = elapsedTone.buttonClass(),
@@ -162,7 +154,6 @@ fun HomeViewState.Render(
                 smokesPerWeek = smokesPerWeek,
                 smokesPerMonth = smokesPerMonth,
                 rateSummary = rateSummary,
-                onNavigateToHistory = { onIntent(HomeIntent.OnClickHistory) },
             )
 
             if (canStartNewDay) {
@@ -185,7 +176,7 @@ private fun PulseHeroCard(
     val averageGapMinutes = rateSummary?.averageIntervalMinutesToday
     val progress = when {
         elapsedMinutes == null || averageGapMinutes == null || averageGapMinutes <= 0 -> 18
-        else -> ((elapsedMinutes.toFloat() / (averageGapMinutes * 1.5f)).coerceIn(0.08f, 1f) * 100).toInt()
+        else -> ((elapsedMinutes.toFloat() / averageGapMinutes).coerceIn(0.08f, 1f) * 100).toInt()
     }
 
     SurfaceCard {
@@ -366,7 +357,6 @@ private fun ArchiveSnapshotCard(
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
     rateSummary: RateSummary?,
-    onNavigateToHistory: () -> Unit,
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
@@ -381,7 +371,6 @@ private fun ArchiveSnapshotCard(
                         Text("History holds the full log")
                     }
                 }
-                GhostButton(text = "Open history", onClick = onNavigateToHistory)
             }
 
             Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;") }) {
