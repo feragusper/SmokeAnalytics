@@ -182,10 +182,10 @@ private fun StatsWebContent(
                 val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
 
                 Div(attrs = {
-                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:stretch;")
+                    attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;")
                 }) {
                     SurfaceCard {
-                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;min-height:144px;justify-content:space-between;") }) {
+                        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                             Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
                                 Text("Total Frequency")
                             }
@@ -203,10 +203,10 @@ private fun StatsWebContent(
                         }
                     }
 
-                    Div(attrs = { attr("style", "display:grid;grid-template-rows:1fr 1fr;gap:16px;") }) {
+                    Div(attrs = { attr("style", "display:grid;grid-template-rows:auto auto;gap:16px;align-content:start;") }) {
                         SurfaceCard {
                             Div(attrs = {
-                                attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:132px;background:var(--sa-color-primary);border-radius:22px;padding:20px;color:var(--sa-color-onPrimary);")
+                                attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;background:var(--sa-color-primary);border-radius:22px;padding:20px;color:var(--sa-color-onPrimary);")
                             }) {
                                 Div {
                                     Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
@@ -223,7 +223,7 @@ private fun StatsWebContent(
                         }
 
                         SurfaceCard {
-                            Div(attrs = { attr("style", "display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:132px;") }) {
+                            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                                 Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
                                     Text("Peak Window")
                                 }
