@@ -29,6 +29,8 @@
 - Merge `develop` into `master` only when preparing a release.
 - Tags and deploys happen from the release state on `master`, not from feature branches.
 - If work is merged to `master` by mistake, bring `develop` forward before starting the next branch.
+- Never use PR auto-delete or `gh pr merge --delete-branch` when the PR head branch is `develop` or `master`.
+- Delete only short-lived feature branches after merge. Long-lived branches must remain in the remote.
 
 ## Repo-Specific Agent Assets
 - Subtree-specific overrides live in `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`, and `.github/workflows/AGENTS.md`.
