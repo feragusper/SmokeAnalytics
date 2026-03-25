@@ -51,7 +51,16 @@ class StatsProcessHolderTest {
             dailyAverage = 3.5f
         )
 
-        coEvery { fetchSmokeStatsUseCase(year, month, day, period, 6) } returns mockStats
+        coEvery {
+            fetchSmokeStatsUseCase(
+                year = year,
+                month = month,
+                day = day,
+                periodType = period,
+                dayStartHour = 6,
+                bedtimeHour = 22,
+            )
+        } returns mockStats
 
         processHolder.processIntent(StatsIntent.LoadStats(year, month, day, period)).test {
             awaitItem() shouldBeEqualTo StatsResult.Loading
@@ -59,7 +68,16 @@ class StatsProcessHolderTest {
             awaitComplete()
         }
 
-        coVerify { fetchSmokeStatsUseCase(year, month, day, period, 6) }
+        coVerify {
+            fetchSmokeStatsUseCase(
+                year = year,
+                month = month,
+                day = day,
+                periodType = period,
+                dayStartHour = 6,
+                bedtimeHour = 22,
+            )
+        }
     }
 
     @Test
@@ -71,7 +89,16 @@ class StatsProcessHolderTest {
             val period = FetchSmokeStatsUseCase.PeriodType.WEEK
             val exception = RuntimeException("Error fetching stats")
 
-            coEvery { fetchSmokeStatsUseCase(year, month, day, period, 6) } throws exception
+            coEvery {
+                fetchSmokeStatsUseCase(
+                    year = year,
+                    month = month,
+                    day = day,
+                    periodType = period,
+                    dayStartHour = 6,
+                    bedtimeHour = 22,
+                )
+            } throws exception
 
             processHolder.processIntent(StatsIntent.LoadStats(year, month, day, period)).test {
                 awaitItem() shouldBeEqualTo StatsResult.Loading
@@ -79,6 +106,15 @@ class StatsProcessHolderTest {
                 awaitComplete()
             }
 
-            coVerify { fetchSmokeStatsUseCase(year, month, day, period, 6) }
+            coVerify {
+                fetchSmokeStatsUseCase(
+                    year = year,
+                    month = month,
+                    day = day,
+                    periodType = period,
+                    dayStartHour = 6,
+                    bedtimeHour = 22,
+                )
+            }
         }
 }

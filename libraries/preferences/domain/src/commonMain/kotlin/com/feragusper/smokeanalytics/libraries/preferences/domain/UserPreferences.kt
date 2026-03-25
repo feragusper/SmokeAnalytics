@@ -4,6 +4,7 @@ data class UserPreferences(
     val packPrice: Double = 0.0,
     val cigarettesPerPack: Int = 20,
     val dayStartHour: Int = 6,
+    val bedtimeHour: Int = 22,
     val manualDayStartEpochMillis: Long? = null,
     val locationTrackingEnabled: Boolean = false,
     val currencySymbol: String = "€",
@@ -11,6 +12,12 @@ data class UserPreferences(
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0
+
+    val awakeMinutesPerDay: Int
+        get() {
+            val awakeHours = (bedtimeHour - dayStartHour).mod(24).takeIf { it > 0 } ?: 16
+            return awakeHours * 60
+        }
 }
 
 fun Double.formatMoney(symbol: String): String {

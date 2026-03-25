@@ -274,6 +274,23 @@ private fun RoutineSnapshotCard(
                 )
                 HighlightCard(
                     modifier = Modifier.weight(1f),
+                    title = "Sleep starts",
+                    value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                    body = "Sleep hours are excluded from the mindful gap target and hourly averages.",
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                HighlightCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Awake window",
+                    value = "${preferences.awakeMinutesPerDay / 60}h",
+                    body = "This is the daily window used to calculate a healthier target pace.",
+                )
+                HighlightCard(
+                    modifier = Modifier.weight(1f),
                     title = "Location",
                     value = if (preferences.locationTrackingEnabled) "On" else "Off",
                     body = "Controls whether the map can learn from repeated smoking areas.",
@@ -478,6 +495,17 @@ private fun PreferencesCard(
             enabled = enabled,
             onTimeSelected = { hour ->
                 onPreferencesChange(preferences.copy(dayStartHour = hour))
+            },
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        TimePreferenceRow(
+            label = "Bedtime",
+            hour = preferences.bedtimeHour,
+            enabled = enabled,
+            onTimeSelected = { hour ->
+                onPreferencesChange(preferences.copy(bedtimeHour = hour))
             },
         )
 

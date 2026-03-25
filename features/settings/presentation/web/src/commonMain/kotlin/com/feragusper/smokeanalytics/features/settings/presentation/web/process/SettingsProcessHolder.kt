@@ -67,6 +67,7 @@ class SettingsProcessHolder(
             packPrice = intent.packPrice,
             cigarettesPerPack = intent.cigarettesPerPack,
             dayStartHour = intent.dayStartHour,
+            bedtimeHour = intent.bedtimeHour,
             locationTrackingEnabled = intent.locationTrackingEnabled,
             currencySymbol = intent.currencySymbol,
         )

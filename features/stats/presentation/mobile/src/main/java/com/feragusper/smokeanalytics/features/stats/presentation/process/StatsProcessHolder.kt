@@ -68,7 +68,14 @@ class StatsProcessHolder @Inject constructor(
         val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
 
         // Fetch the statistics data using the use case
-        val stats = fetchSmokeStatsUseCase(year, month, day, period, preferences.dayStartHour)
+        val stats = fetchSmokeStatsUseCase(
+            year = year,
+            month = month,
+            day = day,
+            periodType = period,
+            dayStartHour = preferences.dayStartHour,
+            bedtimeHour = preferences.bedtimeHour,
+        )
 
         // Emit the success result with the fetched statistics
         emit(StatsResult.Success(stats))
