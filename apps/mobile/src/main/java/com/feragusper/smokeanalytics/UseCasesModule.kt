@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotRepository
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
@@ -68,6 +69,9 @@ object UseCasesModule {
     fun provideFetchUserPreferencesUseCase(
         repo: UserPreferencesRepository
     ) = FetchUserPreferencesUseCase(repo)
+
+    @Provides
+    fun provideEvaluateGoalProgressUseCase() = EvaluateGoalProgressUseCase()
 
     @Provides
     fun provideUpdateUserPreferencesUseCase(

@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
@@ -45,19 +46,43 @@ private fun SettingsViewState.Render(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
+    var showingGoals by remember(currentEmail, preferences.activeGoal) { mutableStateOf(false) }
 
     LaunchedEffect(preferences, currentEmail) {
         draftPreferences = preferences
     }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        if (showingGoals) {
+            GoalsWebEditorPanel(
+                currentEmail = currentEmail,
+                preferences = draftPreferences,
+                goalProgress = goalProgress,
+                displayLoading = displayLoading,
+                onBack = { showingGoals = false },
+                onSaveGoal = { goal ->
+                    draftPreferences = draftPreferences.copy(activeGoal = goal)
+                    onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = goal)))
+                },
+                onClearGoal = {
+                    draftPreferences = draftPreferences.copy(activeGoal = null)
+                    onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = null)))
+                },
+            )
+            return@Div
+        }
+
         HeroCard(
             displayLoading = displayLoading,
             currentEmail = currentEmail,
             currentDisplayName = currentDisplayName,
         )
 
-        GoalsCard()
+        GoalsCard(
+            goalProgress = goalProgress,
+            activeGoal = preferences.activeGoal,
+            onOpenGoals = { showingGoals = true },
+        )
 
         errorMessage?.let { msg ->
             EmptyStateCard(
@@ -128,12 +153,7 @@ private fun SettingsViewState.Render(
                 onSave = {
                     onIntent(
                         SettingsIntent.UpdatePreferences(
-                            packPrice = draftPreferences.packPrice,
-                            cigarettesPerPack = draftPreferences.cigarettesPerPack,
-                            dayStartHour = draftPreferences.dayStartHour,
-                            bedtimeHour = draftPreferences.bedtimeHour,
-                            locationTrackingEnabled = draftPreferences.locationTrackingEnabled,
-                            currencySymbol = draftPreferences.currencySymbol,
+                            preferences = draftPreferences,
                         )
                     )
                 },
@@ -195,25 +215,30 @@ private fun HeroCard(
 }
 
 @Composable
-private fun GoalsCard() {
+private fun GoalsCard(
+    goalProgress: GoalProgress?,
+    activeGoal: com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal?,
+    onOpenGoals: () -> Unit,
+) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
             Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
                 Text("Goals")
             }
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                Text("Your next personal targets will open here.")
+                Text(goalProgress?.title ?: "Your next personal targets start here.")
             }
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("Daily caps, reduction plans, and mindful-gap targets are being wired next. You is now the stable place where that flow will live.")
+                Text(goalProgress?.supportingText ?: "Daily caps, reduction plans, and mindful-gap targets live here inside You.")
             }
-            Div(attrs = {
-                attr(
-                    "style",
-                    "display:inline-flex;align-items:center;width:max-content;padding:8px 12px;border-radius:999px;background:var(--sa-color-secondaryContainer);color:var(--sa-color-onSecondaryContainer);font-size:13px;font-weight:600;"
+            goalProgress?.targetLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                PrimaryButton(
+                    text = if (activeGoal == null) "Set up goals" else "Review goals",
+                    onClick = onOpenGoals,
                 )
-            }) {
-                Text("Coming soon")
             }
         }
     }

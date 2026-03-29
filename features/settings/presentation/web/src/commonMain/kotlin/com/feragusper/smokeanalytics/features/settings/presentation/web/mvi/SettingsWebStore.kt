@@ -69,6 +69,7 @@ class SettingsWebStore(
                 currentEmail = result.email,
                 currentDisplayName = result.displayName,
                 preferences = result.preferences,
+                goalProgress = result.goalProgress,
                 errorMessage = null,
             )
 
@@ -77,6 +78,7 @@ class SettingsWebStore(
                 currentEmail = null,
                 currentDisplayName = null,
                 preferences = previous.preferences,
+                goalProgress = null,
                 errorMessage = null,
             )
 

@@ -1,7 +1,9 @@
 package com.feragusper.smokeanalytics.libraries.preferences.data
 
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
+import com.feragusper.smokeanalytics.libraries.preferences.domain.GoalType
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.preferences.domain.smokingGoalOrNull
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,6 +16,8 @@ data class UserPreferencesEntity(
     val locationTrackingEnabled: Boolean = false,
     val currencySymbol: String = "€",
     val accountTier: String = AccountTier.Free.name,
+    val activeGoalType: String? = null,
+    val activeGoalMetricValue: Double? = null,
 ) {
     fun toDomain(): UserPreferences = UserPreferences(
         packPrice = packPrice,
@@ -24,6 +28,10 @@ data class UserPreferencesEntity(
         locationTrackingEnabled = locationTrackingEnabled,
         currencySymbol = currencySymbol,
         accountTier = AccountTier.entries.firstOrNull { it.name == accountTier } ?: AccountTier.Free,
+        activeGoal = smokingGoalOrNull(
+            type = GoalType.entries.firstOrNull { it.name == activeGoalType },
+            metricValue = activeGoalMetricValue,
+        ),
     )
 
     companion object {

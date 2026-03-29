@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.web.process
 
+import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
+import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
@@ -8,6 +10,7 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseC
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -23,6 +26,8 @@ class SettingsProcessHolder(
     private val signOutUseCase: SignOutUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
+    private val fetchSmokesUseCase: FetchSmokesUseCase,
+    private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) {
 
     /**
@@ -41,13 +46,18 @@ class SettingsProcessHolder(
         emit(SettingsResult.Loading)
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
-            is Session.LoggedIn -> emit(
-                SettingsResult.UserLoggedIn(
-                    email = session.user.email,
-                    displayName = session.user.displayName,
-                    preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences()),
+            is Session.LoggedIn -> {
+                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
+                emit(
+                    SettingsResult.UserLoggedIn(
+                        email = session.user.email,
+                        displayName = session.user.displayName,
+                        preferences = preferences,
+                        goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, smokes, preferences),
+                    )
                 )
-            )
+            }
         }
     }.catch {
         emit(SettingsResult.ErrorGeneric())
@@ -63,15 +73,9 @@ class SettingsProcessHolder(
 
     private fun processUpdatePreferences(intent: SettingsIntent.UpdatePreferences): Flow<SettingsResult> = flow {
         emit(SettingsResult.Loading)
-        val preferences = UserPreferences(
-            packPrice = intent.packPrice,
-            cigarettesPerPack = intent.cigarettesPerPack,
-            dayStartHour = intent.dayStartHour,
-            bedtimeHour = intent.bedtimeHour,
-            locationTrackingEnabled = intent.locationTrackingEnabled,
-            currencySymbol = intent.currencySymbol,
-        )
+        val preferences = intent.preferences
         updateUserPreferencesUseCase(preferences)
+        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> emit(
@@ -79,6 +83,7 @@ class SettingsProcessHolder(
                     email = session.user.email,
                     displayName = session.user.displayName,
                     preferences = preferences,
+                    goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, smokes, preferences),
                 )
             )
         }

@@ -9,6 +9,7 @@ data class UserPreferences(
     val locationTrackingEnabled: Boolean = false,
     val currencySymbol: String = "€",
     val accountTier: AccountTier = AccountTier.Free,
+    val activeGoal: SmokingGoal? = null,
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

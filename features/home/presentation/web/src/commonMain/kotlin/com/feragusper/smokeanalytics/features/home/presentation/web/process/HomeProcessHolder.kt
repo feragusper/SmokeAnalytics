@@ -5,6 +5,8 @@ import com.feragusper.smokeanalytics.features.home.domain.financialSummary
 import com.feragusper.smokeanalytics.features.home.domain.gamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
 import com.feragusper.smokeanalytics.features.home.domain.rateSummary
+import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
+import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
@@ -20,6 +22,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -40,10 +43,12 @@ class HomeProcessHolder(
     private val editSmokeUseCase: EditSmokeUseCase,
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
+    private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
+    private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) {
 
     /**
@@ -60,6 +65,7 @@ class HomeProcessHolder(
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
         HomeIntent.OnClickHistory -> flow { emit(HomeResult.GoToHistory) }
+        HomeIntent.OnClickGoals -> flow { emit(HomeResult.GoToGoals) }
         is HomeIntent.TickTimeSinceLastCigarette -> flow {
             emit(
                 HomeResult.UpdateTimeSinceLastCigarette(
@@ -91,6 +97,9 @@ class HomeProcessHolder(
                         dayStartHour = preferences.dayStartHour,
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                     )
+                    val goalSmokes = runCatching {
+                        fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+                    }.getOrDefault(emptyList())
                     val greetingState = greetingStateFor(
                         hourOfDay = kotlinx.datetime.Clock.System.now()
                             .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
@@ -118,6 +127,7 @@ class HomeProcessHolder(
                                 preferences = preferences,
                             ),
                             gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
+                            goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences),
                             canStartNewDay = shouldOfferStartNewDay(
                                 dayStartHour = preferences.dayStartHour,
                                 manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,

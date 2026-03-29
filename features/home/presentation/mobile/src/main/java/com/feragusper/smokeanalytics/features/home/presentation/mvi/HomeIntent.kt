@@ -58,4 +58,6 @@ sealed class HomeIntent : MVIIntent {
      * Represents an intent to navigate to the smoke history screen.
      */
     data object OnClickHistory : HomeIntent()
+
+    data object OnClickGoals : HomeIntent()
 }

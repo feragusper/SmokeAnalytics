@@ -88,6 +88,7 @@ fun AppRoot(graph: WebAppGraph) {
             signOutUseCase = graph.signOutUseCase,
             fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
+            fetchSmokesUseCase = graph.fetchSmokesUseCase,
         )
     }
 
@@ -99,6 +100,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> HomeWebScreen(
                 deps = homeDeps,
                 onNavigateToHistory = { navigateTo(WebRoute.History) },
+                onNavigateToGoals = { navigateTo(WebRoute.Settings) },
             )
 
             WebRoute.Analytics -> AnalyticsWebScreen(

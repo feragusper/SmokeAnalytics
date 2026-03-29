@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.web.mvi
 
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
@@ -20,6 +21,7 @@ sealed interface SettingsResult {
         val email: String?,
         val displayName: String?,
         val preferences: UserPreferences,
+        val goalProgress: GoalProgress?,
     ) : SettingsResult
 
     /**
