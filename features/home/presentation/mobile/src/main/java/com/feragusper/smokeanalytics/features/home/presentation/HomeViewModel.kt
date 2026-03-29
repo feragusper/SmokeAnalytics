@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.E
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToAuthentication
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToGoals
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
@@ -96,11 +97,18 @@ class HomeViewModel @Inject constructor(
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
                 lastSmoke = null,
+                goalProgress = null,
+                hasActiveGoal = false,
                 canStartNewDay = false,
             )
 
             GoToHistory -> {
                 navigator.navigateToHistory()
+                previous
+            }
+
+            GoToGoals -> {
+                navigator.navigateToSettings()
                 previous
             }
 
@@ -134,6 +142,8 @@ class HomeViewModel @Inject constructor(
                     financialSummary = result.financialSummary,
                     rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
+                    goalProgress = result.goalProgress,
+                    hasActiveGoal = result.preferences.activeGoal != null,
                     canStartNewDay = result.canStartNewDay,
                     elapsedTone = elapsedToneFrom(
                         result.smokeCountListResult.timeSinceLastCigarette.first,

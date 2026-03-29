@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.web.mvi
 
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+
 /**
  * Represents the intents that can be sent to the Settings screen.
  */
@@ -11,12 +13,7 @@ sealed interface SettingsIntent {
     data object FetchUser : SettingsIntent
 
     data class UpdatePreferences(
-        val packPrice: Double,
-        val cigarettesPerPack: Int,
-        val dayStartHour: Int,
-        val bedtimeHour: Int,
-        val locationTrackingEnabled: Boolean,
-        val currencySymbol: String,
+        val preferences: UserPreferences,
     ) : SettingsIntent
 
     /**

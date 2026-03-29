@@ -133,6 +133,7 @@ data class WebAppGraph(
                 editSmokeUseCase = editSmoke,
                 deleteSmokeUseCase = deleteSmoke,
                 fetchSmokeCountListUseCase = fetchSmokeCounts,
+                fetchSmokesUseCase = fetchSmokes,
                 fetchSessionUseCase = fetchSession,
                 fetchUserPreferencesUseCase = fetchPreferences,
                 updateUserPreferencesUseCase = updatePreferences,

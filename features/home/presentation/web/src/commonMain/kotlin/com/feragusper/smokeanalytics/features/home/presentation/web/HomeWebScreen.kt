@@ -33,6 +33,7 @@ import org.jetbrains.compose.web.dom.Text
 fun HomeWebScreen(
     deps: HomeWebDependencies,
     onNavigateToHistory: () -> Unit,
+    onNavigateToGoals: () -> Unit,
 ) {
     val store = remember(deps) { HomeWebStore(processHolder = deps.homeProcessHolder) }
 
@@ -44,6 +45,7 @@ fun HomeWebScreen(
         onIntent = { intent ->
             when (intent) {
                 HomeIntent.OnClickHistory -> onNavigateToHistory()
+                HomeIntent.OnClickGoals -> onNavigateToGoals()
                 else -> store.send(intent)
             }
         },
@@ -145,6 +147,12 @@ fun HomeViewState.Render(
                 gamificationSummary = gamificationSummary,
             )
 
+            GoalFocusCard(
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
+                onOpenGoals = { onIntent(HomeIntent.OnClickGoals) },
+            )
+
             FinancialInsightCard(
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
@@ -160,6 +168,39 @@ fun HomeViewState.Render(
                 EveningResetCard(
                     greetingMessage = greetingMessage,
                     onStartNewDay = { onIntent(HomeIntent.StartNewDay) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoalFocusCard(
+    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
+    hasActiveGoal: Boolean,
+    onOpenGoals: () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                Text("Goal Focus")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                Text(goalProgress?.title ?: "Add one active goal")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text(goalProgress?.supportingText ?: "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home.")
+            }
+            goalProgress?.targetLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            goalProgress?.progressLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                PrimaryButton(
+                    text = if (hasActiveGoal) "Review in You" else "Set in You",
+                    onClick = onOpenGoals,
                 )
             }
         }

@@ -69,7 +69,7 @@ fun MapWebScreen(
             loading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
             preferences?.locationTrackingEnabled == false -> EmptyStateCard(
                 title = "Location tracking is off",
-                message = "Enable location tracking in Settings to unlock map insights, repeated-area detection, and the geographic side of Analytics.",
+                message = "Enable location tracking in You to unlock map insights, repeated-area detection, and the geographic side of Analytics.",
             )
             clusters.isEmpty() -> EmptyStateCard(
                 title = "No mapped smokes yet",

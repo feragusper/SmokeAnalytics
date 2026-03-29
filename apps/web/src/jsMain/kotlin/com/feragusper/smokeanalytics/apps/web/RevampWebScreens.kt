@@ -59,9 +59,9 @@ fun SettingsAboutWebScreen(
 ) {
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Settings & About",
-            eyebrow = "Preferences",
-            subtitle = "Manage your account, app behavior, and product details in one place.",
+            title = "You",
+            eyebrow = "Personal space",
+            subtitle = "Keep account, routine preferences, goals, and product details in one calmer destination.",
             actions = {
                 PrimaryButton(
                     text = "Share",

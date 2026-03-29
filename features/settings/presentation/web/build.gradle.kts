@@ -14,9 +14,12 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(project(":libraries:design:web"))
+                implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:presentation:web"))
                 implementation(project(":libraries:preferences:domain"))
+                implementation(project(":libraries:smokes:domain"))
+                implementation(project(":features:goals:domain"))
 
                 implementation(compose.runtime)
                 implementation(compose.html.core)

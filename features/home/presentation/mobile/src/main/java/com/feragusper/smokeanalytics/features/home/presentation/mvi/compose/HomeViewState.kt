@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -49,6 +51,7 @@ import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
@@ -73,6 +76,8 @@ data class HomeViewState(
     internal val financialSummary: FinancialSummary? = null,
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
+    internal val goalProgress: GoalProgress? = null,
+    internal val hasActiveGoal: Boolean = false,
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
@@ -144,6 +149,8 @@ data class HomeViewState(
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
                 gamificationSummary = gamificationSummary,
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
                 isLoading = displayLoading,
@@ -165,6 +172,8 @@ private fun HomeContent(
     financialSummary: FinancialSummary?,
     rateSummary: RateSummary?,
     gamificationSummary: GamificationSummary?,
+    goalProgress: GoalProgress?,
+    hasActiveGoal: Boolean,
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
@@ -215,6 +224,14 @@ private fun HomeContent(
                 timeSinceLastCigaretteMinutes = elapsedMinutes,
                 gamificationSummary = gamificationSummary,
                 isLoading = isLoading,
+            )
+        }
+        item {
+            GoalFocusSection(
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
+                isLoading = isLoading,
+                onOpenGoals = { intent(HomeIntent.OnClickGoals) },
             )
         }
         item {
@@ -350,6 +367,63 @@ private fun PulseHeroSection(
                 color = elapsedTone.contentColor(),
                 textAlign = TextAlign.Center,
             )
+        }
+    }
+}
+
+@Composable
+private fun GoalFocusSection(
+    goalProgress: GoalProgress?,
+    hasActiveGoal: Boolean,
+    isLoading: Boolean,
+    onOpenGoals: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "Goal Focus",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = goalProgress?.title ?: "Add one active goal",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = when {
+                    isLoading -> "Refreshing the latest goal progress."
+                    goalProgress != null -> goalProgress.supportingText
+                    else -> "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            goalProgress?.targetLabel?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            goalProgress?.progressLabel?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Button(onClick = onOpenGoals) {
+                Text(if (hasActiveGoal) "Review in You" else "Set in You")
+            }
         }
     }
 }

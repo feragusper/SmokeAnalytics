@@ -44,7 +44,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
             WebRoute.Coach -> "Smoke Analytics | AI Coach"
-            WebRoute.Settings -> "Smoke Analytics | Settings & About"
+            WebRoute.Settings -> "Smoke Analytics | You"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
     }
@@ -88,6 +88,7 @@ fun AppRoot(graph: WebAppGraph) {
             signOutUseCase = graph.signOutUseCase,
             fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
+            fetchSmokesUseCase = graph.fetchSmokesUseCase,
         )
     }
 
@@ -99,6 +100,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> HomeWebScreen(
                 deps = homeDeps,
                 onNavigateToHistory = { navigateTo(WebRoute.History) },
+                onNavigateToGoals = { navigateTo(WebRoute.Settings) },
             )
 
             WebRoute.Analytics -> AnalyticsWebScreen(
