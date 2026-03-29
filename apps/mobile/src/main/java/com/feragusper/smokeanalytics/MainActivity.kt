@@ -234,7 +234,7 @@ private fun MainContainerScreen(
         BottomNavigationScreens.Analytics,
         BottomNavigationScreens.History,
         BottomNavigationScreens.Coach,
-        BottomNavigationScreens.Settings,
+        BottomNavigationScreens.You,
     )
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -451,7 +451,7 @@ private fun MainScreenNavigationConfigurations(
             HomeMobileDestination(
                 navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = {
-                    navController.navigate(BottomNavigationScreens.Settings.route) {
+                    navController.navigate(BottomNavigationScreens.You.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
@@ -485,7 +485,7 @@ private fun MainScreenNavigationConfigurations(
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             CoachMobileDestination()
         }
-        composable(route = BottomNavigationScreens.Settings.route) {
+        composable(route = BottomNavigationScreens.You.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             SettingsMobileDestination()
         }
@@ -558,9 +558,9 @@ private sealed class BottomNavigationScreens(
     data object Coach : BottomNavigationScreens(route = "coach", iconId = R.drawable.ic_chatbot)
 
     /**
-     * The Settings screen, allowing users to configure app settings and preferences.
+     * The personal destination for account, preferences, and goals entry.
      */
-    data object Settings : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_settings)
+    data object You : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_you)
 }
 
 @Preview(showBackground = true)

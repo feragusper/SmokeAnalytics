@@ -408,13 +408,13 @@ private fun DisabledState(modifier: Modifier) {
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StatusChip(text = "Settings required")
+                StatusChip(text = "Action required")
                 Text(
                     text = "Location tracking is off",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Enable location tracking in Settings to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.",
+                    text = "Enable location tracking in You to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

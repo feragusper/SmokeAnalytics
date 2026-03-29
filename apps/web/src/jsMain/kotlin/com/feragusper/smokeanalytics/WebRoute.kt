@@ -14,7 +14,7 @@ internal fun WebRoute.toHash(): String = when (this) {
     WebRoute.Analytics -> "#/analytics"
     WebRoute.History -> "#/history"
     WebRoute.Coach -> "#/coach"
-    WebRoute.Settings -> "#/settings"
+    WebRoute.Settings -> "#/you"
     WebRoute.Auth -> "#/auth"
 }
 
@@ -22,7 +22,7 @@ internal fun parseRouteFromHash(hash: String): WebRoute = when (hash.removePrefi
     "/analytics", "/stats", "/map" -> WebRoute.Analytics
     "/history" -> WebRoute.History
     "/coach" -> WebRoute.Coach
-    "/settings", "/about" -> WebRoute.Settings
+    "/you", "/settings", "/about" -> WebRoute.Settings
     "/auth" -> WebRoute.Auth
     "/home", "/", "" -> WebRoute.Home
     else -> WebRoute.Home

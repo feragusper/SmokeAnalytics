@@ -25,7 +25,7 @@ fun WebScaffold(
         Triple("▤", "Analytics & Map", WebRoute.Analytics),
         Triple("◫", "History", WebRoute.History),
         Triple("◌", "AI Coach", WebRoute.Coach),
-        Triple("⚙", "Settings & About", WebRoute.Settings),
+        Triple("◉", "You", WebRoute.Settings),
     )
 
     Div(attrs = { classes(SmokeWebStyles.shell) }) {

@@ -104,6 +104,8 @@ data class SettingsViewState(
                 currentDisplayName = currentDisplayName,
             )
 
+            GoalsEntryCard()
+
             SessionCard(
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
@@ -126,7 +128,7 @@ data class SettingsViewState(
 
             SettingsCard(
                 title = "About & Support",
-                subtitle = "Share the app, reach support, and review plan metadata in one calmer section.",
+                subtitle = "Share the app, reach support, and review plan metadata from your personal destination.",
             ) {
                 AboutSection()
             }
@@ -160,24 +162,24 @@ private fun SettingsHeroCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "Settings & About",
+                text = "You",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = if (currentDisplayName.isNullOrBlank()) {
-                    "Keep the app aligned with your routine."
+                    "Keep your routine, goals, and account in sync."
                 } else {
-                    "Keep $currentDisplayName's setup aligned with the routine."
+                    "Keep $currentDisplayName's routine, goals, and account in sync."
                 },
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = if (currentEmail == null) {
-                    "Sign in to sync preferences, preserve progress, and unlock the full product shell across devices."
+                    "Sign in to sync preferences, preserve progress, and keep goals ready across devices."
                 } else {
-                    "Review session state, tune how the app interprets your day, and keep support details in one destination."
+                    "Review session state, tune how the app interprets your day, and keep the next goals flow anchored here."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -188,6 +190,28 @@ private fun SettingsHeroCard(
                     currentEmail != null -> "Signed in"
                     else -> "Guest mode"
                 },
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalsEntryCard() {
+    SettingsCard(
+        title = "Goals",
+        subtitle = "This is the stable entry point for your personal targets.",
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Daily caps, reduction plans, and mindful-gap targets will live here as the next guided flow.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            StatusBadge(text = "Coming soon")
+            Text(
+                text = "For now, this destination holds the place where goals will open from You without becoming a new tab.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

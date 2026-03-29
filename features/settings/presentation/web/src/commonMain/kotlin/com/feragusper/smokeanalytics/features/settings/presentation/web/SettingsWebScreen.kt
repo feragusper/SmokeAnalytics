@@ -57,9 +57,11 @@ private fun SettingsViewState.Render(
             currentDisplayName = currentDisplayName,
         )
 
+        GoalsCard()
+
         errorMessage?.let { msg ->
             EmptyStateCard(
-                title = "Settings unavailable",
+                title = "Your space is unavailable",
                 message = msg,
                 actionLabel = "Try again",
                 onAction = { onIntent(SettingsIntent.FetchUser) },
@@ -154,23 +156,23 @@ private fun HeroCard(
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
             Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                Text("Preferences")
+                Text("You")
             }
             Div(attrs = { attr("style", "font-size:36px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);max-width:680px;") }) {
                 Text(
                     if (currentDisplayName.isNullOrBlank()) {
-                        "Keep the app aligned with your routine."
+                        "Keep your routine, goals, and account in sync."
                     } else {
-                        "Keep ${currentDisplayName}'s setup aligned with the routine."
+                        "Keep ${currentDisplayName}'s routine, goals, and account in sync."
                     }
                 )
             }
             Div(attrs = { attr("style", "font-size:16px;line-height:1.6;color:var(--sa-color-secondary);max-width:760px;") }) {
                 Text(
                     if (currentEmail == null) {
-                        "Sign in to sync preferences, preserve progress, and unlock the full product shell across devices."
+                        "Sign in to sync preferences, preserve progress, and keep goals ready across devices."
                     } else {
-                        "Review session state, tune how the app interprets your day, and keep support details in one destination."
+                        "Review session state, tune how the app interprets your day, and keep the next goals flow anchored here."
                     }
                 )
             }
@@ -187,6 +189,31 @@ private fun HeroCard(
                         else -> "Guest mode"
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoalsCard() {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
+            Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                Text("Goals")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                Text("Your next personal targets will open here.")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("Daily caps, reduction plans, and mindful-gap targets are being wired next. You is now the stable place where that flow will live.")
+            }
+            Div(attrs = {
+                attr(
+                    "style",
+                    "display:inline-flex;align-items:center;width:max-content;padding:8px 12px;border-radius:999px;background:var(--sa-color-secondaryContainer);color:var(--sa-color-onSecondaryContainer);font-size:13px;font-weight:600;"
+                )
+            }) {
+                Text("Coming soon")
             }
         }
     }
