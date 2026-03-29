@@ -731,14 +731,14 @@ private fun EveningResetSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Ready to Reset?",
+                text = "Starting Early?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = if (isLoading) "Checking whether you can start a new day."
-                else greetingMessage ?: "Your day boundary is close. Reset the day when you want to start the next reflection window cleanly.",
+                text = if (isLoading) "Checking whether you can begin a new day now."
+                else "Up earlier than usual? You can start today's reflection window now and begin a fresh day.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

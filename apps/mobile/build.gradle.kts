@@ -196,6 +196,8 @@ dependencies {
     implementation(libs.animated.navigation.bar)
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.material3)
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
     implementation(libs.play.review.ktx)
     implementation(libs.play.services.maps)
 
