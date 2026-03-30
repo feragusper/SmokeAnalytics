@@ -119,6 +119,7 @@ data class HistoryViewState(
                         onNavigateUp = { intent(HistoryIntent.NavigateUp) },
                         entriesCount = entriesCount,
                         displayLoading = displayLoading,
+                        hasCachedEntries = smokes != null,
                     )
                 }
 
@@ -198,8 +199,38 @@ data class HistoryViewState(
                     }
                 }
 
+                error?.let { currentError ->
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text(
+                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) "Session required" else "Could not refresh archive",
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text(
+                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) {
+                                        "Sign back in to keep the archive synced."
+                                    } else {
+                                        "Showing the last available state while the selected day could not be refreshed."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+
                 when {
-                    displayLoading -> {
+                    displayLoading && smokes == null -> {
                         items(4) {
                             Box(
                                 modifier = Modifier
@@ -281,6 +312,7 @@ private fun ArchiveHeader(
     onNavigateUp: () -> Unit,
     entriesCount: Int,
     displayLoading: Boolean,
+    hasCachedEntries: Boolean,
 ) {
     Card(
         shape = RoundedCornerShape(28.dp),
@@ -325,7 +357,7 @@ private fun ArchiveHeader(
                     shape = RoundedCornerShape(999.dp),
                 ) {
                     Text(
-                        text = if (displayLoading) "Refreshing" else "$entriesCount entries",
+                        text = if (displayLoading && hasCachedEntries) "Refreshing" else "$entriesCount entries",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,

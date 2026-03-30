@@ -25,23 +25,31 @@ class MapMobileViewModel @Inject constructor(
     private val _state = MutableStateFlow(MapMobileState())
     val state: StateFlow<MapMobileState> = _state.asStateFlow()
 
-    init {
-        refresh()
-    }
-
     fun onPeriodChange(period: SmokeMapPeriod) {
         _state.value = _state.value.copy(period = period)
         refresh()
+    }
+
+    fun onScreenVisible() {
+        if (_state.value.hasLoadedOnce) {
+            refresh(isRefresh = true)
+        } else {
+            refresh()
+        }
     }
 
     fun onSelectCluster(cluster: SmokeMapCluster) {
         _state.value = _state.value.copy(selectedCluster = cluster)
     }
 
-    fun refresh() {
+    fun refresh(isRefresh: Boolean = false) {
         viewModelScope.launch {
             val previous = _state.value
-            _state.value = previous.copy(isLoading = true, error = false)
+            _state.value = previous.copy(
+                isLoading = !previous.hasLoadedOnce,
+                isRefreshing = isRefresh && previous.hasLoadedOnce,
+                error = false,
+            )
             runCatching {
                 val preferences = fetchUserPreferencesUseCase()
                 val (start, end) = smokeMapRange(
@@ -53,13 +61,17 @@ class MapMobileViewModel @Inject constructor(
                 val clusters = clusterSmokesForMap(smokes, previous.period)
                 previous.copy(
                     isLoading = false,
+                    isRefreshing = false,
+                    hasLoadedOnce = true,
                     preferences = preferences,
                     clusters = clusters,
-                    selectedCluster = clusters.firstOrNull(),
+                    selectedCluster = previous.selectedCluster?.let { current ->
+                        clusters.firstOrNull { it.label == current.label } ?: clusters.firstOrNull()
+                    } ?: clusters.firstOrNull(),
                     error = false,
                 )
             }.getOrElse {
-                previous.copy(isLoading = false, error = true)
+                previous.copy(isLoading = false, isRefreshing = false, error = true)
             }.also { _state.value = it }
         }
     }
@@ -67,6 +79,8 @@ class MapMobileViewModel @Inject constructor(
 
 data class MapMobileState(
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val hasLoadedOnce: Boolean = false,
     val error: Boolean = false,
     val period: SmokeMapPeriod = SmokeMapPeriod.Week,
     val preferences: UserPreferences? = null,

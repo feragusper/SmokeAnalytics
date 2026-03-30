@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
@@ -31,11 +30,10 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun HomeWebScreen(
-    deps: HomeWebDependencies,
+    store: HomeWebStore,
     onNavigateToHistory: () -> Unit,
+    onNavigateToGoals: () -> Unit,
 ) {
-    val store = remember(deps) { HomeWebStore(processHolder = deps.homeProcessHolder) }
-
     LaunchedEffect(store) { store.start() }
 
     val state by store.state.collectAsState()
@@ -44,6 +42,7 @@ fun HomeWebScreen(
         onIntent = { intent ->
             when (intent) {
                 HomeIntent.OnClickHistory -> onNavigateToHistory()
+                HomeIntent.OnClickGoals -> onNavigateToGoals()
                 else -> store.send(intent)
             }
         },
@@ -113,6 +112,7 @@ fun HomeViewState.Render(
             PulseHeroCard(
                 elapsedTone = elapsedTone,
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmoke?.date?.toLocalClockLabel(),
                 rateSummary = rateSummary,
             )
 
@@ -145,14 +145,18 @@ fun HomeViewState.Render(
                 gamificationSummary = gamificationSummary,
             )
 
+            GoalFocusCard(
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
+                onOpenGoals = { onIntent(HomeIntent.OnClickGoals) },
+            )
+
             FinancialInsightCard(
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
             )
 
             ArchiveSnapshotCard(
-                smokesPerWeek = smokesPerWeek,
-                smokesPerMonth = smokesPerMonth,
                 rateSummary = rateSummary,
             )
 
@@ -167,9 +171,43 @@ fun HomeViewState.Render(
 }
 
 @Composable
+private fun GoalFocusCard(
+    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
+    hasActiveGoal: Boolean,
+    onOpenGoals: () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                Text("Goal Focus")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                Text(goalProgress?.title ?: "Add one active goal")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text(goalProgress?.supportingText ?: "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home.")
+            }
+            goalProgress?.targetLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            goalProgress?.progressLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                PrimaryButton(
+                    text = if (hasActiveGoal) "Review in You" else "Set in You",
+                    onClick = onOpenGoals,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun PulseHeroCard(
     elapsedTone: ElapsedTone,
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     rateSummary: RateSummary?,
 ) {
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
@@ -217,7 +255,7 @@ private fun PulseHeroCard(
                         Div(attrs = {
                             attr("style", "font-size:13px;color:var(--sa-color-secondary);")
                         }) {
-                            Text("Minutes ago")
+                            Text(lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago")
                         }
                     }
                 }
@@ -354,8 +392,6 @@ private fun FinancialInsightCard(
 
 @Composable
 private fun ArchiveSnapshotCard(
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
     rateSummary: RateSummary?,
 ) {
     SurfaceCard {
@@ -375,14 +411,14 @@ private fun ArchiveSnapshotCard(
 
             Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;") }) {
                 MetricSummary(
-                    label = "Week",
-                    value = smokesPerWeek?.toString() ?: "--",
-                    meta = rateSummary?.let { "${it.averageSmokesPerDayWeek.formatOneDecimal()} / day" },
+                    label = "Week average",
+                    value = rateSummary?.averageSmokesPerDayWeek?.formatOneDecimal() ?: "--",
+                    meta = "Cigarettes / day",
                 )
                 MetricSummary(
-                    label = "Month",
-                    value = smokesPerMonth?.toString() ?: "--",
-                    meta = rateSummary?.let { "${it.averageSmokesPerDayMonth.formatOneDecimal()} / day" },
+                    label = "Month average",
+                    value = rateSummary?.averageSmokesPerDayMonth?.formatOneDecimal() ?: "--",
+                    meta = "Cigarettes / day",
                 )
             }
         }
@@ -478,6 +514,11 @@ private fun Double.formatOneDecimal(): String {
     val decimal = ((rounded - whole) * 10).toInt()
     return "$whole.$decimal"
 }
+
+private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
+    toLocalDateTime(TimeZone.currentSystemDefault()).time.let { time ->
+        "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
+    }
 
 private fun ElapsedTone.recoveryTitle(): String = when (this) {
     ElapsedTone.Urgent -> "Level 1 Reset"

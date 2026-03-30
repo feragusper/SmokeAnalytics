@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 /**
  * Represents the store for the History screen.
@@ -27,6 +26,7 @@ class HistoryWebStore(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val intents = Channel<HistoryIntent>(capacity = Channel.Factory.BUFFERED)
+    private var started = false
 
     private val _state = MutableStateFlow(HistoryViewState())
 
@@ -48,14 +48,14 @@ class HistoryWebStore(
      * Starts the store.
      */
     fun start() {
+        if (started) return
+        started = true
         scope.launch {
             intents
                 .receiveAsFlow()
                 .flatMapLatest { processHolder.processIntent(it) }
                 .collect { reduce(it) }
         }
-
-        send(HistoryIntent.FetchSmokes(Clock.System.now()))
     }
 
     private fun reduce(result: HistoryResult) {

@@ -71,7 +71,7 @@ class SettingsViewModelTest {
             val email = "fernando@example.com"
             val displayName = "Fernando Perez"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email, displayName, UserPreferences())
+                SettingsResult.UserLoggedIn(email, displayName, UserPreferences(), null)
             )
 
             viewModel.states().test {
@@ -88,7 +88,7 @@ class SettingsViewModelTest {
             val email = "fernando@example.com"
             val displayName = "Fernando Perez"
             every { processHolder.processIntent(SettingsIntent.FetchUser) } returns flowOf(
-                SettingsResult.UserLoggedIn(email, displayName, UserPreferences())
+                SettingsResult.UserLoggedIn(email, displayName, UserPreferences(), null)
             )
             every { processHolder.processIntent(SettingsIntent.SignOut) } returns flowOf(
                 SettingsResult.UserLoggedOut

@@ -48,6 +48,8 @@ sealed interface HomeIntent {
      */
     data object OnClickHistory : HomeIntent
 
+    data object OnClickGoals : HomeIntent
+
     /**
      * Represents the intent to tick the time since last cigarette.
      *

@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -49,6 +51,7 @@ import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
@@ -58,6 +61,9 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlinx.datetime.toJavaInstant
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -73,10 +79,15 @@ data class HomeViewState(
     internal val financialSummary: FinancialSummary? = null,
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
+    internal val goalProgress: GoalProgress? = null,
+    internal val hasActiveGoal: Boolean = false,
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
+
+    internal val lastSmokeTimeLabel: String?
+        get() = lastSmoke?.date?.toLocalClockLabel()
 
     interface TestTags {
         companion object {
@@ -139,11 +150,14 @@ data class HomeViewState(
                 smokesPerWeek = smokesPerWeek,
                 smokesPerMonth = smokesPerMonth,
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
                 gamificationSummary = gamificationSummary,
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
                 isLoading = displayLoading,
@@ -160,11 +174,14 @@ private fun HomeContent(
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
     rateSummary: RateSummary?,
     gamificationSummary: GamificationSummary?,
+    goalProgress: GoalProgress?,
+    hasActiveGoal: Boolean,
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
@@ -189,6 +206,7 @@ private fun HomeContent(
         item {
             PulseHeroSection(
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmokeTimeLabel,
                 elapsedTone = elapsedTone,
                 rateSummary = rateSummary,
                 isLoading = isLoading,
@@ -218,6 +236,14 @@ private fun HomeContent(
             )
         }
         item {
+            GoalFocusSection(
+                goalProgress = goalProgress,
+                hasActiveGoal = hasActiveGoal,
+                isLoading = isLoading,
+                onOpenGoals = { intent(HomeIntent.OnClickGoals) },
+            )
+        }
+        item {
             FinancialInsightSection(
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
@@ -226,8 +252,6 @@ private fun HomeContent(
         }
         item {
             ArchiveSnapshotSection(
-                smokesPerWeek = smokesPerWeek,
-                smokesPerMonth = smokesPerMonth,
                 rateSummary = rateSummary,
                 isLoading = isLoading,
                 onHistoryClick = { intent(HomeIntent.OnClickHistory) },
@@ -278,6 +302,7 @@ private fun PulseHeaderSection(
 @Composable
 private fun PulseHeroSection(
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     elapsedTone: ElapsedTone,
     rateSummary: RateSummary?,
     isLoading: Boolean,
@@ -329,7 +354,11 @@ private fun PulseHeroSection(
                     )
                 }
                 Text(
-                    text = "Minutes ago",
+                    text = if (isLoading) {
+                        "Refreshing latest smoke time"
+                    } else {
+                        lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -350,6 +379,63 @@ private fun PulseHeroSection(
                 color = elapsedTone.contentColor(),
                 textAlign = TextAlign.Center,
             )
+        }
+    }
+}
+
+@Composable
+private fun GoalFocusSection(
+    goalProgress: GoalProgress?,
+    hasActiveGoal: Boolean,
+    isLoading: Boolean,
+    onOpenGoals: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "Goal Focus",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = goalProgress?.title ?: "Add one active goal",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = when {
+                    isLoading -> "Refreshing the latest goal progress."
+                    goalProgress != null -> goalProgress.supportingText
+                    else -> "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            goalProgress?.targetLabel?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            goalProgress?.progressLabel?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Button(onClick = onOpenGoals) {
+                Text(if (hasActiveGoal) "Review in You" else "Set in You")
+            }
         }
     }
 }
@@ -626,8 +712,6 @@ private fun MoneyMetric(
 
 @Composable
 private fun ArchiveSnapshotSection(
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
     rateSummary: RateSummary?,
     isLoading: Boolean,
     onHistoryClick: () -> Unit,
@@ -651,16 +735,16 @@ private fun ArchiveSnapshotSection(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SnapshotMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Week",
-                    value = smokesPerWeek?.toString(),
-                    supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayWeek) },
+                    title = "Week Avg",
+                    value = rateSummary?.averageSmokesPerDayWeek?.let { "%.1f".format(it) },
+                    supporting = "Cigarettes / day",
                     isLoading = isLoading,
                 )
                 SnapshotMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Month",
-                    value = smokesPerMonth?.toString(),
-                    supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayMonth) },
+                    title = "Month Avg",
+                    value = rateSummary?.averageSmokesPerDayMonth?.let { "%.1f".format(it) },
+                    supporting = "Cigarettes / day",
                     isLoading = isLoading,
                 )
             }
@@ -731,14 +815,14 @@ private fun EveningResetSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Ready to Reset?",
+                text = "Starting Early?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = if (isLoading) "Checking whether you can start a new day."
-                else greetingMessage ?: "Your day boundary is close. Reset the day when you want to start the next reflection window cleanly.",
+                text = if (isLoading) "Checking whether you can begin a new day now."
+                else "Up earlier than usual? You can start today's reflection window now and begin a fresh day.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -859,3 +943,7 @@ private fun HomeViewPreview() {
         ).Compose({ _, _, _ -> }, {})
     }
 }
+
+private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
+    DateTimeFormatter.ofPattern("HH:mm")
+        .format(toJavaInstant().atZone(ZoneId.systemDefault()).toLocalTime())

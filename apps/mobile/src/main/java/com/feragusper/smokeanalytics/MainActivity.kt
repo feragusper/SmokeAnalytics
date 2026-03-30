@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics
 import android.content.Intent
 import android.os.Bundle
 import android.view.animation.OvershootInterpolator
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
@@ -16,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -26,6 +29,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +58,14 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.Authen
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -63,12 +75,47 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private lateinit var appUpdateManager: AppUpdateManager
+    private lateinit var installStateListener: InstallStateUpdatedListener
+
+    private var availableUpdateInfo: AppUpdateInfo? = null
+    private var inAppUpdatePrompt by mutableStateOf<InAppUpdatePrompt?>(null)
+    private var restartUpdateReady by mutableStateOf(false)
+    private var hasPromptedForUpdateInSession = false
+    private var hasPromptedForRestartInSession = false
+
+    private val inAppUpdateLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+            refreshInAppUpdateState()
+        }
+
     /**
      * Called when the activity is starting. This is where most initialization should go:
      * setting up Jetpack Compose content and configuring the theme with [SmokeAnalyticsTheme].
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
+        installStateListener = InstallStateUpdatedListener { state ->
+            when (state.installStatus()) {
+                InstallStatus.DOWNLOADED -> {
+                    restartUpdateReady = true
+                    inAppUpdatePrompt = null
+                    hasPromptedForRestartInSession = true
+                }
+
+                InstallStatus.INSTALLED,
+                InstallStatus.CANCELED,
+                InstallStatus.FAILED -> {
+                    restartUpdateReady = false
+                    availableUpdateInfo = null
+                }
+
+                else -> Unit
+            }
+        }
+        appUpdateManager.registerListener(installStateListener)
+        refreshInAppUpdateState()
         setContent {
             SmokeAnalyticsTheme(
                 dynamicColor = false,
@@ -79,6 +126,12 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainContainerScreen(
+                        inAppUpdatePrompt = inAppUpdatePrompt,
+                        restartUpdateReady = restartUpdateReady,
+                        onDismissUpdatePrompt = { inAppUpdatePrompt = null },
+                        onStartUpdate = ::startFlexibleUpdate,
+                        onDismissRestartPrompt = { restartUpdateReady = false },
+                        onCompleteDownloadedUpdate = ::completeDownloadedUpdate,
                         navigateToAuthentication = {
                             startActivity(Intent(this, AuthenticationActivity::class.java))
                         }
@@ -86,6 +139,76 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshInAppUpdateState()
+    }
+
+    override fun onDestroy() {
+        appUpdateManager.unregisterListener(installStateListener)
+        super.onDestroy()
+    }
+
+    private fun refreshInAppUpdateState() {
+        appUpdateManager.appUpdateInfo
+            .addOnSuccessListener { info ->
+                availableUpdateInfo = info
+                when {
+                    info.installStatus() == InstallStatus.DOWNLOADED -> {
+                        restartUpdateReady = true
+                    }
+
+                    info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+                        info.isUpdateTypeAllowed(AppUpdateOptions.defaultOptions(AppUpdateType.FLEXIBLE)) &&
+                        !hasPromptedForUpdateInSession -> {
+                        hasPromptedForUpdateInSession = true
+                        inAppUpdatePrompt = InAppUpdatePrompt(
+                            availableVersionCode = info.availableVersionCode(),
+                            stalenessDays = info.clientVersionStalenessDays(),
+                            priority = info.updatePriority(),
+                        )
+                    }
+
+                    info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS &&
+                        info.isUpdateTypeAllowed(AppUpdateOptions.defaultOptions(AppUpdateType.IMMEDIATE)) -> {
+                        startUpdateFlow(info, AppUpdateType.IMMEDIATE)
+                    }
+
+                    info.updateAvailability() == UpdateAvailability.UPDATE_NOT_AVAILABLE &&
+                        !hasPromptedForRestartInSession -> {
+                        restartUpdateReady = false
+                    }
+                }
+            }
+            .addOnFailureListener {
+                availableUpdateInfo = null
+            }
+    }
+
+    private fun startFlexibleUpdate() {
+        val info = availableUpdateInfo ?: return
+        startUpdateFlow(info, AppUpdateType.FLEXIBLE)
+    }
+
+    private fun startUpdateFlow(
+        info: AppUpdateInfo,
+        updateType: Int,
+    ) {
+        val started = appUpdateManager.startUpdateFlowForResult(
+            info,
+            inAppUpdateLauncher,
+            AppUpdateOptions.defaultOptions(updateType),
+        )
+        if (started) {
+            inAppUpdatePrompt = null
+        }
+    }
+
+    private fun completeDownloadedUpdate() {
+        appUpdateManager.completeUpdate()
+        restartUpdateReady = false
     }
 }
 
@@ -96,6 +219,12 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 private fun MainContainerScreen(
+    inAppUpdatePrompt: InAppUpdatePrompt?,
+    restartUpdateReady: Boolean,
+    onDismissUpdatePrompt: () -> Unit,
+    onStartUpdate: () -> Unit,
+    onDismissRestartPrompt: () -> Unit,
+    onCompleteDownloadedUpdate: () -> Unit,
     navigateToAuthentication: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -105,13 +234,28 @@ private fun MainContainerScreen(
         BottomNavigationScreens.Analytics,
         BottomNavigationScreens.History,
         BottomNavigationScreens.Coach,
-        BottomNavigationScreens.Settings,
+        BottomNavigationScreens.You,
     )
     val snackbarHostState = remember { SnackbarHostState() }
 
     var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showFab by remember { mutableStateOf(false) }
     var fabTone by remember { mutableStateOf(ElapsedTone.Urgent) }
+
+    if (inAppUpdatePrompt != null) {
+        InAppUpdateDialog(
+            prompt = inAppUpdatePrompt,
+            onDismiss = onDismissUpdatePrompt,
+            onConfirm = onStartUpdate,
+        )
+    }
+
+    if (restartUpdateReady) {
+        DownloadedUpdateDialog(
+            onDismiss = onDismissRestartPrompt,
+            onConfirm = onCompleteDownloadedUpdate,
+        )
+    }
 
     Scaffold(
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
@@ -161,6 +305,72 @@ private fun MainContainerScreen(
         )
     }
 }
+
+@Composable
+private fun InAppUpdateDialog(
+    prompt: InAppUpdatePrompt,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Update available") },
+        text = {
+            Text(
+                buildString {
+                    append("A newer Android build is ready in Google Play.")
+                    prompt.stalenessDays?.takeIf { it > 0 }?.let { days ->
+                        append(" This version has been available for $days day")
+                        append(if (days == 1) "." else "s.")
+                    }
+                    if (prompt.priority > 0) {
+                        append(" Update priority: ${prompt.priority}.")
+                    }
+                }
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Update now")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Later")
+            }
+        },
+    )
+}
+
+@Composable
+private fun DownloadedUpdateDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Restart to finish update") },
+        text = {
+            Text("The update has finished downloading. Restart the app to install the latest version.")
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Restart now")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Later")
+            }
+        },
+    )
+}
+
+private data class InAppUpdatePrompt(
+    val availableVersionCode: Int,
+    val stalenessDays: Int?,
+    val priority: Int,
+)
 
 /**
  * Defines the UI and behavior of the bottom navigation bar.
@@ -239,9 +449,10 @@ private fun MainScreenNavigationConfigurations(
     ) {
         composable(route = BottomNavigationScreens.Home.route) {
             HomeMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.Home.route,
                 navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = {
-                    navController.navigate(BottomNavigationScreens.Settings.route) {
+                    navController.navigate(BottomNavigationScreens.You.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
@@ -263,11 +474,14 @@ private fun MainScreenNavigationConfigurations(
         }
         composable(route = BottomNavigationScreens.Analytics.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
-            AnalyticsMobileDestination()
+            AnalyticsMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.Analytics.route,
+            )
         }
         composable(route = BottomNavigationScreens.History.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             HistoryMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.History.route,
                 navigateToAuthentication = navigateToAuthentication,
             )
         }
@@ -275,7 +489,7 @@ private fun MainScreenNavigationConfigurations(
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             CoachMobileDestination()
         }
-        composable(route = BottomNavigationScreens.Settings.route) {
+        composable(route = BottomNavigationScreens.You.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             SettingsMobileDestination()
         }
@@ -348,9 +562,9 @@ private sealed class BottomNavigationScreens(
     data object Coach : BottomNavigationScreens(route = "coach", iconId = R.drawable.ic_chatbot)
 
     /**
-     * The Settings screen, allowing users to configure app settings and preferences.
+     * The personal destination for account, preferences, and goals entry.
      */
-    data object Settings : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_settings)
+    data object You : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_you)
 }
 
 @Preview(showBackground = true)
@@ -358,6 +572,12 @@ private sealed class BottomNavigationScreens(
 private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
         MainContainerScreen(
+            inAppUpdatePrompt = null,
+            restartUpdateReady = false,
+            onDismissUpdatePrompt = {},
+            onStartUpdate = {},
+            onDismissRestartPrompt = {},
+            onCompleteDownloadedUpdate = {},
             navigateToAuthentication = {},
         )
     }

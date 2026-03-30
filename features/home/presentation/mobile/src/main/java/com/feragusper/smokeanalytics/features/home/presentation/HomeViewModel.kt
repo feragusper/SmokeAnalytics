@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.E
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToAuthentication
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToGoals
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToHistory
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Loading
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.NotLoggedIn
@@ -51,11 +52,6 @@ class HomeViewModel @Inject constructor(
      */
     override lateinit var navigator: HomeNavigator
 
-    init {
-        // Trigger initial intent to fetch smoke events.
-        intents().trySend(HomeIntent.FetchSmokes)
-    }
-
     /**
      * Transforms [HomeIntent] into a stream of [HomeResult]s.
      *
@@ -63,6 +59,12 @@ class HomeViewModel @Inject constructor(
      * @return A Flow of [HomeResult] representing the result of processing the intent.
      */
     override fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
+
+    fun onScreenVisible() {
+        val state = states().value
+        val hasCachedData = state.timeSinceLastCigarette != null || state.lastSmoke != null || state.smokesPerDay != null
+        intents().trySend(if (hasCachedData) HomeIntent.RefreshFetchSmokes else HomeIntent.FetchSmokes)
+    }
 
     /**
      * Reduces the previous [HomeViewState] and a new [HomeResult] to a new state.
@@ -96,11 +98,18 @@ class HomeViewModel @Inject constructor(
                 smokesPerMonth = 0,
                 timeSinceLastCigarette = 0L to 0L,
                 lastSmoke = null,
+                goalProgress = null,
+                hasActiveGoal = false,
                 canStartNewDay = false,
             )
 
             GoToHistory -> {
                 navigator.navigateToHistory()
+                previous
+            }
+
+            GoToGoals -> {
+                navigator.navigateToSettings()
                 previous
             }
 
@@ -134,6 +143,8 @@ class HomeViewModel @Inject constructor(
                     financialSummary = result.financialSummary,
                     rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
+                    goalProgress = result.goalProgress,
+                    hasActiveGoal = result.preferences.activeGoal != null,
                     canStartNewDay = result.canStartNewDay,
                     elapsedTone = elapsedToneFrom(
                         result.smokeCountListResult.timeSinceLastCigarette.first,

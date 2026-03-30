@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
@@ -28,6 +29,7 @@ sealed class SettingsResult : MVIResult {
         val email: String?,
         val displayName: String?,
         val preferences: UserPreferences,
+        val goalProgress: GoalProgress?,
     ) : SettingsResult()
 
     /**

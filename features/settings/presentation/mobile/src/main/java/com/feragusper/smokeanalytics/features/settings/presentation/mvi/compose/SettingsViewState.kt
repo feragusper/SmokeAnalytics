@@ -49,7 +49,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
+import com.feragusper.smokeanalytics.features.settings.presentation.GoalsEditorScreen
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
@@ -64,6 +66,7 @@ data class SettingsViewState(
     internal val currentEmail: String? = null,
     internal val currentDisplayName: String? = null,
     internal val preferences: UserPreferences = UserPreferences(),
+    internal val goalProgress: GoalProgress? = null,
     internal val infoMessage: String? = null,
 ) : MVIViewState<SettingsIntent> {
 
@@ -80,9 +83,30 @@ data class SettingsViewState(
         intent: (SettingsIntent) -> Unit,
     ) {
         var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
+        var showingGoals by remember(currentEmail, preferences.activeGoal) { mutableStateOf(false) }
 
         LaunchedEffect(preferences, currentEmail) {
             draftPreferences = preferences
+        }
+
+        if (showingGoals) {
+            GoalsEditorScreen(
+                currentEmail = currentEmail,
+                preferences = draftPreferences,
+                goalProgress = goalProgress,
+                displayLoading = displayLoading,
+                onBack = { showingGoals = false },
+                onSaveGoal = { goal ->
+                    draftPreferences = draftPreferences.copy(activeGoal = goal)
+                    intent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = goal)))
+                },
+                onClearGoal = {
+                    draftPreferences = draftPreferences.copy(activeGoal = null)
+                    intent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = null)))
+                },
+                onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+            )
+            return
         }
 
         Column(
@@ -102,6 +126,12 @@ data class SettingsViewState(
                 displayLoading = displayLoading,
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
+            )
+
+            GoalsEntryCard(
+                goalProgress = goalProgress,
+                activeGoal = preferences.activeGoal,
+                onOpenGoals = { showingGoals = true },
             )
 
             SessionCard(
@@ -126,7 +156,7 @@ data class SettingsViewState(
 
             SettingsCard(
                 title = "About & Support",
-                subtitle = "Share the app, reach support, and review plan metadata in one calmer section.",
+                subtitle = "Share the app, reach support, and review plan metadata from your personal destination.",
             ) {
                 AboutSection()
             }
@@ -160,24 +190,24 @@ private fun SettingsHeroCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "Settings & About",
+                text = "You",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = if (currentDisplayName.isNullOrBlank()) {
-                    "Keep the app aligned with your routine."
+                    "Keep your routine, goals, and account in sync."
                 } else {
-                    "Keep $currentDisplayName's setup aligned with the routine."
+                    "Keep $currentDisplayName's routine, goals, and account in sync."
                 },
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = if (currentEmail == null) {
-                    "Sign in to sync preferences, preserve progress, and unlock the full product shell across devices."
+                    "Sign in to sync preferences, preserve progress, and keep goals ready across devices."
                 } else {
-                    "Review session state, tune how the app interprets your day, and keep support details in one destination."
+                    "Review session state, tune how the app interprets your day, and keep the next goals flow anchored here."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -189,6 +219,37 @@ private fun SettingsHeroCard(
                     else -> "Guest mode"
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun GoalsEntryCard(
+    goalProgress: GoalProgress?,
+    activeGoal: com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal?,
+    onOpenGoals: () -> Unit,
+) {
+    SettingsCard(
+        title = "Goals",
+        subtitle = "This is the stable entry point for your personal targets.",
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = goalProgress?.supportingText
+                    ?: "Daily caps, reduction plans, and mindful-gap targets live here as your personal next step.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            StatusBadge(text = goalProgress?.status?.name ?: if (activeGoal == null) "No goal yet" else "Ready")
+            Text(
+                text = goalProgress?.targetLabel
+                    ?: "Open Goals to create one active target without turning it into a new bottom-bar destination.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = onOpenGoals) {
+                Text(if (activeGoal == null) "Set up goals" else "Review goals")
+            }
         }
     }
 }

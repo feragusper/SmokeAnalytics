@@ -10,6 +10,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +39,7 @@ import com.feragusper.smokeanalytics.map.MapMobileRoute
 
 @Composable
 fun HomeMobileDestination(
+    active: Boolean,
     navigateToAuthentication: () -> Unit,
     navigateToSettings: () -> Unit,
     navigateToHistory: () -> Unit,
@@ -51,6 +53,9 @@ fun HomeMobileDestination(
             navigateToHistory = navigateToHistory,
         )
     }
+    LaunchedEffect(active) {
+        if (active) viewModel.onScreenVisible()
+    }
 
     HomeView(
         viewModel = viewModel,
@@ -60,6 +65,7 @@ fun HomeMobileDestination(
 
 @Composable
 fun HistoryMobileDestination(
+    active: Boolean,
     navigateToAuthentication: () -> Unit,
 ) {
     val viewModel = hiltViewModel<HistoryViewModel>()
@@ -69,6 +75,9 @@ fun HistoryMobileDestination(
             navigateUp = {},
         )
     }
+    LaunchedEffect(active) {
+        if (active) viewModel.onScreenVisible()
+    }
 
     HistoryView(
         viewModel = viewModel,
@@ -77,8 +86,15 @@ fun HistoryMobileDestination(
 }
 
 @Composable
-fun AnalyticsMobileDestination() {
+fun AnalyticsMobileDestination(
+    active: Boolean,
+) {
     var selectedTab by remember { mutableStateOf(AnalyticsTab.Trends) }
+    var refreshNonce by remember { mutableStateOf(0) }
+
+    LaunchedEffect(active, selectedTab) {
+        if (active) refreshNonce += 1
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -112,8 +128,14 @@ fun AnalyticsMobileDestination() {
         }
 
         when (selectedTab) {
-            AnalyticsTab.Trends -> StatsMobileDestination(modifier = Modifier.fillMaxSize())
-            AnalyticsTab.Map -> MapMobileRoute(modifier = Modifier.fillMaxSize())
+            AnalyticsTab.Trends -> StatsMobileDestination(
+                modifier = Modifier.fillMaxSize(),
+                refreshNonce = refreshNonce,
+            )
+            AnalyticsTab.Map -> MapMobileRoute(
+                modifier = Modifier.fillMaxSize(),
+                refreshNonce = refreshNonce,
+            )
         }
     }
 }
@@ -136,11 +158,15 @@ fun SettingsMobileDestination() {
 @Composable
 private fun StatsMobileDestination(
     modifier: Modifier = Modifier,
+    refreshNonce: Int = 0,
 ) {
     val viewModel = hiltViewModel<StatsViewModel>()
     viewModel.navigator = remember { StatsNavigator() }
     Column(modifier = modifier) {
-        StatsView(viewModel = viewModel)
+        StatsView(
+            viewModel = viewModel,
+            refreshNonce = refreshNonce,
+        )
     }
 }
 

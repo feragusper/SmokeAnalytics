@@ -35,6 +35,7 @@ dependencies {
     // Authentication modules for user session management
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:preferences:domain"))
+    implementation(project(":features:goals:domain"))
 
     // Home feature domain logic
     implementation(project(":features:home:domain"))

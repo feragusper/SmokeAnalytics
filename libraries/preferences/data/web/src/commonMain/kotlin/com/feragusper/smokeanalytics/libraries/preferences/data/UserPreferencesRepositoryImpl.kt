@@ -29,6 +29,8 @@ class UserPreferencesRepositoryImpl(
                 locationTrackingEnabled = preferences.locationTrackingEnabled,
                 currencySymbol = preferences.currencySymbol,
                 accountTier = preferences.accountTier.name,
+                activeGoalType = preferences.activeGoal?.type?.name,
+                activeGoalMetricValue = preferences.activeGoal?.metricValue,
             )
         )
     }

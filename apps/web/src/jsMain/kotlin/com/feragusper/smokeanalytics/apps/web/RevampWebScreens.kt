@@ -1,14 +1,8 @@
 package com.feragusper.smokeanalytics.apps.web
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebDependencies
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebScreen
-import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebDependencies
-import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
@@ -19,11 +13,11 @@ import org.jetbrains.compose.web.dom.Div
 
 @Composable
 fun AnalyticsWebScreen(
-    statsDeps: StatsWebDependencies,
+    selectedTab: AnalyticsTab,
+    onSelectTab: (AnalyticsTab) -> Unit,
+    statsContent: @Composable () -> Unit,
     mapContent: @Composable () -> Unit,
 ) {
-    var selectedTab by remember { mutableStateOf(AnalyticsTab.Trends) }
-
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Analytics & Map",
@@ -39,14 +33,14 @@ fun AnalyticsWebScreen(
                 } else {
                     GhostButton(
                         text = tab.label,
-                        onClick = { selectedTab = tab },
+                        onClick = { onSelectTab(tab) },
                     )
                 }
             }
         }
 
         when (selectedTab) {
-            AnalyticsTab.Trends -> StatsWebScreen(deps = statsDeps)
+            AnalyticsTab.Trends -> statsContent()
             AnalyticsTab.Map -> mapContent()
         }
     }
@@ -59,9 +53,9 @@ fun SettingsAboutWebScreen(
 ) {
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Settings & About",
-            eyebrow = "Preferences",
-            subtitle = "Manage your account, app behavior, and product details in one place.",
+            title = "You",
+            eyebrow = "Personal space",
+            subtitle = "Keep account, routine preferences, goals, and product details in one calmer destination.",
             actions = {
                 PrimaryButton(
                     text = "Share",
@@ -75,7 +69,7 @@ fun SettingsAboutWebScreen(
     }
 }
 
-private enum class AnalyticsTab(val label: String) {
+enum class AnalyticsTab(val label: String) {
     Trends("Frequency"),
     Map("Clusters"),
 }

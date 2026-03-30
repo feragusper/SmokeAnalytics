@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseC
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -31,6 +32,7 @@ class SettingsProcessHolderTest {
     private val signOutUseCase: SignOutUseCase = mockk()
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
+    private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
 
     /**
      * Sets up the test environment by initializing the process holder and configuring mock behaviors.
@@ -43,6 +45,7 @@ class SettingsProcessHolderTest {
             signOutUseCase = signOutUseCase,
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
+            fetchSmokesUseCase = fetchSmokesUseCase,
         )
     }
 
@@ -73,6 +76,7 @@ class SettingsProcessHolderTest {
                 Session.User(id = "123", email = email, displayName = displayName)
             )
             coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+            coEvery { fetchSmokesUseCase(any(), any()) } returns emptyList()
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
@@ -80,6 +84,7 @@ class SettingsProcessHolderTest {
                     email = email,
                     displayName = displayName,
                     preferences = UserPreferences(),
+                    goalProgress = null,
                 )
                 awaitComplete()
             }

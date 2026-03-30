@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GreetingState
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
@@ -42,6 +43,8 @@ sealed interface HomeResult : MVIResult {
      * Triggers navigation to the smoke history screen.
      */
     data object GoToHistory : HomeResult
+
+    data object GoToGoals : HomeResult
 
     /**
      * Indicates that a smoke event was successfully added.
@@ -90,6 +93,7 @@ sealed interface HomeResult : MVIResult {
         val financialSummary: FinancialSummary,
         val rateSummary: RateSummary,
         val gamificationSummary: GamificationSummary,
+        val goalProgress: GoalProgress?,
         val canStartNewDay: Boolean,
     ) : HomeResult
 

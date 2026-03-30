@@ -21,6 +21,7 @@ class HomeWebStore(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val intents = Channel<HomeIntent>(capacity = Channel.Factory.BUFFERED)
+    private var started = false
 
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state.asStateFlow()
@@ -31,6 +32,8 @@ class HomeWebStore(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun start() {
+        if (started) return
+        started = true
         scope.launch {
             intents
                 .receiveAsFlow()
@@ -45,9 +48,6 @@ class HomeWebStore(
                 send(HomeIntent.TickTimeSinceLastCigarette(lastSmoke))
             }
         }
-
-        // bootstrap
-        send(HomeIntent.FetchSmokes)
     }
 
     private fun reduce(result: HomeResult) {
@@ -75,6 +75,8 @@ class HomeWebStore(
                 timeSinceLastCigarette = 0L to 0L,
                 latestSmokes = emptyList(),
                 lastSmoke = null,
+                goalProgress = null,
+                hasActiveGoal = false,
                 canStartNewDay = false,
             )
 
@@ -93,6 +95,8 @@ class HomeWebStore(
                 financialSummary = result.financialSummary,
                 rateSummary = result.rateSummary,
                 gamificationSummary = result.gamificationSummary,
+                goalProgress = result.goalProgress,
+                hasActiveGoal = result.preferences.activeGoal != null,
                 currencySymbol = result.preferences.currencySymbol,
                 canStartNewDay = result.canStartNewDay,
                 elapsedTone = elapsedToneFrom(
@@ -131,7 +135,8 @@ class HomeWebStore(
             )
 
             HomeResult.GoToAuthentication,
-            HomeResult.GoToHistory -> previous // en web lo resolvemos arriba (router) o por callbacks
+            HomeResult.GoToHistory,
+            HomeResult.GoToGoals -> previous // en web lo resolvemos arriba (router) o por callbacks
         }
 
         _state.value = newState

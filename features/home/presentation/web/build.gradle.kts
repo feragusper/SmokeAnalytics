@@ -16,6 +16,7 @@ kotlin {
                 implementation(project(":libraries:logging"))
                 implementation(project(":libraries:preferences:domain"))
                 implementation(project(":libraries:design:web"))
+                implementation(project(":features:goals:domain"))
                 implementation(project(":features:home:domain"))
 
                 implementation(compose.runtime)

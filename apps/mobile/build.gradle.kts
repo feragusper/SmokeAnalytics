@@ -181,6 +181,7 @@ dependencies {
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:chatbot:presentation"))
     implementation(project(":features:chatbot:domain"))
+    implementation(project(":features:goals:domain"))
     implementation(project(":features:history:presentation:mobile"))
     implementation(project(":features:home:presentation:mobile"))
     implementation(project(":features:home:domain"))
@@ -196,6 +197,8 @@ dependencies {
     implementation(libs.animated.navigation.bar)
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.material3)
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
     implementation(libs.play.review.ktx)
     implementation(libs.play.services.maps)
 

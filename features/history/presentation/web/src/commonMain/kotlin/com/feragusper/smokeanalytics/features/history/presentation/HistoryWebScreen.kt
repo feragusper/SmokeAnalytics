@@ -41,11 +41,10 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun HistoryWebScreen(
-    deps: HistoryWebDependencies,
+    store: HistoryWebStore,
     onNavigateUp: () -> Unit,
     onNavigateToAuth: () -> Unit,
 ) {
-    val store = remember(deps) { HistoryWebStore(deps.historyProcessHolder) }
     LaunchedEffect(store) { store.start() }
 
     val state by store.state.collectAsState()
@@ -65,9 +64,10 @@ fun HistoryWebScreen(
             eyebrow = "The Archive",
             subtitle = "Browse the calendar, inspect a single day, and edit the full smoking log without leaving the main shell.",
             badgeText = when {
+                state.displayLoading && state.smokes != null -> "Refreshing"
                 state.displayLoading -> "Loading"
                 state.error != null -> "Needs attention"
-                else -> "${state.smokes.size} entries"
+                else -> "${state.smokes?.size ?: 0} entries"
             },
             badgeTone = when {
                 state.displayLoading -> StatusTone.Busy
@@ -76,7 +76,7 @@ fun HistoryWebScreen(
             },
         )
 
-        if (state.error != null) {
+        if (state.error != null && state.smokes == null) {
             EmptyStateCard(
                 title = if (state.error == HistoryResult.Error.NotLoggedIn) "Sign in required" else "History could not be loaded",
                 message = when (state.error) {
@@ -167,22 +167,26 @@ fun HistoryWebScreen(
         } else {
             ArchiveSummaryCard(
                 selectedLocalDate = selectedLocalDate,
-                entryCount = state.smokes.size,
+                entryCount = state.smokes?.size ?: 0,
             )
         }
 
+        if (state.error != null && state.smokes != null) {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("Latest refresh failed. Showing the last available archive state.")
+            }
+        }
+
         when {
-            state.displayLoading -> {
-                if (!calendarMode) {
-                    repeat(4) {
-                        LoadingSkeletonCard(heightPx = 74, lineWidths = listOf("32%", "48%"))
-                    }
+            state.displayLoading && state.smokes == null -> {
+                repeat(if (calendarMode) 2 else 4) {
+                    LoadingSkeletonCard(heightPx = if (calendarMode) 120 else 74, lineWidths = listOf("32%", "48%"))
                 }
             }
 
             calendarMode -> Unit
 
-            state.smokes.isEmpty() -> EmptyStateCard(
+            state.smokes.isNullOrEmpty() -> EmptyStateCard(
                 title = "Quiet day in the archive",
                 message = "This date has no smoke entries yet. Shift the archive window or add one for the selected day.",
                 actionLabel = "Add smoke",
@@ -200,7 +204,7 @@ fun HistoryWebScreen(
                         }
                     }
                     Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
-                        Text("${state.smokes.size} entries")
+                        Text("${state.smokes?.size ?: 0} entries")
                     }
                 }
 
@@ -336,7 +340,7 @@ private fun HistorySmokeList(
     onDeleteSmoke: (String) -> Unit,
 ) {
     Div(attrs = { classes(SmokeWebStyles.list) }) {
-        state.smokes.forEach { smoke ->
+        state.smokes.orEmpty().forEach { smoke ->
             val id = smoke.id
             val isEditing = editing[id] == true
             val local = smoke.date.toLocalDateTime(tz)

@@ -7,7 +7,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
@@ -19,12 +18,9 @@ import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Canvas
@@ -34,36 +30,22 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun StatsWebScreen(
-    deps: StatsWebDependencies,
+    store: StatsWebStore,
+    currentPeriod: StatsPeriod,
+    selectedDate: LocalDate,
+    onPeriodChange: (StatsPeriod) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
 ) {
-    val store = remember(deps) { StatsWebStore(processHolder = deps.processHolder) }
     LaunchedEffect(store) { store.start() }
 
     val state by store.state.collectAsState()
-
-    var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
-    var selectedDate by remember {
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        mutableStateOf(today)
-    }
-
-    LaunchedEffect(currentPeriod, selectedDate) {
-        store.send(
-            StatsIntent.LoadStats(
-                year = selectedDate.year,
-                month = selectedDate.monthNumber,
-                day = selectedDate.dayOfMonth,
-                period = currentPeriod.toDomainPeriodType(),
-            )
-        )
-    }
 
     StatsWebContent(
         state = state,
         currentPeriod = currentPeriod,
         selectedDate = selectedDate,
-        onPeriodChange = { currentPeriod = it },
-        onDateChange = { selectedDate = it },
+        onPeriodChange = onPeriodChange,
+        onDateChange = onDateChange,
         onReload = {
             store.send(
                 StatsIntent.LoadStats(
@@ -77,9 +59,9 @@ fun StatsWebScreen(
     )
 }
 
-private enum class StatsPeriod { DAY, WEEK, MONTH, YEAR }
+enum class StatsPeriod { DAY, WEEK, MONTH, YEAR }
 
-private fun StatsPeriod.toDomainPeriodType(): FetchSmokeStatsUseCase.PeriodType = when (this) {
+fun StatsPeriod.toDomainPeriodType(): FetchSmokeStatsUseCase.PeriodType = when (this) {
     StatsPeriod.DAY -> FetchSmokeStatsUseCase.PeriodType.DAY
     StatsPeriod.WEEK -> FetchSmokeStatsUseCase.PeriodType.WEEK
     StatsPeriod.MONTH -> FetchSmokeStatsUseCase.PeriodType.MONTH
@@ -100,12 +82,13 @@ private fun StatsWebContent(
             title = "Patterns in motion",
             eyebrow = "Trends",
             badgeText = when {
+                state.displayRefreshLoading -> "Refreshing"
                 state.displayLoading -> "Loading"
                 state.error != null -> "Error"
                 else -> currentPeriod.label()
             },
             badgeTone = when {
-                state.displayLoading -> StatusTone.Busy
+                state.displayLoading || state.displayRefreshLoading -> StatusTone.Busy
                 state.error != null -> StatusTone.Error
                 else -> StatusTone.Default
             }
@@ -165,21 +148,27 @@ private fun StatsWebContent(
         }
 
         when {
-            state.error != null -> EmptyStateCard(
+            state.error != null && state.stats == null -> EmptyStateCard(
                 title = "Pattern view unavailable",
                 message = "The selected range could not be assembled right now. Keep the period and date, then refresh to try this view again.",
                 actionLabel = "Try again",
                 onAction = onReload,
             )
 
-            state.displayLoading || state.stats == null -> LoadingSkeletonCard(
+            state.displayLoading && state.stats == null -> LoadingSkeletonCard(
                 heightPx = 240,
                 lineWidths = listOf("24%", "64%", "42%")
             )
 
             else -> {
-                val stats = state.stats
+                val stats = state.stats ?: return@Div
                 val chartId = remember(currentPeriod) { "statsChart_${currentPeriod.name}" }
+
+                if (state.error != null) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text("Latest refresh failed. Showing the last available analytics snapshot.")
+                    }
+                }
 
                 Div(attrs = {
                     attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;")

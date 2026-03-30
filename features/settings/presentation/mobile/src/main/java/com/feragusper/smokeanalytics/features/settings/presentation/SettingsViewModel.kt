@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.mvi.Settings
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.SettingsViewState
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.process.SettingsProcessHolder
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,6 +67,7 @@ class SettingsViewModel @Inject constructor(
             currentEmail = result.email,
             currentDisplayName = result.displayName,
             preferences = result.preferences,
+            goalProgress = result.goalProgress,
             infoMessage = null,
         )
 
@@ -77,6 +79,7 @@ class SettingsViewModel @Inject constructor(
             currentEmail = null,
             currentDisplayName = null,
             preferences = UserPreferences(),
+            goalProgress = null,
             infoMessage = null,
         )
 

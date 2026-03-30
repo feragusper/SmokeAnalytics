@@ -26,6 +26,7 @@ class StatsWebStore(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val intents = Channel<StatsIntent>(capacity = Channel.Factory.BUFFERED)
+    private var started = false
 
     private val _state = MutableStateFlow(StatsViewState())
 
@@ -47,6 +48,8 @@ class StatsWebStore(
      * Starts the store.
      */
     fun start() {
+        if (started) return
+        started = true
         scope.launch {
             intents
                 .receiveAsFlow()
@@ -59,19 +62,21 @@ class StatsWebStore(
         val previous = _state.value
         _state.value = when (result) {
             StatsResult.Loading -> previous.copy(
-                displayLoading = true,
+                displayLoading = previous.stats == null,
+                displayRefreshLoading = previous.stats != null,
                 error = null,
             )
 
             is StatsResult.Success -> previous.copy(
                 displayLoading = false,
+                displayRefreshLoading = false,
                 stats = result.stats,
                 error = null,
             )
 
             is StatsResult.Error -> previous.copy(
                 displayLoading = false,
-                stats = null,
+                displayRefreshLoading = false,
                 error = StatsViewState.StatsError.Generic,
             )
         }

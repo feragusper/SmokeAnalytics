@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
@@ -32,6 +33,8 @@ data class HomeViewState(
     val financialSummary: FinancialSummary? = null,
     val rateSummary: RateSummary? = null,
     val gamificationSummary: GamificationSummary? = null,
+    val goalProgress: GoalProgress? = null,
+    val hasActiveGoal: Boolean = false,
     val currencySymbol: String = "€",
     val canStartNewDay: Boolean = false,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
