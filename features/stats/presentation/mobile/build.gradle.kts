@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.vico.compose.m2)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.views)
+    implementation(libs.compose.shimmer)
 
     // Unit testing dependencies
     testImplementation(platform(libs.junit.bom))

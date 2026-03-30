@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.produceState
@@ -60,8 +61,12 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MapMobileRoute(
     modifier: Modifier = Modifier,
+    refreshNonce: Int = 0,
     viewModel: MapMobileViewModel = hiltViewModel(),
 ) {
+    LaunchedEffect(refreshNonce) {
+        if (refreshNonce > 0) viewModel.onScreenVisible()
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     MapMobileScreen(
         modifier = modifier,
@@ -187,6 +192,13 @@ private fun LoadedState(
                                 }
                             )
                         }
+                    }
+                    if (state.isRefreshing) {
+                        Text(
+                            text = "Refreshing clusters in background",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }

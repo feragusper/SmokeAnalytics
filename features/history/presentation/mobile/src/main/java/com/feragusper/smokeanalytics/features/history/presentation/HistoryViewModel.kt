@@ -29,11 +29,11 @@ class HistoryViewModel @Inject constructor(
 
     override lateinit var navigator: HistoryNavigator
 
-    init {
-        intents().trySend(HistoryIntent.FetchSmokes(Clock.System.now()))
-    }
-
     override fun transformer(intent: HistoryIntent) = processHolder.processIntent(intent)
+
+    fun onScreenVisible() {
+        intents().trySend(HistoryIntent.FetchSmokes(states().value.selectedDate))
+    }
 
     override fun reducer(
         previous: HistoryViewState,

@@ -12,12 +12,15 @@ import androidx.compose.runtime.remember
  * @param viewModel The [StatsViewModel] that manages the state and business logic for the Statistics feature.
  */
 @Composable
-fun StatsView(viewModel: StatsViewModel) {
+fun StatsView(
+    viewModel: StatsViewModel,
+    refreshNonce: Int = 0,
+) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
 
     // Render the UI based on the current state and send user intents to the ViewModel.
-    viewState.Compose { intent ->
+    viewState.Compose(refreshNonce = refreshNonce) { intent ->
         viewModel.intents().trySend(intent)
     }
 }

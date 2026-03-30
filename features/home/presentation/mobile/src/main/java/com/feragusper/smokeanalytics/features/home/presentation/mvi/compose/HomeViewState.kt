@@ -61,6 +61,9 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlinx.datetime.toJavaInstant
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -82,6 +85,9 @@ data class HomeViewState(
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
+
+    internal val lastSmokeTimeLabel: String?
+        get() = lastSmoke?.date?.toLocalClockLabel()
 
     interface TestTags {
         companion object {
@@ -144,6 +150,7 @@ data class HomeViewState(
                 smokesPerWeek = smokesPerWeek,
                 smokesPerMonth = smokesPerMonth,
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 financialSummary = financialSummary,
@@ -167,6 +174,7 @@ private fun HomeContent(
     smokesPerWeek: Int?,
     smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
@@ -198,6 +206,7 @@ private fun HomeContent(
         item {
             PulseHeroSection(
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmokeTimeLabel,
                 elapsedTone = elapsedTone,
                 rateSummary = rateSummary,
                 isLoading = isLoading,
@@ -243,8 +252,6 @@ private fun HomeContent(
         }
         item {
             ArchiveSnapshotSection(
-                smokesPerWeek = smokesPerWeek,
-                smokesPerMonth = smokesPerMonth,
                 rateSummary = rateSummary,
                 isLoading = isLoading,
                 onHistoryClick = { intent(HomeIntent.OnClickHistory) },
@@ -295,6 +302,7 @@ private fun PulseHeaderSection(
 @Composable
 private fun PulseHeroSection(
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     elapsedTone: ElapsedTone,
     rateSummary: RateSummary?,
     isLoading: Boolean,
@@ -346,7 +354,11 @@ private fun PulseHeroSection(
                     )
                 }
                 Text(
-                    text = "Minutes ago",
+                    text = if (isLoading) {
+                        "Refreshing latest smoke time"
+                    } else {
+                        lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -700,8 +712,6 @@ private fun MoneyMetric(
 
 @Composable
 private fun ArchiveSnapshotSection(
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
     rateSummary: RateSummary?,
     isLoading: Boolean,
     onHistoryClick: () -> Unit,
@@ -725,16 +735,16 @@ private fun ArchiveSnapshotSection(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SnapshotMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Week",
-                    value = smokesPerWeek?.toString(),
-                    supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayWeek) },
+                    title = "Week Avg",
+                    value = rateSummary?.averageSmokesPerDayWeek?.let { "%.1f".format(it) },
+                    supporting = "Cigarettes / day",
                     isLoading = isLoading,
                 )
                 SnapshotMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Month",
-                    value = smokesPerMonth?.toString(),
-                    supporting = rateSummary?.let { "%.1f / day".format(it.averageSmokesPerDayMonth) },
+                    title = "Month Avg",
+                    value = rateSummary?.averageSmokesPerDayMonth?.let { "%.1f".format(it) },
+                    supporting = "Cigarettes / day",
                     isLoading = isLoading,
                 )
             }
@@ -933,3 +943,7 @@ private fun HomeViewPreview() {
         ).Compose({ _, _, _ -> }, {})
     }
 }
+
+private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
+    DateTimeFormatter.ofPattern("HH:mm")
+        .format(toJavaInstant().atZone(ZoneId.systemDefault()).toLocalTime())

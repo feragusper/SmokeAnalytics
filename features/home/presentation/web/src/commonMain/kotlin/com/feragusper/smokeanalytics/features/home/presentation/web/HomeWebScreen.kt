@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
@@ -31,12 +30,10 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun HomeWebScreen(
-    deps: HomeWebDependencies,
+    store: HomeWebStore,
     onNavigateToHistory: () -> Unit,
     onNavigateToGoals: () -> Unit,
 ) {
-    val store = remember(deps) { HomeWebStore(processHolder = deps.homeProcessHolder) }
-
     LaunchedEffect(store) { store.start() }
 
     val state by store.state.collectAsState()
@@ -115,6 +112,7 @@ fun HomeViewState.Render(
             PulseHeroCard(
                 elapsedTone = elapsedTone,
                 timeSinceLastCigarette = timeSinceLastCigarette,
+                lastSmokeTimeLabel = lastSmoke?.date?.toLocalClockLabel(),
                 rateSummary = rateSummary,
             )
 
@@ -159,8 +157,6 @@ fun HomeViewState.Render(
             )
 
             ArchiveSnapshotCard(
-                smokesPerWeek = smokesPerWeek,
-                smokesPerMonth = smokesPerMonth,
                 rateSummary = rateSummary,
             )
 
@@ -211,6 +207,7 @@ private fun GoalFocusCard(
 private fun PulseHeroCard(
     elapsedTone: ElapsedTone,
     timeSinceLastCigarette: Pair<Long, Long>?,
+    lastSmokeTimeLabel: String?,
     rateSummary: RateSummary?,
 ) {
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
@@ -258,7 +255,7 @@ private fun PulseHeroCard(
                         Div(attrs = {
                             attr("style", "font-size:13px;color:var(--sa-color-secondary);")
                         }) {
-                            Text("Minutes ago")
+                            Text(lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago")
                         }
                     }
                 }
@@ -395,8 +392,6 @@ private fun FinancialInsightCard(
 
 @Composable
 private fun ArchiveSnapshotCard(
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
     rateSummary: RateSummary?,
 ) {
     SurfaceCard {
@@ -416,14 +411,14 @@ private fun ArchiveSnapshotCard(
 
             Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;") }) {
                 MetricSummary(
-                    label = "Week",
-                    value = smokesPerWeek?.toString() ?: "--",
-                    meta = rateSummary?.let { "${it.averageSmokesPerDayWeek.formatOneDecimal()} / day" },
+                    label = "Week average",
+                    value = rateSummary?.averageSmokesPerDayWeek?.formatOneDecimal() ?: "--",
+                    meta = "Cigarettes / day",
                 )
                 MetricSummary(
-                    label = "Month",
-                    value = smokesPerMonth?.toString() ?: "--",
-                    meta = rateSummary?.let { "${it.averageSmokesPerDayMonth.formatOneDecimal()} / day" },
+                    label = "Month average",
+                    value = rateSummary?.averageSmokesPerDayMonth?.formatOneDecimal() ?: "--",
+                    meta = "Cigarettes / day",
                 )
             }
         }
@@ -519,6 +514,11 @@ private fun Double.formatOneDecimal(): String {
     val decimal = ((rounded - whole) * 10).toInt()
     return "$whole.$decimal"
 }
+
+private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
+    toLocalDateTime(TimeZone.currentSystemDefault()).time.let { time ->
+        "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
+    }
 
 private fun ElapsedTone.recoveryTitle(): String = when (this) {
     ElapsedTone.Urgent -> "Level 1 Reset"

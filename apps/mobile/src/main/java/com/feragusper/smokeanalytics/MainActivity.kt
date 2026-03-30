@@ -449,6 +449,7 @@ private fun MainScreenNavigationConfigurations(
     ) {
         composable(route = BottomNavigationScreens.Home.route) {
             HomeMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.Home.route,
                 navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = {
                     navController.navigate(BottomNavigationScreens.You.route) {
@@ -473,11 +474,14 @@ private fun MainScreenNavigationConfigurations(
         }
         composable(route = BottomNavigationScreens.Analytics.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
-            AnalyticsMobileDestination()
+            AnalyticsMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.Analytics.route,
+            )
         }
         composable(route = BottomNavigationScreens.History.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             HistoryMobileDestination(
+                active = currentRoute(navController) == BottomNavigationScreens.History.route,
                 navigateToAuthentication = navigateToAuthentication,
             )
         }

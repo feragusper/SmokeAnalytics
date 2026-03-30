@@ -15,6 +15,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreference
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -47,6 +48,7 @@ class HomeProcessHolderTest {
     private val editSmokeUseCase: EditSmokeUseCase = mockk()
     private val deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
+    private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
     private val syncWithWearUseCase: SyncWithWearUseCase = mockk()
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
@@ -63,6 +65,7 @@ class HomeProcessHolderTest {
             editSmokeUseCase = editSmokeUseCase,
             deleteSmokeUseCase = deleteSmokeUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
+            fetchSmokesUseCase = fetchSmokesUseCase,
             fetchSessionUseCase = fetchSessionUseCase,
             syncWithWearUseCase = syncWithWearUseCase,
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
@@ -76,6 +79,7 @@ class HomeProcessHolderTest {
         coEvery { updateUserPreferencesUseCase.invoke(any()) } just Runs
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
         coEvery { fetchSmokeCountListUseCase.invoke(any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
+        coEvery { fetchSmokesUseCase.invoke(any(), any()) } returns emptyList()
         coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs
     }
 

@@ -52,11 +52,6 @@ class HomeViewModel @Inject constructor(
      */
     override lateinit var navigator: HomeNavigator
 
-    init {
-        // Trigger initial intent to fetch smoke events.
-        intents().trySend(HomeIntent.FetchSmokes)
-    }
-
     /**
      * Transforms [HomeIntent] into a stream of [HomeResult]s.
      *
@@ -64,6 +59,12 @@ class HomeViewModel @Inject constructor(
      * @return A Flow of [HomeResult] representing the result of processing the intent.
      */
     override fun transformer(intent: HomeIntent) = processHolder.processIntent(intent)
+
+    fun onScreenVisible() {
+        val state = states().value
+        val hasCachedData = state.timeSinceLastCigarette != null || state.lastSmoke != null || state.smokesPerDay != null
+        intents().trySend(if (hasCachedData) HomeIntent.RefreshFetchSmokes else HomeIntent.FetchSmokes)
+    }
 
     /**
      * Reduces the previous [HomeViewState] and a new [HomeResult] to a new state.

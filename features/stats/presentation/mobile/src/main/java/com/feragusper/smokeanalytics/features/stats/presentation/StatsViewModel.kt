@@ -57,20 +57,33 @@ class StatsViewModel @Inject constructor(
          *
          * This result is used to show a loading indicator while fetching the data.
          */
-        is StatsResult.Loading -> previous.copy(stats = null)
+        is StatsResult.Loading -> previous.copy(
+            displayLoading = previous.stats == null,
+            displayRefreshLoading = previous.stats != null,
+            error = null,
+        )
 
         /**
          * Indicates a successful fetch of statistics data.
          *
          * This result is used to update the UI with the fetched statistics.
          */
-        is StatsResult.Success -> previous.copy(stats = result.stats)
+        is StatsResult.Success -> previous.copy(
+            displayLoading = false,
+            displayRefreshLoading = false,
+            stats = result.stats,
+            error = null,
+        )
 
         /**
          * Indicates that an error occurred while fetching the statistics data.
          *
          * This result is used to display an error message or a fallback state.
          */
-        is StatsResult.Error -> previous.copy(stats = null)
+        is StatsResult.Error -> previous.copy(
+            displayLoading = false,
+            displayRefreshLoading = false,
+            error = result.error,
+        )
     }
 }
