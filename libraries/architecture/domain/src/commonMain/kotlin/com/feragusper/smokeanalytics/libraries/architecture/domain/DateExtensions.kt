@@ -19,10 +19,12 @@ private fun todayLocalDate(timeZone: TimeZone = defaultTimeZone): LocalDate =
     Clock.System.now().toLocalDateTime(timeZone).date
 
 fun currentBucketDate(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): LocalDate = activeCurrentDayStartInstant(
+    now = now,
     timeZone = timeZone,
     dayStartHour = dayStartHour,
     manualDayStartEpochMillis = manualDayStartEpochMillis,
@@ -60,21 +62,25 @@ fun currentDayStartInstant(
 )
 
 fun nextDayStartInstant(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant = currentBucketDate(
+    now = now,
     timeZone = timeZone,
     dayStartHour = dayStartHour,
     manualDayStartEpochMillis = manualDayStartEpochMillis,
 ).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
 
 fun currentWeekStartInstant(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant {
     val today = currentBucketDate(
+        now = now,
         timeZone = timeZone,
         dayStartHour = dayStartHour,
         manualDayStartEpochMillis = manualDayStartEpochMillis,
@@ -84,21 +90,25 @@ fun currentWeekStartInstant(
 }
 
 fun nextWeekStartInstant(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant = currentWeekStartInstant(
+    now = now,
     timeZone = timeZone,
     dayStartHour = dayStartHour,
     manualDayStartEpochMillis = manualDayStartEpochMillis,
 ).plus(7, DateTimeUnit.DAY, timeZone)
 
 fun currentMonthStartInstant(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant {
     val current = currentBucketDate(
+        now = now,
         timeZone = timeZone,
         dayStartHour = dayStartHour,
         manualDayStartEpochMillis = manualDayStartEpochMillis,
@@ -111,11 +121,13 @@ fun currentMonthStartInstant(
 }
 
 fun nextMonthStartInstant(
+    now: Instant = Clock.System.now(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant {
     val current = currentBucketDate(
+        now = now,
         timeZone = timeZone,
         dayStartHour = dayStartHour,
         manualDayStartEpochMillis = manualDayStartEpochMillis,

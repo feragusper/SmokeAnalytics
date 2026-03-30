@@ -84,11 +84,13 @@ class EvaluateGoalProgressUseCase(
         now: Instant,
     ): GoalProgress {
         val currentStart = currentWeekStartInstant(
+            now = now,
             timeZone = timeZone,
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
         val currentEnd = nextWeekStartInstant(
+            now = now,
             timeZone = timeZone,
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
@@ -111,11 +113,13 @@ class EvaluateGoalProgressUseCase(
         now: Instant,
     ): GoalProgress {
         val currentStart = currentMonthStartInstant(
+            now = now,
             timeZone = timeZone,
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
         val currentEnd = nextMonthStartInstant(
+            now = now,
             timeZone = timeZone,
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
@@ -219,6 +223,7 @@ fun goalDataFetchStart(
     now: Instant = Clock.System.now(),
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): Instant = currentMonthStartInstant(
+    now = now,
     timeZone = timeZone,
     dayStartHour = preferences.dayStartHour,
     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
