@@ -139,22 +139,17 @@ fun gamificationSummary(smokes: List<Smoke>): GamificationSummary {
 }
 
 fun SmokeCountListResult.toWidgetSnapshot(preferences: UserPreferences): WidgetSnapshot {
-    val financial = financialSummary(
-        todayCount = countByToday,
-        weekCount = countByWeek,
-        monthCount = countByMonth,
+    val rate = rateSummary(
+        smokeCountListResult = this,
         preferences = preferences,
     )
-    val gamification = gamificationSummary(todaysSmokes)
     val elapsed = timeSinceLastCigarette
     return WidgetSnapshot(
         todayCount = countByToday,
-        weekCount = countByWeek,
-        monthCount = countByMonth,
-        currentStreakHours = gamification.currentStreakHours,
         elapsedHours = elapsed.first,
         elapsedMinutes = elapsed.second,
-        spentToday = financial.spentToday,
+        targetGapMinutes = rate.averageIntervalMinutesToday ?: preferences.awakeMinutesPerDay,
+        averageSmokesPerDayWeek = rate.averageSmokesPerDayWeek,
     )
 }
 

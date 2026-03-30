@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +75,9 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val ACTION_WIDGET_QUICK_ADD = "com.feragusper.smokeanalytics.action.WIDGET_QUICK_ADD"
+    }
 
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var installStateListener: InstallStateUpdatedListener
@@ -83,6 +87,7 @@ class MainActivity : ComponentActivity() {
     private var restartUpdateReady by mutableStateOf(false)
     private var hasPromptedForUpdateInSession = false
     private var hasPromptedForRestartInSession = false
+    private var widgetQuickAddRequestId by mutableStateOf(0)
 
     private val inAppUpdateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
@@ -95,6 +100,7 @@ class MainActivity : ComponentActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleLaunchIntent(intent)
         appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
         installStateListener = InstallStateUpdatedListener { state ->
             when (state.installStatus()) {
@@ -126,6 +132,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainContainerScreen(
+                        widgetQuickAddRequestId = widgetQuickAddRequestId,
                         inAppUpdatePrompt = inAppUpdatePrompt,
                         restartUpdateReady = restartUpdateReady,
                         onDismissUpdatePrompt = { inAppUpdatePrompt = null },
@@ -144,6 +151,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshInAppUpdateState()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLaunchIntent(intent)
     }
 
     override fun onDestroy() {
@@ -210,6 +223,12 @@ class MainActivity : ComponentActivity() {
         appUpdateManager.completeUpdate()
         restartUpdateReady = false
     }
+
+    private fun handleLaunchIntent(intent: Intent?) {
+        if (intent?.action != ACTION_WIDGET_QUICK_ADD) return
+        widgetQuickAddRequestId += 1
+        intent.action = null
+    }
 }
 
 /**
@@ -219,6 +238,7 @@ class MainActivity : ComponentActivity() {
  */
 @Composable
 private fun MainContainerScreen(
+    widgetQuickAddRequestId: Int,
     inAppUpdatePrompt: InAppUpdatePrompt?,
     restartUpdateReady: Boolean,
     onDismissUpdatePrompt: () -> Unit,
@@ -228,6 +248,7 @@ private fun MainContainerScreen(
     navigateToAuthentication: () -> Unit,
 ) {
     val navController = rememberNavController()
+    val activeRoute = currentRoute(navController)
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
@@ -241,6 +262,24 @@ private fun MainContainerScreen(
     var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showFab by remember { mutableStateOf(false) }
     var fabTone by remember { mutableStateOf(ElapsedTone.Urgent) }
+    var lastHandledWidgetQuickAdd by remember { mutableStateOf(0) }
+
+    LaunchedEffect(widgetQuickAddRequestId, activeRoute, fabAction) {
+        if (widgetQuickAddRequestId == 0 || widgetQuickAddRequestId == lastHandledWidgetQuickAdd) return@LaunchedEffect
+        if (activeRoute != BottomNavigationScreens.Home.route) {
+            navController.navigate(BottomNavigationScreens.Home.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+            return@LaunchedEffect
+        }
+        val action = fabAction ?: return@LaunchedEffect
+        action()
+        lastHandledWidgetQuickAdd = widgetQuickAddRequestId
+    }
 
     if (inAppUpdatePrompt != null) {
         InAppUpdateDialog(
@@ -572,6 +611,7 @@ private sealed class BottomNavigationScreens(
 private fun MainContainerScreenPreview() {
     SmokeAnalyticsTheme {
         MainContainerScreen(
+            widgetQuickAddRequestId = 0,
             inAppUpdatePrompt = null,
             restartUpdateReady = false,
             onDismissUpdatePrompt = {},
