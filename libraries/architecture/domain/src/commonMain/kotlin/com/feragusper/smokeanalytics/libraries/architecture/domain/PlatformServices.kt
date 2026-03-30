@@ -23,12 +23,10 @@ interface ExternalLinkService {
 
 data class WidgetSnapshot(
     val todayCount: Int,
-    val weekCount: Int,
-    val monthCount: Int,
-    val currentStreakHours: Long,
     val elapsedHours: Long,
     val elapsedMinutes: Long,
-    val spentToday: Double,
+    val targetGapMinutes: Int,
+    val averageSmokesPerDayWeek: Double,
 )
 
 interface WidgetRefreshService {
