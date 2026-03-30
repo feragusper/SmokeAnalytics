@@ -3,7 +3,9 @@ package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +43,7 @@ import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
+import com.valentinilk.shimmer.shimmer
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -63,17 +66,23 @@ import kotlin.math.max
  * Represents the state of the Stats screen, encapsulating all UI-related data.
  */
 data class StatsViewState(
+    val displayLoading: Boolean = false,
+    val displayRefreshLoading: Boolean = false,
     val stats: SmokeStats? = null,
+    val error: Throwable? = null,
 ) : MVIViewState<StatsIntent> {
 
     enum class StatsPeriod { DAY, WEEK, MONTH, YEAR }
 
     @Composable
-    fun Compose(intent: (StatsIntent) -> Unit) {
+    fun Compose(
+        refreshNonce: Int = 0,
+        intent: (StatsIntent) -> Unit,
+    ) {
         var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
         var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
-        LaunchedEffect(currentPeriod, selectedDate) {
+        LaunchedEffect(refreshNonce, currentPeriod, selectedDate) {
             intent(
                 StatsIntent.LoadStats(
                     selectedDate.year,
@@ -119,6 +128,15 @@ data class StatsViewState(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                 )
+                                Text(
+                                    text = when {
+                                        displayRefreshLoading -> "Refreshing in background"
+                                        error != null && stats != null -> "Latest refresh failed"
+                                        else -> selectedDate.summaryMeta(currentPeriod)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                             Card(
                                 shape = RoundedCornerShape(999.dp),
@@ -128,7 +146,7 @@ data class StatsViewState(
                             ) {
                                 Text(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    text = selectedDate.summaryMeta(currentPeriod),
+                                    text = if (displayRefreshLoading) "Refreshing" else selectedDate.summaryMeta(currentPeriod),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
@@ -155,14 +173,6 @@ data class StatsViewState(
                                     selected = isSelected,
                                     onClick = {
                                         currentPeriod = period
-                                        intent(
-                                            StatsIntent.LoadStats(
-                                                year = selectedDate.year,
-                                                month = selectedDate.month.value,
-                                                day = selectedDate.dayOfMonth,
-                                                period = period.toDomainPeriodType()
-                                            )
-                                        )
                                     },
                                     selectedContentColor = MaterialTheme.colorScheme.primary,
                                     unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -181,16 +191,48 @@ data class StatsViewState(
                             selectedDate = selectedDate,
                             onDateChange = { newDate ->
                                 selectedDate = newDate
-                                intent(
-                                    StatsIntent.LoadStats(
-                                        year = newDate.year,
-                                        month = newDate.month.value,
-                                        day = newDate.dayOfMonth,
-                                        period = currentPeriod.toDomainPeriodType()
-                                    )
-                                )
                             }
                         )
+                    }
+                }
+
+                if (displayLoading && stats == null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .shimmer()
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                    }
+                } else if (error != null && stats == null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                        ),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                text = "Could not refresh trends",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                text = "Retry to rebuild the frequency view for the selected range.",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     }
                 }
 

@@ -21,6 +21,7 @@ class HomeWebStore(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     private val intents = Channel<HomeIntent>(capacity = Channel.Factory.BUFFERED)
+    private var started = false
 
     private val _state = MutableStateFlow(HomeViewState())
     val state: StateFlow<HomeViewState> = _state.asStateFlow()
@@ -31,6 +32,8 @@ class HomeWebStore(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun start() {
+        if (started) return
+        started = true
         scope.launch {
             intents
                 .receiveAsFlow()
@@ -45,9 +48,6 @@ class HomeWebStore(
                 send(HomeIntent.TickTimeSinceLastCigarette(lastSmoke))
             }
         }
-
-        // bootstrap
-        send(HomeIntent.FetchSmokes)
     }
 
     private fun reduce(result: HomeResult) {

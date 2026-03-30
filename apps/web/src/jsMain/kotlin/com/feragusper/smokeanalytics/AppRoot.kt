@@ -7,27 +7,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.apps.web.AnalyticsTab
 import com.feragusper.smokeanalytics.apps.web.AnalyticsWebScreen
 import com.feragusper.smokeanalytics.apps.web.CoachWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
+import com.feragusper.smokeanalytics.apps.web.MapWebStateHolder
 import com.feragusper.smokeanalytics.apps.web.SettingsAboutWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
-import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebScreen
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
-import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebDependencies
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebScreen
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
+import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.features.settings.presentation.web.createSettingsWebDependencies
+import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsPeriod
+import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
+import com.feragusper.smokeanalytics.features.stats.presentation.web.toDomainPeriodType
 import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
+import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
+import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.w3c.dom.events.Event
 
 @Composable
 fun AppRoot(graph: WebAppGraph) {
-    var route by remember {
-        mutableStateOf(parseRouteFromHash(window.location.hash))
+    var route by remember { mutableStateOf(parseRouteFromHash(window.location.hash)) }
+    var analyticsTab by remember { mutableStateOf(AnalyticsTab.Trends) }
+    var statsPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
+    var statsSelectedDate by remember {
+        mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
     }
 
     DisposableEffect(Unit) {
@@ -36,6 +51,50 @@ fun AppRoot(graph: WebAppGraph) {
         }
         window.addEventListener("hashchange", handler)
         onDispose { window.removeEventListener("hashchange", handler) }
+    }
+
+    val homeStore = remember(graph) { HomeWebStore(processHolder = graph.homeProcessHolder) }
+    val historyStore = remember(graph) {
+        HistoryWebStore(
+            HistoryProcessHolder(
+                addSmokeUseCase = graph.addSmokeUseCase,
+                editSmokeUseCase = graph.editSmokeUseCase,
+                deleteSmokeUseCase = graph.deleteSmokeUseCase,
+                fetchSmokesUseCase = graph.fetchSmokesUseCase,
+                fetchSessionUseCase = graph.fetchSessionUseCase,
+                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+                locationCaptureService = graph.locationCaptureService,
+            )
+        )
+    }
+    val authDeps = remember(graph) {
+        createAuthenticationWebDependencies(
+            fetchSessionUseCase = graph.fetchSessionUseCase,
+            signOutUseCase = graph.signOutUseCase,
+            signInWithGoogle = { }
+        )
+    }
+    val statsDeps = remember(graph) {
+        createStatsWebDependencies(
+            fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+        )
+    }
+    val statsStore = remember(statsDeps) { StatsWebStore(processHolder = statsDeps.processHolder) }
+    val mapStateHolder = remember(graph) {
+        MapWebStateHolder(
+            fetchSmokesUseCase = graph.fetchSmokesUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+        )
+    }
+    val settingsDeps = remember(graph) {
+        createSettingsWebDependencies(
+            fetchSessionUseCase = graph.fetchSessionUseCase,
+            signOutUseCase = graph.signOutUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
+            fetchSmokesUseCase = graph.fetchSmokesUseCase,
+        )
     }
 
     LaunchedEffect(route) {
@@ -49,47 +108,33 @@ fun AppRoot(graph: WebAppGraph) {
         }
     }
 
-    val homeDeps = remember(graph) {
-        HomeWebDependencies(homeProcessHolder = graph.homeProcessHolder)
-    }
+    LaunchedEffect(route, analyticsTab, statsPeriod, statsSelectedDate) {
+        when (route) {
+            WebRoute.Home -> {
+                val homeState = homeStore.state.value
+                val hasCachedData = homeState.lastSmoke != null || homeState.timeSinceLastCigarette != null
+                homeStore.send(if (hasCachedData) HomeIntent.RefreshFetchSmokes else HomeIntent.FetchSmokes)
+            }
 
-    val historyDeps = remember(graph) {
-        HistoryWebDependencies(
-            historyProcessHolder = HistoryProcessHolder(
-                addSmokeUseCase = graph.addSmokeUseCase,
-                editSmokeUseCase = graph.editSmokeUseCase,
-                deleteSmokeUseCase = graph.deleteSmokeUseCase,
-                fetchSmokesUseCase = graph.fetchSmokesUseCase,
-                fetchSessionUseCase = graph.fetchSessionUseCase,
-                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-                locationCaptureService = graph.locationCaptureService,
-            )
-        )
-    }
+            WebRoute.History -> {
+                historyStore.send(HistoryIntent.FetchSmokes(historyStore.state.value.selectedDate))
+            }
 
-    val authDeps = remember(graph) {
-        createAuthenticationWebDependencies(
-            fetchSessionUseCase = graph.fetchSessionUseCase,
-            signOutUseCase = graph.signOutUseCase,
-            signInWithGoogle = { }
-        )
-    }
+            WebRoute.Analytics -> when (analyticsTab) {
+                AnalyticsTab.Trends -> statsStore.send(
+                    StatsIntent.LoadStats(
+                        year = statsSelectedDate.year,
+                        month = statsSelectedDate.monthNumber,
+                        day = statsSelectedDate.dayOfMonth,
+                        period = statsPeriod.toDomainPeriodType(),
+                    )
+                )
 
-    val statsDeps = remember(graph) {
-        createStatsWebDependencies(
-            fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-        )
-    }
+                AnalyticsTab.Map -> mapStateHolder.refresh()
+            }
 
-    val settingsDeps = remember(graph) {
-        createSettingsWebDependencies(
-            fetchSessionUseCase = graph.fetchSessionUseCase,
-            signOutUseCase = graph.signOutUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
-            fetchSmokesUseCase = graph.fetchSmokesUseCase,
-        )
+            else -> Unit
+        }
     }
 
     WebScaffold(
@@ -98,18 +143,25 @@ fun AppRoot(graph: WebAppGraph) {
     ) {
         when (route) {
             WebRoute.Home -> HomeWebScreen(
-                deps = homeDeps,
+                store = homeStore,
                 onNavigateToHistory = { navigateTo(WebRoute.History) },
                 onNavigateToGoals = { navigateTo(WebRoute.Settings) },
             )
 
             WebRoute.Analytics -> AnalyticsWebScreen(
-                statsDeps = statsDeps,
-                mapContent = {
-                    MapWebScreen(
-                        fetchSmokesUseCase = graph.fetchSmokesUseCase,
-                        fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+                selectedTab = analyticsTab,
+                onSelectTab = { analyticsTab = it },
+                statsContent = {
+                    StatsWebScreen(
+                        store = statsStore,
+                        currentPeriod = statsPeriod,
+                        selectedDate = statsSelectedDate,
+                        onPeriodChange = { statsPeriod = it },
+                        onDateChange = { statsSelectedDate = it },
                     )
+                },
+                mapContent = {
+                    MapWebScreen(stateHolder = mapStateHolder)
                 },
             )
 
@@ -128,7 +180,7 @@ fun AppRoot(graph: WebAppGraph) {
             )
 
             WebRoute.History -> HistoryWebScreen(
-                deps = historyDeps,
+                store = historyStore,
                 onNavigateUp = { navigateTo(WebRoute.Home) },
                 onNavigateToAuth = { navigateTo(WebRoute.Auth) },
             )

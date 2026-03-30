@@ -1,89 +1,65 @@
 package com.feragusper.smokeanalytics.apps.web
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
-import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.clusterSmokesForMap
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeMapRange
-import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Iframe
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun MapWebScreen(
-    fetchSmokesUseCase: FetchSmokesUseCase,
-    fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
+    stateHolder: MapWebStateHolder,
 ) {
-    var period by remember { mutableStateOf(SmokeMapPeriod.Week) }
-    var clusters by remember { mutableStateOf<List<SmokeMapCluster>>(emptyList()) }
-    var selectedCluster by remember { mutableStateOf<SmokeMapCluster?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var preferences by remember { mutableStateOf<com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences?>(null) }
-
-    LaunchedEffect(period) {
-        loading = true
-        val fetchedPreferences = fetchUserPreferencesUseCase()
-        preferences = fetchedPreferences
-        val (start, end) = smokeMapRange(
-            period = period,
-            dayStartHour = fetchedPreferences.dayStartHour,
-            manualDayStartEpochMillis = fetchedPreferences.manualDayStartEpochMillis,
-        )
-        clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), period)
-        selectedCluster = clusters.maxByOrNull { it.count }
-        loading = false
-    }
+    val state = stateHolder.state
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "Geographic Clusters",
             eyebrow = "Locations",
-            badgeText = "${clusters.sumOf { it.count }} smokes",
+            badgeText = if (state.isRefreshing) "Refreshing" else "${state.clusters.sumOf { it.count }} smokes",
             subtitle = "Inspect repeated smoking areas and the places that dominate the current map period.",
             actions = {
                 SmokeMapPeriod.entries.forEach { candidate ->
                     PrimaryButton(
                         text = candidate.name,
-                        onClick = { period = candidate },
-                        enabled = !loading && candidate != period,
+                        onClick = { stateHolder.onPeriodChange(candidate) },
+                        enabled = !state.isLoading && candidate != state.period,
                     )
                 }
             }
         )
 
         when {
-            loading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
-            preferences?.locationTrackingEnabled == false -> EmptyStateCard(
+            state.isLoading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
+            state.preferences?.locationTrackingEnabled == false -> EmptyStateCard(
                 title = "Location tracking is off",
                 message = "Enable location tracking in You to unlock map insights, repeated-area detection, and the geographic side of Analytics.",
             )
-            clusters.isEmpty() -> EmptyStateCard(
+            state.clusters.isEmpty() -> EmptyStateCard(
                 title = "No mapped smokes yet",
                 message = "There is not enough location-linked history for this period yet. Add more smoke entries with location tracking enabled to build clusters.",
             )
 
             else -> {
-                val activeCluster = selectedCluster ?: clusters.first()
+                val activeCluster = state.selectedCluster ?: state.clusters.first()
 
                 Div(attrs = {
                     attr("style", "display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);gap:16px;align-items:start;")
                 }) {
                     SurfaceCard {
                         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+                            if (state.isRefreshing) {
+                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Refreshing clusters in background.") }
+                            } else if (state.error) {
+                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Latest refresh failed. Showing the last available clusters.") }
+                            }
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                                 Text("${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.")
@@ -116,11 +92,11 @@ fun MapWebScreen(
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                                 Text("Pick an area to inspect on Google Maps.")
                             }
-                            clusters.take(4).forEach { cluster ->
+                            state.clusters.take(4).forEach { cluster ->
                                 Div(
                                     attrs = {
                                         classes(SmokeWebStyles.listRow)
-                                        onClick { selectedCluster = cluster }
+                                        onClick { stateHolder.onSelectCluster(cluster) }
                                         attr("style", "cursor:pointer;margin-top:10px;")
                                     }
                                 ) {
@@ -132,7 +108,7 @@ fun MapWebScreen(
                                     }
                                     PrimaryButton(
                                         text = if (cluster == activeCluster) "Viewing" else "View",
-                                        onClick = { selectedCluster = cluster },
+                                        onClick = { stateHolder.onSelectCluster(cluster) },
                                         enabled = cluster != activeCluster,
                                     )
                                 }

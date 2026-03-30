@@ -1,7 +1,8 @@
-package com.feragusper.smokeanalytics.map
+package com.feragusper.smokeanalytics.apps.web
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
@@ -9,47 +10,36 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPerio
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.clusterSmokesForMap
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeMapRange
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class MapMobileViewModel @Inject constructor(
+class MapWebStateHolder(
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(MapMobileState())
-    val state: StateFlow<MapMobileState> = _state.asStateFlow()
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+) {
+    var state by mutableStateOf(MapWebUiState())
+        private set
 
     fun onPeriodChange(period: SmokeMapPeriod) {
-        _state.value = _state.value.copy(period = period)
+        state = state.copy(period = period)
         refresh()
     }
 
-    fun onScreenVisible() {
-        if (_state.value.hasLoadedOnce) {
-            refresh(isRefresh = true)
-        } else {
-            refresh()
-        }
-    }
-
     fun onSelectCluster(cluster: SmokeMapCluster) {
-        _state.value = _state.value.copy(selectedCluster = cluster)
+        state = state.copy(selectedCluster = cluster)
     }
 
-    fun refresh(isRefresh: Boolean = false) {
-        viewModelScope.launch {
-            val previous = _state.value
-            _state.value = previous.copy(
-                isLoading = !previous.hasLoadedOnce,
-                isRefreshing = isRefresh && previous.hasLoadedOnce,
-                error = false,
-            )
+    fun refresh() {
+        val previous = state
+        state = previous.copy(
+            isLoading = !previous.hasLoadedOnce,
+            isRefreshing = previous.hasLoadedOnce,
+            error = false,
+        )
+        scope.launch {
             runCatching {
                 val preferences = fetchUserPreferencesUseCase()
                 val (start, end) = smokeMapRange(
@@ -57,8 +47,7 @@ class MapMobileViewModel @Inject constructor(
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 )
-                val smokes = fetchSmokesUseCase(start, end)
-                val clusters = clusterSmokesForMap(smokes, previous.period)
+                val clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), previous.period)
                 previous.copy(
                     isLoading = false,
                     isRefreshing = false,
@@ -66,18 +55,22 @@ class MapMobileViewModel @Inject constructor(
                     preferences = preferences,
                     clusters = clusters,
                     selectedCluster = previous.selectedCluster?.let { current ->
-                        clusters.firstOrNull { it.label == current.label } ?: clusters.firstOrNull()
-                    } ?: clusters.firstOrNull(),
+                        clusters.firstOrNull { it.label == current.label } ?: clusters.maxByOrNull { it.count }
+                    } ?: clusters.maxByOrNull { it.count },
                     error = false,
                 )
             }.getOrElse {
-                previous.copy(isLoading = false, isRefreshing = false, error = true)
-            }.also { _state.value = it }
+                previous.copy(
+                    isLoading = false,
+                    isRefreshing = false,
+                    error = true,
+                )
+            }.also { state = it }
         }
     }
 }
 
-data class MapMobileState(
+data class MapWebUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val hasLoadedOnce: Boolean = false,
