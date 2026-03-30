@@ -856,17 +856,27 @@ private fun pulseSummaryText(
     averageGapMinutes == null || averageGapMinutes <= 0 -> "Stay with this gap and watch the daily pulse settle."
     elapsedMinutes >= averageGapMinutes -> {
         val delta = elapsedMinutes - averageGapMinutes
-        "You are ${delta} minutes beyond your average gap today."
+        "You are ${delta.toDurationLabel()} beyond your average gap today."
     }
     else -> {
         val remaining = averageGapMinutes - elapsedMinutes
-        "$remaining minutes until you meet today's average gap."
+        "${remaining.toDurationLabel()} until you meet today's average gap."
     }
 }
 
 private fun Int.toGapLabel(): String = when {
     this >= 60 -> "${this / 60}h ${this % 60}m"
     else -> "${this}m"
+}
+
+private fun Long.toDurationLabel(): String {
+    val hours = this / 60
+    val minutes = this % 60
+    return when {
+        hours <= 0 -> "${minutes}m"
+        minutes == 0L -> "${hours}h"
+        else -> "${hours}h ${minutes}m"
+    }
 }
 
 private fun ElapsedTone.recoveryTitle(): String = when (this) {
@@ -918,7 +928,7 @@ private fun HomeViewPreview() {
             smokesPerMonth = 58,
             timeSinceLastCigarette = 4L to 22L,
             greetingTitle = "Good morning",
-            greetingMessage = "You are 12 minutes beyond your average gap today.",
+            greetingMessage = "You are 12m beyond your average gap today.",
             financialSummary = FinancialSummary(
                 spentToday = 2.45,
                 spentWeek = 13.8,
