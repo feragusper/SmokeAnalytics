@@ -78,14 +78,23 @@ class SmokeRepositoryImpl @Inject constructor(
         val startMillis = (startDate ?: firstInstantThisMonth()).toEpochMilliseconds().toDouble()
         val endMillis = (endDate ?: nextDayStartInstant()).toEpochMilliseconds().toDouble()
 
-        var query: Query = smokesQuery()
+        val query: Query = smokesQuery()
             .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
             .whereGreaterThanOrEqualTo(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
             .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, endMillis)
 
         val result = query.get().await()
+        val previousDocument = smokesQuery()
+            .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
+            .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
+            .limit(1)
+            .get()
+            .await()
+            .documents
+            .firstOrNull()
 
-        val instants = result.documents.mapNotNull { it.getInstant() }
+        val documents = previousDocument?.let { result.documents + it } ?: result.documents
+        val instants = documents.mapNotNull { it.getInstant() }
 
         return result.documents.mapIndexedNotNull { index, document ->
             val currentInstant = instants.getOrNull(index) ?: return@mapIndexedNotNull null

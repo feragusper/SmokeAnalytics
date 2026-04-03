@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.amshove.kluent.shouldBe
+import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -118,8 +119,8 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.EditSmoke(id, date))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
-                awaitItem() shouldBe HistoryResult.EditSmokeSuccess
+                awaitItem() shouldBeEqualTo HistoryResult.EditSmokeInFlight(id)
+                awaitItem() shouldBeEqualTo HistoryResult.EditSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }
@@ -133,8 +134,8 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.DeleteSmoke(id))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
-                awaitItem() shouldBe HistoryResult.DeleteSmokeSuccess
+                awaitItem() shouldBeEqualTo HistoryResult.DeleteSmokeInFlight(id)
+                awaitItem() shouldBeEqualTo HistoryResult.DeleteSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
             }

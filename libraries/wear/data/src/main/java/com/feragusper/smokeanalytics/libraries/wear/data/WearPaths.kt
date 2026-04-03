@@ -11,11 +11,8 @@ object WearPaths {
     // Path to add a smoke record
     const val ADD_SMOKE = "/add-smoke"
 
-    // Constants representing the different smoke count metrics
-    const val SMOKE_COUNT_TODAY = "smoke_count_today" // Count of smokes for today
-    const val SMOKE_COUNT_WEEK = "smoke_count_week" // Count of smokes for the current week
-    const val SMOKE_COUNT_MONTH = "smoke_count_month" // Count of smokes for the current month
-
-    // Path to get the timestamp of the last smoke
+    const val SMOKE_COUNT_TODAY = "smoke_count_today"
+    const val AVERAGE_SMOKES_PER_DAY_WEEK = "average_smokes_per_day_week"
+    const val TARGET_GAP_MINUTES = "target_gap_minutes"
     const val LAST_SMOKE_TIMESTAMP = "last_smoke_timestamp"
 }

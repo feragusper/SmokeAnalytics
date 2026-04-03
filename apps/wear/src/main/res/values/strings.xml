@@ -5,5 +5,6 @@
     <string name="last_smoke_hours_ago">Last smoke %1$d h ago</string>
     <string name="last_smoke_days_ago">Last smoke %1$d d ago</string>
     <string name="stats_today_short">Today %1$d</string>
-    <string name="stats_summary">Week %1$d · Month %2$d</string>
+    <string name="target_gap_short">Target gap %1$s</string>
+    <string name="average_week_short">7d avg %1$s</string>
 </resources>

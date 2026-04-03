@@ -433,10 +433,56 @@ private fun GoalFocusSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            goalProgress?.progressFraction?.let { progressFraction ->
+                LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            goalProgress?.warningLabel?.let {
+                GoalAssistPill(
+                    text = it,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+            goalProgress?.celebrationLabel?.let {
+                GoalAssistPill(
+                    text = it,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            goalProgress?.streakLabel?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Button(onClick = onOpenGoals) {
                 Text(if (hasActiveGoal) "Review in You" else "Set in You")
             }
         }
+    }
+}
+
+@Composable
+private fun GoalAssistPill(
+    text: String,
+    containerColor: Color,
+    contentColor: Color,
+) {
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(999.dp),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 
