@@ -928,7 +928,7 @@ private fun HomeViewPreview() {
             smokesPerMonth = 58,
             timeSinceLastCigarette = 4L to 22L,
             greetingTitle = "Good morning",
-            greetingMessage = "You are 12 minutes beyond your average gap today.",
+            greetingMessage = "You are 12m beyond your average gap today.",
             financialSummary = FinancialSummary(
                 spentToday = 2.45,
                 spentWeek = 13.8,
