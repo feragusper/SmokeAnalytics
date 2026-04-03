@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.goals.domain
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.activeCurrentDayStartInstant
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentBucketDate
+import com.feragusper.smokeanalytics.libraries.architecture.domain.dayBucketDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartInstant
@@ -11,6 +13,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreference
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlin.math.roundToInt
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -56,24 +59,61 @@ class EvaluateGoalProgressUseCase(
         )
         val todayCount = smokes.count { it.date >= currentDayStart && it.date < nextDayStart }
         val remaining = (goal.maxCigarettesPerDay - todayCount).coerceAtLeast(0)
+        val currentBucketDate = currentBucketDate(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        val countsByBucketDate = smokes.groupingBy {
+            it.date.dayBucketDate(
+                timeZone = timeZone,
+                dayStartHour = preferences.dayStartHour,
+                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+            )
+        }.eachCount()
+        val yesterdayBucketDate = currentBucketDate.minus(1, DateTimeUnit.DAY)
+        val yesterdayCount = countsByBucketDate[yesterdayBucketDate] ?: 0
+        val hasHistoryBeforeToday = countsByBucketDate.keys.any { it < currentBucketDate }
+        val yesterdayCompleted = hasHistoryBeforeToday && yesterdayCount <= goal.maxCigarettesPerDay
+        val streakDays = countsByBucketDate.consecutiveCompletedDays(
+            endDateInclusive = yesterdayBucketDate,
+            maxPerDay = goal.maxCigarettesPerDay,
+        )
         val status = when {
             todayCount < goal.maxCigarettesPerDay -> GoalStatus.OnTrack
             todayCount == goal.maxCigarettesPerDay -> GoalStatus.Completed
             else -> GoalStatus.OffTrack
+        }
+        val warningLabel = when {
+            todayCount == goal.maxCigarettesPerDay - 1 -> "One more cigarette breaks today's cap."
+            todayCount > goal.maxCigarettesPerDay -> "Today's cap is broken."
+            else -> null
+        }
+        val celebrationLabel = when {
+            todayCount == goal.maxCigarettesPerDay -> "You reached today's cap without going over. Hold here to keep the win."
+            todayCount == 0 && yesterdayCompleted -> "Yesterday stayed under your cap. Strong work."
+            else -> null
         }
 
         return GoalProgress(
             goal = goal,
             title = "Daily cap",
             targetLabel = "Target: at most ${goal.maxCigarettesPerDay} today",
-            progressLabel = "$todayCount smoked today",
+            progressLabel = "$todayCount / ${goal.maxCigarettesPerDay} smoked today",
             supportingText = when (status) {
-                GoalStatus.OnTrack -> "$remaining left before reaching today's cap."
-                GoalStatus.Completed -> "You reached today's cap. Holding here keeps the goal intact."
+                GoalStatus.OnTrack -> warningLabel ?: "$remaining left before reaching today's cap."
+                GoalStatus.Completed -> celebrationLabel ?: "You reached today's cap. Holding here keeps the goal intact."
                 GoalStatus.OffTrack -> "Today's cap is exceeded. The next win is stopping the count from climbing further."
                 GoalStatus.NotEnoughData -> ""
             },
             status = status,
+            progressFraction = (todayCount.toFloat() / goal.maxCigarettesPerDay.toFloat()).coerceIn(0f, 1f),
+            warningLabel = warningLabel,
+            celebrationLabel = celebrationLabel,
+            streakDays = streakDays,
+            streakLabel = streakDays.takeIf { it > 0 }?.let(::formatStreakLabel),
+            isBroken = todayCount > goal.maxCigarettesPerDay,
         )
     }
 
@@ -156,6 +196,7 @@ class EvaluateGoalProgressUseCase(
                 baselineLabel = baselineLabel,
                 supportingText = "A previous comparison period is needed before this goal can be evaluated reliably.",
                 status = GoalStatus.NotEnoughData,
+                progressFraction = null,
             )
         }
 
@@ -180,6 +221,7 @@ class EvaluateGoalProgressUseCase(
                 GoalStatus.NotEnoughData -> ""
             },
             status = status,
+            progressFraction = ((currentReduction / reductionPercent).coerceAtLeast(0.0).coerceIn(0.0, 1.0)).toFloat(),
         )
     }
 
@@ -214,9 +256,29 @@ class EvaluateGoalProgressUseCase(
                 GoalStatus.NotEnoughData -> ""
             },
             status = status,
+            progressFraction = (elapsedMinutes.toFloat() / goal.targetMinutes.toFloat()).coerceIn(0f, 1f),
         )
     }
 }
+
+private fun Map<LocalDate, Int>.consecutiveCompletedDays(
+    endDateInclusive: LocalDate,
+    maxPerDay: Int,
+): Int {
+    val firstTrackedDate = keys.minOrNull() ?: return 0
+    var streak = 0
+    var cursor = endDateInclusive
+    while (cursor >= firstTrackedDate) {
+        val count = this[cursor] ?: 0
+        if (count > maxPerDay) break
+        streak += 1
+        cursor = cursor.minus(1, DateTimeUnit.DAY)
+    }
+    return streak
+}
+
+private fun formatStreakLabel(days: Int): String =
+    if (days == 1) "1 day completed in a row" else "$days days completed in a row"
 
 fun goalDataFetchStart(
     preferences: UserPreferences,

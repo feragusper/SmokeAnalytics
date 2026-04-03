@@ -58,11 +58,14 @@ class WearSyncManagerImpl(
          */
         override suspend fun syncWithWear() {
             val preferences = userPreferencesRepository.fetch()
+            val smokeCount = smokeRepository.fetchSmokeCount(
+                dayStartHour = preferences.dayStartHour,
+                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+            )
             respondToWearWithSmokeCount(
-                smokeRepository.fetchSmokeCount(
-                    dayStartHour = preferences.dayStartHour,
-                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
-                )
+                smokeCount = smokeCount,
+                targetGapMinutes = smokeCount.targetGapMinutes(preferences.awakeMinutesPerDay),
+                averageSmokesPerDayWeek = smokeCount.averageSmokesPerDayWeek(),
             )
         }
 
@@ -89,11 +92,15 @@ class WearSyncManagerImpl(
          *
          * @param smokeCount The [SmokeCount] object containing today's, week's, and month's smoke data.
          */
-        private fun respondToWearWithSmokeCount(smokeCount: SmokeCount) {
+        private fun respondToWearWithSmokeCount(
+            smokeCount: SmokeCount,
+            targetGapMinutes: Int,
+            averageSmokesPerDayWeek: Double,
+        ) {
             val putDataMapRequest = PutDataMapRequest.create(WearPaths.SMOKE_DATA).apply {
                 dataMap.putInt(WearPaths.SMOKE_COUNT_TODAY, smokeCount.today.size)
-                dataMap.putInt(WearPaths.SMOKE_COUNT_WEEK, smokeCount.week)
-                dataMap.putInt(WearPaths.SMOKE_COUNT_MONTH, smokeCount.month)
+                dataMap.putInt(WearPaths.TARGET_GAP_MINUTES, targetGapMinutes)
+                dataMap.putDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK, averageSmokesPerDayWeek)
                 smokeCount.lastSmoke?.date?.utcMillis()?.let {
                     dataMap.putLong(WearPaths.LAST_SMOKE_TIMESTAMP, it)
                 }
@@ -128,7 +135,12 @@ class WearSyncManagerImpl(
          * @param onDataReceived Callback function to handle the received data.
          */
         override fun listenForDataUpdates(
-            onDataReceived: (smokesToday: Int, smokesPerWeek: Int, smokesPerMonth: Int, lastSmokeTimestamp: Long?) -> Unit
+            onDataReceived: (
+                todayCount: Int,
+                targetGapMinutes: Int,
+                averageSmokesPerDayWeek: Double,
+                lastSmokeTimestamp: Long?,
+            ) -> Unit
         ) {
             Timber.d("listenForDataUpdates")
 
@@ -141,9 +153,9 @@ class WearSyncManagerImpl(
 
                             onDataReceived(
                                 dataMap.getInt(WearPaths.SMOKE_COUNT_TODAY),
-                                dataMap.getInt(WearPaths.SMOKE_COUNT_WEEK),
-                                dataMap.getInt(WearPaths.SMOKE_COUNT_MONTH),
-                                dataMap.getLong(WearPaths.LAST_SMOKE_TIMESTAMP)
+                                dataMap.getInt(WearPaths.TARGET_GAP_MINUTES),
+                                dataMap.getDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK),
+                                dataMap.getLong(WearPaths.LAST_SMOKE_TIMESTAMP),
                             )
                         }
                     }
@@ -194,3 +206,10 @@ class WearSyncManagerImpl(
     private val dataClient: DataClient by lazy { Wearable.getDataClient(context) }
     private val messageClient: MessageClient by lazy { Wearable.getMessageClient(context) }
 }
+
+private fun SmokeCount.targetGapMinutes(awakeMinutesPerDay: Int): Int = when (val count = today.size) {
+    0 -> awakeMinutesPerDay
+    else -> (awakeMinutesPerDay / count).coerceAtLeast(1)
+}
+
+private fun SmokeCount.averageSmokesPerDayWeek(): Double = week / 7.0

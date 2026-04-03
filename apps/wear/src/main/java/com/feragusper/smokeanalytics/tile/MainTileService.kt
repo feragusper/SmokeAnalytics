@@ -52,9 +52,9 @@ class MainTileService : SuspendingTileService() {
         lifecycleScope.launch {
             viewModel.states()
                 .distinctUntilChanged { old, new ->
-                    old.smokesPerDay == new.smokesPerDay &&
-                        old.smokesPerWeek == new.smokesPerWeek &&
-                        old.smokesPerMonth == new.smokesPerMonth &&
+                    old.todayCount == new.todayCount &&
+                        old.targetGapMinutes == new.targetGapMinutes &&
+                        old.averageSmokesPerDayWeek == new.averageSmokesPerDayWeek &&
                         old.lastSmokeTimestamp == new.lastSmokeTimestamp
                 }
                 .collect {
@@ -120,19 +120,22 @@ class MainTileService : SuspendingTileService() {
 
         // Format last smoke time
         val lastSmokeText = formatLastSmokeTime(state.lastSmokeTimestamp)
-        val summaryText = getString(
-            R.string.stats_summary,
-            state.smokesPerWeek ?: 0,
-            state.smokesPerMonth ?: 0,
-        )
-
-        val statsText = Text.Builder(this, getString(R.string.stats_today_short, state.smokesPerDay ?: 0))
+        val statsText = Text.Builder(this, getString(R.string.stats_today_short, state.todayCount ?: 0))
             .setTypography(Typography.TYPOGRAPHY_TITLE3)
             .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
             .setMaxLines(1)
             .build()
 
-        val content = Text.Builder(this, "$summaryText\n$lastSmokeText")
+        val content = Text.Builder(
+            this,
+            buildString {
+                append(lastSmokeText)
+                append('\n')
+                append(getString(R.string.target_gap_short, (state.targetGapMinutes ?: 0).toGapLabel()))
+                append('\n')
+                append(getString(R.string.average_week_short, (state.averageSmokesPerDayWeek ?: 0.0).formatOneDecimal()))
+            }
+        )
             .setTypography(Typography.TYPOGRAPHY_BODY2)
             .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
             .setMaxLines(3)
@@ -193,3 +196,16 @@ class MainTileService : SuspendingTileService() {
     }
 
 }
+
+private fun Int.toGapLabel(): String {
+    if (this <= 0) return "--"
+    val hours = this / 60
+    val minutes = this % 60
+    return when {
+        hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+        hours > 0 -> "${hours}h"
+        else -> "${minutes}m"
+    }
+}
+
+private fun Double.formatOneDecimal(): String = String.format("%.1f", this)

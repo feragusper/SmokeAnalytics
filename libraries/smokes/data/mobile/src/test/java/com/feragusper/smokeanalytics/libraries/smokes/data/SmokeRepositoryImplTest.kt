@@ -105,6 +105,28 @@ class SmokeRepositoryImplTest {
             }
 
         @Test
+        fun `GIVEN fetch starts after an older smoke WHEN fetch smokes is called THEN first row keeps the real previous gap`() =
+            runTest {
+                mockFetchSmokes(
+                    resultDocuments = listOf(mockDocumentSnapshot(id1, instant1)),
+                    previousDocument = mockDocumentSnapshot(id2, instant2),
+                )
+
+                val result = smokeRepository.fetchSmokes(instant1, Instant.fromEpochMilliseconds(1_672_580_000_000))
+
+                assertEquals(
+                    listOf(
+                        Smoke(
+                            id = id1,
+                            date = instant1,
+                            timeElapsedSincePreviousSmoke = timeAfter2
+                        )
+                    ),
+                    result
+                )
+            }
+
+        @Test
         fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() = runTest {
             val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
             val smokeEntitySlot = slot<SmokeEntity>()
@@ -179,9 +201,17 @@ class SmokeRepositoryImplTest {
                 smokeRepository.deleteSmoke(id)
             }
 
-        private fun mockFetchSmokes() {
+        private fun mockFetchSmokes(
+            resultDocuments: List<DocumentSnapshot> = listOf(
+                mockDocumentSnapshot(id1, instant1),
+                mockDocumentSnapshot(id2, instant2),
+            ),
+            previousDocument: DocumentSnapshot? = null,
+        ) {
             val query = mockk<Query>(relaxed = true)
             val finalQuery = mockk<Query>(relaxed = true)
+            val previousQuery = mockk<Query>(relaxed = true)
+            val previousLimitedQuery = mockk<Query>(relaxed = true)
 
             every {
                 collectionReference.orderBy(
@@ -197,6 +227,12 @@ class SmokeRepositoryImplTest {
             every {
                 finalQuery.whereLessThan(any<String>(), any())
             } returns finalQuery
+            every {
+                query.whereLessThan(any<String>(), any())
+            } returns previousQuery
+            every {
+                previousQuery.limit(1)
+            } returns previousLimitedQuery
 
             every { finalQuery.get() } answers {
                 mockk<Task<QuerySnapshot>>().apply {
@@ -205,10 +241,20 @@ class SmokeRepositoryImplTest {
                     every { isCanceled } returns false
                     every { result } answers {
                         mockk<QuerySnapshot>().apply {
-                            every { documents } returns listOf(
-                                mockDocumentSnapshot(id1, instant1),
-                                mockDocumentSnapshot(id2, instant2)
-                            )
+                            every { documents } returns resultDocuments
+                        }
+                    }
+                    every { exception } returns null
+                }
+            }
+            every { previousLimitedQuery.get() } answers {
+                mockk<Task<QuerySnapshot>>().apply {
+                    every { isComplete } returns true
+                    every { isSuccessful } returns true
+                    every { isCanceled } returns false
+                    every { result } answers {
+                        mockk<QuerySnapshot>().apply {
+                            every { documents } returns listOfNotNull(previousDocument)
                         }
                     }
                     every { exception } returns null

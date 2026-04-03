@@ -17,6 +17,14 @@ sealed interface HistoryResult : MVIResult {
      */
     data object Loading : HistoryResult
 
+    data class EditSmokeInFlight(
+        val id: String,
+    ) : HistoryResult
+
+    data class DeleteSmokeInFlight(
+        val id: String,
+    ) : HistoryResult
+
     /**
      * Indicates that the user is not logged in and the selected date is preserved.
      *

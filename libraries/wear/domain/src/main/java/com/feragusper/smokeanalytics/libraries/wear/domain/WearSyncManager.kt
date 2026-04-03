@@ -31,18 +31,14 @@ sealed interface WearSyncManager {
         /**
          * Listens for data updates from the mobile app and processes them.
          *
-         * @param onDataReceived Callback function that receives the smoke count data.
-         *                       - `smokesToday`: Number of smokes recorded today.
-         *                       - `smokesPerWeek`: Number of smokes recorded this week.
-         *                       - `smokesPerMonth`: Number of smokes recorded this month.
-         *                       - `lastSmokeTimestamp`: Timestamp of the last recorded smoke.
+         * @param onDataReceived Callback function that receives the pulse snapshot data.
          */
         fun listenForDataUpdates(
             onDataReceived: (
-                smokesToday: Int,
-                smokesPerWeek: Int,
-                smokesPerMonth: Int,
-                lastSmokeTimestamp: Long?
+                todayCount: Int,
+                targetGapMinutes: Int,
+                averageSmokesPerDayWeek: Double,
+                lastSmokeTimestamp: Long?,
             ) -> Unit
         )
     }
