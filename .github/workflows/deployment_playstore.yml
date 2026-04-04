@@ -100,8 +100,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Build & deploy Android release to Play Store
-        env:
-          PLAYSTORE_RELEASE_NOTES: ${{ steps.release_notes.outputs.playstore_notes }}
         run: bundler exec fastlane android deploy_playstore
 
       - name: Retrieve release metadata
