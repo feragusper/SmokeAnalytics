@@ -80,7 +80,28 @@ jobs:
       - name: Build Android App Bundle
         run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
 
+      - name: Load release notes
+        id: release_notes
+        shell: bash
+        run: |
+          product_version="$(grep '^product.version=' version.properties | cut -d= -f2)"
+          notes_path="docs/releases/${product_version}.md"
+
+          if [ ! -f "$notes_path" ]; then
+            echo "Missing release notes file at $notes_path"
+            exit 1
+          fi
+
+          {
+            echo "path=$notes_path"
+            echo "playstore_notes<<EOF"
+            sed '/^# /d' "$notes_path"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build & deploy Android release to Play Store
+        env:
+          PLAYSTORE_RELEASE_NOTES: ${{ steps.release_notes.outputs.playstore_notes }}
         run: bundler exec fastlane android deploy_playstore
 
       - name: Retrieve release metadata
@@ -104,5 +125,6 @@ jobs:
         with:
           tag_name: ${{ steps.android_version.outputs.release_tag }}
           release_name: "Android ${{ steps.android_version.outputs.version_name }}"
+          body_path: ${{ steps.release_notes.outputs.path }}
           draft: false
           prerelease: false
