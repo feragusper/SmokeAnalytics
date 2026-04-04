@@ -102,7 +102,17 @@ class SmokeRepositoryImpl(
             }
             .get()
 
-        val instants = result.documents.mapNotNull { it.getInstant() }
+        val previousDocument = smokesCollection()
+            .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
+            .where {
+                SmokeEntity.Fields.TIMESTAMP_MILLIS lessThan startMillis
+            }
+            .limit(1)
+            .get()
+            .documents
+            .firstOrNull()
+        val documents = previousDocument?.let { result.documents + it } ?: result.documents
+        val instants = documents.mapNotNull { it.getInstant() }
 
         return result.documents.mapIndexedNotNull { index, document ->
             val currentInstant = instants.getOrNull(index) ?: return@mapIndexedNotNull null

@@ -74,6 +74,9 @@ data class HistoryViewState(
     internal val monthCounts: Map<Int, Int> = emptyMap(),
     internal val error: HistoryResult.Error? = null,
     internal val selectedDate: Instant = Clock.System.now(),
+    internal val pendingSmokeId: String? = null,
+    internal val pendingAction: com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction? = null,
+    internal val rowInteractionEpoch: Int = 0,
 ) : MVIViewState<HistoryIntent> {
 
     @Composable
@@ -275,7 +278,10 @@ data class HistoryViewState(
                             }
                         }
 
-                        items(smokes) { smoke ->
+                        items(
+                            items = smokes,
+                            key = { smoke -> "${smoke.id}-${rowInteractionEpoch}" }
+                        ) { smoke ->
                             Card(
                                 shape = RoundedCornerShape(22.dp),
                                 colors = CardDefaults.cardColors(
@@ -283,11 +289,18 @@ data class HistoryViewState(
                                 ),
                             ) {
                                 SwipeToDismissRow(
+                                    itemKey = smoke.id,
                                     date = smoke.date,
                                     timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
                                     onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
                                     fullDateTimeEdit = true,
                                     onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },
+                                    isPending = pendingSmokeId == smoke.id,
+                                    pendingLabel = when (pendingAction) {
+                                        com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Editing -> "Saving edit…"
+                                        com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Deleting -> "Deleting…"
+                                        null -> null
+                                    },
                                 )
                             }
                         }

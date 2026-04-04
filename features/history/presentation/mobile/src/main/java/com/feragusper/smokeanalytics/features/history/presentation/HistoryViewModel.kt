@@ -4,7 +4,9 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIn
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.AddSmokeSuccess
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.DeleteSmokeSuccess
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.DeleteSmokeInFlight
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.EditSmokeSuccess
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.EditSmokeInFlight
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.Error
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.FetchSmokesSuccess
@@ -45,6 +47,18 @@ class HistoryViewModel @Inject constructor(
                 error = null,
             )
 
+            is EditSmokeInFlight -> previous.copy(
+                pendingSmokeId = result.id,
+                pendingAction = HistoryPendingAction.Editing,
+                error = null,
+            )
+
+            is DeleteSmokeInFlight -> previous.copy(
+                pendingSmokeId = result.id,
+                pendingAction = HistoryPendingAction.Deleting,
+                error = null,
+            )
+
             is NotLoggedIn -> previous.copy(
                 displayLoading = false,
                 error = null,
@@ -57,21 +71,32 @@ class HistoryViewModel @Inject constructor(
                 smokes = result.smokes,
                 selectedDate = result.selectedDate,
                 monthCounts = result.monthCounts,
+                pendingSmokeId = null,
+                pendingAction = null,
+                rowInteractionEpoch = previous.rowInteractionEpoch + 1,
             )
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
                 intents().trySend(HistoryIntent.FetchSmokes(previous.selectedDate))
-                previous
+                previous.copy(
+                    pendingSmokeId = null,
+                    pendingAction = null,
+                    rowInteractionEpoch = previous.rowInteractionEpoch + 1,
+                )
             }
 
             is Error -> previous.copy(
                 displayLoading = false,
                 error = result,
+                pendingSmokeId = null,
+                pendingAction = null,
             )
 
             FetchSmokesError -> previous.copy(
                 displayLoading = false,
                 error = Error.Generic,
+                pendingSmokeId = null,
+                pendingAction = null,
             )
 
             NavigateUp -> {

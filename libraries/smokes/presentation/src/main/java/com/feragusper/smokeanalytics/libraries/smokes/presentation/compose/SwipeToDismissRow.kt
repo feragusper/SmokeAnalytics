@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,16 +63,19 @@ import kotlinx.datetime.toLocalDateTime
  */
 @Composable
 fun SwipeToDismissRow(
+    itemKey: String,
     date: Instant,
     timeElapsedSincePreviousSmoke: Pair<Long, Long>,
     onDelete: () -> Unit,
     fullDateTimeEdit: Boolean,
     onEdit: (Instant) -> Unit,
+    isPending: Boolean = false,
+    pendingLabel: String? = null,
 ) {
     val timeZone = TimeZone.currentSystemDefault()
     val shape = MaterialTheme.shapes.medium
 
-    val state = rememberRevealState(
+    val revealState = rememberRevealState(
         directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
     )
 
@@ -79,22 +83,24 @@ fun SwipeToDismissRow(
 
     RevealSwipe(
         modifier = Modifier.padding(vertical = 5.dp),
-        state = state,
+        state = revealState,
         shape = shape,
         backgroundCardStartColor = MaterialTheme.colorScheme.primaryContainer,
         backgroundCardEndColor = MaterialTheme.colorScheme.errorContainer,
         backgroundStartActionLabel = "Edit smoke",
         backgroundEndActionLabel = "Delete smoke",
         onBackgroundStartClick = {
+            if (isPending) return@RevealSwipe false
             showDatePicker = true
             true
         },
         onBackgroundEndClick = {
+            if (isPending) return@RevealSwipe false
             onDelete()
             true
         },
         hiddenContentStart = {
-            IconButton(onClick = { showDatePicker = true }) {
+            IconButton(onClick = { showDatePicker = true }, enabled = !isPending) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_pencil),
                     contentDescription = null,
@@ -103,7 +109,7 @@ fun SwipeToDismissRow(
             }
         },
         hiddenContentEnd = {
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = onDelete, enabled = !isPending) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
                     contentDescription = null,
@@ -116,25 +122,44 @@ fun SwipeToDismissRow(
                 modifier = Modifier.matchParentSize(),
                 colors = CardDefaults.cardColors(
                     contentColor = MaterialTheme.colorScheme.onSecondary,
-                    containerColor = Color.Transparent
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 shape = cardShape,
                 content = content
             )
         }
     ) {
-        SmokeItem(
-            date = date,
-            timeZone = timeZone,
-            timeAfterPrevious = timeElapsedSincePreviousSmoke,
-            tone = elapsedToneFrom(
-                timeElapsedSincePreviousSmoke.first,
-                timeElapsedSincePreviousSmoke.second,
-            ),
-        )
+        Column {
+            SmokeItem(
+                date = date,
+                timeZone = timeZone,
+                timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                tone = elapsedToneFrom(
+                    timeElapsedSincePreviousSmoke.first,
+                    timeElapsedSincePreviousSmoke.second,
+                ),
+            )
+            if (isPending) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.width(18.dp).height(18.dp), strokeWidth = 2.dp)
+                    Text(
+                        text = pendingLabel ?: "Updating…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 
-    if (showDatePicker) {
+    if (showDatePicker && !isPending) {
         var selectedDateTime: LocalDateTime = date.toLocalDateTime(timeZone)
 
         if (fullDateTimeEdit) {
@@ -192,6 +217,7 @@ private fun SmokeItem(
 
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .background(color = tone.rowContainerColor(), shape = MaterialTheme.shapes.medium)
             .padding(horizontal = 12.dp)
             .height(72.dp),

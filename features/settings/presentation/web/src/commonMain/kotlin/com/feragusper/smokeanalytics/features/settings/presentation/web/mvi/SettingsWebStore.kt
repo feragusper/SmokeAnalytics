@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * Represents the store for the Settings screen.
@@ -19,10 +20,12 @@ import kotlinx.coroutines.launch
  * @property processHolder The process holder for the Settings screen.
  * @property scope The coroutine scope for the store.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsWebStore(
     private val processHolder: SettingsProcessHolder,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
+    private var started = false
     private val intents = Channel<SettingsIntent>(capacity = Channel.Factory.BUFFERED)
 
     private val _state = MutableStateFlow(SettingsViewState())
@@ -45,6 +48,8 @@ class SettingsWebStore(
      * Starts the store.
      */
     fun start() {
+        if (started) return
+        started = true
         scope.launch {
             intents
                 .receiveAsFlow()

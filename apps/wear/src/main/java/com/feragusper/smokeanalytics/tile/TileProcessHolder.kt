@@ -66,13 +66,13 @@ class TileProcessHolder @Inject constructor(
         wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
 
         // Listen for real-time updates
-        wearSyncManager.listenForDataUpdates { smokesToday, smokesPerWeek, smokesPerMonth, lastSmokeTimestamp ->
+        wearSyncManager.listenForDataUpdates { todayCount, targetGapMinutes, averageSmokesPerDayWeek, lastSmokeTimestamp ->
             trySend(
                 TileResult.FetchSmokesSuccess(
-                    smokesPerDay = smokesToday,
-                    smokesPerWeek = smokesPerWeek,
-                    smokesPerMonth = smokesPerMonth,
-                    lastSmokeTimestamp = lastSmokeTimestamp
+                    todayCount = todayCount,
+                    targetGapMinutes = targetGapMinutes,
+                    averageSmokesPerDayWeek = averageSmokesPerDayWeek,
+                    lastSmokeTimestamp = lastSmokeTimestamp,
                 )
             )
         }

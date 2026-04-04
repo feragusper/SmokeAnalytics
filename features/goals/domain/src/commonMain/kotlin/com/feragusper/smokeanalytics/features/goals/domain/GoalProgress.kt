@@ -17,4 +17,10 @@ data class GoalProgress(
     val baselineLabel: String? = null,
     val supportingText: String,
     val status: GoalStatus,
+    val progressFraction: Float? = null,
+    val warningLabel: String? = null,
+    val celebrationLabel: String? = null,
+    val streakDays: Int = 0,
+    val streakLabel: String? = null,
+    val isBroken: Boolean = false,
 )

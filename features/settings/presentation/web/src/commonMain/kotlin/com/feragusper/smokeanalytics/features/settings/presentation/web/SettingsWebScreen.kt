@@ -69,6 +69,21 @@ private fun SettingsViewState.Render(
                     onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = null)))
                 },
             )
+            errorMessage?.let { msg ->
+                EmptyStateCard(
+                    title = "Could not save your goal",
+                    message = msg,
+                    actionLabel = "Try again",
+                    onAction = {
+                        draftPreferences.activeGoal?.let { goal ->
+                            onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = goal)))
+                        }
+                    },
+                )
+            }
+            infoMessage?.let { msg ->
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(msg) }
+            }
             return@Div
         }
 

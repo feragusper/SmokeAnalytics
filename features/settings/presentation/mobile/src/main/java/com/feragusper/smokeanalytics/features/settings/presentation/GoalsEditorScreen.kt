@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -157,6 +158,12 @@ fun GoalsEditorScreen(
                 }
 
                 goalProgress?.let { progress ->
+                    progress.progressFraction?.let { fraction ->
+                        LinearProgressIndicator(
+                            progress = { fraction },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     Text(
                         text = progress.progressLabel,
                         style = MaterialTheme.typography.bodyMedium,
@@ -165,6 +172,27 @@ fun GoalsEditorScreen(
                     progress.baselineLabel?.let { baseline ->
                         Text(
                             text = baseline,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    progress.warningLabel?.let { warning ->
+                        Text(
+                            text = warning,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
+                    progress.celebrationLabel?.let { celebration ->
+                        Text(
+                            text = celebration,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    progress.streakLabel?.let { streak ->
+                        Text(
+                            text = streak,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

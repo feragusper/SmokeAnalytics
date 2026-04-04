@@ -79,7 +79,7 @@ class HistoryProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the delete operation.
      */
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {
-        emit(HistoryResult.Loading)
+        emit(HistoryResult.DeleteSmokeInFlight(intent.id))
         deleteSmokeUseCase.invoke(intent.id)
         refreshWidgetSnapshot()
         emit(HistoryResult.DeleteSmokeSuccess)
@@ -95,7 +95,7 @@ class HistoryProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the edit operation.
      */
     private fun processEditSmoke(intent: HistoryIntent.EditSmoke) = flow {
-        emit(HistoryResult.Loading)
+        emit(HistoryResult.EditSmokeInFlight(intent.id))
         editSmokeUseCase.invoke(intent.id, intent.date)
         refreshWidgetSnapshot()
         emit(HistoryResult.EditSmokeSuccess)

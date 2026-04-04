@@ -51,10 +51,10 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
         result: TileResult
     ): TileViewState = when (result) {
         is TileResult.FetchSmokesSuccess -> previous.copy(
-            smokesPerDay = result.smokesPerDay,
-            smokesPerWeek = result.smokesPerWeek,
-            smokesPerMonth = result.smokesPerMonth,
-            lastSmokeTimestamp = result.lastSmokeTimestamp
+            todayCount = result.todayCount,
+            targetGapMinutes = result.targetGapMinutes,
+            averageSmokesPerDayWeek = result.averageSmokesPerDayWeek,
+            lastSmokeTimestamp = result.lastSmokeTimestamp,
         )
 
         is TileResult.AddSmokeSuccess -> previous.copy()

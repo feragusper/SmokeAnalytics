@@ -499,13 +499,23 @@ private fun pulseSummaryText(
 ): String = when {
     elapsedMinutes == null -> "Log a smoke or refresh to rebuild today's pulse."
     averageGapMinutes == null || averageGapMinutes <= 0 -> "Stay with this gap and watch the daily pulse settle."
-    elapsedMinutes >= averageGapMinutes -> "You are ${elapsedMinutes - averageGapMinutes} minutes beyond your average gap today."
-    else -> "${averageGapMinutes - elapsedMinutes} minutes until you meet today's average gap."
+    elapsedMinutes >= averageGapMinutes -> "You are ${(elapsedMinutes - averageGapMinutes).toDurationLabel()} beyond your average gap today."
+    else -> "${(averageGapMinutes - elapsedMinutes).toDurationLabel()} until you meet today's average gap."
 }
 
 private fun Int.toGapLabel(): String = when {
     this >= 60 -> "${this / 60}h ${this % 60}m"
     else -> "${this}m"
+}
+
+private fun Long.toDurationLabel(): String {
+    val hours = this / 60
+    val minutes = this % 60
+    return when {
+        hours <= 0 -> "${minutes}m"
+        minutes == 0L -> "${hours}h"
+        else -> "${hours}h ${minutes}m"
+    }
 }
 
 private fun Double.formatOneDecimal(): String {

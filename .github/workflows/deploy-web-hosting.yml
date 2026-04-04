@@ -38,6 +38,21 @@ jobs:
           echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:web:printWebVersionName -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:web:printWebReleaseTag -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
 
+      - name: Load release notes
+        if: ${{ inputs.env == 'prod' }}
+        id: release_notes
+        shell: bash
+        run: |
+          product_version="$(grep '^product.version=' version.properties | cut -d= -f2)"
+          notes_path="docs/releases/${product_version}.md"
+
+          if [ ! -f "$notes_path" ]; then
+            echo "Missing release notes file at $notes_path"
+            exit 1
+          fi
+
+          echo "path=$notes_path" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to Firebase Hosting (staging)
         if: ${{ inputs.env == 'staging' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -74,5 +89,6 @@ jobs:
         with:
           tag_name: ${{ steps.web_version.outputs.release_tag }}
           release_name: "Web ${{ steps.web_version.outputs.version_name }}"
+          body_path: ${{ steps.release_notes.outputs.path }}
           draft: false
           prerelease: false
