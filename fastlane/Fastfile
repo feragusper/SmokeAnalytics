@@ -3,7 +3,6 @@ default_platform(:android)
 platform :android do
   desc "Deploy the production release to Google Play Store beta channel"
   lane :deploy_playstore do |options|
-    release_notes = ENV["PLAYSTORE_RELEASE_NOTES"].to_s.strip
     upload_options = {
       release_status: "completed",                       # Marks the release as final.
       track: "beta",                                     # Deploys to the beta channel.
@@ -12,15 +11,6 @@ platform :android do
       package_name: "com.feragusper.smokeanalytics",     # The package name of the application.
       aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab" # Path to the AAB file.
     }
-
-    unless release_notes.empty?
-      upload_options[:release_notes] = [
-        {
-          language: "en-US",
-          text: release_notes
-        }
-      ]
-    end
 
     # Upload the Android App Bundle (AAB) to Google Play.
     # Ensure the service account JSON key is available at the specified path.

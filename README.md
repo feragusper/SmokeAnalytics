@@ -1,106 +1,243 @@
 # Smoke Analytics
 
-[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_artifact.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_artifact.yml)
-[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml)
-[![CI](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
-
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics>)
+[![Integration](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
+[![Android Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml)
+[![Web Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=feragusper_SmokeAnalytics)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=feragusper_SmokeAnalytics)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=code_smells)](https://sonarcloud.io/component_measures/metric/code_smells/list?id=feragusper_SmokeAnalytics)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=feragusper_SmokeAnalytics)
 
-Android application to track smoking habits and run analytics on them.
+Smoke Analytics is a Kotlin Multiplatform smoking journal focused on one thing: making patterns visible without turning the product into noise.
 
-📸 Screenshots
---------------
-<p>
-  <!--suppress CheckImageSize -->
-<img src="misc/image/screen_home.png" width="250"  alt="home screen"/>
-  <!--suppress CheckImageSize -->
-<img src="misc/image/screen_settings.png" width="250"  alt="settings screen"/>
-</p>
+The current `0.12.0` product is organized around five core destinations:
 
-💻Requirements and Getting started
-----------------------------------
-Java 17 is required.
+- `The Pulse`: today, the last cigarette, pace, goals, and short status cues
+- `Analytics & Map`: smoking frequency and geographic clustering from one destination
+- `The Archive`: list and calendar views for the detailed smoking log
+- `The Guide`: contextual coaching with live-model or fallback guidance
+- `You`: account, preferences, goals, and product actions in one place
 
-> :warning: **This project won't compile unless a few credentials are provided**
+## Platforms
 
-In order to build it locally:
+- `apps/mobile`: Android app, the visual source of truth for the product
+- `apps/web`: Compose for Web version aligned to the same product model
+- `apps/wear`: Wear OS surface for quick status and lightweight interaction
 
-- Add `google.auth.server.client.id=\"GOOGLE_AUTH_SERVER_CLIENT_ID\"` to local.properties (used by
-  firebase google auth).
-- Add proper `google-services.json` (download it from firebase project) to app module (used by
-  firebase firestore and google auth).
+## Current Product Surface
 
-- Use `./gradlew assemble` to build it, or run it in Android Studio.
-- Use `./gradlew test` to run the unit test on your local host.
+### The Pulse
+- time since last cigarette and last-smoked clock time
+- today count, current pace, weekly and monthly averages
+- active goal state and progress
+- quick access into the main smoking flow
 
-🏗️Architecture
---------------
-Based on Clean Architecture. Using MVI, Use Cases and Repositories.
-Modules are split by feature. App module is almost empty, it's just the glue between the modules.
+### Analytics & Map
+- smoking frequency trends
+- period switching
+- map clusters for repeated smoking areas
+- location-disabled, no-data, loading, and error states
 
-Features can be found in the `features` module. Each feature has its own module, and it's split in 3
-layers:
+### The Archive
+- day-based log review
+- list and calendar modes
+- add, edit, and delete entries
+- date navigation and archive scanning
 
-- `domain`: Contains the business logic of the feature. It's the core of the feature, and it's
-  agnostic of the platform.
-- `data`: Contains the implementation of the repositories defined in the domain layer. It's the
-  layer that knows how to get the data from the platform.
-- `presentation`: Contains the UI of the feature. It's the layer that knows how to display the data
-  to the user.
+### The Guide
+- initial insight based on recent smoking context
+- intent-based prompts for cravings, stress, and progress
+- live-model replies when available
+- graceful fallback guidance when live replies are unavailable
 
-Shared libraries can be found in the `libraries` module. Following the same structure as the
-features, each library has its own module, and it's split in 3 layers if necessary.
+### You
+- authentication state
+- goals
+- personal preferences such as custom day start, price, and pack size
+- product actions such as share, support, and bug reporting
 
-📚Libraries included
---------------------
+## Repository Structure
 
-- Kotlin
-- Architecture Components
-- Kotlin Coroutines/Flow
+The repository is organized as a Kotlin Multiplatform product, not as a single Android app with extras bolted on later.
+
+```text
+apps/
+  mobile/     Android application shell
+  web/        Compose Web application shell
+  wear/       Wear OS app / tile surface
+
+features/
+  authentication/
+  chatbot/
+  goals/
+  history/
+  home/
+  settings/
+  stats/
+
+libraries/
+  architecture/
+  authentication/
+  design/
+  logging/
+  preferences/
+  smokes/
+  wear/
+
+functions/
+  Firebase Functions used by the web product
+
+docs/
+  releases/
+  discovery/
+```
+
+Each feature or library follows the same general split when needed:
+
+- `domain`: shared business logic and contracts
+- `data`: implementation details and platform integration
+- `presentation`: UI, view state, stores, process holders, and navigation
+
+## Tech Baseline
+
+- Kotlin `2.2.20`
+- Jetpack Compose / Compose Multiplatform
+- Android Gradle Plugin `8.13.2`
+- Java 17 toolchain
 - Hilt
-- Retrofit and OkHttp
-- Compose
-- Navigation Component
-- JUnit
-- Mockk
 - Firebase
-- Google Auth
+- Kotlin Coroutines / Flow
+- Compose for Web
+- Firebase Functions for the secure web coach relay
 
-⚙️CI
-----
-Github Actions are used for automating several recurrent processes:
+## Local Setup
 
-- Integration: Run unit tests. It's triggered on every PR.
-- Deployment Artifact: Build and deploy a new artifact to Github Packages. It's triggered on every
-  push to master.
-    - There should always be available a latest debug build for downloading
-      at https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment.yml
-- Deployment Playstore: Build and deploy candidate releases to Playstore in closed beta channel. Can
-  be executed manually with proper credentials.
+### Requirements
 
-🤝Support & Contribute
-----------------------
-If you've found an error in this project, please file an
-issue: https://github.com/feragusper/SmokeAnalytics/issues
+- Java 17
+- Android Studio with Android SDK installed
+- Node.js available for the Firebase Functions and web deploy tooling
 
-Patches are encouraged, and may be submitted by forking this project and submitting a pull request
-through GitHub.
+### Android / shared app configuration
 
-Pull requests are welcome.
+Local Android and product-specific keys live in `local.properties`. Typical entries include:
 
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request :D
+- `google.auth.server.client.id`
+- `google.maps.android.api.key.staging`
+- `google.maps.android.api.key.production`
+- `google.ai.client.generativeai.api.key.staging`
+- `google.ai.client.generativeai.api.key.production`
+
+The mobile Firebase configs used by the current repo live at:
+
+- `apps/mobile/src/staging/google-services.json`
+- `apps/mobile/src/production/google-services.json`
+
+### Web coach relay
+
+The web coach no longer uses a browser-side Gemini key. It goes through Firebase Functions.
+
+For GitHub-hosted deploys, the required repository secrets are:
+
+- `WEB_COACH_GEMINI_API_KEY_STAGING`
+- `WEB_COACH_GEMINI_API_KEY_PROD`
+
+Those are used by the release workflow to populate the Firebase Functions secret `COACH_GEMINI_API_KEY`.
+
+You do not need to add those web relay secrets to `local.properties` unless you are intentionally building your own manual deploy path outside the repository workflows.
+
+## Build And Run
+
+### Mobile
+
+```bash
+./gradlew :apps:mobile:assembleStagingDebug
+```
+
+### Web
+
+```bash
+./gradlew :apps:web:jsBrowserDevelopmentWebpack
+```
+
+### Wear
+
+```bash
+./gradlew :apps:wear:assembleDebug
+```
+
+If you want to install the Wear build on a connected Wear OS device or emulator:
+
+```bash
+adb install -r apps/wear/build/outputs/apk/debug/apps-wear-debug.apk
+```
+
+## Verification Defaults
+
+These are the repository-default validation paths used for most product work:
+
+- Web work: `./gradlew :apps:web:jsBrowserDevelopmentWebpack`
+- Mobile work: the closest feature compile/test path plus an app-level mobile build when the shell changes materially
+- Release or CI work: validate the nearest real workflow/build path, not only a lightweight compile
+
+## Branch And Release Flow
+
+The repository uses:
+
+```text
+master <- develop <- feature branch
+```
+
+Rules:
+
+- start new work from `develop`
+- open feature PRs into `develop`
+- merge `develop` into `master` only for a release
+- deploy Android and web from `master`
+- bump `develop` to the next version only after the release is merged and deployed
+
+Current product version:
+
+- `product.version=0.12.0`
+
+## CI And Automation
+
+GitHub Actions drive the main repository automation:
+
+- `integration.yml`: validation on PRs
+- `deployment_playstore.yml`: Android release path
+- `deploy-web-hosting.yml`: production web deploy path
+
+Release notes are expected in GitHub Releases, not as a growing set of historical markdown files in the repo.
+
+## Contributor Notes
+
+- mobile is the visual source of truth unless a task explicitly needs platform divergence
+- prefer shared domain logic and shared presentation models over platform-specific duplication
+- keep issue state and project board state aligned
+- do not widen product scope inside maintenance tickets
+
+Companion docs:
+
+- [AGENTS.md](AGENTS.md)
+- [RULES.md](RULES.md)
+- [SKILLS.md](SKILLS.md)
+- [docs/agent-workflow.md](docs/agent-workflow.md)
+
+## Screenshots
+
+The old screenshots previously referenced by this README were removed because they no longer represented the current product. The next README asset pass should add refreshed captures from the current `0.12` app surfaces instead of reusing pre-revamp images.
+
+## Support
+
+- Issues: [github.com/feragusper/SmokeAnalytics/issues](https://github.com/feragusper/SmokeAnalytics/issues)
+- Discussions and code: [github.com/feragusper/SmokeAnalytics](https://github.com/feragusper/SmokeAnalytics)
+- Contact: `feragusper@gmail.com`
 
 ## License
 
-```
+```text
 Copyright 2025 feragusper
 
 Licensed under the Apache License, Version 2.0 (the "License");
