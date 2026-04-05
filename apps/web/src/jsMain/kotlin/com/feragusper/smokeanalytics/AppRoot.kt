@@ -47,10 +47,22 @@ fun AppRoot(graph: WebAppGraph) {
 
     DisposableEffect(Unit) {
         val handler: (Event) -> Unit = {
-            route = parseRouteFromHash(window.location.hash)
+            val parsedRoute = parseRouteFromHash(window.location.hash)
+            route = parsedRoute
+            val canonicalHash = parsedRoute.toHash()
+            if (window.location.hash != canonicalHash) {
+                window.location.hash = canonicalHash
+            }
         }
         window.addEventListener("hashchange", handler)
         onDispose { window.removeEventListener("hashchange", handler) }
+    }
+
+    LaunchedEffect(Unit) {
+        val canonicalHash = route.toHash()
+        if (window.location.hash != canonicalHash) {
+            window.location.hash = canonicalHash
+        }
     }
 
     val homeStore = remember(graph) { HomeWebStore(processHolder = graph.homeProcessHolder) }
@@ -102,7 +114,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> "Smoke Analytics | Home"
             WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
-            WebRoute.Coach -> "Smoke Analytics | AI Coach"
+            WebRoute.Coach -> "Smoke Analytics | The Guide"
             WebRoute.Settings -> "Smoke Analytics | You"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
