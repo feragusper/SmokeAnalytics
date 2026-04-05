@@ -79,16 +79,23 @@ data class ChatbotViewState(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "Reflecting on your week",
+                        text = "Guidance grounded in your smoking rhythm",
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Short, grounded guidance based on your recent smoking pattern and recovery rhythm.",
+                        text = "A calmer coaching space for cravings, progress checks, and pattern shifts based on your recent context.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+
+            item {
+                GuideContextOverview(
+                    hasFallback = hasFallback,
+                    isLoading = isLoading && primaryInsight == null,
+                )
             }
 
             item {
@@ -102,20 +109,19 @@ data class ChatbotViewState(
             }
 
             item {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    quickActions.forEach { action ->
-                        AssistChip(
-                            onClick = { intent(ChatbotIntent.SendMessage(action.prompt)) },
-                            label = { Text(action.label) },
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text(
+                        text = "Ask By Intent",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    coachActionGroups.forEach { group ->
+                        ActionGroupCard(
+                            group = group,
                             enabled = !isLoading,
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ),
+                            onActionClick = { prompt ->
+                                intent(ChatbotIntent.SendMessage(prompt))
+                            },
                         )
                     }
                 }
@@ -132,7 +138,7 @@ data class ChatbotViewState(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Offline Support & Tips",
+                        text = "Quiet Support",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -173,7 +179,7 @@ data class ChatbotViewState(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = "Coach unavailable",
+                                text = "Guide unavailable",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                             )
@@ -258,7 +264,7 @@ private fun PrimaryInsightCard(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Primary Insight",
+                    text = if (hasFallback) "Fallback insight" else "Primary insight",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -277,11 +283,11 @@ private fun PrimaryInsightCard(
                                 modifier = Modifier.size(24.dp),
                                 strokeWidth = 3.dp,
                             )
-                            Text(
-                                text = "Preparing your guide",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                        Text(
+                            text = "Preparing your guide",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                         }
                         Text(
                             text = "Reviewing your recent rhythm, recovery gap, and prompts before the next insight lands.",
@@ -318,9 +324,9 @@ private fun PrimaryInsightCard(
 
             Text(
                 text = if (hasFallback) {
-                    "Fallback guidance is active. The advice still uses your recent smoking context, but it is not backed by a live model."
+                    "Live coaching is unavailable right now. The guide is still using your recent smoking context, but the response is coming from the built-in fallback path."
                 } else {
-                    "Use the guide for cravings, progress checks, and practical pattern shifts without turning it into a noisy chat screen."
+                    "Use this insight to decide what to ask next: decode the pattern, get a realistic adjustment, or ask for a short recovery plan."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -330,25 +336,93 @@ private fun PrimaryInsightCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                coachActionPills.forEach { action ->
-                    AssistChip(
-                        onClick = if (action.primary) onPrimaryAction else onSecondaryAction,
-                        label = { Text(action.label) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (action.primary) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            },
-                            labelColor = if (action.primary) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            },
-                        ),
-                    )
-                }
+                AssistChip(
+                    onClick = onPrimaryAction,
+                    label = { Text("How can I adjust this?") },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        labelColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                )
+                AssistChip(
+                    onClick = onSecondaryAction,
+                    label = { Text("Tell me more") },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun GuideContextOverview(
+    hasFallback: Boolean,
+    isLoading: Boolean,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        GuideContextCard(
+            title = "What it uses",
+            body = "Recent smoking rhythm, recovery gaps, and the prompts you ask in this session.",
+            accent = "Context",
+        )
+        GuideContextCard(
+            title = "Best asks",
+            body = "Craving plans, stress resets, delay tactics, and weekly pattern checks work best here.",
+            accent = "Intent",
+        )
+        GuideContextCard(
+            title = if (hasFallback) "Current mode" else "Live mode",
+            body = if (isLoading) {
+                "Refreshing the next insight now."
+            } else if (hasFallback) {
+                "Fallback guidance is active, so answers stay practical and bounded even without the live model."
+            } else {
+                "Live coaching is active, so the guide can respond with more tailored follow-ups."
+            },
+            accent = if (hasFallback) "Fallback" else "Live",
+        )
+    }
+}
+
+@Composable
+private fun GuideContextCard(
+    title: String,
+    body: String,
+    accent: String,
+) {
+    Card(
+        modifier = Modifier.width(220.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = accent,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -371,6 +445,62 @@ private fun LoadingTag(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSecondaryContainer,
         )
+    }
+}
+
+@Composable
+private fun ActionGroupCard(
+    group: CoachActionGroup,
+    enabled: Boolean,
+    onActionClick: (String) -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = group.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = group.subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                group.actions.forEach { action ->
+                    AssistChip(
+                        onClick = { onActionClick(action.prompt) },
+                        enabled = enabled,
+                        label = { Text(action.label) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = if (action.emphasized) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            },
+                            labelColor = if (action.emphasized) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            },
+                        ),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -525,12 +655,12 @@ private fun WeeklySummaryCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Weekly Summary",
+                        text = "Guide Snapshot",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
                     )
                     Text(
-                        text = "Making steady progress",
+                        text = if (hasFallback) "Steady fallback support" else "Live coaching session",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
@@ -605,14 +735,68 @@ private data class CoachSupportCard(
     val body: String,
 )
 
-private data class CoachActionPill(
+private data class CoachAction(
     val label: String,
-    val primary: Boolean,
+    val prompt: String,
+    val emphasized: Boolean = false,
 )
 
-private val coachActionPills = listOf(
-    CoachActionPill(label = "How can I adjust this?", primary = true),
-    CoachActionPill(label = "Tell me more", primary = false),
+private data class CoachActionGroup(
+    val title: String,
+    val subtitle: String,
+    val actions: List<CoachAction>,
+)
+
+private val coachActionGroups = listOf(
+    CoachActionGroup(
+        title = "Craving right now",
+        subtitle = "Short tactical prompts when you need to delay the next cigarette instead of overthinking it.",
+        actions = listOf(
+            CoachAction(
+                label = "Craving plan",
+                prompt = "I have a craving right now and I need a short delay plan.",
+                emphasized = true,
+            ),
+            CoachAction(
+                label = "Delay next smoke",
+                prompt = "Help me delay the next cigarette by at least 15 minutes with a realistic plan.",
+            ),
+        ),
+    ),
+    CoachActionGroup(
+        title = "Stress & reset",
+        subtitle = "Use these when the urge is tied to pressure, overload, or the need to decompress.",
+        actions = listOf(
+            CoachAction(
+                label = "Stress reset",
+                prompt = "I feel stressed right now and I want a calmer alternative to smoking.",
+                emphasized = true,
+            ),
+            CoachAction(
+                label = "Break the loop",
+                prompt = "What can I do right now to break the automatic loop around this craving?",
+            ),
+        ),
+    ),
+    CoachActionGroup(
+        title = "Progress & pattern",
+        subtitle = "Ask the guide to explain what is improving, what still repeats, and how to adjust this week.",
+        actions = listOf(
+            CoachAction(
+                label = "Progress check",
+                prompt = "How am I doing this week, and what improved?",
+                emphasized = true,
+            ),
+            CoachAction(
+                label = "How can I adjust this?",
+                prompt = "How can I adjust this pattern in a realistic way this week?",
+            ),
+            CoachAction(
+                label = "Tell me more",
+                prompt = "Tell me more about the strongest pattern you see right now.",
+            ),
+        ),
+    ),
 )
 
 private fun buildSummaryCards(
@@ -624,7 +808,7 @@ private fun buildSummaryCards(
         return promptResponses.take(2).mapIndexed { index, message ->
             CoachSupportCard(
                 icon = if (index == 0) "NOW" else "PATTERN",
-                title = if (index == 0) "Prompt in focus" else "Pattern worth revisiting",
+                title = if (index == 0) "Latest follow-up" else "Pattern worth revisiting",
                 body = message.text,
             )
         }
@@ -642,7 +826,7 @@ private fun buildSummaryCards(
         ),
         CoachSupportCard(
             icon = "SHIFT",
-            title = "Weekly shift",
+            title = "Best next move",
             body = "Use progress checks to spot when consumption drops, then protect the environment or routine that helped create that change.",
         ),
     )
