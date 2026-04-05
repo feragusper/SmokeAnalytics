@@ -21,7 +21,7 @@ googleid = "1.1.1"
 glance = "1.1.1"
 gradle = "8.13.2"
 hilt = "2.57.2"
-hiltNavigationCompose = "1.3.0"
+hiltLifecycleViewmodelCompose = "1.3.0"
 horologistComposables = "0.7.15"
 horologistComposeToolsVersion = "0.7.15"
 horologistTiles = "0.7.15"
@@ -97,7 +97,7 @@ gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", versio
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hiltLifecycleViewmodelCompose" }
 horologist-composables = { module = "com.google.android.horologist:horologist-composables", version.ref = "horologistComposables" }
 horologist-compose-tools = { module = "com.google.android.horologist:horologist-compose-tools", version.ref = "horologistComposeToolsVersion" }
 horologist-tiles = { module = "com.google.android.horologist:horologist-tiles", version.ref = "horologistTiles" }
@@ -145,7 +145,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 [bundles]
 android-test = ["androidx-espresso-core", "androidx-junit"]
 androidx-base = ["androidx-appcompat", "androidx-core-ktx"]
-androidx-navigation = ["androidx-navigation-compose", "androidx-navigation-fragment-ktx", "androidx-navigation-testing", "androidx-navigation-ui-ktx", "hilt-navigation-compose"]
+androidx-navigation = ["androidx-navigation-compose", "androidx-navigation-fragment-ktx", "androidx-navigation-testing", "androidx-navigation-ui-ktx", "hilt-lifecycle-viewmodel-compose"]
 compose = ["androidx-compose-ui", "androidx-compose-ui-tooling", "androidx-compose-activity", "androidx-compose-material3"]
 compose-debug = ["androidx-compose-ui-tooling", "androidx-compose-ui-test-manifest"]
 compose-test = ["mockkAndroid", "androidx-compose-ui-test-junit4"]

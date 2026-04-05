@@ -39,7 +39,7 @@ import org.w3c.dom.events.Event
 @Composable
 fun AppRoot(graph: WebAppGraph) {
     var route by remember { mutableStateOf(parseRouteFromHash(window.location.hash)) }
-    var analyticsTab by remember { mutableStateOf(AnalyticsTab.Trends) }
+    var analyticsTab by remember { mutableStateOf(parseAnalyticsTabFromHash(window.location.hash)) }
     var statsPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
     var statsSelectedDate by remember {
         mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
@@ -47,10 +47,24 @@ fun AppRoot(graph: WebAppGraph) {
 
     DisposableEffect(Unit) {
         val handler: (Event) -> Unit = {
-            route = parseRouteFromHash(window.location.hash)
+            val currentHash = window.location.hash
+            val parsedRoute = parseRouteFromHash(currentHash)
+            route = parsedRoute
+            analyticsTab = parseAnalyticsTabFromHash(currentHash)
+            val canonicalHash = parsedRoute.toHash()
+            if (window.location.hash != canonicalHash) {
+                window.location.hash = canonicalHash
+            }
         }
         window.addEventListener("hashchange", handler)
         onDispose { window.removeEventListener("hashchange", handler) }
+    }
+
+    LaunchedEffect(Unit) {
+        val canonicalHash = route.toHash()
+        if (window.location.hash != canonicalHash) {
+            window.location.hash = canonicalHash
+        }
     }
 
     val homeStore = remember(graph) { HomeWebStore(processHolder = graph.homeProcessHolder) }
@@ -102,7 +116,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> "Smoke Analytics | Home"
             WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
-            WebRoute.Coach -> "Smoke Analytics | AI Coach"
+            WebRoute.Coach -> "Smoke Analytics | The Guide"
             WebRoute.Settings -> "Smoke Analytics | You"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
@@ -156,12 +170,16 @@ fun AppRoot(graph: WebAppGraph) {
                         store = statsStore,
                         currentPeriod = statsPeriod,
                         selectedDate = statsSelectedDate,
+                        embedded = true,
                         onPeriodChange = { statsPeriod = it },
                         onDateChange = { statsSelectedDate = it },
                     )
                 },
                 mapContent = {
-                    MapWebScreen(stateHolder = mapStateHolder)
+                    MapWebScreen(
+                        stateHolder = mapStateHolder,
+                        embedded = true,
+                    )
                 },
             )
 

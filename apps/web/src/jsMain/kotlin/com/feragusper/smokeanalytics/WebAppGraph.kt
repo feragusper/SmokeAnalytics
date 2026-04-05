@@ -1,12 +1,7 @@
 package com.feragusper.smokeanalytics
 
-import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotRepository
+import com.feragusper.smokeanalytics.apps.web.CoachRelayRepository
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
-import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReply
-import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
-import com.feragusper.smokeanalytics.features.chatbot.domain.CoachContext
-import com.feragusper.smokeanalytics.features.chatbot.domain.fallbackCoachReply
-import com.feragusper.smokeanalytics.features.chatbot.domain.fallbackInitialCoachMessage
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
@@ -109,19 +104,7 @@ data class WebAppGraph(
             val fetchSmokes = FetchSmokesUseCase(smokeRepo)
             val fetchStats = FetchSmokeStatsUseCase(smokeRepo)
             val fetchSmokeCounts = FetchSmokeCountListUseCase(smokeRepo)
-            val chatbotRepository = object : ChatbotRepository {
-                override suspend fun sendMessage(message: String, context: CoachContext): CoachReply =
-                    CoachReply(
-                        text = fallbackCoachReply(message, context),
-                        source = CoachReplySource.Fallback,
-                    )
-
-                override suspend fun sendInitialMessage(context: CoachContext): CoachReply =
-                    CoachReply(
-                        text = fallbackInitialCoachMessage(context),
-                        source = CoachReplySource.Fallback,
-                    )
-            }
+            val chatbotRepository = CoachRelayRepository()
             val chatbotUseCase = ChatbotUseCase(
                 smokeRepository = smokeRepo,
                 authRepository = authRepo,

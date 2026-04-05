@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -62,6 +62,7 @@ import kotlinx.coroutines.withContext
 fun MapMobileRoute(
     modifier: Modifier = Modifier,
     refreshNonce: Int = 0,
+    embedded: Boolean = false,
     viewModel: MapMobileViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(refreshNonce) {
@@ -71,6 +72,7 @@ fun MapMobileRoute(
     MapMobileScreen(
         modifier = modifier,
         state = state,
+        embedded = embedded,
         onPeriodChange = viewModel::onPeriodChange,
         onSelectCluster = viewModel::onSelectCluster,
         onRetry = viewModel::refresh,
@@ -81,6 +83,7 @@ fun MapMobileRoute(
 private fun MapMobileScreen(
     modifier: Modifier = Modifier,
     state: MapMobileState,
+    embedded: Boolean,
     onPeriodChange: (SmokeMapPeriod) -> Unit,
     onSelectCluster: (SmokeMapCluster) -> Unit,
     onRetry: () -> Unit,
@@ -93,6 +96,7 @@ private fun MapMobileScreen(
         else -> LoadedState(
             modifier = modifier,
             state = state,
+            embedded = embedded,
             onPeriodChange = onPeriodChange,
             onSelectCluster = onSelectCluster,
         )
@@ -139,6 +143,7 @@ private fun LoadingState(modifier: Modifier) {
 private fun LoadedState(
     modifier: Modifier,
     state: MapMobileState,
+    embedded: Boolean,
     onPeriodChange: (SmokeMapPeriod) -> Unit,
     onSelectCluster: (SmokeMapCluster) -> Unit,
 ) {
@@ -161,19 +166,31 @@ private fun LoadedState(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!embedded) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Locations",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = "Geographic clusters",
+                                style = MaterialTheme.typography.headlineSmall,
+                            )
+                            Text(
+                                text = "See where repeated smoking clusters show up across the selected period.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
                         Text(
-                            text = "Locations",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "Geographic clusters",
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
-                        Text(
-                            text = "See where repeated smoking clusters show up across the selected period.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = if (state.isRefreshing) {
+                                "Refreshing clusters in background"
+                            } else {
+                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected period"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -193,7 +210,7 @@ private fun LoadedState(
                             )
                         }
                     }
-                    if (state.isRefreshing) {
+                    if (state.isRefreshing && !embedded) {
                         Text(
                             text = "Refreshing clusters in background",
                             style = MaterialTheme.typography.bodySmall,

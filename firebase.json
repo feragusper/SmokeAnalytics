@@ -1,16 +1,25 @@
 {
+  "functions": {
+    "source": "functions"
+  },
   "hosting": [
     {
       "target": "staging",
       "public": "apps/web/build/firebaseHosting",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "rewrites": [
+        { "source": "/api/coach", "function": "coachRelay" },
+        { "source": "**", "destination": "/index.html" }
+      ]
     },
     {
       "target": "prod",
       "public": "apps/web/build/firebaseHosting",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "rewrites": [
+        { "source": "/api/coach", "function": "coachRelay" },
+        { "source": "**", "destination": "/index.html" }
+      ]
     }
   ]
 }

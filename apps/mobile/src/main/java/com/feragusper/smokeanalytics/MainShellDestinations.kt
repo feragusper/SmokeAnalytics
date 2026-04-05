@@ -17,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.chatbot.presentation.ChatbotView
 import com.feragusper.smokeanalytics.features.chatbot.presentation.ChatbotViewModel
@@ -135,6 +135,7 @@ fun AnalyticsMobileDestination(
             AnalyticsTab.Map -> MapMobileRoute(
                 modifier = Modifier.fillMaxSize(),
                 refreshNonce = refreshNonce,
+                embedded = true,
             )
         }
     }
@@ -166,6 +167,7 @@ private fun StatsMobileDestination(
         StatsView(
             viewModel = viewModel,
             refreshNonce = refreshNonce,
+            embedded = true,
         )
     }
 }
