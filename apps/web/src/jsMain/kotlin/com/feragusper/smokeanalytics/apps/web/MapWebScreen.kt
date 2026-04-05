@@ -16,25 +16,51 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun MapWebScreen(
     stateHolder: MapWebStateHolder,
+    embedded: Boolean = false,
 ) {
     val state = stateHolder.state
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
-        PageSectionHeader(
-            title = "Geographic Clusters",
-            eyebrow = "Locations",
-            badgeText = if (state.isRefreshing) "Refreshing" else "${state.clusters.sumOf { it.count }} smokes",
-            subtitle = "Inspect repeated smoking areas and the places that dominate the current map period.",
-            actions = {
-                SmokeMapPeriod.entries.forEach { candidate ->
-                    PrimaryButton(
-                        text = candidate.name,
-                        onClick = { stateHolder.onPeriodChange(candidate) },
-                        enabled = !state.isLoading && candidate != state.period,
-                    )
+        if (!embedded) {
+            PageSectionHeader(
+                title = "Geographic Clusters",
+                eyebrow = "Locations",
+                badgeText = if (state.isRefreshing) "Refreshing" else "${state.clusters.sumOf { it.count }} smokes",
+                subtitle = "Inspect repeated smoking areas and the places that dominate the current map period.",
+                actions = {
+                    SmokeMapPeriod.entries.forEach { candidate ->
+                        PrimaryButton(
+                            text = candidate.name,
+                            onClick = { stateHolder.onPeriodChange(candidate) },
+                            enabled = !state.isLoading && candidate != state.period,
+                        )
+                    }
+                }
+            )
+        } else {
+            SurfaceCard {
+                Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text(
+                            if (state.isRefreshing) {
+                                "Refreshing clusters in background."
+                            } else {
+                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected period."
+                            }
+                        )
+                    }
+                    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                        SmokeMapPeriod.entries.forEach { candidate ->
+                            PrimaryButton(
+                                text = candidate.name,
+                                onClick = { stateHolder.onPeriodChange(candidate) },
+                                enabled = !state.isLoading && candidate != state.period,
+                            )
+                        }
+                    }
                 }
             }
-        )
+        }
 
         when {
             state.isLoading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))

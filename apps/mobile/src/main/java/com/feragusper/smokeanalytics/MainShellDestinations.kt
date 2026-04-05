@@ -135,6 +135,7 @@ fun AnalyticsMobileDestination(
             AnalyticsTab.Map -> MapMobileRoute(
                 modifier = Modifier.fillMaxSize(),
                 refreshNonce = refreshNonce,
+                embedded = true,
             )
         }
     }
@@ -166,6 +167,7 @@ private fun StatsMobileDestination(
         StatsView(
             viewModel = viewModel,
             refreshNonce = refreshNonce,
+            embedded = true,
         )
     }
 }

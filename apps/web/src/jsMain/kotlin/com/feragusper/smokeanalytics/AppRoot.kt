@@ -39,7 +39,7 @@ import org.w3c.dom.events.Event
 @Composable
 fun AppRoot(graph: WebAppGraph) {
     var route by remember { mutableStateOf(parseRouteFromHash(window.location.hash)) }
-    var analyticsTab by remember { mutableStateOf(AnalyticsTab.Trends) }
+    var analyticsTab by remember { mutableStateOf(parseAnalyticsTabFromHash(window.location.hash)) }
     var statsPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
     var statsSelectedDate by remember {
         mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
@@ -47,8 +47,10 @@ fun AppRoot(graph: WebAppGraph) {
 
     DisposableEffect(Unit) {
         val handler: (Event) -> Unit = {
-            val parsedRoute = parseRouteFromHash(window.location.hash)
+            val currentHash = window.location.hash
+            val parsedRoute = parseRouteFromHash(currentHash)
             route = parsedRoute
+            analyticsTab = parseAnalyticsTabFromHash(currentHash)
             val canonicalHash = parsedRoute.toHash()
             if (window.location.hash != canonicalHash) {
                 window.location.hash = canonicalHash
@@ -168,12 +170,16 @@ fun AppRoot(graph: WebAppGraph) {
                         store = statsStore,
                         currentPeriod = statsPeriod,
                         selectedDate = statsSelectedDate,
+                        embedded = true,
                         onPeriodChange = { statsPeriod = it },
                         onDateChange = { statsSelectedDate = it },
                     )
                 },
                 mapContent = {
-                    MapWebScreen(stateHolder = mapStateHolder)
+                    MapWebScreen(
+                        stateHolder = mapStateHolder,
+                        embedded = true,
+                    )
                 },
             )
 

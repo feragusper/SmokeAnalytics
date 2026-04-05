@@ -22,7 +22,7 @@ fun AnalyticsWebScreen(
         PageSectionHeader(
             title = "Analytics & Map",
             eyebrow = "Patterns",
-            subtitle = "Review smoking frequency and geographic clusters from one destination.",
+            subtitle = "Review smoking frequency and repeated smoking areas from one destination.",
             badgeText = selectedTab.label,
         )
 
