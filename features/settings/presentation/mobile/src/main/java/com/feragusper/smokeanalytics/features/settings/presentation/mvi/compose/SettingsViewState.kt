@@ -128,10 +128,9 @@ data class SettingsViewState(
                 currentDisplayName = currentDisplayName,
             )
 
-            GoalsEntryCard(
-                goalProgress = goalProgress,
-                activeGoal = preferences.activeGoal,
-                onOpenGoals = { showingGoals = true },
+            SettingsSectionHeader(
+                title = "Account",
+                subtitle = "Session state and the core product context that keep this personal space synced.",
             )
 
             SessionCard(
@@ -144,6 +143,22 @@ data class SettingsViewState(
 
             HighlightsRow(tier = preferences.accountTier)
 
+            SettingsSectionHeader(
+                title = "Goals",
+                subtitle = "Keep the active target visible here without turning it into another top-level destination.",
+            )
+
+            GoalsEntryCard(
+                goalProgress = goalProgress,
+                activeGoal = preferences.activeGoal,
+                onOpenGoals = { showingGoals = true },
+            )
+
+            SettingsSectionHeader(
+                title = "Preferences",
+                subtitle = "Routine and cost settings that shape how Home, History, and Analytics interpret your day.",
+            )
+
             RoutineSnapshotCard(preferences = preferences)
 
             PreferencesCard(
@@ -152,6 +167,11 @@ data class SettingsViewState(
                 onPreferencesChange = { draftPreferences = it },
                 onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
                 onReset = { draftPreferences = preferences },
+            )
+
+            SettingsSectionHeader(
+                title = "App",
+                subtitle = "Support links, plan context, and version details stay inside You instead of a detached About route.",
             )
 
             SettingsCard(
@@ -169,6 +189,25 @@ data class SettingsViewState(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsSectionHeader(
+    title: String,
+    subtitle: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

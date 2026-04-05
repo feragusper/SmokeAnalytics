@@ -18,10 +18,13 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.promise
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Option
@@ -31,6 +34,7 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun SettingsWebScreen(
     deps: SettingsWebDependencies,
+    onShare: suspend () -> Unit,
 ) {
     val store = remember(deps) { SettingsWebStore(processHolder = deps.processHolder) }
 
@@ -38,12 +42,16 @@ fun SettingsWebScreen(
 
     val state by store.state.collectAsState()
 
-    state.Render(onIntent = { store.send(it) })
+    state.Render(
+        onIntent = { store.send(it) },
+        onShare = onShare,
+    )
 }
 
 @Composable
 private fun SettingsViewState.Render(
     onIntent: (SettingsIntent) -> Unit,
+    onShare: suspend () -> Unit,
 ) {
     var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
     var showingGoals by remember(currentEmail, preferences.activeGoal) { mutableStateOf(false) }
@@ -93,25 +101,10 @@ private fun SettingsViewState.Render(
             currentDisplayName = currentDisplayName,
         )
 
-        GoalsCard(
-            goalProgress = goalProgress,
-            activeGoal = preferences.activeGoal,
-            onOpenGoals = { showingGoals = true },
+        SectionHeader(
+            title = "Account",
+            subtitle = "Session state and core product context stay together here instead of splitting You into old Settings/About leftovers.",
         )
-
-        errorMessage?.let { msg ->
-            EmptyStateCard(
-                title = "Your space is unavailable",
-                message = msg,
-                actionLabel = "Try again",
-                onAction = { onIntent(SettingsIntent.FetchUser) },
-            )
-        }
-
-        if (displayLoading && currentEmail == null) {
-            LoadingSkeletonCard(heightPx = 120, lineWidths = listOf("42%", "70%", "36%"))
-            return@Div
-        }
 
         if (currentEmail != null) {
             SessionCard(
@@ -139,6 +132,41 @@ private fun SettingsViewState.Render(
                 value = "Recovery",
                 body = "Progress is tied to smoke-free gaps, not perfection. Longer gaps keep the score moving.",
             )
+        }
+
+        SectionHeader(
+            title = "Goals",
+            subtitle = "The active target stays visible here, with the full editor still nested inside You.",
+        )
+
+        GoalsCard(
+            goalProgress = goalProgress,
+            activeGoal = preferences.activeGoal,
+            onOpenGoals = { showingGoals = true },
+        )
+
+        errorMessage?.let { msg ->
+            EmptyStateCard(
+                title = "Your space is unavailable",
+                message = msg,
+                actionLabel = "Try again",
+                onAction = { onIntent(SettingsIntent.FetchUser) },
+            )
+        }
+
+        if (displayLoading && currentEmail == null) {
+            LoadingSkeletonCard(heightPx = 120, lineWidths = listOf("42%", "70%", "36%"))
+            return@Div
+        }
+
+        SectionHeader(
+            title = "Preferences",
+            subtitle = "Routine and cost settings shape how the rest of the product interprets your day.",
+        )
+
+        Div(attrs = {
+            attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+        }) {
             HighlightCard(
                 title = "Day model",
                 value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
@@ -174,11 +202,43 @@ private fun SettingsViewState.Render(
                 },
                 onReset = { draftPreferences = preferences },
             )
+        } else {
+            SurfaceCard {
+                Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text("Sign in to edit routine preferences and keep them synced across mobile and web.")
+                    }
+                }
+            }
         }
+
+        SectionHeader(
+            title = "App",
+            subtitle = "Support, sharing, and product metadata stay visible inside You instead of a detached About route.",
+        )
+
+        AppInfoCard(
+            accountTier = preferences.accountTier.name,
+            onShare = onShare,
+        )
 
         infoMessage?.let { msg ->
             Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(msg) }
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    subtitle: String,
+) {
+    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:6px;max-width:760px;") }) {
+        Div(attrs = { attr("style", "font-size:20px;font-weight:800;color:var(--sa-color-primary);") }) {
+            Text(title)
+        }
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(subtitle) }
     }
 }
 
@@ -254,6 +314,53 @@ private fun GoalsCard(
                     text = if (activeGoal == null) "Set up goals" else "Review goals",
                     onClick = onOpenGoals,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppInfoCard(
+    accountTier: String,
+    onShare: suspend () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+            Div(attrs = {
+                attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+            }) {
+                SessionValueCard(
+                    title = "Plan",
+                    value = accountTier,
+                    body = "Premium remains framed as a future upgrade with richer insights and no ads."
+                )
+                SessionValueCard(
+                    title = "Version",
+                    value = "Web",
+                    body = "The browser surface stays aligned with the same product direction as mobile."
+                )
+            }
+
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Actions") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("Share the app, report bugs, and reach support from the same personal destination.")
+                }
+                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                    PrimaryButton(
+                        text = "Share app",
+                        onClick = { GlobalScope.promise { onShare() } },
+                    )
+                    A("https://github.com/feragusper/SmokeAnalytics/issues/new/choose", attrs = { attr("target", "_blank") }) {
+                        Text("Report bug")
+                    }
+                    A("mailto:feragusper@gmail.com", attrs = { attr("target", "_blank") }) {
+                        Text("Contact us")
+                    }
+                    A("https://github.com/feragusper/SmokeAnalytics", attrs = { attr("target", "_blank") }) {
+                        Text("GitHub")
+                    }
+                }
             }
         }
     }
