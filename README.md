@@ -3,6 +3,11 @@
 [![Integration](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
 [![Android Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml)
 [![Web Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=feragusper_SmokeAnalytics)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=feragusper_SmokeAnalytics)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=code_smells)](https://sonarcloud.io/component_measures/metric/code_smells/list?id=feragusper_SmokeAnalytics)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=feragusper_SmokeAnalytics)
 
 Smoke Analytics is a Kotlin Multiplatform smoking journal focused on one thing: making patterns visible without turning the product into noise.
 
@@ -196,11 +201,6 @@ Current product version:
 
 - `product.version=0.12.0`
 
-Release notes live in:
-
-- [docs/releases/0.10.0.md](docs/releases/0.10.0.md)
-- [docs/releases/0.11.0.md](docs/releases/0.11.0.md)
-
 ## CI And Automation
 
 GitHub Actions drive the main repository automation:
@@ -209,7 +209,7 @@ GitHub Actions drive the main repository automation:
 - `deployment_playstore.yml`: Android release path
 - `deploy-web-hosting.yml`: production web deploy path
 
-Release notes are now part of the release flow and are expected for GitHub releases and the deploy pipeline.
+Release notes are expected in GitHub Releases, not as a growing set of historical markdown files in the repo.
 
 ## Contributor Notes
 
