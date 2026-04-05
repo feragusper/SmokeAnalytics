@@ -24,7 +24,7 @@ fun WebScaffold(
         Triple("⌂", "Home", WebRoute.Home),
         Triple("▤", "Analytics & Map", WebRoute.Analytics),
         Triple("◫", "History", WebRoute.History),
-        Triple("◌", "AI Coach", WebRoute.Coach),
+        Triple("◌", "The Guide", WebRoute.Coach),
         Triple("◉", "You", WebRoute.Settings),
     )
 
