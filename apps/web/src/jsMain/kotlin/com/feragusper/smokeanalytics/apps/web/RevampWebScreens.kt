@@ -1,14 +1,14 @@
 package com.feragusper.smokeanalytics.apps.web
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebDependencies
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebScreen
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.dom.Div
 
 @Composable
@@ -51,6 +51,7 @@ fun SettingsAboutWebScreen(
     settingsDeps: SettingsWebDependencies,
     onShare: suspend () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "You",
@@ -59,7 +60,7 @@ fun SettingsAboutWebScreen(
             actions = {
                 PrimaryButton(
                     text = "Share",
-                    onClick = { GlobalScope.promise { onShare() } },
+                    onClick = { scope.launch { onShare() } },
                 )
             },
         )

@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
 import com.feragusper.smokeanalytics.features.chatbot.domain.CoachReplySource
@@ -16,8 +17,7 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
@@ -26,6 +26,7 @@ import org.jetbrains.compose.web.dom.Text
 fun CoachWebScreen(
     chatbotUseCase: ChatbotUseCase,
 ) {
+    val scope = rememberCoroutineScope()
     var messages by remember { mutableStateOf(emptyList<CoachMessage>()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -95,7 +96,7 @@ fun CoachWebScreen(
             actions = {
                 GhostButton(
                     text = "Refresh",
-                    onClick = { GlobalScope.promise { loadInitialInsight() } },
+                    onClick = { scope.launch { loadInitialInsight() } },
                     enabled = !loading,
                 )
             },
@@ -135,7 +136,7 @@ fun CoachWebScreen(
                 title = "No guide insight yet",
                 message = "Refresh the coach to rebuild a new insight from your recent smoking pattern and current session context.",
                 actionLabel = "Refresh",
-                onAction = { GlobalScope.promise { loadInitialInsight() } },
+                onAction = { scope.launch { loadInitialInsight() } },
             )
 
             else -> {
@@ -143,10 +144,10 @@ fun CoachWebScreen(
                     message = primaryInsight,
                     hasFallback = hasFallback,
                     onPrimaryAction = {
-                        GlobalScope.promise { sendPrompt(primaryCoachActions.first()) }
+                        scope.launch { sendPrompt(primaryCoachActions.first()) }
                     },
                     onSecondaryAction = {
-                        GlobalScope.promise { sendPrompt(primaryCoachActions.last()) }
+                        scope.launch { sendPrompt(primaryCoachActions.last()) }
                     },
                 )
 
@@ -173,7 +174,7 @@ fun CoachWebScreen(
                         ActionGroupCard(
                             group = group,
                             loading = loading,
-                            onPromptClick = { prompt -> GlobalScope.promise { sendPrompt(prompt) } },
+                            onPromptClick = { prompt -> scope.launch { sendPrompt(prompt) } },
                         )
                     }
                 }
@@ -215,7 +216,7 @@ fun CoachWebScreen(
                 title = "Guide temporarily unavailable",
                 message = message,
                 actionLabel = "Refresh guide",
-                onAction = { GlobalScope.promise { loadInitialInsight() } },
+                onAction = { scope.launch { loadInitialInsight() } },
             )
         }
     }

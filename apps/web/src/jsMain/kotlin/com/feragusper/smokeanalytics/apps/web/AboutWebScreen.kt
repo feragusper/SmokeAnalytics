@@ -1,11 +1,11 @@
 package com.feragusper.smokeanalytics.apps.web
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.launch
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
@@ -24,6 +24,7 @@ fun AboutWebScreen(
 fun AboutWebSections(
     onShare: (suspend () -> Unit)? = null,
 ) {
+    val scope = rememberCoroutineScope()
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         SurfaceCard {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
@@ -38,7 +39,7 @@ fun AboutWebSections(
                     Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                         PrimaryButton(
                             text = "Share app",
-                            onClick = { GlobalScope.promise { share() } },
+                            onClick = { scope.launch { share() } },
                         )
                     }
                 }
