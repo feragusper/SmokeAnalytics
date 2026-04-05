@@ -27,3 +27,8 @@ internal fun parseRouteFromHash(hash: String): WebRoute = when (hash.removePrefi
     "/home", "/", "" -> WebRoute.Home
     else -> WebRoute.Home
 }
+
+internal fun parseAnalyticsTabFromHash(hash: String) = when (hash.removePrefix("#")) {
+    "/map" -> com.feragusper.smokeanalytics.apps.web.AnalyticsTab.Map
+    else -> com.feragusper.smokeanalytics.apps.web.AnalyticsTab.Trends
+}

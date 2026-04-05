@@ -77,6 +77,7 @@ data class StatsViewState(
     @Composable
     fun Compose(
         refreshNonce: Int = 0,
+        embedded: Boolean = false,
         intent: (StatsIntent) -> Unit,
     ) {
         var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
@@ -106,51 +107,68 @@ data class StatsViewState(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                        containerColor = if (embedded) {
+                            MaterialTheme.colorScheme.surfaceContainerLow
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                        }
                     ),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "Trends",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(
-                                    text = "Patterns in motion",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Text(
-                                    text = when {
-                                        displayRefreshLoading -> "Refreshing in background"
-                                        error != null && stats != null -> "Latest refresh failed"
-                                        else -> selectedDate.summaryMeta(currentPeriod)
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Card(
-                                shape = RoundedCornerShape(999.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                ),
+                        if (!embedded) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    text = if (displayRefreshLoading) "Refreshing" else selectedDate.summaryMeta(currentPeriod),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = "Trends",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = "Patterns in motion",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    Text(
+                                        text = when {
+                                            displayRefreshLoading -> "Refreshing in background"
+                                            error != null && stats != null -> "Latest refresh failed"
+                                            else -> selectedDate.summaryMeta(currentPeriod)
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Card(
+                                    shape = RoundedCornerShape(999.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                    ),
+                                ) {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        text = if (displayRefreshLoading) "Refreshing" else selectedDate.summaryMeta(currentPeriod),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
                             }
+                        } else {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                text = when {
+                                    displayRefreshLoading -> "Refreshing trends in background"
+                                    error != null && stats != null -> "Latest frequency refresh failed. Showing the last snapshot."
+                                    else -> selectedDate.summaryMeta(currentPeriod)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
 
                         TabRow(

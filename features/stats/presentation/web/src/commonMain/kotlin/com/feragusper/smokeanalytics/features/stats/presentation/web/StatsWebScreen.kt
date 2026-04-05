@@ -33,6 +33,7 @@ fun StatsWebScreen(
     store: StatsWebStore,
     currentPeriod: StatsPeriod,
     selectedDate: LocalDate,
+    embedded: Boolean = false,
     onPeriodChange: (StatsPeriod) -> Unit,
     onDateChange: (LocalDate) -> Unit,
 ) {
@@ -44,6 +45,7 @@ fun StatsWebScreen(
         state = state,
         currentPeriod = currentPeriod,
         selectedDate = selectedDate,
+        embedded = embedded,
         onPeriodChange = onPeriodChange,
         onDateChange = onDateChange,
         onReload = {
@@ -73,28 +75,42 @@ private fun StatsWebContent(
     state: StatsViewState,
     currentPeriod: StatsPeriod,
     selectedDate: LocalDate,
+    embedded: Boolean,
     onPeriodChange: (StatsPeriod) -> Unit,
     onDateChange: (LocalDate) -> Unit,
     onReload: () -> Unit,
 ) {
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
-        PageSectionHeader(
-            title = "Patterns in motion",
-            eyebrow = "Trends",
-            badgeText = when {
-                state.displayRefreshLoading -> "Refreshing"
-                state.displayLoading -> "Loading"
-                state.error != null -> "Error"
-                else -> currentPeriod.label()
-            },
-            badgeTone = when {
-                state.displayLoading || state.displayRefreshLoading -> StatusTone.Busy
-                state.error != null -> StatusTone.Error
-                else -> StatusTone.Default
-            }
-        )
+        if (!embedded) {
+            PageSectionHeader(
+                title = "Patterns in motion",
+                eyebrow = "Trends",
+                badgeText = when {
+                    state.displayRefreshLoading -> "Refreshing"
+                    state.displayLoading -> "Loading"
+                    state.error != null -> "Error"
+                    else -> currentPeriod.label()
+                },
+                badgeTone = when {
+                    state.displayLoading || state.displayRefreshLoading -> StatusTone.Busy
+                    state.error != null -> StatusTone.Error
+                    else -> StatusTone.Default
+                }
+            )
+        }
 
         SurfaceCard {
+            if (embedded) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text(
+                        when {
+                            state.displayRefreshLoading -> "Refreshing frequency in background."
+                            state.error != null && state.stats != null -> "Latest frequency refresh failed. Showing the last snapshot."
+                            else -> selectedDate.summaryLabel(currentPeriod)
+                        }
+                    )
+                }
+            }
             Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
                 Div(attrs = { classes(SmokeWebStyles.periodPills) }) {
                     StatsPeriod.entries.forEach { p ->

@@ -15,12 +15,16 @@ import androidx.compose.runtime.remember
 fun StatsView(
     viewModel: StatsViewModel,
     refreshNonce: Int = 0,
+    embedded: Boolean = false,
 ) {
     // Observe the ViewModel's state using collectAsState and remember to optimize recomposition.
     val viewState by remember(viewModel) { viewModel.states() }.collectAsState()
 
     // Render the UI based on the current state and send user intents to the ViewModel.
-    viewState.Compose(refreshNonce = refreshNonce) { intent ->
+    viewState.Compose(
+        refreshNonce = refreshNonce,
+        embedded = embedded,
+    ) { intent ->
         viewModel.intents().trySend(intent)
     }
 }
