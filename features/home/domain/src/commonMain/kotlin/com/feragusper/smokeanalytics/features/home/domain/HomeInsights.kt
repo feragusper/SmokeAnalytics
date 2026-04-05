@@ -1,8 +1,16 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentBucketDate
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.max
 
 enum class ElapsedTone {
@@ -84,11 +92,33 @@ fun financialSummary(
 fun rateSummary(
     smokeCountListResult: SmokeCountListResult,
     preferences: UserPreferences,
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): RateSummary {
     val targetGapMinutes = when (val count = smokeCountListResult.countByToday) {
         0 -> preferences.awakeMinutesPerDay
         else -> (preferences.awakeMinutesPerDay / count).coerceAtLeast(1)
     }
+    val currentDate = currentBucketDate(
+        now = now,
+        timeZone = timeZone,
+        dayStartHour = preferences.dayStartHour,
+        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+    )
+    val weekStartDate = currentWeekStartInstant(
+        now = now,
+        timeZone = timeZone,
+        dayStartHour = preferences.dayStartHour,
+        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+    ).toLocalDateTime(timeZone).date
+    val monthStartDate = currentMonthStartInstant(
+        now = now,
+        timeZone = timeZone,
+        dayStartHour = preferences.dayStartHour,
+        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+    ).toLocalDateTime(timeZone).date
+    val elapsedWeekDays = (weekStartDate.daysUntil(currentDate) + 1).coerceAtLeast(1)
+    val elapsedMonthDays = (monthStartDate.daysUntil(currentDate) + 1).coerceAtLeast(1)
 
     return RateSummary(
         latestIntervalMinutes = smokeCountListResult.lastSmoke
@@ -96,8 +126,8 @@ fun rateSummary(
             ?.totalMinutes()
             ?.takeIf { it > 0 },
         averageIntervalMinutesToday = targetGapMinutes,
-        averageSmokesPerDayWeek = smokeCountListResult.countByWeek / 7.0,
-        averageSmokesPerDayMonth = smokeCountListResult.countByMonth / 30.0,
+        averageSmokesPerDayWeek = smokeCountListResult.countByWeek / elapsedWeekDays.toDouble(),
+        averageSmokesPerDayMonth = smokeCountListResult.countByMonth / elapsedMonthDays.toDouble(),
     )
 }
 
@@ -138,10 +168,16 @@ fun gamificationSummary(smokes: List<Smoke>): GamificationSummary {
     )
 }
 
-fun SmokeCountListResult.toWidgetSnapshot(preferences: UserPreferences): WidgetSnapshot {
+fun SmokeCountListResult.toWidgetSnapshot(
+    preferences: UserPreferences,
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): WidgetSnapshot {
     val rate = rateSummary(
         smokeCountListResult = this,
         preferences = preferences,
+        now = now,
+        timeZone = timeZone,
     )
     val elapsed = timeSinceLastCigarette
     return WidgetSnapshot(
