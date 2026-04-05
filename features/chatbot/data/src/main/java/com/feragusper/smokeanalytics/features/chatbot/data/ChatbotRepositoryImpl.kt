@@ -19,7 +19,7 @@ class ChatbotRepositoryImpl @Inject constructor(
 
     override suspend fun sendMessage(message: String, context: CoachContext): CoachReply {
         return runCatching {
-            gemini.generateContent(buildConversationPrompt(message, context)).text
+            gemini.generateContent(buildConversationPromptText(message, context)).text
         }.getOrElse { throwable ->
             throwable.printStackTrace()
             null
@@ -55,7 +55,7 @@ class ChatbotRepositoryImpl @Inject constructor(
         context: CoachContext,
     ): String = buildInitialCoachPrompt(context)
 
-    private fun buildConversationPrompt(
+    private fun buildConversationPromptText(
         message: String,
         context: CoachContext,
     ): String = buildConversationPrompt(message, context)
