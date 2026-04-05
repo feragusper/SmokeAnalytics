@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
@@ -18,8 +19,7 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import org.jetbrains.compose.web.attributes.InputType
@@ -324,6 +324,7 @@ private fun AppInfoCard(
     accountTier: String,
     onShare: suspend () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
             Div(attrs = {
@@ -349,7 +350,7 @@ private fun AppInfoCard(
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     PrimaryButton(
                         text = "Share app",
-                        onClick = { GlobalScope.promise { onShare() } },
+                        onClick = { scope.launch { onShare() } },
                     )
                     A("https://github.com/feragusper/SmokeAnalytics/issues/new/choose", attrs = { attr("target", "_blank") }) {
                         Text("Report bug")
