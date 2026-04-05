@@ -80,7 +80,7 @@ fun CoachWebScreen(
         PageSectionHeader(
             title = "The Guide",
             eyebrow = "Guide",
-            subtitle = "Pattern-aware prompts, quiet fallback support, and a calmer coaching surface built around recent smoking behavior.",
+            subtitle = "A calmer coaching surface for cravings, progress checks, and pattern shifts built around recent smoking behavior.",
             badgeText = when {
                 loading -> "Refreshing"
                 error != null -> "Needs attention"
@@ -100,6 +100,30 @@ fun CoachWebScreen(
                 )
             },
         )
+
+        Div(attrs = {
+            attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+        }) {
+            GuideContextCard(
+                title = "What it uses",
+                accent = "Context",
+                body = "Recent smoking rhythm, recovery gaps, and the prompts you ask in this session."
+            )
+            GuideContextCard(
+                title = "Best asks",
+                accent = "Intent",
+                body = "Craving plans, stress resets, delay tactics, and weekly pattern checks work best here."
+            )
+            GuideContextCard(
+                title = if (hasFallback) "Current mode" else "Live mode",
+                accent = if (hasFallback) "Fallback" else "Live",
+                body = when {
+                    loading && primaryInsight == null -> "Refreshing the next guide insight now."
+                    hasFallback -> "Fallback guidance is active, so answers stay practical and bounded even without the live model."
+                    else -> "Live coaching is active, so the guide can respond with more tailored follow-ups."
+                }
+            )
+        }
 
         when {
             loading && primaryInsight == null -> {
@@ -141,19 +165,22 @@ fun CoachWebScreen(
                     }
                 }
 
-                Div(attrs = { attr("style", "display:flex;flex-wrap:wrap;gap:12px;") }) {
-                    coachPrompts.forEach { prompt ->
-                        PrimaryButton(
-                            text = prompt.label,
-                            onClick = { GlobalScope.promise { sendPrompt(prompt) } },
-                            enabled = !loading,
+                Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                        Text("Ask By Intent")
+                    }
+                    coachActionGroups.forEach { group ->
+                        ActionGroupCard(
+                            group = group,
+                            loading = loading,
+                            onPromptClick = { prompt -> GlobalScope.promise { sendPrompt(prompt) } },
                         )
                     }
                 }
 
                 Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                        Text("Offline Support & Tips")
+                        Text("Quiet Support")
                     }
                     coachTips.forEach { tip ->
                         TipCard(
@@ -212,7 +239,7 @@ private fun PrimaryInsightCard(
             Div(attrs = { attr("style", "display:flex;align-items:center;gap:8px;margin-bottom:18px;position:relative;z-index:1;") }) {
                 Div(attrs = { attr("style", "color:var(--sa-color-primary);font-weight:700;font-size:20px;") }) { Text("◎") }
                 Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                    Text("Primary Insight")
+                    Text(if (hasFallback) "Fallback Insight" else "Primary Insight")
                 }
             }
             Div(attrs = { attr("style", "font-size:34px;font-weight:800;line-height:1.12;color:var(--sa-color-primary);max-width:640px;") }) {
@@ -221,9 +248,9 @@ private fun PrimaryInsightCard(
             Div(attrs = { attr("style", "margin-top:14px;font-size:16px;line-height:1.6;color:var(--sa-color-secondary);max-width:720px;") }) {
                 Text(
                     if (hasFallback) {
-                        "Fallback guidance is active. The advice still uses recent smoking context, but it is not backed by a live model."
+                        "Live coaching is unavailable right now. The guide is still using your recent smoking context, but the response is coming from the built-in fallback path."
                     } else {
-                        "Use the guide to isolate patterns, request a realistic adjustment, and keep follow-ups anchored in your recent behavior."
+                        "Use this insight to decide what to ask next: decode the pattern, get a realistic adjustment, or ask for a short recovery plan."
                     }
                 )
             }
@@ -252,6 +279,27 @@ private fun PrimaryInsightCard(
 }
 
 @Composable
+private fun GuideContextCard(
+    title: String,
+    accent: String,
+    body: String,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;min-height:160px;") }) {
+            Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-primary);") }) {
+                Text(accent)
+            }
+            Div(attrs = { attr("style", "font-size:20px;font-weight:700;color:var(--sa-color-onSurface);") }) {
+                Text(title)
+            }
+            Div(attrs = { attr("style", "font-size:14px;line-height:1.6;color:var(--sa-color-secondary);") }) {
+                Text(body)
+            }
+        }
+    }
+}
+
+@Composable
 private fun InsightSupportCard(
     icon: String,
     title: String,
@@ -267,6 +315,33 @@ private fun InsightSupportCard(
             }
             Div(attrs = { attr("style", "font-size:14px;line-height:1.6;color:var(--sa-color-secondary);") }) {
                 Text(body)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionGroupCard(
+    group: CoachActionGroup,
+    loading: Boolean,
+    onPromptClick: (CoachPrompt) -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+            Div(attrs = { attr("style", "font-size:20px;font-weight:700;color:var(--sa-color-onSurface);") }) {
+                Text(group.title)
+            }
+            Div(attrs = { attr("style", "font-size:14px;line-height:1.6;color:var(--sa-color-secondary);") }) {
+                Text(group.subtitle)
+            }
+            Div(attrs = { attr("style", "display:flex;flex-wrap:wrap;gap:12px;") }) {
+                group.actions.forEach { prompt ->
+                    PrimaryButton(
+                        text = prompt.label,
+                        onClick = { onPromptClick(prompt) },
+                        enabled = !loading,
+                    )
+                }
             }
         }
     }
@@ -337,10 +412,10 @@ private fun WeeklySummaryCard(
             Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-start;gap:16px;") }) {
                 Div {
                     Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;opacity:0.78;") }) {
-                        Text("Weekly Summary")
+                        Text("Guide Snapshot")
                     }
                     Div(attrs = { attr("style", "font-size:32px;font-weight:800;line-height:1.1;margin-top:6px;") }) {
-                        Text("Making steady progress")
+                        Text(if (hasFallback) "Steady fallback support" else "Live coaching session")
                     }
                 }
                 Div(attrs = { attr("style", "font-size:28px;opacity:0.42;") }) {
@@ -387,6 +462,12 @@ private data class CoachPrompt(
     val message: String,
 )
 
+private data class CoachActionGroup(
+    val title: String,
+    val subtitle: String,
+    val actions: List<CoachPrompt>,
+)
+
 private data class CoachTip(
     val icon: String,
     val title: String,
@@ -404,10 +485,32 @@ private val primaryCoachActions = listOf(
     CoachPrompt("Tell me more", "Tell me more about the strongest pattern you see right now."),
 )
 
-private val coachPrompts = listOf(
-    CoachPrompt("Craving plan", "I have a craving right now and I want a short delay plan."),
-    CoachPrompt("Progress check", "How am I doing this week, and what seems to be improving?"),
-    CoachPrompt("Stress reset", "I feel stressed right now and I want a calmer alternative to smoking."),
+private val coachActionGroups = listOf(
+    CoachActionGroup(
+        title = "Craving right now",
+        subtitle = "Short tactical prompts when you need to delay the next cigarette instead of overthinking it.",
+        actions = listOf(
+            CoachPrompt("Craving plan", "I have a craving right now and I want a short delay plan."),
+            CoachPrompt("Delay next smoke", "Help me delay the next cigarette by at least 15 minutes with a realistic plan."),
+        ),
+    ),
+    CoachActionGroup(
+        title = "Stress & reset",
+        subtitle = "Use these when the urge is tied to pressure, overload, or the need to decompress.",
+        actions = listOf(
+            CoachPrompt("Stress reset", "I feel stressed right now and I want a calmer alternative to smoking."),
+            CoachPrompt("Break the loop", "What can I do right now to break the automatic loop around this craving?"),
+        ),
+    ),
+    CoachActionGroup(
+        title = "Progress & pattern",
+        subtitle = "Ask the guide to explain what is improving, what still repeats, and how to adjust this week.",
+        actions = listOf(
+            CoachPrompt("Progress check", "How am I doing this week, and what seems to be improving?"),
+            CoachPrompt("How can I adjust this?", "How can I adjust this pattern in a realistic way this week?"),
+            CoachPrompt("Tell me more", "Tell me more about the strongest pattern you see right now."),
+        ),
+    ),
 )
 
 private val coachTips = listOf(
@@ -432,7 +535,7 @@ private fun buildSupportCards(
         return followUps.take(2).mapIndexed { index, message ->
             CoachSupportCard(
                 icon = if (index == 0) "!" else "~",
-                title = if (index == 0) "Prompt in focus" else "Pattern worth revisiting",
+                title = if (index == 0) "Latest follow-up" else "Pattern worth revisiting",
                 body = message.body,
             )
         }
@@ -450,7 +553,7 @@ private fun buildSupportCards(
         ),
         CoachSupportCard(
             icon = "~",
-            title = "Weekly shift",
+            title = "Best next move",
             body = "When consumption drops on a specific day or routine, protect that context and ask the coach how to repeat it intentionally.",
         ),
     )
