@@ -127,50 +127,14 @@ data class HistoryViewState(
                 }
 
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        FilterChip(
-                            modifier = Modifier.weight(1f),
-                            selected = calendarMode,
-                            onClick = { calendarMode = true },
-                            leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                            label = { Text("Calendar") },
-                        )
-                        FilterChip(
-                            modifier = Modifier.weight(1f),
-                            selected = !calendarMode,
-                            onClick = { calendarMode = false },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
-                            label = { Text("List") },
-                        )
-                    }
-                }
-
-                item {
-                    Button(
-                        onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                        enabled = !displayLoading,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Text(
-                            text = "Add for Date",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                    }
-                }
-
-                item {
-                    HistoryDateBar(
+                    ArchiveControlsCard(
+                        calendarMode = calendarMode,
+                        displayLoading = displayLoading,
                         selectedLocalDate = selectedLocalDate,
+                        entriesCount = entriesCount,
+                        onSelectCalendar = { calendarMode = true },
+                        onSelectList = { calendarMode = false },
+                        onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                         onPrevious = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
                         onNext = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
                         onPickDate = { showDatePicker = true },
@@ -248,34 +212,10 @@ data class HistoryViewState(
 
                     !smokes.isNullOrEmpty() -> {
                         item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                        text = dateLabel,
-                                        style = MaterialTheme.typography.titleLarge,
-                                    )
-                                    Text(
-                                        text = "Daily archive",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = RoundedCornerShape(999.dp),
-                                ) {
-                                    Text(
-                                        text = "$entriesCount entries",
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    )
-                                }
-                            }
+                            ArchiveDaySummaryCard(
+                                selectedLocalDate = selectedLocalDate,
+                                entriesCount = entriesCount,
+                            )
                         }
 
                         items(
@@ -420,6 +360,112 @@ private fun HistoryDateBar(
 }
 
 @Composable
+private fun ArchiveControlsCard(
+    calendarMode: Boolean,
+    displayLoading: Boolean,
+    selectedLocalDate: LocalDate,
+    entriesCount: Int,
+    onSelectCalendar: () -> Unit,
+    onSelectList: () -> Unit,
+    onAdd: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onPickDate: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = if (calendarMode) "Browse the month" else "Inspect one day",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = if (calendarMode) {
+                        "Calendar mode is best for spotting denser days before drilling into a specific date."
+                    } else {
+                        "List mode keeps the selected day open for editing, deleting, and verifying timestamps."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    modifier = Modifier.weight(1f),
+                    selected = calendarMode,
+                    onClick = onSelectCalendar,
+                    leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+                    label = { Text("Calendar") },
+                )
+                FilterChip(
+                    modifier = Modifier.weight(1f),
+                    selected = !calendarMode,
+                    onClick = onSelectList,
+                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
+                    label = { Text("List") },
+                )
+            }
+
+            HistoryDateBar(
+                selectedLocalDate = selectedLocalDate,
+                onPrevious = onPrevious,
+                onNext = onNext,
+                onPickDate = onPickDate,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(999.dp),
+                ) {
+                    Text(
+                        text = "$entriesCount entries",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+
+                Button(
+                    onClick = onAdd,
+                    enabled = !displayLoading,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                ) {
+                    Text(
+                        text = "Add for Date",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ArchiveDaySummaryCard(
     selectedLocalDate: LocalDate,
     entriesCount: Int,
@@ -441,7 +487,7 @@ private fun ArchiveDaySummaryCard(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "Daily archive",
+                    text = "${selectedLocalDate.toUiMonthYear()} · Daily archive",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -495,6 +541,11 @@ private fun ArchiveCalendarCard(
                     )
                     Text(
                         text = "Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "Tap a day to pivot the archive and open that date in list mode.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
