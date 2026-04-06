@@ -90,13 +90,29 @@ jobs:
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
 
       - name: Push Git Tag
+        id: push_android_tag
+        shell: bash
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git tag "${{ steps.android_version.outputs.release_tag }}"
-          git push origin "${{ steps.android_version.outputs.release_tag }}"
+          release_tag="${{ steps.android_version.outputs.release_tag }}"
+
+          if git ls-remote --exit-code --tags origin "$release_tag" >/dev/null 2>&1; then
+            echo "status=available" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git tag "$release_tag"
+
+          if git push origin "$release_tag"; then
+            echo "status=available" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Play deploy succeeded but pushing tag $release_tag failed. Create the tag/release manually if needed."
+            echo "status=skipped" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Release
+        if: ${{ steps.push_android_tag.outputs.status == 'available' }}
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -107,3 +123,7 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+      - name: Note skipped Android release automation
+        if: ${{ steps.push_android_tag.outputs.status == 'skipped' }}
+        run: echo "Android deploy completed, but GitHub tag/release creation was skipped due to token permissions."

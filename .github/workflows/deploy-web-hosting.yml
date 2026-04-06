@@ -81,14 +81,29 @@ jobs:
 
       - name: Push Web Git Tag
         if: ${{ inputs.env == 'prod' }}
+        id: push_web_tag
+        shell: bash
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git tag "${{ steps.web_version.outputs.release_tag }}"
-          git push origin "${{ steps.web_version.outputs.release_tag }}"
+          release_tag="${{ steps.web_version.outputs.release_tag }}"
+
+          if git ls-remote --exit-code --tags origin "$release_tag" >/dev/null 2>&1; then
+            echo "status=available" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git tag "$release_tag"
+
+          if git push origin "$release_tag"; then
+            echo "status=available" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Web deploy succeeded but pushing tag $release_tag failed. Create the tag/release manually if needed."
+            echo "status=skipped" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create Web Release
-        if: ${{ inputs.env == 'prod' }}
+        if: ${{ inputs.env == 'prod' && steps.push_web_tag.outputs.status == 'available' }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,3 +113,7 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+      - name: Note skipped web release automation
+        if: ${{ inputs.env == 'prod' && steps.push_web_tag.outputs.status == 'skipped' }}
+        run: echo "Web deploy completed, but GitHub tag/release creation was skipped due to token permissions."
