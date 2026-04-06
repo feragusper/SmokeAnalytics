@@ -77,7 +77,7 @@ jobs:
       - name: Deploy Firebase Hosting + coach relay
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "functions:coachRelay,hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive
+        run: npx firebase-tools deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "functions:coachRelay,hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive --force
 
       - name: Push Web Git Tag
         if: ${{ inputs.env == 'prod' }}
