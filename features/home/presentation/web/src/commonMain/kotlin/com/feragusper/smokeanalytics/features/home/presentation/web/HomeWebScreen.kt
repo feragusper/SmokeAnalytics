@@ -8,6 +8,7 @@ import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
@@ -114,6 +115,7 @@ fun HomeViewState.Render(
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 lastSmokeTimeLabel = lastSmoke?.date?.toLocalClockLabel(),
                 rateSummary = rateSummary,
+                goalProgress = goalProgress,
             )
 
             Div(attrs = { attr("style", "display:flex;justify-content:center;") }) {
@@ -135,14 +137,15 @@ fun HomeViewState.Render(
                 HomeHighlightCard(
                     eyebrow = "Recovery Points",
                     value = gamificationSummary?.points?.toString() ?: "--",
-                    supporting = gamificationSummary?.let { "Next ${it.nextMilestoneHours}h" } ?: "Momentum",
+                    supporting = "Consistency",
                 )
             }
 
             RecoveryStatusCard(
                 elapsedTone = elapsedTone,
                 timeSinceLastCigarette = timeSinceLastCigarette,
-                gamificationSummary = gamificationSummary,
+                rateSummary = rateSummary,
+                goalProgress = goalProgress,
             )
 
             GoalFocusCard(
@@ -176,6 +179,7 @@ private fun GoalFocusCard(
     hasActiveGoal: Boolean,
     onOpenGoals: () -> Unit,
 ) {
+    val progress = ((goalProgress?.progressFraction ?: 0f).coerceIn(0f, 1f) * 100).toInt()
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
             Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
@@ -191,6 +195,18 @@ private fun GoalFocusCard(
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
             }
             goalProgress?.progressLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            goalProgress?.progressFraction?.let {
+                ProgressTrack(progress = progress, color = "var(--sa-color-primary)")
+            }
+            goalProgress?.warningLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            goalProgress?.celebrationLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+            }
+            goalProgress?.streakLabel?.let {
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
@@ -209,12 +225,18 @@ private fun PulseHeroCard(
     timeSinceLastCigarette: Pair<Long, Long>?,
     lastSmokeTimeLabel: String?,
     rateSummary: RateSummary?,
+    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
 ) {
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
-    val averageGapMinutes = rateSummary?.averageIntervalMinutesToday
+    val gapFocus = gapFocusSummary(
+        elapsedMinutes = elapsedMinutes,
+        rateSummary = rateSummary,
+        goalProgress = goalProgress,
+    )
+    val progressFraction = gapFocus.progressFraction
     val progress = when {
-        elapsedMinutes == null || averageGapMinutes == null || averageGapMinutes <= 0 -> 18
-        else -> ((elapsedMinutes.toFloat() / averageGapMinutes).coerceIn(0.08f, 1f) * 100).toInt()
+        progressFraction == null -> 18
+        else -> (progressFraction.coerceIn(0.08f, 1f) * 100).toInt()
     }
 
     SurfaceCard {
@@ -268,10 +290,7 @@ private fun PulseHeroCard(
                 )
             }) {
                 Text(
-                    pulseSummaryText(
-                        elapsedMinutes = elapsedMinutes,
-                        averageGapMinutes = averageGapMinutes,
-                    )
+                    gapFocus.pulseSummaryText
                 )
             }
         }
@@ -313,11 +332,16 @@ private fun HomeHighlightCard(
 private fun RecoveryStatusCard(
     elapsedTone: ElapsedTone,
     timeSinceLastCigarette: Pair<Long, Long>?,
-    gamificationSummary: GamificationSummary?,
+    rateSummary: RateSummary?,
+    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
 ) {
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
-    val targetMinutes = (gamificationSummary?.nextMilestoneHours ?: 1).coerceAtLeast(1) * 60
-    val progress = if (elapsedMinutes == null) 0 else ((elapsedMinutes.toFloat() / targetMinutes.toFloat()).coerceIn(0f, 1f) * 100).toInt()
+    val gapFocus = gapFocusSummary(
+        elapsedMinutes = elapsedMinutes,
+        rateSummary = rateSummary,
+        goalProgress = goalProgress,
+    )
+    val progress = ((gapFocus.progressFraction ?: 0f).coerceIn(0f, 1f) * 100).toInt()
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
@@ -338,10 +362,7 @@ private fun RecoveryStatusCard(
             }
             ProgressTrack(progress = progress, color = elapsedTone.ringColor())
             Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
-                Text(
-                    gamificationSummary?.let { "You are working toward the next ${it.nextMilestoneHours}h milestone." }
-                        ?: "Each longer gap compounds into steadier recovery."
-                )
+                Text(gapFocus.recoverySummaryText)
             }
         }
     }
@@ -493,29 +514,9 @@ private fun Pair<Long, Long>?.toPulseValue(): String = this?.let { (hours, minut
     "${displayHours.toString().padStart(2, '0')}:${displayMinutes.toString().padStart(2, '0')}"
 } ?: "--:--"
 
-private fun pulseSummaryText(
-    elapsedMinutes: Long?,
-    averageGapMinutes: Int?,
-): String = when {
-    elapsedMinutes == null -> "Log a smoke or refresh to rebuild today's pulse."
-    averageGapMinutes == null || averageGapMinutes <= 0 -> "Stay with this gap and watch the daily pulse settle."
-    elapsedMinutes >= averageGapMinutes -> "You are ${(elapsedMinutes - averageGapMinutes).toDurationLabel()} beyond your average gap today."
-    else -> "${(averageGapMinutes - elapsedMinutes).toDurationLabel()} until you meet today's average gap."
-}
-
 private fun Int.toGapLabel(): String = when {
     this >= 60 -> "${this / 60}h ${this % 60}m"
     else -> "${this}m"
-}
-
-private fun Long.toDurationLabel(): String {
-    val hours = this / 60
-    val minutes = this % 60
-    return when {
-        hours <= 0 -> "${minutes}m"
-        minutes == 0L -> "${hours}h"
-        else -> "${hours}h ${minutes}m"
-    }
 }
 
 private fun Double.formatOneDecimal(): String {

@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
 import com.feragusper.smokeanalytics.libraries.architecture.domain.firstInstantThisMonth
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
+import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentDayBucket
 import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentMonthBucket
 import com.feragusper.smokeanalytics.libraries.architecture.domain.isInCurrentWeekBucket
@@ -131,8 +133,16 @@ class SmokeRepositoryImpl(
      * @see SmokeRepository.fetchSmokeCount
      */
     override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?): SmokeCount {
+        val monthStart = currentMonthStartInstant(
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        )
+        val weekStart = currentWeekStartInstant(
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        )
         return fetchSmokes(
-            start = firstInstantThisMonth(dayStartHour = dayStartHour),
+            start = if (weekStart < monthStart) weekStart else monthStart,
             end = nextDayStartInstant(
                 dayStartHour = dayStartHour,
                 manualDayStartEpochMillis = manualDayStartEpochMillis,

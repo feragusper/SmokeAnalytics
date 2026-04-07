@@ -1,5 +1,8 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
+import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlinx.datetime.Instant
@@ -115,5 +118,57 @@ class HomeInsightsTest {
         assertTrue(snapshot.elapsedMinutes >= 0L)
         assertEquals(240, snapshot.targetGapMinutes)
         assertEquals(14.0 / 3.0, snapshot.averageSmokesPerDayWeek, 0.0001)
+    }
+
+    @Test
+    fun `gapFocusSummary uses mindful gap goal as the source of truth when active`() {
+        val summary = gapFocusSummary(
+            elapsedMinutes = 95,
+            rateSummary = RateSummary(
+                latestIntervalMinutes = 70,
+                averageIntervalMinutesToday = 180,
+                averageSmokesPerDayWeek = 12.0,
+                averageSmokesPerDayMonth = 13.0,
+            ),
+            goalProgress = GoalProgress(
+                goal = SmokingGoal.MindfulGap(targetMinutes = 120),
+                title = "Mindful gap",
+                targetLabel = "Target: wait 2h",
+                progressLabel = "Current gap: 1h 35m",
+                supportingText = "Keep going.",
+                status = GoalStatus.OnTrack,
+            ),
+        )
+
+        assertEquals(120, summary.targetMinutes)
+        assertEquals(95f / 120f, summary.progressFraction)
+        assertEquals("25m until you reach your goal gap.", summary.pulseSummaryText)
+        assertEquals("You are building toward your 2h mindful gap goal.", summary.recoverySummaryText)
+    }
+
+    @Test
+    fun `gapFocusSummary falls back to observed gap when no mindful gap goal is active`() {
+        val summary = gapFocusSummary(
+            elapsedMinutes = 210,
+            rateSummary = RateSummary(
+                latestIntervalMinutes = 210,
+                averageIntervalMinutesToday = 180,
+                averageSmokesPerDayWeek = 14.0,
+                averageSmokesPerDayMonth = 14.0,
+            ),
+            goalProgress = GoalProgress(
+                goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
+                title = "Daily cap",
+                targetLabel = "Target: at most 15 today",
+                progressLabel = "6 / 15 smoked today",
+                supportingText = "9 left before reaching today's cap.",
+                status = GoalStatus.OnTrack,
+                progressFraction = 0.4f,
+            ),
+        )
+
+        assertEquals(180, summary.targetMinutes)
+        assertEquals("You are 30m beyond your steady gap target.", summary.pulseSummaryText)
+        assertEquals("You are building toward a 3h steady gap rhythm.", summary.recoverySummaryText)
     }
 }

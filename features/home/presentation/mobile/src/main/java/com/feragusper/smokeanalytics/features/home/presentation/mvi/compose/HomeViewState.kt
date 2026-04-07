@@ -50,7 +50,9 @@ import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
@@ -188,6 +190,11 @@ private fun HomeContent(
     intent: (HomeIntent) -> Unit,
 ) {
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
+    val gapFocus = gapFocusSummary(
+        elapsedMinutes = elapsedMinutes,
+        rateSummary = rateSummary,
+        goalProgress = goalProgress,
+    )
 
     LazyColumn(
         modifier = Modifier
@@ -208,7 +215,7 @@ private fun HomeContent(
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 elapsedTone = elapsedTone,
-                rateSummary = rateSummary,
+                gapFocus = gapFocus,
                 isLoading = isLoading,
             )
         }
@@ -230,8 +237,7 @@ private fun HomeContent(
         item {
             RecoveryStatusSection(
                 elapsedTone = elapsedTone,
-                timeSinceLastCigaretteMinutes = elapsedMinutes,
-                gamificationSummary = gamificationSummary,
+                gapFocusSummary = gapFocus,
                 isLoading = isLoading,
             )
         }
@@ -304,15 +310,14 @@ private fun PulseHeroSection(
     timeSinceLastCigarette: Pair<Long, Long>?,
     lastSmokeTimeLabel: String?,
     elapsedTone: ElapsedTone,
-    rateSummary: RateSummary?,
+    gapFocus: GapFocusSummary,
     isLoading: Boolean,
 ) {
-    val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
-    val averageGap = rateSummary?.averageIntervalMinutesToday
+    val progressFraction = gapFocus.progressFraction
     val progress = when {
         isLoading -> 0f
-        elapsedMinutes == null || averageGap == null || averageGap <= 0 -> 0.22f
-        else -> (elapsedMinutes.toFloat() / averageGap.toFloat()).coerceIn(0.08f, 1f)
+        progressFraction == null -> 0.22f
+        else -> progressFraction.coerceIn(0.08f, 1f)
     }
 
     Column(
@@ -370,10 +375,7 @@ private fun PulseHeroSection(
             shape = RoundedCornerShape(999.dp),
         ) {
             Text(
-                text = pulseSummaryText(
-                    elapsedMinutes = elapsedMinutes,
-                    averageGapMinutes = averageGap,
-                ),
+                text = gapFocus.pulseSummaryText,
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 color = elapsedTone.contentColor(),
@@ -533,7 +535,7 @@ private fun PrimaryMetricGrid(
             modifier = Modifier.weight(1f),
             eyebrow = "Recovery Points",
             value = gamificationSummary?.points?.toString(),
-            supporting = gamificationSummary?.let { "Next ${it.nextMilestoneHours}h" } ?: "Momentum",
+            supporting = "Consistency",
             isLoading = isLoading,
         )
     }
@@ -596,13 +598,15 @@ private fun HighlightMetricCard(
 @Composable
 private fun RecoveryStatusSection(
     elapsedTone: ElapsedTone,
-    timeSinceLastCigaretteMinutes: Long?,
-    gamificationSummary: GamificationSummary?,
+    gapFocusSummary: GapFocusSummary,
     isLoading: Boolean,
 ) {
-    val targetMinutes = (gamificationSummary?.nextMilestoneHours ?: 1).coerceAtLeast(1) * 60
-    val progress = if (timeSinceLastCigaretteMinutes == null) 0f
-    else (timeSinceLastCigaretteMinutes.toFloat() / targetMinutes.toFloat()).coerceIn(0f, 1f)
+    val progressFraction = gapFocusSummary.progressFraction
+    val progress = when {
+        isLoading -> 0f
+        progressFraction == null -> 0f
+        else -> progressFraction
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -651,8 +655,7 @@ private fun RecoveryStatusSection(
             Text(
                 text = when {
                     isLoading -> "Calculating your next recovery milestone."
-                    gamificationSummary != null -> "You are working toward the next ${gamificationSummary.nextMilestoneHours}h milestone."
-                    else -> "Each longer gap compounds into steadier recovery."
+                    else -> gapFocusSummary.recoverySummaryText
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -894,35 +897,9 @@ private fun Pair<Long, Long>?.toPulseValue(): String = this?.let { (hours, minut
     "%02d:%02d".format(totalMinutes / 60, totalMinutes % 60)
 } ?: "--:--"
 
-private fun pulseSummaryText(
-    elapsedMinutes: Long?,
-    averageGapMinutes: Int?,
-): String = when {
-    elapsedMinutes == null -> "Log a smoke or refresh to rebuild today's pulse."
-    averageGapMinutes == null || averageGapMinutes <= 0 -> "Stay with this gap and watch the daily pulse settle."
-    elapsedMinutes >= averageGapMinutes -> {
-        val delta = elapsedMinutes - averageGapMinutes
-        "You are ${delta.toDurationLabel()} beyond your average gap today."
-    }
-    else -> {
-        val remaining = averageGapMinutes - elapsedMinutes
-        "${remaining.toDurationLabel()} until you meet today's average gap."
-    }
-}
-
 private fun Int.toGapLabel(): String = when {
     this >= 60 -> "${this / 60}h ${this % 60}m"
     else -> "${this}m"
-}
-
-private fun Long.toDurationLabel(): String {
-    val hours = this / 60
-    val minutes = this % 60
-    return when {
-        hours <= 0 -> "${minutes}m"
-        minutes == 0L -> "${hours}h"
-        else -> "${hours}h ${minutes}m"
-    }
 }
 
 private fun ElapsedTone.recoveryTitle(): String = when (this) {
