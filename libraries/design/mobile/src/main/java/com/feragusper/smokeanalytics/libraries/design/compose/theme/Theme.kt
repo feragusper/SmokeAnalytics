@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
 import android.os.Build
+import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -53,6 +54,12 @@ fun SmokeAnalyticsTheme(
             // Set the appearance of system bars (status and navigation bars) based on the theme.
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
+
+            window.statusBarColor = AndroidColor.TRANSPARENT
+            window.navigationBarColor = AndroidColor.TRANSPARENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
 
             // Use transparent system bars for a more immersive UI experience.
             window.setBackgroundDrawable(null)
