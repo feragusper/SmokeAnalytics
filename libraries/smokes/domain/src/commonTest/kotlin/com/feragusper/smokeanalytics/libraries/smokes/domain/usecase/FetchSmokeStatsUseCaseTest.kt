@@ -26,7 +26,13 @@ class FetchSmokeStatsUseCaseTest {
 
             val result = useCase.invoke(2023, 3, 1, FetchSmokeStatsUseCase.PeriodType.DAY)
 
-            val expectedStats = SmokeStats.from(smokeList, 2023, 3, 1)
+            val expectedStats = SmokeStats.from(
+                smokeList,
+                2023,
+                3,
+                1,
+                periodType = SmokeStats.SelectionPeriod.DAY,
+            )
             assertEquals(expectedStats, result)
         }
 
@@ -42,7 +48,13 @@ class FetchSmokeStatsUseCaseTest {
 
             val result = useCase.invoke(2023, 3, 1, FetchSmokeStatsUseCase.PeriodType.WEEK)
 
-            val expectedStats = SmokeStats.from(smokeList, 2023, 3, 1)
+            val expectedStats = SmokeStats.from(
+                smokeList,
+                2023,
+                3,
+                1,
+                periodType = SmokeStats.SelectionPeriod.WEEK,
+            )
             assertEquals(expectedStats, result)
         }
 

@@ -108,12 +108,28 @@ class HistoryProcessHolder(
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                     ).dayOfMonth
                 }.eachCount()
+                val previousMonthStart = LocalDate(
+                    year = selectedBucketDate.year,
+                    monthNumber = selectedBucketDate.monthNumber,
+                    dayOfMonth = 1,
+                ).plus(DatePeriod(months = -1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                val previousMonthCounts = fetchSmokesUseCase(
+                    start = previousMonthStart,
+                    end = monthStart,
+                ).groupingBy { smoke ->
+                    smoke.date.dayBucketDate(
+                        timeZone = tz,
+                        dayStartHour = preferences.dayStartHour,
+                        manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    ).dayOfMonth
+                }.eachCount()
 
                 emit(
                     HistoryResult.FetchSmokesSuccess(
                         selectedDate = dayStart,
                         smokes = filtered,
                         monthCounts = monthCounts,
+                        previousMonthCounts = previousMonthCounts,
                     )
                 )
             }

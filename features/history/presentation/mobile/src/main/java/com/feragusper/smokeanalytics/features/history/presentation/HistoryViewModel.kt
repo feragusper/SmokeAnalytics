@@ -71,6 +71,7 @@ class HistoryViewModel @Inject constructor(
                 smokes = result.smokes,
                 selectedDate = result.selectedDate,
                 monthCounts = result.monthCounts,
+                previousMonthCounts = result.previousMonthCounts,
                 pendingSmokeId = null,
                 pendingAction = null,
                 rowInteractionEpoch = previous.rowInteractionEpoch + 1,

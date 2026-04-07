@@ -20,13 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ViewList
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +68,7 @@ data class HistoryViewState(
     internal val displayLoading: Boolean = false,
     internal val smokes: List<Smoke>? = null,
     internal val monthCounts: Map<Int, Int> = emptyMap(),
+    internal val previousMonthCounts: Map<Int, Int> = emptyMap(),
     internal val error: HistoryResult.Error? = null,
     internal val selectedDate: Instant = Clock.System.now(),
     internal val pendingSmokeId: String? = null,
@@ -87,12 +84,16 @@ data class HistoryViewState(
         val snackbarHostState = remember { SnackbarHostState() }
         val timeZone = remember { TimeZone.currentSystemDefault() }
         var showDatePicker by remember { mutableStateOf(false) }
-        var calendarMode by rememberSaveable { mutableStateOf(true) }
-
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
         val dateLabel = selectedLocalDate.toUiMonthDay()
         val entriesCount = smokes?.size ?: 0
-        val trendValue = remember(monthCounts) { monthTrendPercent(monthCounts) }
+        val trendValue = remember(selectedLocalDate, monthCounts, previousMonthCounts) {
+            monthTrendPercent(
+                selectedDate = selectedLocalDate,
+                monthCounts = monthCounts,
+                previousMonthCounts = previousMonthCounts,
+            )
+        }
 
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -128,12 +129,9 @@ data class HistoryViewState(
 
                 item {
                     ArchiveControlsCard(
-                        calendarMode = calendarMode,
                         displayLoading = displayLoading,
                         selectedLocalDate = selectedLocalDate,
                         entriesCount = entriesCount,
-                        onSelectCalendar = { calendarMode = true },
-                        onSelectList = { calendarMode = false },
                         onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                         onPrevious = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
                         onNext = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
@@ -142,28 +140,28 @@ data class HistoryViewState(
                 }
 
                 item {
-                    if (calendarMode) {
-                        ArchiveCalendarCard(
-                            selectedLocalDate = selectedLocalDate,
-                            monthCounts = monthCounts,
-                            onShiftMonth = { amount ->
-                                val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
-                                intent(
-                                    HistoryIntent.FetchSmokes(
-                                        LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)
-                                    )
+                    ArchiveCalendarCard(
+                        selectedLocalDate = selectedLocalDate,
+                        monthCounts = monthCounts,
+                        onShiftMonth = { amount ->
+                            val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
+                            intent(
+                                HistoryIntent.FetchSmokes(
+                                    LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)
                                 )
-                            },
-                            onPickDay = { picked ->
-                                intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
-                            },
-                        )
-                    } else {
-                        ArchiveDaySummaryCard(
-                            selectedLocalDate = selectedLocalDate,
-                            entriesCount = entriesCount,
-                        )
-                    }
+                            )
+                        },
+                        onPickDay = { picked ->
+                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
+                        },
+                    )
+                }
+
+                item {
+                    ArchiveDaySummaryCard(
+                        selectedLocalDate = selectedLocalDate,
+                        entriesCount = entriesCount,
+                    )
                 }
 
                 error?.let { currentError ->
@@ -211,13 +209,6 @@ data class HistoryViewState(
                     }
 
                     !smokes.isNullOrEmpty() -> {
-                        item {
-                            ArchiveDaySummaryCard(
-                                selectedLocalDate = selectedLocalDate,
-                                entriesCount = entriesCount,
-                            )
-                        }
-
                         items(
                             items = smokes,
                             key = { smoke -> "${smoke.id}-${rowInteractionEpoch}" }
@@ -361,12 +352,9 @@ private fun HistoryDateBar(
 
 @Composable
 private fun ArchiveControlsCard(
-    calendarMode: Boolean,
     displayLoading: Boolean,
     selectedLocalDate: LocalDate,
     entriesCount: Int,
-    onSelectCalendar: () -> Unit,
-    onSelectList: () -> Unit,
     onAdd: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
@@ -384,38 +372,14 @@ private fun ArchiveControlsCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = if (calendarMode) "Browse the month" else "Inspect one day",
+                    text = "Browse the month and inspect one day",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = if (calendarMode) {
-                        "Calendar mode is best for spotting denser days before drilling into a specific date."
-                    } else {
-                        "List mode keeps the selected day open for editing, deleting, and verifying timestamps."
-                    },
+                    text = "Use the calendar to pivot the archive, then edit the selected day in the list below.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    modifier = Modifier.weight(1f),
-                    selected = calendarMode,
-                    onClick = onSelectCalendar,
-                    leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-                    label = { Text("Calendar") },
-                )
-                FilterChip(
-                    modifier = Modifier.weight(1f),
-                    selected = !calendarMode,
-                    onClick = onSelectList,
-                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
-                    label = { Text("List") },
                 )
             }
 
@@ -681,13 +645,26 @@ private fun TrendCard(
 
 private fun Map<Int, Int>.averageOrZero(): Double = values.takeIf { it.isNotEmpty() }?.average() ?: 0.0
 
-private fun monthTrendPercent(monthCounts: Map<Int, Int>): Int {
-    if (monthCounts.isEmpty()) return 0
-    val midpoint = monthCounts.keys.maxOrNull()?.div(2)?.coerceAtLeast(1) ?: return 0
-    val firstHalf = monthCounts.filterKeys { it <= midpoint }.values.sum()
-    val secondHalf = monthCounts.filterKeys { it > midpoint }.values.sum()
-    if (firstHalf == 0) return 0
-    return (((secondHalf - firstHalf).toDouble() / firstHalf.toDouble()) * 100).toInt()
+private fun monthTrendPercent(
+    selectedDate: LocalDate,
+    monthCounts: Map<Int, Int>,
+    previousMonthCounts: Map<Int, Int>,
+): Int {
+    if (previousMonthCounts.isEmpty()) return 0
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val currentMonth = selectedDate.year == today.year && selectedDate.monthNumber == today.monthNumber
+    val compareThroughDay = if (currentMonth) {
+        today.dayOfMonth
+    } else {
+        LocalDate(selectedDate.year, selectedDate.monthNumber, 1)
+            .plus(DatePeriod(months = 1))
+            .plus(DatePeriod(days = -1))
+            .dayOfMonth
+    }
+    val currentTotal = (1..compareThroughDay).sumOf { day -> monthCounts[day] ?: 0 }
+    val previousTotal = (1..compareThroughDay).sumOf { day -> previousMonthCounts[day] ?: 0 }
+    if (previousTotal == 0) return 0
+    return (((previousTotal - currentTotal).toDouble() / previousTotal.toDouble()) * 100).toInt()
 }
 
 private fun Double.formatOneDecimal(): String {
