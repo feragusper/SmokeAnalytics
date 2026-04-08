@@ -59,7 +59,14 @@ data class ChatbotViewState(
         val primaryInsight = coachMessages.firstOrNull()
         val secondaryInsights = coachMessages.drop(1)
         val hasFallback = coachMessages.any { it.source == CoachReplySource.Fallback }
-        val summaryCards = buildSummaryCards(coachMessages = coachMessages, hasFallback = hasFallback)
+        val guideMode = when {
+            isLoading && primaryInsight == null -> GuideUiMode.Loading
+            primaryInsight != null && hasFallback -> GuideUiMode.Fallback
+            primaryInsight != null -> GuideUiMode.Live
+            error != null -> GuideUiMode.Unavailable
+            else -> GuideUiMode.Quiet
+        }
+        val summaryCards = buildSummaryCards(coachMessages = coachMessages, hasFallback = guideMode == GuideUiMode.Fallback)
 
         LazyColumn(
             modifier = Modifier
@@ -92,67 +99,74 @@ data class ChatbotViewState(
             }
 
             item {
-                GuideContextOverview(
-                    hasFallback = hasFallback,
-                    isLoading = isLoading && primaryInsight == null,
-                )
+                GuideContextOverview(mode = guideMode)
             }
 
             item {
                 PrimaryInsightCard(
                     insight = primaryInsight,
-                    isLoading = isLoading && primaryInsight == null,
-                    hasFallback = hasFallback,
+                    isLoading = guideMode == GuideUiMode.Loading,
+                    hasFallback = guideMode == GuideUiMode.Fallback,
                     onPrimaryAction = { intent(ChatbotIntent.SendMessage(coachPrimaryActions.first().prompt)) },
                     onSecondaryAction = { intent(ChatbotIntent.SendMessage(coachPrimaryActions.last().prompt)) },
                 )
             }
 
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(
-                        text = "Ask By Intent",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    coachActionGroups.forEach { group ->
-                        ActionGroupCard(
-                            group = group,
-                            enabled = !isLoading,
-                            onActionClick = { prompt ->
-                                intent(ChatbotIntent.SendMessage(prompt))
-                            },
+            if (guideMode == GuideUiMode.Live || guideMode == GuideUiMode.Fallback) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text(
+                            text = "Ask By Intent",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        coachActionGroups.forEach { group ->
+                            ActionGroupCard(
+                                group = group,
+                                enabled = !isLoading,
+                                onActionClick = { prompt ->
+                                    intent(ChatbotIntent.SendMessage(prompt))
+                                },
+                            )
+                        }
                     }
+                }
+
+                items(summaryCards) { card ->
+                    SupportInsightCard(
+                        icon = card.icon,
+                        title = card.title,
+                        body = card.body,
+                    )
+                }
+
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Quiet Support",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        coachTips.forEach { tip ->
+                            TipCard(
+                                icon = tip.icon,
+                                title = tip.title,
+                                body = tip.body,
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    WeeklySummaryCard(
+                        hasFallback = guideMode == GuideUiMode.Fallback,
+                        totalCoachMessages = coachMessages.size,
+                        totalPromptsUsed = messages.count { it.isFromUser },
+                    )
                 }
             }
 
-            items(summaryCards) { card ->
-                SupportInsightCard(
-                    icon = card.icon,
-                    title = card.title,
-                    body = card.body,
-                )
-            }
-
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Quiet Support",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    coachTips.forEach { tip ->
-                        TipCard(
-                            icon = tip.icon,
-                            title = tip.title,
-                            body = tip.body,
-                        )
-                    }
-                }
-            }
-
-            if (secondaryInsights.isNotEmpty()) {
+            if (secondaryInsights.isNotEmpty() && (guideMode == GuideUiMode.Live || guideMode == GuideUiMode.Fallback)) {
                 item {
                     Text(
                         text = "Recent Follow-ups",
@@ -166,7 +180,7 @@ data class ChatbotViewState(
                 }
             }
 
-            error?.let { errorMessage ->
+            if (guideMode == GuideUiMode.Unavailable) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(
@@ -184,21 +198,13 @@ data class ChatbotViewState(
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                             Text(
-                                text = errorMessage,
+                                text = error ?: "The coach could not prepare your insight right now. Try again in a moment.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                             )
                         }
                     }
                 }
-            }
-
-            item {
-                WeeklySummaryCard(
-                    hasFallback = hasFallback,
-                    totalCoachMessages = coachMessages.size,
-                    totalPromptsUsed = messages.count { it.isFromUser },
-                )
             }
         }
     }
@@ -359,8 +365,7 @@ private fun PrimaryInsightCard(
 
 @Composable
 private fun GuideContextOverview(
-    hasFallback: Boolean,
-    isLoading: Boolean,
+    mode: GuideUiMode,
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -378,15 +383,27 @@ private fun GuideContextOverview(
             accent = "Intent",
         )
         GuideContextCard(
-            title = if (hasFallback) "Current mode" else "Live mode",
-            body = if (isLoading) {
-                "Refreshing the next insight now."
-            } else if (hasFallback) {
-                "Fallback guidance is active, so answers stay practical and bounded even without the live model."
-            } else {
-                "Live coaching is active, so the guide can respond with more tailored follow-ups."
+            title = when (mode) {
+                GuideUiMode.Loading -> "Refreshing"
+                GuideUiMode.Live -> "Live guidance"
+                GuideUiMode.Fallback -> "Fallback mode"
+                GuideUiMode.Quiet -> "Quiet state"
+                GuideUiMode.Unavailable -> "Unavailable"
             },
-            accent = if (hasFallback) "Fallback" else "Live",
+            body = when (mode) {
+                GuideUiMode.Loading -> "Refreshing the next insight now."
+                GuideUiMode.Live -> "Live coaching is active, so the guide can respond with more tailored follow-ups."
+                GuideUiMode.Fallback -> "Fallback guidance is active, so answers stay practical and bounded even without the live model."
+                GuideUiMode.Quiet -> "The guide is waiting for enough recent context to prepare a focused insight."
+                GuideUiMode.Unavailable -> "The coach could not prepare your insight right now. Retry in a moment."
+            },
+            accent = when (mode) {
+                GuideUiMode.Loading -> "Busy"
+                GuideUiMode.Live -> "Live"
+                GuideUiMode.Fallback -> "Fallback"
+                GuideUiMode.Quiet -> "Quiet"
+                GuideUiMode.Unavailable -> "Retry"
+            },
         )
     }
 }
@@ -746,6 +763,14 @@ private data class CoachActionGroup(
     val subtitle: String,
     val actions: List<CoachAction>,
 )
+
+private enum class GuideUiMode {
+    Loading,
+    Live,
+    Fallback,
+    Quiet,
+    Unavailable,
+}
 
 private val coachActionGroups = listOf(
     CoachActionGroup(
