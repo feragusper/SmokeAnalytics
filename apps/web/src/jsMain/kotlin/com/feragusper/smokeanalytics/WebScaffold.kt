@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.apps.web.BuildKonfig
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Text
@@ -21,11 +22,11 @@ fun WebScaffold(
 ) {
     var isSidebarCollapsed by remember { mutableStateOf(false) }
     val items = listOf(
-        Triple("⌂", "Home", WebRoute.Home),
-        Triple("▤", "Analytics & Map", WebRoute.Analytics),
-        Triple("◫", "History", WebRoute.History),
-        Triple("◌", "The Guide", WebRoute.Coach),
-        Triple("◉", "You", WebRoute.Settings),
+        NavItem("/icons/nav-home.svg", "Home", WebRoute.Home),
+        NavItem("/icons/nav-analytics.svg", "Analytics & Map", WebRoute.Analytics),
+        NavItem("/icons/nav-history.svg", "History", WebRoute.History),
+        NavItem("/icons/nav-guide.svg", "The Guide", WebRoute.Coach),
+        NavItem("/icons/nav-you.svg", "You", WebRoute.Settings),
     )
 
     Div(attrs = { classes(SmokeWebStyles.shell) }) {
@@ -60,18 +61,40 @@ fun WebScaffold(
             }
 
             Div(attrs = { classes(SmokeWebStyles.navList) }) {
-                items.forEach { (icon, label, target) ->
-                    Div(
+                items.forEach { item ->
+                    val isActive = route == item.target
+                    A(
+                        href = item.target.toHash(),
                         attrs = {
                             classes(SmokeWebStyles.navItem)
-                            if (route == target) classes(SmokeWebStyles.navItemActive)
+                            if (isActive) classes(SmokeWebStyles.navItemActive)
                             if (isSidebarCollapsed) classes(SmokeWebStyles.navItemCollapsed)
-                            onClick { onNavigate(target) }
+                            onClick { event ->
+                                if (event.button == 0.toShort() && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                                    onNavigate(item.target)
+                                }
+                            }
                         }
                     ) {
-                        Div(attrs = { classes(SmokeWebStyles.navIcon) }) { Text(icon) }
+                        Div(attrs = { classes(SmokeWebStyles.navIcon) }) {
+                            Img(
+                                src = item.iconSrc,
+                                attrs = {
+                                    attr("alt", "")
+                                    attr(
+                                        "style",
+                                        buildString {
+                                            append("width: 20px; height: 20px; display: block;")
+                                            if (isActive) {
+                                                append("filter: brightness(0) saturate(100%) invert(100%);")
+                                            }
+                                        }
+                                    )
+                                }
+                            )
+                        }
                         if (!isSidebarCollapsed) {
-                            Div(attrs = { classes(SmokeWebStyles.navLabel) }) { Text(label) }
+                            Div(attrs = { classes(SmokeWebStyles.navLabel) }) { Text(item.label) }
                         }
                     }
                 }
@@ -102,3 +125,9 @@ fun WebScaffold(
         }
     }
 }
+
+private data class NavItem(
+    val iconSrc: String,
+    val label: String,
+    val target: WebRoute,
+)

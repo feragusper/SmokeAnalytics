@@ -76,73 +76,64 @@ fun CoachWebScreen(
     val primaryInsight = messages.firstOrNull()
     val secondaryInsights = messages.drop(1)
     val hasFallback = messages.any { it.source == CoachReplySource.Fallback }
+    val guideMode = remember(primaryInsight, hasFallback, loading, error) {
+        when {
+            loading && primaryInsight == null -> GuideUiMode.Loading
+            primaryInsight != null && hasFallback -> GuideUiMode.Fallback
+            primaryInsight != null -> GuideUiMode.Live
+            error != null -> GuideUiMode.Unavailable
+            else -> GuideUiMode.Quiet
+        }
+    }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "The Guide",
             eyebrow = "Guide",
             subtitle = "A calmer coaching surface for cravings, progress checks, and pattern shifts built around recent smoking behavior.",
-            badgeText = when {
-                loading -> "Refreshing"
-                error != null -> "Needs attention"
-                hasFallback -> "Fallback guidance"
-                else -> "Context-aware"
-            },
-            badgeTone = when {
-                loading -> StatusTone.Busy
-                error != null -> StatusTone.Error
-                else -> StatusTone.Default
-            },
+            badgeText = guideMode.badgeText,
+            badgeTone = guideMode.badgeTone,
             actions = {
                 GhostButton(
-                    text = "Refresh",
+                    text = if (guideMode == GuideUiMode.Unavailable) "Retry" else "Refresh",
                     onClick = { scope.launch { loadInitialInsight() } },
                     enabled = !loading,
                 )
             },
         )
 
-        Div(attrs = {
-            attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
-        }) {
-            GuideContextCard(
-                title = "What it uses",
-                accent = "Context",
-                body = "Recent smoking rhythm, recovery gaps, and the prompts you ask in this session."
-            )
-            GuideContextCard(
-                title = "Best asks",
-                accent = "Intent",
-                body = "Craving plans, stress resets, delay tactics, and weekly pattern checks work best here."
-            )
-            GuideContextCard(
-                title = if (hasFallback) "Current mode" else "Live mode",
-                accent = if (hasFallback) "Fallback" else "Live",
-                body = when {
-                    loading && primaryInsight == null -> "Refreshing the next guide insight now."
-                    hasFallback -> "Fallback guidance is active, so answers stay practical and bounded even without the live model."
-                    else -> "Live coaching is active, so the guide can respond with more tailored follow-ups."
-                }
-            )
-        }
-
         when {
-            loading && primaryInsight == null -> {
+            guideMode == GuideUiMode.Loading -> {
+                GuideTopSummary(mode = guideMode)
                 LoadingSkeletonCard(heightPx = 220, lineWidths = listOf("28%", "76%", "62%"))
                 LoadingSkeletonCard(heightPx = 140, lineWidths = listOf("22%", "58%"))
             }
 
-            primaryInsight == null -> EmptyStateCard(
-                title = "No guide insight yet",
-                message = "Refresh the coach to rebuild a new insight from your recent smoking pattern and current session context.",
-                actionLabel = "Refresh",
-                onAction = { scope.launch { loadInitialInsight() } },
-            )
+            guideMode == GuideUiMode.Quiet -> {
+                GuideTopSummary(mode = guideMode)
+                EmptyStateCard(
+                    title = "No guide insight yet",
+                    message = "Refresh the guide to build a new insight from your recent smoking pattern and current session context.",
+                    actionLabel = "Refresh",
+                    onAction = { scope.launch { loadInitialInsight() } },
+                )
+            }
+
+            guideMode == GuideUiMode.Unavailable -> {
+                GuideTopSummary(mode = guideMode)
+                EmptyStateCard(
+                    title = "Guide temporarily unavailable",
+                    message = error ?: "The coach could not prepare your insight right now. Try again in a moment.",
+                    actionLabel = "Retry",
+                    onAction = { scope.launch { loadInitialInsight() } },
+                )
+            }
 
             else -> {
+                GuideTopSummary(mode = guideMode)
                 PrimaryInsightCard(
-                    message = primaryInsight,
-                    hasFallback = hasFallback,
+                    message = requireNotNull(primaryInsight),
+                    hasFallback = guideMode == GuideUiMode.Fallback,
                     onPrimaryAction = {
                         scope.launch { sendPrompt(primaryCoachActions.first()) }
                     },
@@ -204,21 +195,66 @@ fun CoachWebScreen(
                 }
 
                 WeeklySummaryCard(
-                    hasFallback = hasFallback,
+                    hasFallback = guideMode == GuideUiMode.Fallback,
                     totalInsights = messages.size,
                     totalPrompts = secondaryInsights.size,
                 )
             }
         }
+    }
+}
 
-        error?.let { message ->
-            EmptyStateCard(
-                title = "Guide temporarily unavailable",
-                message = message,
-                actionLabel = "Refresh guide",
-                onAction = { scope.launch { loadInitialInsight() } },
-            )
-        }
+private enum class GuideUiMode(
+    val badgeText: String,
+    val badgeTone: StatusTone,
+) {
+    Loading("Refreshing", StatusTone.Busy),
+    Live("Live", StatusTone.Default),
+    Fallback("Fallback", StatusTone.Error),
+    Quiet("Quiet", StatusTone.Default),
+    Unavailable("Unavailable", StatusTone.Error),
+}
+
+@Composable
+private fun GuideTopSummary(
+    mode: GuideUiMode,
+) {
+    Div(attrs = {
+        attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+    }) {
+        GuideContextCard(
+            title = "What it uses",
+            accent = "Context",
+            body = "Recent smoking rhythm, recovery gaps, and the prompts you ask in this session."
+        )
+        GuideContextCard(
+            title = "Best asks",
+            accent = "Intent",
+            body = "Craving plans, stress resets, delay tactics, and weekly pattern checks work best here."
+        )
+        GuideContextCard(
+            title = when (mode) {
+                GuideUiMode.Loading -> "Refreshing"
+                GuideUiMode.Live -> "Live guidance"
+                GuideUiMode.Fallback -> "Fallback mode"
+                GuideUiMode.Quiet -> "Quiet state"
+                GuideUiMode.Unavailable -> "Unavailable"
+            },
+            accent = when (mode) {
+                GuideUiMode.Loading -> "Busy"
+                GuideUiMode.Live -> "Live"
+                GuideUiMode.Fallback -> "Fallback"
+                GuideUiMode.Quiet -> "Quiet"
+                GuideUiMode.Unavailable -> "Retry"
+            },
+            body = when (mode) {
+                GuideUiMode.Loading -> "Refreshing the next guide insight now."
+                GuideUiMode.Live -> "Live coaching is active, so the guide can respond with more tailored follow-ups."
+                GuideUiMode.Fallback -> "Fallback guidance is active, so answers stay practical and bounded even without the live model."
+                GuideUiMode.Quiet -> "The guide is waiting for enough recent context to produce a focused insight."
+                GuideUiMode.Unavailable -> "The coach could not prepare an insight right now. Retry in a moment."
+            }
+        )
     }
 }
 

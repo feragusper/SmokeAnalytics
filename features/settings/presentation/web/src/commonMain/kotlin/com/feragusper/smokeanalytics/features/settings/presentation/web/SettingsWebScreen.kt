@@ -164,30 +164,6 @@ private fun SettingsViewState.Render(
             subtitle = "Routine and cost settings shape how the rest of the product interprets your day.",
         )
 
-        Div(attrs = {
-            attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
-        }) {
-            HighlightCard(
-                title = "Day model",
-                value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                body = "Wake-up hour used as the main bucket boundary across Home, History, and Analytics.",
-            )
-            HighlightCard(
-                title = "Sleep starts",
-                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                body = "Sleep hours are excluded from the mindful gap target and the daily hourly average.",
-            )
-            HighlightCard(
-                title = "Location",
-                value = if (preferences.locationTrackingEnabled) "On" else "Off",
-                body = if (preferences.locationTrackingEnabled) {
-                    "Location tracking is enabled, so map insights can learn from repeated areas."
-                } else {
-                    "Location tracking is off, so map insights stay unavailable until the setting changes."
-                },
-            )
-        }
-
         if (currentEmail != null) {
             PreferencesCard(
                 preferences = draftPreferences,
@@ -491,90 +467,124 @@ private fun PreferencesCard(
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Values that shape cost calculations, day buckets, and map behavior.")
-            }
-
-            ChoiceField(
-                label = "Currency",
-                displayLoading = displayLoading,
-                selected = preferences.currencySymbol,
-                options = listOf("€", "$", "£"),
-                onSelection = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
-            )
-
-            NumberField(
-                label = "Pack price",
-                value = preferences.packPrice,
-                prefix = preferences.currencySymbol,
-                step = 0.5,
-                displayLoading = displayLoading,
-                onDecrease = {
-                    onPreferencesChange(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
-                },
-                onIncrease = {
-                    onPreferencesChange(preferences.copy(packPrice = preferences.packPrice + 0.5))
-                },
-                onManualChange = { raw ->
-                    raw.toDoubleOrNull()?.let { value ->
-                        onPreferencesChange(preferences.copy(packPrice = value.coerceAtLeast(0.0)))
-                    }
-                },
-            )
-
-            NumberField(
-                label = "Cigarettes per pack",
-                value = preferences.cigarettesPerPack.toDouble(),
-                step = 1.0,
-                displayLoading = displayLoading,
-                onDecrease = {
-                    onPreferencesChange(
-                        preferences.copy(cigarettesPerPack = (preferences.cigarettesPerPack - 1).coerceAtLeast(1))
+            Div(attrs = {
+                attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+            }) {
+                PreferenceSummaryCard(
+                    title = "Day model",
+                    value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                    body = "Wake-up hour used as the main bucket boundary across Home, History, and Analytics.",
+                ) {
+                    TimeField(
+                        label = "First hour of the day",
+                        value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                        displayLoading = displayLoading,
+                        onChange = {
+                            val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
+                            onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
+                        },
                     )
-                },
-                onIncrease = {
-                    onPreferencesChange(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
-                },
-                onManualChange = { raw ->
-                    raw.toIntOrNull()?.let { value ->
-                        onPreferencesChange(preferences.copy(cigarettesPerPack = value.coerceAtLeast(1)))
-                    }
-                },
-            )
-
-            TimeField(
-                label = "First hour of the day",
-                value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                displayLoading = displayLoading,
-                onChange = {
-                    val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
-                    onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
-                },
-            )
-
-            TimeField(
-                label = "Bedtime",
-                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                displayLoading = displayLoading,
-                onChange = {
-                    val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
-                    onPreferencesChange(preferences.copy(bedtimeHour = raw.coerceIn(0, 23)))
-                },
-            )
-
-            LabeledField(label = "Track location with smokes") {
-                Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                    Input(type = InputType.Checkbox, attrs = {
-                        if (preferences.locationTrackingEnabled) attr("checked", "true")
-                        if (displayLoading) disabled()
-                        onInput {
-                            onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                }
+                PreferenceSummaryCard(
+                    title = "Sleep starts",
+                    value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                    body = "Sleep hours are excluded from the mindful gap target and the daily hourly average.",
+                ) {
+                    TimeField(
+                        label = "Bedtime",
+                        value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                        displayLoading = displayLoading,
+                        onChange = {
+                            val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
+                            onPreferencesChange(preferences.copy(bedtimeHour = raw.coerceIn(0, 23)))
+                        },
+                    )
+                }
+                PreferenceSummaryCard(
+                    title = "Location",
+                    value = if (preferences.locationTrackingEnabled) "On" else "Off",
+                    body = if (preferences.locationTrackingEnabled) {
+                        "Location tracking is enabled, so map insights can learn from repeated areas."
+                    } else {
+                        "Location tracking is off, so map insights stay unavailable until the setting changes."
+                    },
+                ) {
+                    LabeledField(label = "Track location with smokes") {
+                        Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                            Input(type = InputType.Checkbox, attrs = {
+                                if (preferences.locationTrackingEnabled) attr("checked", "true")
+                                if (displayLoading) disabled()
+                                onInput {
+                                    onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                                }
+                            })
+                            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                                Text("Optional. Used for map insights.")
+                            }
                         }
-                    })
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Optional. Used for map insights.")
                     }
+                }
+                PreferenceSummaryCard(
+                    title = "Currency",
+                    value = preferences.currencySymbol,
+                    body = "Used for pack-price and cost calculations across the product.",
+                ) {
+                    ChoiceField(
+                        label = "Currency",
+                        displayLoading = displayLoading,
+                        selected = preferences.currencySymbol,
+                        options = listOf("€", "$", "£"),
+                        onSelection = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
+                    )
+                }
+                PreferenceSummaryCard(
+                    title = "Pack price",
+                    value = preferences.currencySymbol + preferences.packPrice.asDecimalString(),
+                    body = "The cost base for spend estimates and progress summaries.",
+                ) {
+                    NumberField(
+                        label = "Pack price",
+                        value = preferences.packPrice,
+                        prefix = preferences.currencySymbol,
+                        step = 0.5,
+                        displayLoading = displayLoading,
+                        onDecrease = {
+                            onPreferencesChange(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
+                        },
+                        onIncrease = {
+                            onPreferencesChange(preferences.copy(packPrice = preferences.packPrice + 0.5))
+                        },
+                        onManualChange = { raw ->
+                            raw.toDoubleOrNull()?.let { value ->
+                                onPreferencesChange(preferences.copy(packPrice = value.coerceAtLeast(0.0)))
+                            }
+                        },
+                    )
+                }
+                PreferenceSummaryCard(
+                    title = "Cigarettes per pack",
+                    value = preferences.cigarettesPerPack.toString(),
+                    body = "Keeps cost metrics and pack-level estimates aligned.",
+                ) {
+                    NumberField(
+                        label = "Cigarettes per pack",
+                        value = preferences.cigarettesPerPack.toDouble(),
+                        step = 1.0,
+                        displayLoading = displayLoading,
+                        onDecrease = {
+                            onPreferencesChange(
+                                preferences.copy(cigarettesPerPack = (preferences.cigarettesPerPack - 1).coerceAtLeast(1))
+                            )
+                        },
+                        onIncrease = {
+                            onPreferencesChange(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
+                        },
+                        onManualChange = { raw ->
+                            raw.toIntOrNull()?.let { value ->
+                                onPreferencesChange(preferences.copy(cigarettesPerPack = value.coerceAtLeast(1)))
+                            }
+                        },
+                    )
                 }
             }
 
@@ -582,6 +592,29 @@ private fun PreferencesCard(
                 GhostButton(text = "Reset", onClick = onReset, enabled = !displayLoading)
                 PrimaryButton(text = "Save", onClick = onSave, enabled = !displayLoading)
             }
+        }
+    }
+}
+
+@Composable
+private fun PreferenceSummaryCard(
+    title: String,
+    value: String,
+    body: String,
+    editor: @Composable () -> Unit,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:220px;") }) {
+            Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+                Text(title)
+            }
+            Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
+                Text(value)
+            }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text(body)
+            }
+            editor()
         }
     }
 }

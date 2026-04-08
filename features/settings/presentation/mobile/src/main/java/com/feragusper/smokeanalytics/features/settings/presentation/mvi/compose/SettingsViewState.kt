@@ -159,8 +159,6 @@ data class SettingsViewState(
                 subtitle = "Routine and cost settings that shape how Home, History, and Analytics interpret your day.",
             )
 
-            RoutineSnapshotCard(preferences = preferences)
-
             PreferencesCard(
                 preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
@@ -557,9 +555,13 @@ private fun PreferencesCard(
     }
 
     SettingsCard(
-        title = "Preferences",
-        subtitle = "Values that shape cost calculations, day buckets, and map behavior.",
+        title = "Edit preferences",
+        subtitle = "Routine, price, and location settings stay in one place instead of a duplicated hierarchy.",
     ) {
+        RoutineSnapshotCard(preferences = preferences)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         CurrencyField(
             selected = preferences.currencySymbol,
             enabled = enabled,

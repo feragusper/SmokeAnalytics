@@ -24,6 +24,13 @@ data class SmokeStats(
     val totalDay: Int,
     val dailyAverage: Float
 ) {
+    enum class SelectionPeriod {
+        DAY,
+        WEEK,
+        MONTH,
+        YEAR,
+    }
+
     companion object {
 
         fun from(
@@ -35,14 +42,19 @@ data class SmokeStats(
             now: Instant = Clock.System.now(),
             dayStartHour: Int = 0,
             bedtimeHour: Int = 22,
+            periodType: SelectionPeriod = SelectionPeriod.MONTH,
         ): SmokeStats {
             val monthStart = LocalDate(year, month, 1)
             val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
             val daysInMonth = monthStart.daysUntil(nextMonthStart)
 
-            val monthSmokes = smokes
+            val shiftedSmokes = smokes
                 .asSequence()
                 .map { smoke -> smoke to smoke.date.minus(dayStartHour, DateTimeUnit.HOUR, timeZone).toLocalDateTime(timeZone) }
+                .toList()
+
+            val monthSmokes = shiftedSmokes
+                .asSequence()
                 .filter { (_, dt) -> dt.date.year == year && dt.date.monthNumber == month }
                 .toList()
 
@@ -55,7 +67,8 @@ data class SmokeStats(
             // Weekly: "Mon".."Sun" (fixed labels; locale lo hacés en UI si querés)
             val weeklyLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
             val weeklyStats = weeklyLabels.associateWith { 0 }.toMutableMap()
-            monthSmokes
+            val weekSource = if (periodType == SelectionPeriod.WEEK) shiftedSmokes else monthSmokes
+            weekSource
                 .groupBy { (_, dt) -> dt.dayOfWeek.toShortLabel() }
                 .forEach { (k, v) -> weeklyStats[k] = v.size }
 
@@ -115,16 +128,19 @@ data class SmokeStats(
 
             val totalMonth = monthSmokes.size
 
-            // totalWeek: última semana “rolling” respecto a `now` (7 días hacia atrás)
             val totalWeek = run {
-                val shiftedNow = now.minus(dayStartHour, DateTimeUnit.HOUR, timeZone).toLocalDateTime(timeZone)
-                val start = shiftedNow.date.plus(DatePeriod(days = -6))
-                    .atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
-                val end = shiftedNow.date.plus(DatePeriod(days = 1))
-                    .atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
-                smokes.count { it.date >= start && it.date < end }
+                if (periodType == SelectionPeriod.WEEK) {
+                    smokes.size
+                } else {
+                    val shiftedNow = now.minus(dayStartHour, DateTimeUnit.HOUR, timeZone).toLocalDateTime(timeZone)
+                    val start = shiftedNow.date.plus(DatePeriod(days = -6))
+                        .atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                    val end = shiftedNow.date.plus(DatePeriod(days = 1))
+                        .atStartOfDayIn(timeZone)
+                        .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                    smokes.count { it.date >= start && it.date < end }
+                }
             }
 
             val totalDay = daySmokes.size

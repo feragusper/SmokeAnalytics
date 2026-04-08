@@ -17,6 +17,8 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStatsPeriod
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.averageSummary
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -208,6 +210,7 @@ private fun StatsWebContent(
                         }
                     }
 
+                    val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
                     Div(attrs = { attr("style", "display:grid;grid-template-rows:auto auto;gap:16px;align-content:start;") }) {
                         SurfaceCard {
                             Div(attrs = {
@@ -215,14 +218,14 @@ private fun StatsWebContent(
                             }) {
                                 Div {
                                     Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
-                                        Text("Daily Average")
+                                        Text(averageSummary.title)
                                     }
                                     Div(attrs = { attr("style", "font-size:40px;font-weight:800;line-height:1;margin-top:8px;") }) {
-                                        Text(averageFor(currentPeriod, stats).formatOneDecimal())
+                                        Text(averageSummary.value.formatOneDecimal())
                                     }
                                 }
                                 Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
-                                    Text(averageLabelFor(currentPeriod))
+                                    Text(averageSummary.supporting)
                                 }
                             }
                         }
@@ -439,23 +442,6 @@ private fun Map<String, Int>.toCumulativeHourly(): Map<String, Int> {
     }
 }
 
-private fun averageFor(period: StatsPeriod, stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats): Double {
-    val values = when (period) {
-        StatsPeriod.DAY -> stats.hourly.values
-        StatsPeriod.WEEK -> stats.weekly.values
-        StatsPeriod.MONTH -> stats.monthly.values
-        StatsPeriod.YEAR -> stats.yearly.values
-    }
-    return values.takeIf { it.isNotEmpty() }?.average() ?: 0.0
-}
-
-private fun averageLabelFor(period: StatsPeriod): String = when (period) {
-    StatsPeriod.DAY -> "Average per hour"
-    StatsPeriod.WEEK -> "Average per weekday"
-    StatsPeriod.MONTH -> "Average per week bucket"
-    StatsPeriod.YEAR -> "Average per month"
-}
-
 private fun peakBucketFor(
     period: StatsPeriod,
     stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
@@ -472,6 +458,20 @@ private fun Double.formatOneDecimal(): String {
     val decimal = ((rounded - whole) * 10).toInt()
     return "$whole.$decimal"
 }
+
+private fun averageSummaryFor(
+    period: StatsPeriod,
+    stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
+    selectedDate: LocalDate,
+) = stats.averageSummary(
+    period = when (period) {
+        StatsPeriod.DAY -> SmokeStatsPeriod.DAY
+        StatsPeriod.WEEK -> SmokeStatsPeriod.WEEK
+        StatsPeriod.MONTH -> SmokeStatsPeriod.MONTH
+        StatsPeriod.YEAR -> SmokeStatsPeriod.YEAR
+    },
+    selectedDate = selectedDate,
+)
 
 private fun jsObject(): dynamic = js("({})")
 

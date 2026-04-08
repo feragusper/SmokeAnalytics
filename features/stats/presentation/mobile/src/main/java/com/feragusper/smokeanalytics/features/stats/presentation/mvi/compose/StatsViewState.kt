@@ -42,6 +42,8 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStatsPeriod
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.averageSummary
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import com.valentinilk.shimmer.shimmer
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -55,10 +57,11 @@ import com.patrykandpatrick.vico.compose.common.VicoTheme
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import java.time.LocalDate
+import java.time.LocalDate as JavaLocalDate
 import java.util.Locale
 import kotlin.math.max
 
@@ -81,7 +84,7 @@ data class StatsViewState(
         intent: (StatsIntent) -> Unit,
     ) {
         var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
-        var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+        var selectedDate by remember { mutableStateOf(JavaLocalDate.now()) }
 
         LaunchedEffect(refreshNonce, currentPeriod, selectedDate) {
             intent(
@@ -310,8 +313,9 @@ data class StatsViewState(
 private fun SummaryCards(
     currentPeriod: StatsViewState.StatsPeriod,
     stats: SmokeStats,
-    selectedDate: LocalDate,
+    selectedDate: JavaLocalDate,
 ) {
+    val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -339,9 +343,9 @@ private fun SummaryCards(
             ) {
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = "Daily Average",
-                    headline = String.format(Locale.getDefault(), "%.1f", averageFor(currentPeriod, stats)),
-                    supporting = averageLabelFor(currentPeriod),
+                    title = averageSummary.title,
+                    headline = String.format(Locale.getDefault(), "%.1f", averageSummary.value),
+                    supporting = averageSummary.supporting,
                     highlighted = true,
                     compact = true,
                 )
@@ -442,8 +446,8 @@ private fun SummaryCard(
 @Composable
 fun HeaderNavigation(
     currentPeriod: StatsViewState.StatsPeriod,
-    selectedDate: LocalDate,
-    onDateChange: (LocalDate) -> Unit
+    selectedDate: JavaLocalDate,
+    onDateChange: (JavaLocalDate) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -539,6 +543,7 @@ private fun LineChart(stats: Map<String, Int>) {
     val xAxisFormatter = rememberXAxisFormatter(stats)
 
     val accumulatedValues = stats.values.runningFold(0) { sum, value -> sum + value }.drop(1)
+    val maxVisibleY = max(1.0, accumulatedValues.maxOrNull()?.toDouble() ?: 0.0)
 
     LaunchedEffect(stats) {
         modelProducer.runTransaction {
@@ -548,7 +553,7 @@ private fun LineChart(stats: Map<String, Int>) {
         }
     }
 
-    val chartWidth = max(560, stats.size * 72).dp
+    val chartWidth = max(420, stats.size * 48).dp
 
     Row(
         modifier = Modifier
@@ -558,7 +563,12 @@ private fun LineChart(stats: Map<String, Int>) {
     ) {
         CartesianChartHost(
             chart = rememberCartesianChart(
-                rememberLineCartesianLayer(),
+                rememberLineCartesianLayer(
+                    pointSpacing = 48.dp,
+                    rangeProvider = remember(maxVisibleY) {
+                        CartesianLayerRangeProvider.fixed(minY = 0.0, maxY = maxVisibleY)
+                    },
+                ),
                 startAxis = VerticalAxis.rememberStart(),
                 bottomAxis = HorizontalAxis.rememberBottom(
                     valueFormatter = xAxisFormatter
@@ -598,36 +608,19 @@ fun rememberSmokeAnalyticsVicoTheme(): VicoTheme {
 
 private fun chartCaptionFor(period: StatsViewState.StatsPeriod): String = when (period) {
     StatsViewState.StatsPeriod.DAY -> "Hourly view across the selected day."
-    StatsViewState.StatsPeriod.WEEK -> "How smoking volume is distributed across weekdays."
-    StatsViewState.StatsPeriod.MONTH -> "Weekly buckets for the selected month."
-    StatsViewState.StatsPeriod.YEAR -> "Month-by-month totals for the selected year."
+    StatsViewState.StatsPeriod.WEEK -> "How smoking volume is distributed across the selected week."
+    StatsViewState.StatsPeriod.MONTH -> "Week buckets across the selected month."
+    StatsViewState.StatsPeriod.YEAR -> "Month totals across the selected year."
 }
 
-private fun LocalDate.analyticsLabel(): String =
+private fun JavaLocalDate.analyticsLabel(): String =
     "${month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} $dayOfMonth, $year"
 
-private fun LocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
+private fun JavaLocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
     StatsViewState.StatsPeriod.DAY -> "Selected day"
     StatsViewState.StatsPeriod.WEEK -> "Week of ${analyticsLabel()}"
     StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
     StatsViewState.StatsPeriod.YEAR -> "Year to date"
-}
-
-private fun averageFor(period: StatsViewState.StatsPeriod, stats: SmokeStats): Float {
-    val values = when (period) {
-        StatsViewState.StatsPeriod.DAY -> stats.hourly.values
-        StatsViewState.StatsPeriod.WEEK -> stats.weekly.values
-        StatsViewState.StatsPeriod.MONTH -> stats.monthly.values
-        StatsViewState.StatsPeriod.YEAR -> stats.yearly.values
-    }
-    return values.takeIf { it.isNotEmpty() }?.average()?.toFloat() ?: 0f
-}
-
-private fun averageLabelFor(period: StatsViewState.StatsPeriod): String = when (period) {
-    StatsViewState.StatsPeriod.DAY -> "Average per hour"
-    StatsViewState.StatsPeriod.WEEK -> "Average per weekday"
-    StatsViewState.StatsPeriod.MONTH -> "Average per week bucket"
-    StatsViewState.StatsPeriod.YEAR -> "Average per month"
 }
 
 private fun peakBucketFor(
@@ -659,6 +652,22 @@ fun StatsViewState.StatsPeriod.toDomainPeriodType(): FetchSmokeStatsUseCase.Peri
         StatsViewState.StatsPeriod.YEAR -> FetchSmokeStatsUseCase.PeriodType.YEAR
     }
 }
+
+private fun averageSummaryFor(
+    period: StatsViewState.StatsPeriod,
+    stats: SmokeStats,
+    selectedDate: JavaLocalDate,
+) = stats.averageSummary(
+    period = when (period) {
+        StatsViewState.StatsPeriod.DAY -> SmokeStatsPeriod.DAY
+        StatsViewState.StatsPeriod.WEEK -> SmokeStatsPeriod.WEEK
+        StatsViewState.StatsPeriod.MONTH -> SmokeStatsPeriod.MONTH
+        StatsViewState.StatsPeriod.YEAR -> SmokeStatsPeriod.YEAR
+    },
+    selectedYear = selectedDate.year,
+    selectedMonth = selectedDate.monthValue,
+    selectedDay = selectedDate.dayOfMonth,
+)
 
 /**
  * Preview for Stats Screen.
