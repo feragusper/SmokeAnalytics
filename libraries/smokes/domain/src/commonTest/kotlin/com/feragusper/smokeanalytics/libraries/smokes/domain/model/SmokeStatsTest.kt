@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.model
 
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -136,6 +137,30 @@ class SmokeStatsTest {
     }
 
     @Test
+    fun `GIVEN a week crossing month boundary WHEN from is called for week THEN weekday buckets include prior-month days`() {
+        val smokes = listOf(
+            Smoke("1", Instant.parse("2023-03-31T10:00:00Z"), 0L to 0L), // Fri
+            Smoke("2", Instant.parse("2023-04-01T11:00:00Z"), 0L to 0L), // Sat
+            Smoke("3", Instant.parse("2023-04-02T12:00:00Z"), 0L to 0L), // Sun
+        )
+
+        val stats = SmokeStats.from(
+            smokes = smokes,
+            year = 2023,
+            month = 4,
+            day = 1,
+            timeZone = tz,
+            now = Instant.parse("2023-04-02T12:00:00Z"),
+            periodType = SmokeStats.SelectionPeriod.WEEK,
+        )
+
+        assertEquals(1, stats.weekly["Fri"])
+        assertEquals(1, stats.weekly["Sat"])
+        assertEquals(1, stats.weekly["Sun"])
+        assertEquals(3, stats.totalWeek)
+    }
+
+    @Test
     fun `GIVEN day is provided WHEN from is called THEN totalDay should match daySmokes`() {
         val smokes = createSmokeEvents()
 
@@ -174,5 +199,64 @@ class SmokeStatsTest {
         assertEquals(1, stats.hourly["07:00"])
         assertEquals(1, stats.hourly["21:00"])
         assertEquals(null, stats.hourly["23:00"])
+    }
+
+    @Test
+    fun `GIVEN current week stats WHEN averageSummary is called THEN it uses elapsed days in week`() {
+        val stats = SmokeStats(
+            daily = emptyMap(),
+            weekly = mapOf("Mon" to 10, "Tue" to 8, "Wed" to 6, "Thu" to 4, "Fri" to 0, "Sat" to 0, "Sun" to 0),
+            monthly = emptyMap(),
+            yearly = emptyMap(),
+            hourly = emptyMap(),
+            totalMonth = 0,
+            totalWeek = 28,
+            totalDay = 0,
+            dailyAverage = 0f,
+        )
+
+        val summary = stats.averageSummary(
+            period = SmokeStatsPeriod.WEEK,
+            selectedDate = LocalDate(2023, 3, 16),
+            now = Instant.parse("2023-03-16T12:00:00Z"),
+            timeZone = tz,
+        )
+
+        assertEquals("Daily pace", summary.title)
+        assertEquals("Across elapsed days in the selected week", summary.supporting)
+        assertEquals(7.0, summary.value)
+    }
+
+    @Test
+    fun `GIVEN current day stats WHEN averageSummary is called THEN it uses elapsed awake hours`() {
+        val stats = SmokeStats(
+            daily = emptyMap(),
+            weekly = emptyMap(),
+            monthly = emptyMap(),
+            yearly = emptyMap(),
+            hourly = linkedMapOf(
+                "08:00" to 1,
+                "09:00" to 0,
+                "10:00" to 1,
+                "11:00" to 0,
+                "12:00" to 1,
+                "13:00" to 0,
+            ),
+            totalMonth = 0,
+            totalWeek = 0,
+            totalDay = 3,
+            dailyAverage = 0f,
+        )
+
+        val summary = stats.averageSummary(
+            period = SmokeStatsPeriod.DAY,
+            selectedDate = LocalDate(2023, 3, 1),
+            now = Instant.parse("2023-03-01T12:30:00Z"),
+            timeZone = tz,
+        )
+
+        assertEquals("Awake-hour pace", summary.title)
+        assertEquals("Average per awake hour so far", summary.supporting)
+        assertEquals(0.6, summary.value)
     }
 }

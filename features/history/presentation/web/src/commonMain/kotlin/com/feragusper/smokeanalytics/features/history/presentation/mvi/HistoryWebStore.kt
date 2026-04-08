@@ -76,6 +76,7 @@ class HistoryWebStore(
                 selectedDate = result.selectedDate,
                 smokes = result.smokes,
                 monthCounts = result.monthCounts,
+                previousMonthCounts = result.previousMonthCounts,
             )
 
             HistoryResult.FetchSmokesError -> prev.copy(

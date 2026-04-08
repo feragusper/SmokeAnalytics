@@ -71,10 +71,18 @@ class FetchSmokeStatsUseCase(
             timeZone = timeZone,
             dayStartHour = dayStartHour,
             bedtimeHour = bedtimeHour,
+            periodType = periodType.toSmokeStatsPeriod(),
         )
     }
 
     enum class PeriodType { DAY, WEEK, MONTH, YEAR }
+
+    private fun PeriodType.toSmokeStatsPeriod(): SmokeStats.SelectionPeriod = when (this) {
+        PeriodType.DAY -> SmokeStats.SelectionPeriod.DAY
+        PeriodType.WEEK -> SmokeStats.SelectionPeriod.WEEK
+        PeriodType.MONTH -> SmokeStats.SelectionPeriod.MONTH
+        PeriodType.YEAR -> SmokeStats.SelectionPeriod.YEAR
+    }
 
     private fun LocalDate.minusDaysToMonday(): LocalDate {
         // kotlinx.datetime DayOfWeek: MONDAY=1 .. SUNDAY=7

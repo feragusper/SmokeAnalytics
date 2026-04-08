@@ -80,6 +80,7 @@ sealed interface HistoryResult : MVIResult {
         val selectedDate: Instant,
         val smokes: List<Smoke>,
         val monthCounts: Map<Int, Int>,
+        val previousMonthCounts: Map<Int, Int>,
     ) : HistoryResult
 
     /**
