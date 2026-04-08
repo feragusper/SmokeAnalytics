@@ -14,8 +14,6 @@ buildscript {
         classpath(libs.android.gradle.plugin)
         // Kotlin Gradle Plugin for Kotlin support.
         classpath(libs.kotlin.gradle.plugin)
-        // Hilt Gradle Plugin for dependency injection.
-        classpath(libs.hilt.android.gradle.plugin)
         // Kover Gradle Plugin for code coverage reporting.
         classpath(libs.kover.gradle.plugin)
         // SonarQube Gradle Plugin for static code analysis.
@@ -26,7 +24,10 @@ buildscript {
 plugins {
     // Google Services plugin is declared here but not applied by default.
     // Apply it in the respective modules as needed.
+    id("com.android.kotlin.multiplatform.library") apply false
     id("com.google.gms.google-services") version "4.4.4" apply false
+    alias(libs.plugins.hilt.android) apply false
+    alias(libs.plugins.ksp) apply false
 
     // Apply the SonarQube plugin globally for static code analysis.
     sonarqube

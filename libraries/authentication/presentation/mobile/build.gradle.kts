@@ -4,9 +4,9 @@ plugins {
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
     // Enable Kotlin annotation processing.
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
     // Apply Dagger Hilt plugin for dependency injection.
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
     // Apply the Compose Compiler plugin using the version catalog alias.
     alias(libs.plugins.compose.compiler)
 }
@@ -42,7 +42,7 @@ dependencies {
     implementation(libs.bundles.compose)
     // Include Dagger Hilt for dependency injection.
     implementation(libs.hilt)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
     // Include Material3 components for modern UI design.
     implementation(libs.material3)
 

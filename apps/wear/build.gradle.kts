@@ -7,9 +7,8 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-kapt")
-    kotlin("android")
-    id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
     alias(libs.plugins.compose.compiler)
 }
 
@@ -154,5 +153,5 @@ dependencies {
     implementation(libs.play.services.wearable)
     implementation(libs.androidx.tiles.material)
 
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 }

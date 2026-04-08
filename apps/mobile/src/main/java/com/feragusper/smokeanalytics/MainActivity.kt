@@ -15,10 +15,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -299,7 +299,6 @@ private fun MainContainerScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -431,7 +430,8 @@ private fun BottomNavigation(
     AnimatedNavigationBar(
         selectedIndex = selectedIndex,
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 40.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .navigationBarsPadding()
             .height(85.dp),
         ballColor = MaterialTheme.colorScheme.primary,
         cornerRadius = shapeCornerRadius(25.dp),

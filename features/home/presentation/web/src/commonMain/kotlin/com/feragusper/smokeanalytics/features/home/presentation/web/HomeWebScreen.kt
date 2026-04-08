@@ -25,6 +25,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
@@ -596,5 +597,5 @@ internal fun dateTimeInputsToInstant(
         second = 0,
         nanosecond = 0,
     )
-    return ldt.toInstant(timeZone)
+    return ldt.toInstant(timeZone).toDeprecatedInstant()
 }

@@ -32,6 +32,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.web.attributes.InputType
@@ -104,7 +105,7 @@ fun HistoryWebScreen(
             entriesCount = state.smokes?.size ?: 0,
             onPrevious = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz))) },
             onNext = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz))) },
-            onPickDate = { picked -> store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz))) },
+            onPickDate = { picked -> store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz).toDeprecatedInstant())) },
             onAdd = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
         )
 
@@ -116,12 +117,12 @@ fun HistoryWebScreen(
                     val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
                     store.send(
                         HistoryIntent.FetchSmokes(
-                            LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz)
+                            LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz).toDeprecatedInstant()
                         )
                     )
                 },
                 onPickDay = { picked ->
-                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz).toDeprecatedInstant()))
                     calendarMode = false
                 },
             )
@@ -608,5 +609,5 @@ private fun String.toInstantFromHtmlDateTimeLocalOrNull(timeZone: TimeZone): Ins
         nanosecond = 0,
     )
 
-    return runCatching { ldt.toInstant(timeZone) }.getOrNull()
+    return runCatching { ldt.toInstant(timeZone).toDeprecatedInstant() }.getOrNull()
 }

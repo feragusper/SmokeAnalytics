@@ -63,9 +63,9 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
+import java.time.Instant as JavaInstant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import kotlinx.datetime.toJavaInstant
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -979,4 +979,4 @@ private fun HomeViewPreview() {
 
 private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
     DateTimeFormatter.ofPattern("HH:mm")
-        .format(toJavaInstant().atZone(ZoneId.systemDefault()).toLocalTime())
+        .format(JavaInstant.ofEpochMilli(toEpochMilliseconds()).atZone(ZoneId.systemDefault()).toLocalTime())

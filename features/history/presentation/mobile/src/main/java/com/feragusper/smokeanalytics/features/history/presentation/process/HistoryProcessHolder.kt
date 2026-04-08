@@ -30,6 +30,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 
@@ -127,7 +128,9 @@ class HistoryProcessHolder @Inject constructor(
                 manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
             )
         } else {
-            selectedDate.atStartOfDayIn(timeZone).plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+            selectedDate.atStartOfDayIn(timeZone)
+                .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                .toDeprecatedInstant()
         }
         val nextDayStart = if (selectedDate == currentBucketDate) {
             nextDayStartInstant(
@@ -151,13 +154,16 @@ class HistoryProcessHolder @Inject constructor(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
-                ).atStartOfDayIn(timeZone).plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                ).atStartOfDayIn(timeZone)
+                    .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                    .toDeprecatedInstant()
                 val nextMonthStart = LocalDate(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
                 ).plus(DatePeriod(months = 1)).atStartOfDayIn(timeZone)
                     .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                    .toDeprecatedInstant()
                 val monthCounts = fetchSmokesUseCase.invoke(monthStart, nextMonthStart)
                     .groupingBy { smoke ->
                         smoke.date.dayBucketDate(
@@ -173,6 +179,7 @@ class HistoryProcessHolder @Inject constructor(
                     dayOfMonth = 1,
                 ).plus(DatePeriod(months = -1)).atStartOfDayIn(timeZone)
                     .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
+                    .toDeprecatedInstant()
                 val previousMonthCounts = fetchSmokesUseCase.invoke(previousMonthStart, monthStart)
                     .groupingBy { smoke ->
                         smoke.date.dayBucketDate(
