@@ -5,13 +5,11 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,12 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -42,19 +39,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
-import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
-import com.feragusper.smokeanalytics.features.home.presentation.R
+import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
+import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
+import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
+import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
@@ -63,9 +63,6 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import kotlinx.datetime.toJavaInstant
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -83,13 +80,16 @@ data class HomeViewState(
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
     internal val hasActiveGoal: Boolean = false,
+    internal val awakeMinutesPerDay: Int = 0,
+    internal val dayStartHour: Int = 0,
+    internal val bedtimeHour: Int = 0,
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
-        get() = lastSmoke?.date?.toLocalClockLabel()
+        get() = lastSmoke?.date?.toHomeClockLabel()
 
     interface TestTags {
         companion object {
@@ -129,8 +129,10 @@ data class HomeViewState(
 
         val nestedScrollConnection = remember {
             object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): Offset =
-                    Offset.Zero
+                override fun onPreScroll(
+                    available: Offset,
+                    source: androidx.compose.ui.input.nestedscroll.NestedScrollSource,
+                ): Offset = Offset.Zero
             }
         }
 
@@ -149,17 +151,17 @@ data class HomeViewState(
             HomeContent(
                 nestedScrollConnection = nestedScrollConnection,
                 smokesPerDay = smokesPerDay,
-                smokesPerWeek = smokesPerWeek,
-                smokesPerMonth = smokesPerMonth,
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 financialSummary = financialSummary,
                 rateSummary = rateSummary,
-                gamificationSummary = gamificationSummary,
                 goalProgress = goalProgress,
                 hasActiveGoal = hasActiveGoal,
+                awakeMinutesPerDay = awakeMinutesPerDay,
+                dayStartHour = dayStartHour,
+                bedtimeHour = bedtimeHour,
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
                 isLoading = displayLoading,
@@ -173,29 +175,48 @@ data class HomeViewState(
 private fun HomeContent(
     nestedScrollConnection: NestedScrollConnection,
     smokesPerDay: Int?,
-    smokesPerWeek: Int?,
-    smokesPerMonth: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
     lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
     financialSummary: FinancialSummary?,
     rateSummary: RateSummary?,
-    gamificationSummary: GamificationSummary?,
     goalProgress: GoalProgress?,
     hasActiveGoal: Boolean,
+    awakeMinutesPerDay: Int,
+    dayStartHour: Int,
+    bedtimeHour: Int,
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
     intent: (HomeIntent) -> Unit,
 ) {
+    val narrative = homeGoalNarrative(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val heroProgress = homeHeroProgress(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
     val gapFocus = gapFocusSummary(
         elapsedMinutes = elapsedMinutes,
         rateSummary = rateSummary,
         goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
     )
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -204,69 +225,59 @@ private fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            PulseHeaderSection(
+            HomeHeaderSection(
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 isLoading = isLoading,
             )
         }
         item {
-            PulseHeroSection(
-                timeSinceLastCigarette = timeSinceLastCigarette,
-                lastSmokeTimeLabel = lastSmokeTimeLabel,
-                elapsedTone = elapsedTone,
-                gapFocus = gapFocus,
+            GoalHeroSection(
+                heroTitle = narrative.heroTitle,
+                heroSupporting = narrative.heroSupporting,
+                statusLabel = narrative.statusLabel,
+                heroProgress = heroProgress,
                 isLoading = isLoading,
             )
         }
         item {
-            AddSmokeSection(
+            LastCigaretteSection(
+                lastSmokeTimeLabel = lastSmokeTimeLabel,
+                timeSinceLastCigarette = timeSinceLastCigarette,
+                gapFocus = gapFocus,
+                elapsedTone = elapsedTone,
+                isLoading = isLoading,
+            )
+        }
+        item {
+            ConsistencySection(
+                consistencyLabel = narrative.consistencyLabel,
+                statusLabel = narrative.statusLabel,
+                isLoading = isLoading,
+            )
+        }
+        item {
+            NextActionSection(
+                secondaryLabel = if (hasActiveGoal) "Review in You" else "Set in You",
+                supporting = narrative.nextActionLabel,
                 elapsedTone = elapsedTone,
                 isLoading = isLoading,
                 onAddSmoke = { intent(HomeIntent.AddSmoke) },
-            )
-        }
-        item {
-            PrimaryMetricGrid(
-                smokesPerDay = smokesPerDay,
-                gamificationSummary = gamificationSummary,
-                isLoading = isLoading,
-                onHistoryClick = { intent(HomeIntent.OnClickHistory) },
-            )
-        }
-        item {
-            RecoveryStatusSection(
-                elapsedTone = elapsedTone,
-                gapFocusSummary = gapFocus,
-                isLoading = isLoading,
-            )
-        }
-        item {
-            GoalFocusSection(
-                goalProgress = goalProgress,
-                hasActiveGoal = hasActiveGoal,
-                isLoading = isLoading,
                 onOpenGoals = { intent(HomeIntent.OnClickGoals) },
             )
         }
-        item {
-            FinancialInsightSection(
-                financialSummary = financialSummary,
-                rateSummary = rateSummary,
-                isLoading = isLoading,
-            )
-        }
-        item {
-            ArchiveSnapshotSection(
-                rateSummary = rateSummary,
-                isLoading = isLoading,
-                onHistoryClick = { intent(HomeIntent.OnClickHistory) },
-            )
+        if (financialSummary != null || smokesPerDay != null) {
+            item {
+                SupportMetricsSection(
+                    smokesPerDay = smokesPerDay,
+                    financialSummary = financialSummary,
+                    isLoading = isLoading,
+                )
+            }
         }
         if (canStartNewDay) {
             item {
                 EveningResetSection(
-                    greetingMessage = greetingMessage,
                     isLoading = isLoading,
                     onStartNewDay = { intent(HomeIntent.StartNewDay) },
                 )
@@ -277,7 +288,7 @@ private fun HomeContent(
 }
 
 @Composable
-private fun PulseHeaderSection(
+private fun HomeHeaderSection(
     greetingTitle: String?,
     greetingMessage: String?,
     isLoading: Boolean,
@@ -289,15 +300,15 @@ private fun PulseHeaderSection(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = greetingTitle ?: "The Pulse",
+            text = greetingTitle ?: "Home",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = when {
-                isLoading -> "Refreshing your daily snapshot."
+                isLoading -> "Refreshing your goal-first snapshot."
                 greetingMessage != null -> greetingMessage
-                else -> "A quieter way to read your smoking rhythm, money, and recovery cues."
+                else -> "Start from the goal, then read the latest gap with as little noise as possible."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -306,171 +317,330 @@ private fun PulseHeaderSection(
 }
 
 @Composable
-private fun PulseHeroSection(
-    timeSinceLastCigarette: Pair<Long, Long>?,
-    lastSmokeTimeLabel: String?,
-    elapsedTone: ElapsedTone,
-    gapFocus: GapFocusSummary,
+private fun GoalHeroSection(
+    heroTitle: String,
+    heroSupporting: String,
+    statusLabel: String,
+    heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
     isLoading: Boolean,
 ) {
-    val progressFraction = gapFocus.progressFraction
     val progress = when {
         isLoading -> 0f
-        progressFraction == null -> 0.22f
-        else -> progressFraction.coerceIn(0.08f, 1f)
+        else -> heroProgress.fraction.coerceIn(0.08f, 1f)
     }
 
-    Column(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(30.dp),
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.size(220.dp),
-                strokeWidth = 12.dp,
-                color = elapsedTone.buttonContainerColor(),
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = "Mindful Gap",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .size(112.dp, 40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .shimmer()
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-                    )
-                } else {
-                    Text(
-                        text = timeSinceLastCigarette.toPulseValue(),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Text(
-                    text = if (isLoading) {
-                        "Refreshing latest smoke time"
-                    } else {
-                        lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        Surface(
-            color = elapsedTone.containerColor(),
-            shape = RoundedCornerShape(999.dp),
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = gapFocus.pulseSummaryText,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                text = "Goal",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(108.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxSize(),
+                        strokeWidth = 10.dp,
+                        color = heroProgress.tone.progressColor(),
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Text(
+                        text = if (!isLoading) {
+                            "${(heroProgress.fraction.coerceIn(0f, 1f) * 100).toInt()}%"
+                        } else {
+                            "Goal"
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = heroProgress.tone.progressColor(),
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = if (isLoading) "Loading today's goal" else heroTitle,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    StatusPill(
+                        text = statusLabel,
+                        containerColor = heroProgress.tone.pillContainerColor(),
+                        contentColor = heroProgress.tone.pillContentColor(),
+                    )
+                }
+            }
+            Text(
+                text = if (isLoading) "Bringing the latest goal context into focus." else heroSupporting,
                 style = MaterialTheme.typography.bodyMedium,
-                color = elapsedTone.contentColor(),
-                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
 @Composable
-private fun GoalFocusSection(
-    goalProgress: GoalProgress?,
-    hasActiveGoal: Boolean,
+private fun LastCigaretteSection(
+    lastSmokeTimeLabel: String?,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    gapFocus: GapFocusSummary,
+    elapsedTone: ElapsedTone,
     isLoading: Boolean,
-    onOpenGoals: () -> Unit,
 ) {
-    Card(
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ),
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = "Last cigarette",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                LastCigaretteValueCard(
+                    modifier = Modifier.weight(1f),
+                    label = "At",
+                    value = if (isLoading) "--:--" else ((lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--"),
+                )
+                LastCigaretteValueCard(
+                    modifier = Modifier.weight(1f),
+                    label = "Time since",
+                    value = if (isLoading) "--" else timeSinceLastCigarette.toElapsedGapLabel(),
+                    emphasize = true,
+                )
+            }
+            Surface(
+                color = elapsedTone.containerColor(),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text(
+                    text = if (isLoading) "Calculating the shape of the current gap." else gapFocus.pulseSummaryText,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = elapsedTone.contentColor(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LastCigaretteValueCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    emphasize: Boolean = false,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(22.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = if (emphasize) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConsistencySection(
+    consistencyLabel: String,
+    statusLabel: String,
+    isLoading: Boolean,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(28.dp),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "Goal Focus",
+                text = "Consistency",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = goalProgress?.title ?: "Add one active goal",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+                text = if (isLoading) "Reading the steadier trend." else consistencyLabel,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = when {
-                    isLoading -> "Refreshing the latest goal progress."
-                    goalProgress != null -> goalProgress.supportingText
-                    else -> "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home."
-                },
+                text = if (isLoading) "Status pending" else statusLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NextActionSection(
+    secondaryLabel: String,
+    supporting: String,
+    elapsedTone: ElapsedTone,
+    isLoading: Boolean,
+    onAddSmoke: () -> Unit,
+    onOpenGoals: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(28.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Next action",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = if (isLoading) "Deciding the next step." else supporting,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            goalProgress?.targetLabel?.let {
+            Button(
+                onClick = onAddSmoke,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE)
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = elapsedTone.buttonContainerColor(),
+                    contentColor = elapsedTone.contentColor(),
+                ),
+            ) {
                 Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "Track",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                 )
             }
-            goalProgress?.progressLabel?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            goalProgress?.progressFraction?.let { progressFraction ->
-                LinearProgressIndicator(
-                    progress = { progressFraction },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            goalProgress?.warningLabel?.let {
-                GoalAssistPill(
-                    text = it,
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
-            goalProgress?.celebrationLabel?.let {
-                GoalAssistPill(
-                    text = it,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            goalProgress?.streakLabel?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Button(onClick = onOpenGoals) {
-                Text(if (hasActiveGoal) "Review in You" else "Set in You")
+            OutlinedButton(
+                onClick = onOpenGoals,
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text(secondaryLabel)
             }
         }
     }
 }
 
 @Composable
-private fun GoalAssistPill(
+private fun SupportMetricsSection(
+    smokesPerDay: Int?,
+    financialSummary: FinancialSummary?,
+    isLoading: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        CompactMetricCard(
+            modifier = Modifier.weight(1f),
+            label = "Today",
+            value = if (isLoading) "--" else (smokesPerDay?.toString() ?: "--"),
+            supporting = "Cigarettes",
+        )
+        CompactMetricCard(
+            modifier = Modifier.weight(1f),
+            label = "Spent",
+            value = if (isLoading || financialSummary == null) "--" else {
+                financialSummary.spentToday.formatMoney(financialSummary.currencySymbol)
+            },
+            supporting = "Today",
+        )
+    }
+}
+
+@Composable
+private fun CompactMetricCard(
+    label: String,
+    value: String,
+    supporting: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(22.dp),
+        tonalElevation = 1.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = supporting,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusPill(
     text: String,
     containerColor: Color,
     contentColor: Color,
@@ -484,372 +654,13 @@ private fun GoalAssistPill(
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
         )
-    }
-}
-
-@Composable
-private fun AddSmokeSection(
-    elapsedTone: ElapsedTone,
-    isLoading: Boolean,
-    onAddSmoke: () -> Unit,
-) {
-    Button(
-        onClick = onAddSmoke,
-        enabled = !isLoading,
-        modifier = Modifier
-            .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE)
-            .fillMaxWidth()
-            .height(58.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = elapsedTone.buttonContainerColor(),
-            contentColor = elapsedTone.contentColor(),
-        ),
-    ) {
-        Text(
-            text = stringResource(R.string.home_button_track),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun PrimaryMetricGrid(
-    smokesPerDay: Int?,
-    gamificationSummary: GamificationSummary?,
-    isLoading: Boolean,
-    onHistoryClick: () -> Unit,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        HighlightMetricCard(
-            modifier = Modifier.weight(1f),
-            eyebrow = "Today's Count",
-            value = smokesPerDay?.toString(),
-            supporting = "Cigarettes",
-            isLoading = isLoading,
-            onClick = onHistoryClick,
-        )
-        HighlightMetricCard(
-            modifier = Modifier.weight(1f),
-            eyebrow = "Recovery Points",
-            value = gamificationSummary?.points?.toString(),
-            supporting = "Consistency",
-            isLoading = isLoading,
-        )
-    }
-}
-
-@Composable
-private fun HighlightMetricCard(
-    eyebrow: String,
-    value: String?,
-    supporting: String,
-    modifier: Modifier = Modifier,
-    isLoading: Boolean,
-    onClick: (() -> Unit)? = null,
-) {
-    Surface(
-        modifier = modifier
-            .aspectRatio(1.02f)
-            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 3.dp,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(18.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = eyebrow,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .size(96.dp, 34.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .shimmer()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-                )
-            } else {
-                Text(
-                    text = value ?: "--",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Text(
-                text = supporting,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RecoveryStatusSection(
-    elapsedTone: ElapsedTone,
-    gapFocusSummary: GapFocusSummary,
-    isLoading: Boolean,
-) {
-    val progressFraction = gapFocusSummary.progressFraction
-    val progress = when {
-        isLoading -> 0f
-        progressFraction == null -> 0f
-        else -> progressFraction
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-        shape = RoundedCornerShape(24.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "Recovery Status",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = elapsedTone.recoveryTitle(),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-                Text(
-                    text = if (isLoading) "--" else "${(progress * 100).toInt()}% to next reset",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(999.dp)),
-                color = elapsedTone.buttonContainerColor(),
-                trackColor = MaterialTheme.colorScheme.surface,
-            )
-
-            Text(
-                text = when {
-                    isLoading -> "Calculating your next recovery milestone."
-                    else -> gapFocusSummary.recoverySummaryText
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FinancialInsightSection(
-    financialSummary: FinancialSummary?,
-    rateSummary: RateSummary?,
-    isLoading: Boolean,
-) {
-    val monthTarget = financialSummary?.let { (it.spentWeek * 4).coerceAtLeast(it.spentToday) }
-    val budgetProgress = if (financialSummary == null || monthTarget == null || monthTarget <= 0.0) 0f
-    else (financialSummary.spentToday / monthTarget).toFloat().coerceIn(0f, 1f)
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 3.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = "Financial Insight",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "Budget Mindfulness",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(74.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .shimmer()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    MoneyMetric(
-                        label = "Spent today",
-                        value = financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol) ?: "--",
-                    )
-                    MoneyMetric(
-                        label = "Week",
-                        value = financialSummary?.spentWeek?.formatMoney(financialSummary.currencySymbol) ?: "--",
-                    )
-                }
-                LinearProgressIndicator(
-                    progress = { budgetProgress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(999.dp)),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Text(
-                    text = rateSummary?.latestIntervalMinutes?.let { "Latest interval ${it.toGapLabel()}" }
-                        ?: "Track daily spend against the pace you are actually living.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MoneyMetric(
-    label: String,
-    value: String,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun ArchiveSnapshotSection(
-    rateSummary: RateSummary?,
-    isLoading: Boolean,
-    onHistoryClick: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onHistoryClick() },
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-        shape = RoundedCornerShape(24.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = "Archive Snapshot",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SnapshotMetricCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Week Avg",
-                    value = rateSummary?.averageSmokesPerDayWeek?.let { "%.1f".format(it) },
-                    supporting = "Cigarettes / day",
-                    isLoading = isLoading,
-                )
-                SnapshotMetricCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Month Avg",
-                    value = rateSummary?.averageSmokesPerDayMonth?.let { "%.1f".format(it) },
-                    supporting = "Cigarettes / day",
-                    isLoading = isLoading,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SnapshotMetricCard(
-    title: String,
-    value: String?,
-    supporting: String?,
-    modifier: Modifier = Modifier,
-    isLoading: Boolean,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .size(72.dp, 26.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .shimmer()
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-                )
-            } else {
-                Text(
-                    text = value ?: "--",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Text(
-                text = supporting ?: "Open History for full detail",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 
 @Composable
 private fun EveningResetSection(
-    greetingMessage: String?,
     isLoading: Boolean,
     onStartNewDay: () -> Unit,
 ) {
@@ -864,14 +675,17 @@ private fun EveningResetSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Starting Early?",
+                text = "Starting early?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = if (isLoading) "Checking whether you can begin a new day now."
-                else "Up earlier than usual? You can start today's reflection window now and begin a fresh day.",
+                text = if (isLoading) {
+                    "Checking whether you can begin a new day now."
+                } else {
+                    "If today started earlier than usual, you can reset the reflection window now and keep the home aligned with the day you're actually living."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -886,27 +700,10 @@ private fun EveningResetSection(
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ),
             ) {
-                Text(text = "Start New Day", fontWeight = FontWeight.Bold)
+                Text("Start New Day", fontWeight = FontWeight.Bold)
             }
         }
     }
-}
-
-private fun Pair<Long, Long>?.toPulseValue(): String = this?.let { (hours, minutes) ->
-    val totalMinutes = hours * 60 + minutes
-    "%02d:%02d".format(totalMinutes / 60, totalMinutes % 60)
-} ?: "--:--"
-
-private fun Int.toGapLabel(): String = when {
-    this >= 60 -> "${this / 60}h ${this % 60}m"
-    else -> "${this}m"
-}
-
-private fun ElapsedTone.recoveryTitle(): String = when (this) {
-    ElapsedTone.Urgent -> "Level 1 Reset"
-    ElapsedTone.Warning -> "Level 2 Recovery"
-    ElapsedTone.Caution -> "Level 3 Recovery"
-    ElapsedTone.Calm -> "Level 4 Vitality"
 }
 
 @Composable
@@ -933,6 +730,30 @@ private fun ElapsedTone.buttonContainerColor(): Color = when (this) {
     ElapsedTone.Calm -> MaterialTheme.colorScheme.primaryContainer
 }
 
+@Composable
+private fun HomeHeroProgressTone.progressColor(): Color = when (this) {
+    HomeHeroProgressTone.Green -> MaterialTheme.colorScheme.primary
+    HomeHeroProgressTone.Yellow -> MaterialTheme.colorScheme.tertiary
+    HomeHeroProgressTone.Red -> MaterialTheme.colorScheme.error
+    HomeHeroProgressTone.Neutral -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+}
+
+@Composable
+private fun HomeHeroProgressTone.pillContainerColor(): Color = when (this) {
+    HomeHeroProgressTone.Green -> MaterialTheme.colorScheme.primaryContainer
+    HomeHeroProgressTone.Yellow -> MaterialTheme.colorScheme.tertiaryContainer
+    HomeHeroProgressTone.Red -> MaterialTheme.colorScheme.errorContainer
+    HomeHeroProgressTone.Neutral -> MaterialTheme.colorScheme.surfaceVariant
+}
+
+@Composable
+private fun HomeHeroProgressTone.pillContentColor(): Color = when (this) {
+    HomeHeroProgressTone.Green -> MaterialTheme.colorScheme.onPrimaryContainer
+    HomeHeroProgressTone.Yellow -> MaterialTheme.colorScheme.onTertiaryContainer
+    HomeHeroProgressTone.Red -> MaterialTheme.colorScheme.onErrorContainer
+    HomeHeroProgressTone.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
 @CombinedPreviews
 @Composable
 private fun HomeViewLoadingPreview() {
@@ -951,7 +772,7 @@ private fun HomeViewPreview() {
             smokesPerMonth = 58,
             timeSinceLastCigarette = 4L to 22L,
             greetingTitle = "Good morning",
-            greetingMessage = "You are 12m beyond your average gap today.",
+            greetingMessage = "You are pacing well for a steadier Tuesday.",
             financialSummary = FinancialSummary(
                 spentToday = 2.45,
                 spentWeek = 13.8,
@@ -976,7 +797,3 @@ private fun HomeViewPreview() {
         ).Compose({ _, _, _ -> }, {})
     }
 }
-
-private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
-    DateTimeFormatter.ofPattern("HH:mm")
-        .format(toJavaInstant().atZone(ZoneId.systemDefault()).toLocalTime())

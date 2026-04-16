@@ -100,6 +100,9 @@ class HomeViewModel @Inject constructor(
                 lastSmoke = null,
                 goalProgress = null,
                 hasActiveGoal = false,
+                awakeMinutesPerDay = 0,
+                dayStartHour = 0,
+                bedtimeHour = 0,
                 canStartNewDay = false,
             )
 
@@ -145,6 +148,9 @@ class HomeViewModel @Inject constructor(
                     gamificationSummary = result.gamificationSummary,
                     goalProgress = result.goalProgress,
                     hasActiveGoal = result.preferences.activeGoal != null,
+                    awakeMinutesPerDay = result.preferences.awakeMinutesPerDay,
+                    dayStartHour = result.preferences.dayStartHour,
+                    bedtimeHour = result.preferences.bedtimeHour,
                     canStartNewDay = result.canStartNewDay,
                     elapsedTone = elapsedToneFrom(
                         result.smokeCountListResult.timeSinceLastCigarette.first,
