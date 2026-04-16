@@ -72,12 +72,12 @@ jobs:
       - name: Sync coach relay secret
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools functions:secrets:set COACH_GEMINI_API_KEY --project "${{ steps.firebase_env.outputs.project_id }}" --data-file "${{ runner.temp }}/coach-gemini-api-key.txt" --force
+        run: npx firebase-tools@15.13.0 functions:secrets:set COACH_GEMINI_API_KEY --project "${{ steps.firebase_env.outputs.project_id }}" --data-file "${{ runner.temp }}/coach-gemini-api-key.txt" --force
 
       - name: Deploy Firebase Hosting + coach relay
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "functions:coachRelay,hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive --force
+        run: npx firebase-tools@15.13.0 deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "functions:coachRelay,hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive --force
 
       - name: Push Web Git Tag
         if: ${{ inputs.env == 'prod' }}
