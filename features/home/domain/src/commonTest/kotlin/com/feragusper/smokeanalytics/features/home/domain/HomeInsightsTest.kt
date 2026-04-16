@@ -122,6 +122,7 @@ class HomeInsightsTest {
 
     @Test
     fun `gapFocusSummary uses mindful gap goal as the source of truth when active`() {
+        val now = Instant.parse("2026-03-25T12:00:00Z")
         val summary = gapFocusSummary(
             elapsedMinutes = 95,
             rateSummary = RateSummary(
@@ -138,6 +139,11 @@ class HomeInsightsTest {
                 supportingText = "Keep going.",
                 status = GoalStatus.OnTrack,
             ),
+            awakeMinutesPerDay = 780,
+            dayStartHour = 9,
+            bedtimeHour = 22,
+            now = now,
+            timeZone = utc,
         )
 
         assertEquals(120, summary.targetMinutes)
@@ -147,11 +153,12 @@ class HomeInsightsTest {
     }
 
     @Test
-    fun `gapFocusSummary falls back to observed gap when no mindful gap goal is active`() {
+    fun `gapFocusSummary uses daily cap pace when daily cap goal is active`() {
+        val now = Instant.parse("2026-03-25T15:34:00Z")
         val summary = gapFocusSummary(
-            elapsedMinutes = 210,
+            elapsedMinutes = 0,
             rateSummary = RateSummary(
-                latestIntervalMinutes = 210,
+                latestIntervalMinutes = null,
                 averageIntervalMinutesToday = 180,
                 averageSmokesPerDayWeek = 14.0,
                 averageSmokesPerDayMonth = 14.0,
@@ -165,10 +172,16 @@ class HomeInsightsTest {
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.4f,
             ),
+            smokesPerDay = 13,
+            awakeMinutesPerDay = 780,
+            dayStartHour = 9,
+            bedtimeHour = 22,
+            now = now,
+            timeZone = utc,
         )
 
-        assertEquals(180, summary.targetMinutes)
-        assertEquals("You are 30m beyond your steady gap target.", summary.pulseSummaryText)
-        assertEquals("You are building toward a 3h steady gap rhythm.", summary.recoverySummaryText)
+        assertEquals(193, summary.targetMinutes)
+        assertEquals("3h 13m until you reach your daily cap pace.", summary.pulseSummaryText)
+        assertEquals("You are building toward a 3h 13m pace that keeps today's cap intact.", summary.recoverySummaryText)
     }
 }

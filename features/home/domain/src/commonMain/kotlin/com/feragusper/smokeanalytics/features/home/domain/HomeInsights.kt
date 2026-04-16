@@ -144,9 +144,26 @@ fun gapFocusSummary(
     elapsedMinutes: Long?,
     rateSummary: RateSummary?,
     goalProgress: GoalProgress?,
+    smokesPerDay: Int? = null,
+    awakeMinutesPerDay: Int = 0,
+    dayStartHour: Int = 0,
+    bedtimeHour: Int = 0,
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): GapFocusSummary {
     val targetMinutes = when (val goal = goalProgress?.goal) {
         is SmokingGoal.MindfulGap -> goal.targetMinutes
+        is SmokingGoal.DailyCap -> {
+            val dayWindow = activeDayWindow(
+                dayStartHour = dayStartHour,
+                bedtimeHour = bedtimeHour,
+                awakeMinutesPerDay = awakeMinutesPerDay,
+                now = now,
+                timeZone = timeZone,
+            )
+            val remaining = goal.maxCigarettesPerDay - (smokesPerDay ?: 0)
+            if (remaining > 0) (dayWindow.remainingMinutes / remaining).coerceAtLeast(1) else null
+        }
         else -> rateSummary?.averageIntervalMinutesToday?.takeIf { it > 0 }
     }
     val progressFraction = if (elapsedMinutes == null || targetMinutes == null || targetMinutes <= 0) {
@@ -156,6 +173,7 @@ fun gapFocusSummary(
     }
     val targetLabel = when (goalProgress?.goal) {
         is SmokingGoal.MindfulGap -> "goal gap"
+        is SmokingGoal.DailyCap -> "daily cap pace"
         else -> "steady gap target"
     }
 
@@ -168,6 +186,7 @@ fun gapFocusSummary(
     val recoverySummaryText = when {
         targetMinutes == null || targetMinutes <= 0 -> "Each longer gap compounds into steadier recovery."
         goalProgress?.goal is SmokingGoal.MindfulGap -> "You are building toward your ${targetMinutes.toGapLabel()} mindful gap goal."
+        goalProgress?.goal is SmokingGoal.DailyCap -> "You are building toward a ${targetMinutes.toGapLabel()} pace that keeps today's cap intact."
         else -> "You are building toward a ${targetMinutes.toGapLabel()} steady gap rhythm."
     }
 
