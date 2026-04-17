@@ -4,11 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
-import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
-import com.feragusper.smokeanalytics.features.home.domain.RateSummary
+import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
+import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
+import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
+import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
@@ -19,14 +25,9 @@ import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toDeprecatedInstant
-import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.web.attributes.AttrsScope
+import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -55,19 +56,48 @@ fun HomeWebScreen(
 fun HomeViewState.Render(
     onIntent: (HomeIntent) -> Unit,
 ) {
+    val narrative = homeGoalNarrative(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val heroProgress = homeHeroProgress(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val heroReadout = homeHeroReadout(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val gapFocus = gapFocusSummary(
+        elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second },
+        rateSummary = rateSummary,
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
     val showingInitialSkeleton = error == null && (
         displayLoading ||
-            (latestSmokes == null &&
-                smokesPerDay == null &&
-                smokesPerWeek == null &&
-                smokesPerMonth == null &&
-                timeSinceLastCigarette == null)
+            (timeSinceLastCigarette == null && goalProgress == null && smokesPerDay == null)
     )
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = greetingTitle ?: "The Pulse",
-            eyebrow = "The Pulse",
+            title = greetingTitle ?: "Home",
+            eyebrow = "Home",
             badgeText = when {
                 displayRefreshLoading -> "Refreshing"
                 error != null -> "Needs attention"
@@ -77,7 +107,7 @@ fun HomeViewState.Render(
                 displayRefreshLoading -> StatusTone.Busy
                 error != null -> StatusTone.Error
                 else -> StatusTone.Default
-            }
+            },
         )
 
         greetingMessage?.let { message ->
@@ -88,8 +118,10 @@ fun HomeViewState.Render(
             EmptyStateCard(
                 title = if (error == HomeViewState.HomeError.NotLoggedIn) "Session required" else "Could not refresh home",
                 message = when (error) {
-                    HomeViewState.HomeError.NotLoggedIn -> "The Pulse needs an active session to sync the latest smoke entries and keep the dashboard aligned with your real archive."
-                    HomeViewState.HomeError.Generic -> "The home dashboard could not be refreshed. Try again in a moment."
+                    HomeViewState.HomeError.NotLoggedIn ->
+                        "Home needs an active session to line up your goal, last cigarette, and latest gap."
+                    HomeViewState.HomeError.Generic ->
+                        "The goal-first home could not be refreshed. Try again in a moment."
                 },
                 actionLabel = if (error == HomeViewState.HomeError.NotLoggedIn) "Open archive" else "Retry",
                 onAction = if (error == HomeViewState.HomeError.NotLoggedIn) {
@@ -101,72 +133,46 @@ fun HomeViewState.Render(
         }
 
         if (showingInitialSkeleton) {
-            LoadingSkeletonCard(heightPx = 300, lineWidths = listOf("42%", "28%", "68%"))
-            LoadingSkeletonCard(heightPx = 70, lineWidths = listOf("36%"))
-            Div(attrs = {
-                attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
-            }) {
-                repeat(2) { LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("34%", "52%")) }
-            }
-            LoadingSkeletonCard(heightPx = 160, lineWidths = listOf("24%", "48%", "64%"))
-            LoadingSkeletonCard(heightPx = 150, lineWidths = listOf("24%", "48%", "64%"))
+            LoadingSkeletonCard(heightPx = 260, lineWidths = listOf("34%", "74%", "60%"))
+            LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("28%", "40%", "52%"))
+            LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("26%", "52%", "62%"))
+            LoadingSkeletonCard(heightPx = 140, lineWidths = listOf("22%", "58%"))
         } else {
-            PulseHeroCard(
-                elapsedTone = elapsedTone,
-                timeSinceLastCigarette = timeSinceLastCigarette,
-                lastSmokeTimeLabel = lastSmoke?.date?.toLocalClockLabel(),
-                rateSummary = rateSummary,
-                goalProgress = goalProgress,
+            GoalHeroCard(
+                narrative = narrative,
+                heroProgress = heroProgress,
+                heroReadout = heroReadout,
             )
 
-            Div(attrs = { attr("style", "display:flex;justify-content:center;") }) {
-                PrimaryButton(
-                    text = "Track",
-                    onClick = { onIntent(HomeIntent.AddSmoke) },
-                    enabled = !displayLoading,
-                    extraClass = elapsedTone.buttonClass(),
-                )
-            }
-
-            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;") }) {
-                HomeHighlightCard(
-                    eyebrow = "Today's Count",
-                    value = smokesPerDay?.toString() ?: "--",
-                    supporting = "Cigarettes",
-                    onClick = { onIntent(HomeIntent.OnClickHistory) },
-                )
-                HomeHighlightCard(
-                    eyebrow = "Recovery Points",
-                    value = gamificationSummary?.points?.toString() ?: "--",
-                    supporting = "Consistency",
-                )
-            }
-
-            RecoveryStatusCard(
-                elapsedTone = elapsedTone,
+            LastCigaretteCard(
+                lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
                 timeSinceLastCigarette = timeSinceLastCigarette,
-                rateSummary = rateSummary,
-                goalProgress = goalProgress,
+                gapFocus = gapFocus,
+                elapsedTone = elapsedTone,
             )
 
-            GoalFocusCard(
-                goalProgress = goalProgress,
-                hasActiveGoal = hasActiveGoal,
+            ConsistencyCard(
+                consistencyLabel = narrative.consistencyLabel,
+                statusLabel = narrative.statusLabel,
+            )
+
+            NextActionCard(
+                supporting = narrative.nextActionLabel,
+                secondaryLabel = if (hasActiveGoal) "Review in You" else "Set in You",
+                elapsedTone = elapsedTone,
+                onAddSmoke = { onIntent(HomeIntent.AddSmoke) },
                 onOpenGoals = { onIntent(HomeIntent.OnClickGoals) },
             )
 
-            FinancialInsightCard(
-                financialSummary = financialSummary,
-                rateSummary = rateSummary,
-            )
-
-            ArchiveSnapshotCard(
-                rateSummary = rateSummary,
-            )
+            if (smokesPerDay != null || financialSummary != null) {
+                SupportMetricsRow(
+                    smokesPerDay = smokesPerDay,
+                    financialSummary = financialSummary,
+                )
+            }
 
             if (canStartNewDay) {
                 EveningResetCard(
-                    greetingMessage = greetingMessage,
                     onStartNewDay = { onIntent(HomeIntent.StartNewDay) },
                 )
             }
@@ -175,44 +181,177 @@ fun HomeViewState.Render(
 }
 
 @Composable
-private fun GoalFocusCard(
-    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
-    hasActiveGoal: Boolean,
+private fun GoalHeroCard(
+    narrative: com.feragusper.smokeanalytics.features.home.domain.HomeGoalNarrative,
+    heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+    heroReadout: com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout,
+) {
+    SurfaceCard {
+        Div(
+            attrs = {
+                attr("style", "display:flex;flex-direction:column;gap:16px;")
+            }
+        ) {
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+                SectionEyebrow("Goal")
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                    Text(narrative.heroTitle)
+                }
+                TonePill(
+                    text = narrative.statusLabel,
+                    background = heroProgress.tone.pillBackground(),
+                    foreground = heroProgress.tone.pillForeground(),
+                )
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text(narrative.heroSupporting)
+                }
+            }
+            GoalHeroReadoutCard(heroProgress = heroProgress, heroReadout = heroReadout)
+        }
+    }
+}
+
+@Composable
+private fun GoalHeroReadoutCard(
+    heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+    heroReadout: com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:14px;padding:16px 18px;border-radius:24px;background:var(--sa-color-surface-container-low);"
+            )
+        }
+    ) {
+        heroReadout.meterLabel?.let { label ->
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;") }) {
+                Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;") }) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text(label)
+                    }
+                    heroReadout.meterValue?.let { value ->
+                        Div(attrs = { attr("style", "font-size:18px;font-weight:800;color:${heroProgress.tone.accentColor()};") }) {
+                            Text(value)
+                        }
+                    }
+                }
+                Div(attrs = { attr("style", "height:10px;border-radius:999px;background:rgba(20,32,34,0.08);overflow:hidden;") }) {
+                    Div(
+                        attrs = {
+                            attr(
+                                "style",
+                                "width:${(((heroReadout.meterFraction ?: heroProgress.fraction).coerceIn(0f, 1f)) * 100)}%;height:100%;border-radius:999px;background:${heroProgress.tone.accentColor()};"
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;") }) {
+            heroReadout.metrics.forEach { metric ->
+                GoalHeroMetricCard(
+                    label = metric.label,
+                    value = metric.value,
+                    supporting = metric.supporting,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoalHeroMetricCard(
+    label: String,
+    value: String,
+    supporting: String?,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:20px;background:var(--sa-color-surface);"
+            )
+        }
+    ) {
+        Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+            Text(label)
+        }
+        Div(attrs = { attr("style", "font-size:24px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
+            Text(value)
+        }
+        supporting?.let {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LastCigaretteCard(
+    lastSmokeTimeLabel: String?,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    gapFocus: GapFocusSummary,
+    elapsedTone: ElapsedTone,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
+            SectionEyebrow("Last cigarette")
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;") }) {
+                KeyValueCard("At", lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--")
+                KeyValueCard("Time since", timeSinceLastCigarette.toElapsedGapLabel(), emphasize = true)
+            }
+            TonePill(
+                text = gapFocus.pulseSummaryText,
+                background = elapsedTone.pillBackground(),
+                foreground = elapsedTone.pillForeground(),
+                large = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConsistencyCard(
+    consistencyLabel: String,
+    statusLabel: String,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
+            SectionEyebrow("Consistency")
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                Text(consistencyLabel)
+            }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text(statusLabel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NextActionCard(
+    supporting: String,
+    secondaryLabel: String,
+    elapsedTone: ElapsedTone,
+    onAddSmoke: () -> Unit,
     onOpenGoals: () -> Unit,
 ) {
-    val progress = ((goalProgress?.progressFraction ?: 0f).coerceIn(0f, 1f) * 100).toInt()
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                Text("Goal Focus")
-            }
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                Text(goalProgress?.title ?: "Add one active goal")
-            }
+            SectionEyebrow("Next action")
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text(goalProgress?.supportingText ?: "Set a daily cap, a reduction target, or a mindful gap and keep it visible from Home.")
+                Text(supporting)
             }
-            goalProgress?.targetLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            goalProgress?.progressLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            goalProgress?.progressFraction?.let {
-                ProgressTrack(progress = progress, color = "var(--sa-color-primary)")
-            }
-            goalProgress?.warningLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            goalProgress?.celebrationLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            goalProgress?.streakLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+            Div(attrs = { attr("style", "display:flex;gap:12px;flex-wrap:wrap;") }) {
                 PrimaryButton(
-                    text = if (hasActiveGoal) "Review in You" else "Set in You",
+                    text = "Track",
+                    onClick = onAddSmoke,
+                    extraClass = elapsedTone.buttonClass(),
+                )
+                QuietButton(
+                    text = secondaryLabel,
                     onClick = onOpenGoals,
                 )
             }
@@ -221,381 +360,160 @@ private fun GoalFocusCard(
 }
 
 @Composable
-private fun PulseHeroCard(
-    elapsedTone: ElapsedTone,
-    timeSinceLastCigarette: Pair<Long, Long>?,
-    lastSmokeTimeLabel: String?,
-    rateSummary: RateSummary?,
-    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
-) {
-    val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
-    val gapFocus = gapFocusSummary(
-        elapsedMinutes = elapsedMinutes,
-        rateSummary = rateSummary,
-        goalProgress = goalProgress,
-    )
-    val progressFraction = gapFocus.progressFraction
-    val progress = when {
-        progressFraction == null -> 18
-        else -> (progressFraction.coerceIn(0.08f, 1f) * 100).toInt()
-    }
-
-    SurfaceCard {
-        Div(attrs = {
-            attr(
-                "style",
-                "display:flex;flex-direction:column;align-items:center;gap:20px;padding:12px 8px 4px;"
-            )
-        }) {
-            Div(attrs = {
-                attr(
-                    "style",
-                    "width:260px;height:260px;border-radius:999px;background:conic-gradient(${elapsedTone.ringColor()} ${progress}%, rgba(20,32,34,0.08) ${progress}% 100%);display:flex;align-items:center;justify-content:center;"
-                )
-            }) {
-                Div(attrs = {
-                    attr(
-                        "style",
-                        "width:216px;height:216px;border-radius:999px;background:var(--sa-color-surface);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--sa-color-outline);"
-                    )
-                }) {
-                    Div(attrs = {
-                        attr(
-                            "style",
-                            "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;"
-                        )
-                    }) {
-                        Div(attrs = {
-                            attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);")
-                        }) {
-                            Text("Mindful Gap")
-                        }
-                        Div(attrs = {
-                            attr("style", "font-size:56px;font-weight:800;line-height:1;color:var(--sa-color-primary);")
-                        }) {
-                            Text(timeSinceLastCigarette.toPulseValue())
-                        }
-                        Div(attrs = {
-                            attr("style", "font-size:13px;color:var(--sa-color-secondary);")
-                        }) {
-                            Text(lastSmokeTimeLabel?.let { "Last smoked at $it" } ?: "Minutes ago")
-                        }
-                    }
-                }
-            }
-
-            Div(attrs = {
-                attr(
-                    "style",
-                    "padding:12px 18px;border-radius:999px;background:${elapsedTone.pillBackground()};color:${elapsedTone.pillForeground()};text-align:center;max-width:640px;"
-                )
-            }) {
-                Text(
-                    gapFocus.pulseSummaryText
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeHighlightCard(
-    eyebrow: String,
-    value: String,
-    supporting: String,
-    onClick: (() -> Unit)? = null,
-) {
-    SurfaceCard {
-        Div(attrs = {
-            onClick?.let { onClick { it() } }
-            attr("style", "display:flex;flex-direction:column;gap:18px;min-height:176px;justify-content:space-between;")
-        }) {
-            Div(attrs = {
-                attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);")
-            }) {
-                Text(eyebrow)
-            }
-            Div(attrs = {
-                attr("style", "font-size:52px;font-weight:800;line-height:1;color:var(--sa-color-primary);")
-            }) {
-                Text(value)
-            }
-            Div(attrs = {
-                attr("style", "font-size:14px;color:var(--sa-color-secondary);")
-            }) {
-                Text(supporting)
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecoveryStatusCard(
-    elapsedTone: ElapsedTone,
-    timeSinceLastCigarette: Pair<Long, Long>?,
-    rateSummary: RateSummary?,
-    goalProgress: com.feragusper.smokeanalytics.features.goals.domain.GoalProgress?,
-) {
-    val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
-    val gapFocus = gapFocusSummary(
-        elapsedMinutes = elapsedMinutes,
-        rateSummary = rateSummary,
-        goalProgress = goalProgress,
-    )
-    val progress = ((gapFocus.progressFraction ?: 0f).coerceIn(0f, 1f) * 100).toInt()
-
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-end;gap:16px;") }) {
-                Div {
-                    Div(attrs = {
-                        attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
-                    }) {
-                        Text("Recovery Status")
-                    }
-                    Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text(elapsedTone.recoveryTitle())
-                    }
-                }
-                Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
-                    Text("$progress% to next reset")
-                }
-            }
-            ProgressTrack(progress = progress, color = elapsedTone.ringColor())
-            Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
-                Text(gapFocus.recoverySummaryText)
-            }
-        }
-    }
-}
-
-@Composable
-private fun FinancialInsightCard(
+private fun SupportMetricsRow(
+    smokesPerDay: Int?,
     financialSummary: FinancialSummary?,
-    rateSummary: RateSummary?,
 ) {
-    val monthTarget = financialSummary?.let { (it.spentWeek * 4).coerceAtLeast(it.spentToday) }
-    val progress = if (financialSummary == null || monthTarget == null || monthTarget <= 0.0) 0
-    else ((financialSummary.spentToday / monthTarget).coerceIn(0.0, 1.0) * 100).toInt()
-
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            Div {
-                Div(attrs = {
-                    attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
-                }) {
-                    Text("Financial Insight")
-                }
-                Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                    Text("Budget Mindfulness")
-                }
-            }
-
-            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;") }) {
-                MetricSummary(
-                    label = "Spent today",
-                    value = financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol) ?: "--",
-                )
-                MetricSummary(
-                    label = "Week",
-                    value = financialSummary?.spentWeek?.formatMoney(financialSummary.currencySymbol) ?: "--",
-                )
-                MetricSummary(
-                    label = "Month",
-                    value = financialSummary?.spentMonth?.formatMoney(financialSummary.currencySymbol) ?: "--",
-                    meta = rateSummary?.latestIntervalMinutes?.let { "Latest interval ${it.toGapLabel()}" },
-                )
-            }
-
-            ProgressTrack(progress = progress, color = "var(--sa-color-primary)")
-        }
-    }
-}
-
-@Composable
-private fun ArchiveSnapshotCard(
-    rateSummary: RateSummary?,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-start;gap:16px;") }) {
-                Div {
-                    Div(attrs = {
-                        attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);margin-bottom:8px;")
-                    }) {
-                        Text("Archive Snapshot")
-                    }
-                    Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text("History holds the full log")
-                    }
-                }
-            }
-
-            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;") }) {
-                MetricSummary(
-                    label = "Week average",
-                    value = rateSummary?.averageSmokesPerDayWeek?.formatOneDecimal() ?: "--",
-                    meta = "Cigarettes / day",
-                )
-                MetricSummary(
-                    label = "Month average",
-                    value = rateSummary?.averageSmokesPerDayMonth?.formatOneDecimal() ?: "--",
-                    meta = "Cigarettes / day",
-                )
-            }
-        }
+    Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;") }) {
+        KeyValueCard("Today", smokesPerDay?.toString() ?: "--", supporting = "Cigarettes")
+        KeyValueCard(
+            "Spent",
+            financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol) ?: "--",
+            supporting = "Today",
+        )
     }
 }
 
 @Composable
 private fun EveningResetCard(
-    greetingMessage: String?,
     onStartNewDay: () -> Unit,
 ) {
     SurfaceCard {
-        Div(attrs = {
-            attr(
-                "style",
-                "display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;background:rgba(121,80,21,0.06);border-radius:22px;padding:28px;"
-            )
-        }) {
-            Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                Text("Ready to Reset?")
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            SectionEyebrow("Starting early?")
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("If the day started earlier than usual, reset the reflection window now and keep Home aligned with the day you are actually living.")
             }
-            Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);max-width:480px;") }) {
-                Text(greetingMessage ?: "Your day boundary is close. Reset the day when you want to start the next reflection window cleanly.")
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                PrimaryButton(
+                    text = "Start New Day",
+                    onClick = onStartNewDay,
+                )
             }
-            PrimaryButton(text = "Start New Day", onClick = onStartNewDay)
         }
     }
 }
 
 @Composable
-private fun MetricSummary(
+private fun SectionEyebrow(text: String) {
+    Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun KeyValueCard(
     label: String,
     value: String,
-    meta: String? = null,
+    supporting: String? = null,
+    emphasize: Boolean = false,
 ) {
-    Div(attrs = {
-        classes(SmokeWebStyles.summaryMetricCard)
-        attr("style", "min-height:118px;justify-content:space-between;")
-    }) {
-        Div(attrs = { classes(SmokeWebStyles.summaryMetricLabel) }) { Text(label) }
-        Div(attrs = { classes(SmokeWebStyles.summaryMetricValue) }) { Text(value) }
-        meta?.let {
-            Div(attrs = { classes(SmokeWebStyles.summaryMetricMeta) }) { Text(it) }
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:24px;background:var(--sa-color-surface-container-low);"
+            )
+        }
+    ) {
+        Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+            Text(label)
+        }
+        Div(
+            attrs = {
+                attr(
+                    "style",
+                    "font-size:${if (emphasize) 34 else 28}px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);"
+                )
+            }
+        ) {
+            Text(value)
+        }
+        supporting?.let {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
         }
     }
 }
 
 @Composable
-private fun ProgressTrack(
-    progress: Int,
-    color: String,
+private fun TonePill(
+    text: String,
+    background: String,
+    foreground: String,
+    large: Boolean = false,
 ) {
-    Div(attrs = {
-        attr(
-            "style",
-            "height:10px;border-radius:999px;background:rgba(20,32,34,0.08);overflow:hidden;"
-        )
-    }) {
-        Div(attrs = {
+    Div(
+        attrs = {
             attr(
                 "style",
-                "height:100%;width:${progress.coerceIn(0, 100)}%;border-radius:999px;background:$color;"
+                "display:inline-flex;align-items:center;padding:${if (large) "12px 16px" else "8px 12px"};border-radius:999px;background:$background;color:$foreground;"
             )
-        })
+        }
+    ) {
+        Text(text)
     }
 }
 
-private fun Pair<Long, Long>?.toPulseValue(): String = this?.let { (hours, minutes) ->
-    val totalMinutes = hours * 60 + minutes
-    val displayHours = totalMinutes / 60
-    val displayMinutes = totalMinutes % 60
-    "${displayHours.toString().padStart(2, '0')}:${displayMinutes.toString().padStart(2, '0')}"
-} ?: "--:--"
-
-private fun Int.toGapLabel(): String = when {
-    this >= 60 -> "${this / 60}h ${this % 60}m"
-    else -> "${this}m"
-}
-
-private fun Double.formatOneDecimal(): String {
-    val rounded = (this * 10).toInt() / 10.0
-    val whole = rounded.toInt()
-    val decimal = ((rounded - whole) * 10).toInt()
-    return "$whole.$decimal"
-}
-
-private fun kotlinx.datetime.Instant.toLocalClockLabel(): String =
-    toLocalDateTime(TimeZone.currentSystemDefault()).time.let { time ->
-        "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
+@Composable
+private fun QuietButton(
+    text: String,
+    onClick: () -> Unit,
+) {
+    Button(
+        attrs = {
+            onClick { onClick() }
+            quietButtonStyle()
+        }
+    ) {
+        Text(text)
     }
-
-private fun ElapsedTone.recoveryTitle(): String = when (this) {
-    ElapsedTone.Urgent -> "Level 1 Reset"
-    ElapsedTone.Warning -> "Level 2 Recovery"
-    ElapsedTone.Caution -> "Level 3 Recovery"
-    ElapsedTone.Calm -> "Level 4 Vitality"
 }
 
-private fun ElapsedTone.buttonClass(): String = when (this) {
-    ElapsedTone.Urgent -> SmokeWebStyles.buttonPrimaryUrgent
-    ElapsedTone.Warning -> SmokeWebStyles.buttonPrimaryWarning
-    ElapsedTone.Caution -> SmokeWebStyles.buttonPrimaryCaution
-    ElapsedTone.Calm -> SmokeWebStyles.buttonPrimaryCalm
+private fun AttrsScope<org.w3c.dom.HTMLButtonElement>.quietButtonStyle() {
+    attr(
+        "style",
+        "border:none;background:transparent;color:var(--sa-color-primary);padding:12px 14px;border-radius:999px;font-weight:600;cursor:pointer;"
+    )
 }
 
-private fun ElapsedTone.ringColor(): String = when (this) {
-    ElapsedTone.Urgent -> "var(--sa-color-danger)"
-    ElapsedTone.Warning -> "#B2791F"
-    ElapsedTone.Caution -> "#4D7A83"
-    ElapsedTone.Calm -> "var(--sa-color-primary)"
+private fun HomeHeroProgressTone.accentColor(): String = when (this) {
+    HomeHeroProgressTone.Green -> "var(--sa-color-primary)"
+    HomeHeroProgressTone.Yellow -> "var(--sa-color-tertiary)"
+    HomeHeroProgressTone.Red -> "var(--sa-color-error)"
+    HomeHeroProgressTone.Neutral -> "var(--sa-color-primary-container)"
+}
+
+private fun HomeHeroProgressTone.pillBackground(): String = when (this) {
+    HomeHeroProgressTone.Green -> "var(--sa-color-primary-container)"
+    HomeHeroProgressTone.Yellow -> "var(--sa-color-tertiary-container)"
+    HomeHeroProgressTone.Red -> "var(--sa-color-error-container)"
+    HomeHeroProgressTone.Neutral -> "rgba(77, 98, 102, 0.14)"
+}
+
+private fun HomeHeroProgressTone.pillForeground(): String = when (this) {
+    HomeHeroProgressTone.Green -> "var(--sa-color-on-primary-container)"
+    HomeHeroProgressTone.Yellow -> "var(--sa-color-on-tertiary-container)"
+    HomeHeroProgressTone.Red -> "var(--sa-color-on-error-container)"
+    HomeHeroProgressTone.Neutral -> "var(--sa-color-on-secondary-container)"
 }
 
 private fun ElapsedTone.pillBackground(): String = when (this) {
-    ElapsedTone.Urgent -> "rgba(186,26,26,0.10)"
-    ElapsedTone.Warning -> "rgba(178,121,31,0.12)"
-    ElapsedTone.Caution -> "rgba(77,122,131,0.12)"
-    ElapsedTone.Calm -> "rgba(46,122,132,0.12)"
+    ElapsedTone.Urgent -> "rgba(186, 26, 26, 0.14)"
+    ElapsedTone.Warning -> "rgba(132, 70, 0, 0.14)"
+    ElapsedTone.Caution -> "rgba(77, 98, 102, 0.14)"
+    ElapsedTone.Calm -> "rgba(17, 69, 75, 0.14)"
 }
 
 private fun ElapsedTone.pillForeground(): String = when (this) {
-    ElapsedTone.Urgent -> "var(--sa-color-danger)"
-    ElapsedTone.Warning -> "#7A4A04"
-    ElapsedTone.Caution -> "#2D5D63"
-    ElapsedTone.Calm -> "var(--sa-color-primary)"
+    ElapsedTone.Urgent -> "var(--sa-color-error)"
+    ElapsedTone.Warning -> "var(--sa-color-on-tertiary-container)"
+    ElapsedTone.Caution -> "var(--sa-color-on-secondary-container)"
+    ElapsedTone.Calm -> "var(--sa-color-on-primary-container)"
 }
 
-internal fun Instant.toDateInputValue(timeZone: TimeZone): String {
-    val ldt = toLocalDateTime(timeZone)
-    val mm = ldt.monthNumber.toString().padStart(2, '0')
-    val dd = ldt.dayOfMonth.toString().padStart(2, '0')
-    return "${ldt.year}-$mm-$dd"
-}
-
-internal fun Instant.toTimeInputValue(timeZone: TimeZone): String {
-    val ldt = toLocalDateTime(timeZone)
-    val hh = ldt.hour.toString().padStart(2, '0')
-    val mm = ldt.minute.toString().padStart(2, '0')
-    return "$hh:$mm"
-}
-
-internal fun dateTimeInputsToInstant(
-    dateValue: String,
-    timeValue: String,
-    timeZone: TimeZone,
-): Instant {
-    val date = LocalDate.parse(dateValue)
-    val time = LocalTime.parse(timeValue)
-    val ldt = LocalDateTime(
-        year = date.year,
-        monthNumber = date.monthNumber,
-        dayOfMonth = date.dayOfMonth,
-        hour = time.hour,
-        minute = time.minute,
-        second = 0,
-        nanosecond = 0,
-    )
-    return ldt.toInstant(timeZone).toDeprecatedInstant()
+private fun ElapsedTone.buttonClass(): String = when (this) {
+    ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
+    ElapsedTone.Warning -> SmokeWebStyles.elapsedCardWarning
+    ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
+    ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
 }
