@@ -154,10 +154,7 @@ fun HomeViewState.Render(
                 gapFocus = gapFocus,
                 consistencyLabel = narrative.consistencyLabel,
                 statusLabel = narrative.statusLabel,
-                hasActiveGoal = hasActiveGoal,
                 elapsedTone = elapsedTone,
-                onAddSmoke = { onIntent(HomeIntent.AddSmoke) },
-                onOpenGoals = { onIntent(HomeIntent.OnClickGoals) },
             )
 
             if (canStartNewDay) {
@@ -284,29 +281,24 @@ private fun HomeInsightGrid(
     gapFocus: GapFocusSummary,
     consistencyLabel: String,
     statusLabel: String,
-    hasActiveGoal: Boolean,
     elapsedTone: ElapsedTone,
-    onAddSmoke: () -> Unit,
-    onOpenGoals: () -> Unit,
 ) {
     Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;") }) {
-        CurrentGapCard(
+        LastCigaretteCard(
             lastSmokeTimeLabel = lastSmokeTimeLabel,
             timeSinceLastCigarette = timeSinceLastCigarette,
             gapFocus = gapFocus,
             elapsedTone = elapsedTone,
         )
-        MomentumCard(
+        ConsistencyCard(
             consistencyLabel = consistencyLabel,
             statusLabel = statusLabel,
-            hasActiveGoal = hasActiveGoal,
-            onOpenGoals = onOpenGoals,
         )
     }
 }
 
 @Composable
-private fun CurrentGapCard(
+private fun LastCigaretteCard(
     lastSmokeTimeLabel: String?,
     timeSinceLastCigarette: Pair<Long, Long>?,
     gapFocus: GapFocusSummary,
@@ -314,12 +306,16 @@ private fun CurrentGapCard(
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("◷", "Current gap", elapsedTone.pillForeground())
-            Div(attrs = { attr("style", "font-size:38px;font-weight:850;line-height:1.0;color:var(--sa-color-on-surface);") }) {
-                Text(timeSinceLastCigarette.toElapsedGapLabel())
-            }
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Since ${lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--"}")
+            HomeSectionChip("◷", "Last cigarette", elapsedTone.pillForeground())
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;") }) {
+                LastCigaretteValueCard(
+                    label = "At",
+                    value = lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--",
+                )
+                LastCigaretteValueCard(
+                    label = "Time since",
+                    value = timeSinceLastCigarette.toElapsedGapLabel(),
+                )
             }
             TonePill(
                 text = gapFocus.pulseSummaryText,
@@ -352,26 +348,40 @@ private fun DetachedTrackAction(
 }
 
 @Composable
-private fun MomentumCard(
+private fun LastCigaretteValueCard(
+    label: String,
+    value: String,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:104px;padding:16px;border-radius:22px;background:var(--sa-color-surface-strong);"
+            )
+        }
+    ) {
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+            Text(label)
+        }
+        Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.05;color:var(--sa-color-primary);") }) {
+            Text(value)
+        }
+    }
+}
+
+@Composable
+private fun ConsistencyCard(
     consistencyLabel: String,
     statusLabel: String,
-    hasActiveGoal: Boolean,
-    onOpenGoals: () -> Unit,
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;") }) {
-                HomeSectionChip("↗", "Rhythm", "var(--sa-color-primary)")
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(statusLabel) }
-            }
+            HomeSectionChip("↗", "Consistency", "var(--sa-color-primary)")
             Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
                 Text(consistencyLabel)
             }
-            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                QuietButton(
-                    text = if (hasActiveGoal) "Open You" else "Set goal",
-                    onClick = onOpenGoals,
-                )
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text(statusLabel)
             }
         }
     }
@@ -439,21 +449,6 @@ private fun TonePill(
     }
 }
 
-@Composable
-private fun QuietButton(
-    text: String,
-    onClick: () -> Unit,
-) {
-    Button(
-        attrs = {
-            onClick { onClick() }
-            quietButtonStyle()
-        }
-    ) {
-        Text(text)
-    }
-}
-
 private fun metricGlyph(icon: HomeHeroMetricIcon): String = when (icon) {
     HomeHeroMetricIcon.Focus -> "⌁"
     HomeHeroMetricIcon.Pace -> "↗"
@@ -463,13 +458,6 @@ private fun metricGlyph(icon: HomeHeroMetricIcon): String = when (icon) {
     HomeHeroMetricIcon.Trend -> "↗"
     HomeHeroMetricIcon.Target -> "◎"
     HomeHeroMetricIcon.Window -> "◌"
-}
-
-private fun AttrsScope<org.w3c.dom.HTMLButtonElement>.quietButtonStyle() {
-    attr(
-        "style",
-        "border:none;background:transparent;color:var(--sa-color-primary);padding:12px 14px;border-radius:999px;font-weight:600;cursor:pointer;"
-    )
 }
 
 private fun HomeHeroProgressTone.accentColor(): String = when (this) {
