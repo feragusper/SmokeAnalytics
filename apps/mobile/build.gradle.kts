@@ -9,11 +9,9 @@ plugins {
     // Apply Android Application plugin.
     id("com.android.application")
     // Enable Kotlin annotation processing.
-    id("kotlin-kapt")
-    // Apply Kotlin Android plugin.
-    kotlin("android")
+    id("com.google.devtools.ksp")
     // Enable Dagger Hilt for dependency injection.
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
     // Apply Google Services plugin.
     id("com.google.gms.google-services")
     // Apply Compose Compiler plugin via version catalog alias.
@@ -61,12 +59,14 @@ android {
     buildTypes {
         release {
             // Disable code minification for release builds.
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             // Configure ProGuard rules.
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            isDebuggable = true
             // Use the release signing configuration.
             signingConfig = signingConfigs.getByName("release")
         }
@@ -145,16 +145,14 @@ android {
         // Disable specific lint rule.
         disable.add("EnsureInitializerMetadata")
     }
-}
-
-kotlin {
-    jvmToolchain(17)
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-        freeCompilerArgs.addAll(
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=kotlin.RequiresOptIn"
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                "-opt-in=kotlin.RequiresOptIn"
+            )
+        }
     }
 }
 
@@ -204,7 +202,7 @@ dependencies {
 
     debugImplementation(project(":features:devtools:presentation"))
 
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 }
 
 tasks.register("printProductVersion") {

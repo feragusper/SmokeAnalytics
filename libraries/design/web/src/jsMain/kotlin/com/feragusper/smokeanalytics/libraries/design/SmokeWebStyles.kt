@@ -66,8 +66,8 @@ object SmokeWebStyles : StyleSheet() {
         property("--sa-radius-lg", "24px")
         property("--sa-radius-md", "18px")
         property("--sa-radius-sm", "14px")
-        property("--sa-shadow-1", "0 10px 28px rgba(12,22,24,0.05)")
-        property("--sa-shadow-2", "0 18px 42px rgba(12,22,24,0.09)")
+        property("--sa-shadow-1", "0 10px 24px rgba(12,22,24,0.08)")
+        property("--sa-shadow-2", "0 18px 42px rgba(12,22,24,0.14)")
         property("--sa-transition-fast", "160ms ease")
         property("--sa-transition-page", "220ms cubic-bezier(0.22, 1, 0.36, 1)")
         backgroundColor(Color("var(--sa-color-bg)"))
@@ -517,7 +517,7 @@ object SmokeWebStyles : StyleSheet() {
         border {
             width(1.px)
             style(LineStyle.Solid)
-            color(Color("var(--sa-color-outline)"))
+            color(Color("var(--sa-color-outline-strong)"))
         }
     }
 
@@ -650,6 +650,7 @@ object SmokeWebStyles : StyleSheet() {
     val buttonPrimary by style {
         backgroundColor(Color("var(--sa-color-primary)"))
         color(Color("var(--sa-color-onPrimary)"))
+        property("box-shadow", "var(--sa-shadow-1)")
         border {
             width(0.px)
             style(LineStyle.None)

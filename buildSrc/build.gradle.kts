@@ -18,10 +18,9 @@ repositories {
 
 dependencies {
     // Import dependencies from the version catalog "libs" defined in settings.
-    // These dependencies include the Kotlin, Android, Hilt, Kover, and SonarQube Gradle plugins.
+    // These dependencies include the Kotlin, Android, Kover, and SonarQube Gradle plugins.
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.android.gradle.plugin)
-    implementation(libs.hilt.android.gradle.plugin)
     implementation(libs.kover.gradle.plugin)
     implementation(libs.sonarqube.gradle.plugin)
 }

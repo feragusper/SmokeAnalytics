@@ -1,7 +1,7 @@
 plugins {
     `android-lib`
-    id("kotlin-kapt")
-    id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -20,7 +20,7 @@ dependencies {
     implementation(libs.play.services.wearable)
 
     implementation(libs.hilt)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)

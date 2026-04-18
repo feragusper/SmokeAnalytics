@@ -11,6 +11,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.periodUntil
 import kotlinx.datetime.plus
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 
 data class SmokeStats(
@@ -136,9 +137,11 @@ data class SmokeStats(
                     val start = shiftedNow.date.plus(DatePeriod(days = -6))
                         .atStartOfDayIn(timeZone)
                         .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                        .toDeprecatedInstant()
                     val end = shiftedNow.date.plus(DatePeriod(days = 1))
                         .atStartOfDayIn(timeZone)
                         .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                        .toDeprecatedInstant()
                     smokes.count { it.date >= start && it.date < end }
                 }
             }

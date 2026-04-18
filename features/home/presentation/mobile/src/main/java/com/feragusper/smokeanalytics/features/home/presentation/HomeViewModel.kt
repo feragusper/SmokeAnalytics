@@ -143,7 +143,6 @@ class HomeViewModel @Inject constructor(
                     timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                     greetingTitle = result.greetingState.title,
                     greetingMessage = result.greetingState.message,
-                    financialSummary = result.financialSummary,
                     rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
                     goalProgress = result.goalProgress,

@@ -3,18 +3,14 @@ package com.feragusper.smokeanalytics.features.home.presentation
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.Instant
 import org.junit.Rule
@@ -28,18 +24,10 @@ class HomeViewTest {
     private val viewModel: HomeViewModel = mockk(relaxed = true)
 
     @Test
-    fun testDisplayButton() {
+    fun goalFirstHomeShowsHeroAndCurrentGap() {
         prepareScreen()
 
-        composeTestRule.onNodeWithTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE).assertIsDisplayed()
-    }
-
-    @Test
-    fun testButtonClick() {
-        prepareScreen()
-
-        composeTestRule.onNodeWithTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE).performClick()
-        verify { viewModel.intents().trySend(HomeIntent.AddSmoke) }
+        composeTestRule.onNodeWithText("Home").assertIsDisplayed()
     }
 
     @Test

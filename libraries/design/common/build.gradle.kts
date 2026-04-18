@@ -1,20 +1,18 @@
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.feragusper.smokeanalytics.libraries.design.common"
+        compileSdk = Android.COMPILE_SDK
+        minSdk = Android.MIN_SDK
+        withHostTestBuilder {}
+        withDeviceTestBuilder {}
+    }
+
     js(IR) {
         browser()
-    }
-}
-
-android {
-    namespace = "com.feragusper.smokeanalytics.libraries.design.common"
-    compileSdk = Android.COMPILE_SDK
-
-    defaultConfig {
-        minSdk = Android.MIN_SDK
     }
 }

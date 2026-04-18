@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -906,9 +907,8 @@ private fun sessionInitials(name: String?, email: String?): String {
 }
 
 @Composable
-private fun stringResourceSafe(id: Int, fallback: String): String = runCatching {
-    androidx.compose.ui.res.stringResource(id)
-}.getOrDefault(fallback)
+private fun stringResourceSafe(id: Int, fallback: String): String =
+    if (LocalInspectionMode.current) fallback else androidx.compose.ui.res.stringResource(id)
 
 private fun Context.hasLocationPermission(): Boolean {
     val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)

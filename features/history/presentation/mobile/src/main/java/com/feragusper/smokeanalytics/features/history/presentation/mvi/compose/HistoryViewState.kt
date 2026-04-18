@@ -62,6 +62,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 
 data class HistoryViewState(
@@ -147,12 +148,14 @@ data class HistoryViewState(
                             val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
                             intent(
                                 HistoryIntent.FetchSmokes(
-                                    LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(timeZone)
+                                    LocalDate(shifted.year, shifted.monthNumber, 1)
+                                        .atStartOfDayIn(timeZone)
+                                        .toDeprecatedInstant()
                                 )
                             )
                         },
                         onPickDay = { picked ->
-                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
+                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone).toDeprecatedInstant()))
                         },
                     )
                 }
