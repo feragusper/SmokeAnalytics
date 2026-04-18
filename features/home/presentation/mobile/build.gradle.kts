@@ -49,6 +49,8 @@ dependencies {
     implementation(libs.bundles.androidx.base)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
     implementation(libs.accompanist.swiperefresh)

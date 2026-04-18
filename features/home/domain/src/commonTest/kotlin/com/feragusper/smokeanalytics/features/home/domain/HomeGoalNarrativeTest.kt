@@ -36,7 +36,7 @@ class HomeGoalNarrativeTest {
         assertEquals("On track", narrative.statusLabel)
         assertEquals("Still within today's cap.", narrative.consistencyLabel)
         assertEquals(
-            "You need roughly 3h 20m between the remaining cigarettes to stay within today's cap.",
+            "~3h 20m between the remaining cigarettes.",
             narrative.heroSupporting,
         )
     }
@@ -56,7 +56,7 @@ class HomeGoalNarrativeTest {
         )
 
         assertEquals("Wait 1h 30m before the next cigarette", narrative.heroTitle)
-        assertEquals("Review your mindful gap in You", narrative.nextActionLabel)
+        assertEquals("On track", narrative.statusLabel)
     }
 
     @Test
@@ -132,12 +132,13 @@ class HomeGoalNarrativeTest {
 
         assertEquals("Cap used today", readout.meterLabel)
         assertEquals("3 of 6", readout.meterValue)
-        assertEquals("Today", readout.metrics[0].label)
-        assertEquals("3 / 6", readout.metrics[0].value)
-        assertEquals("Pace now", readout.metrics[1].label)
-        assertEquals("2", readout.metrics[1].value)
-        assertEquals("Margin", readout.metrics[2].label)
-        assertEquals("3 left", readout.metrics[2].value)
+        assertEquals("Pace", readout.metrics[0].label)
+        assertEquals("2", readout.metrics[0].value)
+        assertEquals(HomeHeroMetricIcon.Pace, readout.metrics[0].icon)
+        assertEquals("Margin", readout.metrics[1].label)
+        assertEquals("3 left", readout.metrics[1].value)
+        assertEquals("Every", readout.metrics[2].label)
+        assertEquals("~3h 20m", readout.metrics[2].value)
     }
 
     @Test
