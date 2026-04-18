@@ -20,6 +20,10 @@ jobs:
   build:
     name: Integration
     runs-on: macos-latest
+    env:
+      GRADLE_OPTS: >-
+        -Dorg.gradle.internal.http.connectionTimeout=60000
+        -Dorg.gradle.internal.http.socketTimeout=60000
 
     steps:
       - name: Checkout repository
