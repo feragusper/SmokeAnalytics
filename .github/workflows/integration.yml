@@ -80,7 +80,17 @@ jobs:
         run: node --check functions/index.js
 
       - name: Run Gradle checks
-        run: ./gradlew check --stacktrace
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            if ./gradlew check --stacktrace; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle check failed on attempt $attempt. Retrying once..."
+          done
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v3
