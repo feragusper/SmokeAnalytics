@@ -9,7 +9,8 @@ platform :android do
       timeout: 600,                                      # Timeout for the upload process (in seconds).
       json_key: "playstore.credentials.json",            # Path to the service account JSON key.
       package_name: "com.feragusper.smokeanalytics",     # The package name of the application.
-      aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab" # Path to the AAB file.
+      aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab", # Path to the AAB file.
+      skip_upload_apk: true
     }
 
     # Upload the Android App Bundle (AAB) to Google Play.
