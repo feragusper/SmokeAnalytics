@@ -36,7 +36,22 @@ jobs:
           java-version: 17
 
       - name: Build web bundle + prepare hosting dir
-        run: ./gradlew :apps:web:prepareFirebaseHosting -Psmoke.env=${{ inputs.env }} --no-configuration-cache --rerun-tasks
+        env:
+          GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}
+          GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
+          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}
+          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY }}
+          GOOGLE_MAPS_ANDROID_API_KEY_STAGING: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_STAGING }}
+          GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION }}
+        shell: bash
+        run: |
+          echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID > ./local.properties
+          echo google.auth.server.client.id.staging=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING >> ./local.properties
+          echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY >> ./local.properties
+          echo google.ai.client.generativeai.api.key.staging=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
+          echo google.maps.android.api.key.production=$GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION >> ./local.properties
+          echo google.maps.android.api.key.staging=$GOOGLE_MAPS_ANDROID_API_KEY_STAGING >> ./local.properties
+          ./gradlew :apps:web:prepareFirebaseHosting -Psmoke.env=${{ inputs.env }} --no-configuration-cache --rerun-tasks
 
       - name: Retrieve web release metadata
         if: ${{ inputs.env == 'prod' }}
