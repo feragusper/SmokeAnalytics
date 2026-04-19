@@ -6,11 +6,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
-import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.HomeHeroMetricIcon
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
 import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
@@ -23,7 +24,6 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
-import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import org.jetbrains.compose.web.attributes.AttrsScope
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
@@ -64,6 +64,14 @@ fun HomeViewState.Render(
         bedtimeHour = bedtimeHour,
     )
     val heroProgress = homeHeroProgress(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val heroReadout = homeHeroReadout(
         goalProgress = goalProgress,
         smokesPerDay = smokesPerDay,
         timeSinceLastCigarette = timeSinceLastCigarette,
@@ -132,34 +140,22 @@ fun HomeViewState.Render(
             GoalHeroCard(
                 narrative = narrative,
                 heroProgress = heroProgress,
+                heroReadout = heroReadout,
             )
 
-            LastCigaretteCard(
+            DetachedTrackAction(
+                elapsedTone = elapsedTone,
+                onAddSmoke = { onIntent(HomeIntent.AddSmoke) },
+            )
+
+            HomeInsightGrid(
                 lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 gapFocus = gapFocus,
-                elapsedTone = elapsedTone,
-            )
-
-            ConsistencyCard(
                 consistencyLabel = narrative.consistencyLabel,
                 statusLabel = narrative.statusLabel,
-            )
-
-            NextActionCard(
-                supporting = narrative.nextActionLabel,
-                secondaryLabel = if (hasActiveGoal) "Review in You" else "Set in You",
                 elapsedTone = elapsedTone,
-                onAddSmoke = { onIntent(HomeIntent.AddSmoke) },
-                onOpenGoals = { onIntent(HomeIntent.OnClickGoals) },
             )
-
-            if (smokesPerDay != null || financialSummary != null) {
-                SupportMetricsRow(
-                    smokesPerDay = smokesPerDay,
-                    financialSummary = financialSummary,
-                )
-            }
 
             if (canStartNewDay) {
                 EveningResetCard(
@@ -174,65 +170,130 @@ fun HomeViewState.Render(
 private fun GoalHeroCard(
     narrative: com.feragusper.smokeanalytics.features.home.domain.HomeGoalNarrative,
     heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+    heroReadout: com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout,
 ) {
     SurfaceCard {
         Div(
             attrs = {
-                attr(
-                    "style",
-                    "display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;"
-                )
+                attr("style", "display:flex;flex-direction:column;gap:16px;")
             }
         ) {
-            GoalHeroProgress(heroProgress = heroProgress)
-            Div(
-                attrs = {
-                    attr("style", "display:flex;flex-direction:column;gap:12px;flex:1;min-width:240px;")
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+                Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;") }) {
+                    HomeSectionChip("⌁", "Goal", heroProgress.tone.accentColor())
+                    TonePill(
+                        text = narrative.statusLabel,
+                        background = heroProgress.tone.pillBackground(),
+                        foreground = heroProgress.tone.pillForeground(),
+                    )
                 }
-            ) {
-                SectionEyebrow("Goal")
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+                Div(attrs = { attr("style", "font-size:clamp(28px,4vw,40px);font-weight:850;line-height:1.02;color:var(--sa-color-on-surface);max-width:720px;") }) {
                     Text(narrative.heroTitle)
                 }
-                TonePill(
-                    text = narrative.statusLabel,
-                    background = heroProgress.tone.pillBackground(),
-                    foreground = heroProgress.tone.pillForeground(),
-                )
-                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text(narrative.heroSupporting)
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(narrative.heroSupporting) }
+            }
+            GoalHeroReadoutCard(heroProgress = heroProgress, heroReadout = heroReadout)
+        }
+    }
+}
+
+@Composable
+private fun GoalHeroReadoutCard(
+    heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+    heroReadout: com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;gap:14px;padding:16px 18px;border-radius:24px;background:var(--sa-color-surface-container-low);"
+            )
+        }
+    ) {
+        heroReadout.meterLabel?.let { label ->
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;") }) {
+                Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;") }) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                        Text(label)
+                    }
+                    heroReadout.meterValue?.let { value ->
+                        Div(attrs = { attr("style", "font-size:18px;font-weight:800;color:${heroProgress.tone.accentColor()};") }) {
+                            Text(value)
+                        }
+                    }
                 }
+                Div(attrs = { attr("style", "height:10px;border-radius:999px;background:rgba(20,32,34,0.08);overflow:hidden;") }) {
+                    Div(
+                        attrs = {
+                            attr(
+                                "style",
+                                "width:${(((heroReadout.meterFraction ?: heroProgress.fraction).coerceIn(0f, 1f)) * 100)}%;height:100%;border-radius:999px;background:${heroProgress.tone.accentColor()};"
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;") }) {
+            heroReadout.metrics.forEach { metric ->
+                GoalHeroMetricCard(
+                    label = metric.label,
+                    value = metric.value,
+                    supporting = metric.supporting,
+                    icon = metric.icon,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun GoalHeroProgress(
-    heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+private fun GoalHeroMetricCard(
+    label: String,
+    value: String,
+    supporting: String?,
+    icon: HomeHeroMetricIcon,
 ) {
-    val bounded = heroProgress.fraction.coerceIn(0.08f, 1f)
-    val percent = (bounded * 100).toInt()
     Div(
         attrs = {
             attr(
                 "style",
-                "width:124px;height:124px;border-radius:999px;background:conic-gradient(${heroProgress.tone.ringColor()} ${percent}%, rgba(20,32,34,0.08) ${percent}% 100%);display:flex;align-items:center;justify-content:center;flex:0 0 auto;"
+                "display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:20px;background:var(--sa-color-surface-strong);"
             )
         }
     ) {
-        Div(
-            attrs = {
-                attr(
-                    "style",
-                    "width:94px;height:94px;border-radius:999px;background:var(--sa-color-surface);display:flex;align-items:center;justify-content:center;"
-                )
-            }
-        ) {
-            Div(attrs = { attr("style", "font-size:18px;font-weight:700;color:var(--sa-color-primary);") }) {
-                Text("${percent}%")
+        HomeSectionChip(metricGlyph(icon), label, "var(--sa-color-primary)")
+        Div(attrs = { attr("style", "font-size:24px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
+            Text(value)
+        }
+        supporting?.let {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text(it)
             }
         }
+    }
+}
+
+@Composable
+private fun HomeInsightGrid(
+    lastSmokeTimeLabel: String?,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    gapFocus: GapFocusSummary,
+    consistencyLabel: String,
+    statusLabel: String,
+    elapsedTone: ElapsedTone,
+) {
+    Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;") }) {
+        LastCigaretteCard(
+            lastSmokeTimeLabel = lastSmokeTimeLabel,
+            timeSinceLastCigarette = timeSinceLastCigarette,
+            gapFocus = gapFocus,
+            elapsedTone = elapsedTone,
+        )
+        ConsistencyCard(
+            consistencyLabel = consistencyLabel,
+            statusLabel = statusLabel,
+        )
     }
 }
 
@@ -244,11 +305,17 @@ private fun LastCigaretteCard(
     elapsedTone: ElapsedTone,
 ) {
     SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            SectionEyebrow("Last cigarette")
-            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;") }) {
-                KeyValueCard("At", lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--")
-                KeyValueCard("Time since", timeSinceLastCigarette.toElapsedGapLabel(), emphasize = true)
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            HomeSectionChip("◷", "Last cigarette", elapsedTone.pillForeground())
+            Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;") }) {
+                LastCigaretteValueCard(
+                    label = "At",
+                    value = lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--",
+                )
+                LastCigaretteValueCard(
+                    label = "Time since",
+                    value = timeSinceLastCigarette.toElapsedGapLabel(),
+                )
             }
             TonePill(
                 text = gapFocus.pulseSummaryText,
@@ -261,14 +328,56 @@ private fun LastCigaretteCard(
 }
 
 @Composable
+private fun DetachedTrackAction(
+    elapsedTone: ElapsedTone,
+    onAddSmoke: () -> Unit,
+) {
+    Div(
+        attrs = {
+            attr("style", "display:flex;justify-content:flex-end;position:sticky;bottom:16px;z-index:4;pointer-events:none;")
+        }
+    ) {
+        Div(attrs = { attr("style", "pointer-events:auto;") }) {
+            PrimaryButton(
+                text = "Track",
+                onClick = onAddSmoke,
+                extraClass = elapsedTone.buttonClass(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LastCigaretteValueCard(
+    label: String,
+    value: String,
+) {
+    Div(
+        attrs = {
+            attr(
+                "style",
+                "display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:104px;padding:16px;border-radius:22px;background:var(--sa-color-surface-strong);"
+            )
+        }
+    ) {
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+            Text(label)
+        }
+        Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.05;color:var(--sa-color-primary);") }) {
+            Text(value)
+        }
+    }
+}
+
+@Composable
 private fun ConsistencyCard(
     consistencyLabel: String,
     statusLabel: String,
 ) {
     SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-            SectionEyebrow("Consistency")
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            HomeSectionChip("↗", "Consistency", "var(--sa-color-primary)")
+            Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
                 Text(consistencyLabel)
             }
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
@@ -279,56 +388,12 @@ private fun ConsistencyCard(
 }
 
 @Composable
-private fun NextActionCard(
-    supporting: String,
-    secondaryLabel: String,
-    elapsedTone: ElapsedTone,
-    onAddSmoke: () -> Unit,
-    onOpenGoals: () -> Unit,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            SectionEyebrow("Next action")
-            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text(supporting)
-            }
-            Div(attrs = { attr("style", "display:flex;gap:12px;flex-wrap:wrap;") }) {
-                PrimaryButton(
-                    text = "Track",
-                    onClick = onAddSmoke,
-                    extraClass = elapsedTone.buttonClass(),
-                )
-                QuietButton(
-                    text = secondaryLabel,
-                    onClick = onOpenGoals,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SupportMetricsRow(
-    smokesPerDay: Int?,
-    financialSummary: FinancialSummary?,
-) {
-    Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;") }) {
-        KeyValueCard("Today", smokesPerDay?.toString() ?: "--", supporting = "Cigarettes")
-        KeyValueCard(
-            "Spent",
-            financialSummary?.spentToday?.formatMoney(financialSummary.currencySymbol) ?: "--",
-            supporting = "Today",
-        )
-    }
-}
-
-@Composable
 private fun EveningResetCard(
     onStartNewDay: () -> Unit,
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            SectionEyebrow("Starting early?")
+            HomeSectionChip("◌", "Reset day", "var(--sa-color-primary)")
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
                 Text("If the day started earlier than usual, reset the reflection window now and keep Home aligned with the day you are actually living.")
             }
@@ -343,42 +408,24 @@ private fun EveningResetCard(
 }
 
 @Composable
-private fun SectionEyebrow(text: String) {
-    Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-        Text(text)
-    }
-}
-
-@Composable
-private fun KeyValueCard(
+private fun HomeSectionChip(
+    glyph: String,
     label: String,
-    value: String,
-    supporting: String? = null,
-    emphasize: Boolean = false,
+    accentColor: String,
 ) {
-    Div(
-        attrs = {
-            attr(
-                "style",
-                "display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:24px;background:var(--sa-color-surface-container-low);"
-            )
-        }
-    ) {
-        Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-            Text(label)
-        }
+    Div(attrs = { attr("style", "display:inline-flex;align-items:center;gap:10px;") }) {
         Div(
             attrs = {
                 attr(
                     "style",
-                    "font-size:${if (emphasize) 34 else 28}px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);"
+                    "display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:12px;background:color-mix(in srgb, $accentColor 12%, white);color:$accentColor;font-size:15px;font-weight:800;"
                 )
             }
         ) {
-            Text(value)
+            Text(glyph)
         }
-        supporting?.let {
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+        Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
+            Text(label)
         }
     }
 }
@@ -402,29 +449,18 @@ private fun TonePill(
     }
 }
 
-@Composable
-private fun QuietButton(
-    text: String,
-    onClick: () -> Unit,
-) {
-    Button(
-        attrs = {
-            onClick { onClick() }
-            quietButtonStyle()
-        }
-    ) {
-        Text(text)
-    }
+private fun metricGlyph(icon: HomeHeroMetricIcon): String = when (icon) {
+    HomeHeroMetricIcon.Focus -> "⌁"
+    HomeHeroMetricIcon.Pace -> "↗"
+    HomeHeroMetricIcon.Margin -> "△"
+    HomeHeroMetricIcon.Gap -> "◷"
+    HomeHeroMetricIcon.Clock -> "◴"
+    HomeHeroMetricIcon.Trend -> "↗"
+    HomeHeroMetricIcon.Target -> "◎"
+    HomeHeroMetricIcon.Window -> "◌"
 }
 
-private fun AttrsScope<org.w3c.dom.HTMLButtonElement>.quietButtonStyle() {
-    attr(
-        "style",
-        "border:none;background:transparent;color:var(--sa-color-primary);padding:12px 14px;border-radius:999px;font-weight:600;cursor:pointer;"
-    )
-}
-
-private fun HomeHeroProgressTone.ringColor(): String = when (this) {
+private fun HomeHeroProgressTone.accentColor(): String = when (this) {
     HomeHeroProgressTone.Green -> "var(--sa-color-primary)"
     HomeHeroProgressTone.Yellow -> "var(--sa-color-tertiary)"
     HomeHeroProgressTone.Red -> "var(--sa-color-error)"

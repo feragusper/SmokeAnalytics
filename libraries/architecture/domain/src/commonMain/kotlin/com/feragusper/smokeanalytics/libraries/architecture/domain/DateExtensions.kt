@@ -9,6 +9,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.until
 
@@ -48,7 +49,7 @@ fun Instant.dayStartInstant(
     dayStartHour: Int = 0,
 ): Instant {
     val date = dayBucketDate(timeZone = timeZone, dayStartHour = dayStartHour)
-    return date.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    return date.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 }
 
 fun currentDayStartInstant(
@@ -71,7 +72,7 @@ fun nextDayStartInstant(
     timeZone = timeZone,
     dayStartHour = dayStartHour,
     manualDayStartEpochMillis = manualDayStartEpochMillis,
-).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 
 fun currentWeekStartInstant(
     now: Instant = Clock.System.now(),
@@ -86,7 +87,7 @@ fun currentWeekStartInstant(
         manualDayStartEpochMillis = manualDayStartEpochMillis,
     )
     val monday = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
-    return monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    return monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 }
 
 fun nextWeekStartInstant(
@@ -117,7 +118,7 @@ fun currentMonthStartInstant(
         year = current.year,
         monthNumber = current.monthNumber,
         dayOfMonth = 1,
-    ).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    ).atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 }
 
 fun nextMonthStartInstant(
@@ -137,16 +138,16 @@ fun nextMonthStartInstant(
         monthNumber = if (current.monthNumber == 12) 1 else current.monthNumber + 1,
         dayOfMonth = 1,
     )
-    return nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    return nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 }
 
 fun lastInstantToday(timeZone: TimeZone = defaultTimeZone): Instant =
-    todayLocalDate(timeZone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone)
+    todayLocalDate(timeZone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(timeZone).toDeprecatedInstant()
 
 fun firstInstantThisMonth(timeZone: TimeZone = defaultTimeZone): Instant {
     val today = todayLocalDate(timeZone)
     val firstDay = LocalDate(today.year, today.month, 1)
-    return firstDay.atStartOfDayIn(timeZone)
+    return firstDay.atStartOfDayIn(timeZone).toDeprecatedInstant()
 }
 
 fun firstInstantThisMonth(
@@ -155,13 +156,13 @@ fun firstInstantThisMonth(
 ): Instant {
     val today = currentBucketDate(timeZone = timeZone, dayStartHour = dayStartHour)
     val firstDay = LocalDate(today.year, today.month, 1)
-    return firstDay.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    return firstDay.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
 }
 
 fun Instant.isToday(timeZone: TimeZone = defaultTimeZone): Boolean =
     isBetweenInstants(
         instant = this,
-        after = todayLocalDate(timeZone).atStartOfDayIn(timeZone),
+        after = todayLocalDate(timeZone).atStartOfDayIn(timeZone).toDeprecatedInstant(),
         before = lastInstantToday(timeZone),
     )
 
@@ -169,8 +170,8 @@ fun Instant.isThisWeek(timeZone: TimeZone = defaultTimeZone): Boolean {
     val today = todayLocalDate(timeZone)
     val daysFromMonday = (today.dayOfWeek.isoDayNumber - 1)
     val monday = today.minus(daysFromMonday, DateTimeUnit.DAY)
-    val start = monday.atStartOfDayIn(timeZone)
-    val end = monday.plus(7, DateTimeUnit.DAY).atStartOfDayIn(timeZone)
+    val start = monday.atStartOfDayIn(timeZone).toDeprecatedInstant()
+    val end = monday.plus(7, DateTimeUnit.DAY).atStartOfDayIn(timeZone).toDeprecatedInstant()
     return isBetweenInstants(this, start, end)
 }
 
@@ -181,7 +182,7 @@ fun Instant.isThisMonth(timeZone: TimeZone = defaultTimeZone): Boolean {
         year = if (today.monthNumber == 12) today.year + 1 else today.year,
         monthNumber = if (today.monthNumber == 12) 1 else today.monthNumber + 1,
         dayOfMonth = 1
-    ).atStartOfDayIn(timeZone)
+    ).atStartOfDayIn(timeZone).toDeprecatedInstant()
 
     return isBetweenInstants(this, start, nextMonthStart)
 }
@@ -237,7 +238,7 @@ fun Instant.isInCurrentWeekBucket(
         manualDayStartEpochMillis = manualDayStartEpochMillis,
     )
     val monday = today.minus(today.dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
-    val start = monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    val start = monday.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
     val end = start.plus(7, DateTimeUnit.DAY, timeZone)
     return isBetweenInstants(this, start, end)
 }
@@ -258,7 +259,7 @@ fun Instant.isInCurrentMonthBucket(
         monthNumber = if (current.monthNumber == 12) 1 else current.monthNumber + 1,
         dayOfMonth = 1,
     )
-    val end = nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+    val end = nextMonth.atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone).toDeprecatedInstant()
     return isBetweenInstants(this, start, end)
 }
 

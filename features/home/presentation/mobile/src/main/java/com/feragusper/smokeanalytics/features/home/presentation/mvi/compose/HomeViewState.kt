@@ -4,26 +4,25 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -42,16 +41,18 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
-import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
 import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
@@ -60,7 +61,6 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.libraries.preferences.domain.formatMoney
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
 
@@ -75,7 +75,6 @@ data class HomeViewState(
     internal val lastSmoke: Smoke? = null,
     internal val greetingTitle: String? = null,
     internal val greetingMessage: String? = null,
-    internal val financialSummary: FinancialSummary? = null,
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
@@ -155,7 +154,6 @@ data class HomeViewState(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
-                financialSummary = financialSummary,
                 rateSummary = rateSummary,
                 goalProgress = goalProgress,
                 hasActiveGoal = hasActiveGoal,
@@ -179,7 +177,6 @@ private fun HomeContent(
     lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
-    financialSummary: FinancialSummary?,
     rateSummary: RateSummary?,
     goalProgress: GoalProgress?,
     hasActiveGoal: Boolean,
@@ -200,6 +197,14 @@ private fun HomeContent(
         bedtimeHour = bedtimeHour,
     )
     val heroProgress = homeHeroProgress(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+    )
+    val heroReadout = homeHeroReadout(
         goalProgress = goalProgress,
         smokesPerDay = smokesPerDay,
         timeSinceLastCigarette = timeSinceLastCigarette,
@@ -237,6 +242,7 @@ private fun HomeContent(
                 heroSupporting = narrative.heroSupporting,
                 statusLabel = narrative.statusLabel,
                 heroProgress = heroProgress,
+                heroReadout = heroReadout,
                 isLoading = isLoading,
             )
         }
@@ -255,25 +261,6 @@ private fun HomeContent(
                 statusLabel = narrative.statusLabel,
                 isLoading = isLoading,
             )
-        }
-        item {
-            NextActionSection(
-                secondaryLabel = if (hasActiveGoal) "Review in You" else "Set in You",
-                supporting = narrative.nextActionLabel,
-                elapsedTone = elapsedTone,
-                isLoading = isLoading,
-                onAddSmoke = { intent(HomeIntent.AddSmoke) },
-                onOpenGoals = { intent(HomeIntent.OnClickGoals) },
-            )
-        }
-        if (financialSummary != null || smokesPerDay != null) {
-            item {
-                SupportMetricsSection(
-                    smokesPerDay = smokesPerDay,
-                    financialSummary = financialSummary,
-                    isLoading = isLoading,
-                )
-            }
         }
         if (canStartNewDay) {
             item {
@@ -322,75 +309,281 @@ private fun GoalHeroSection(
     heroSupporting: String,
     statusLabel: String,
     heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
+    heroReadout: HomeHeroReadout,
     isLoading: Boolean,
 ) {
-    val progress = when {
-        isLoading -> 0f
-        else -> heroProgress.fraction.coerceIn(0.08f, 1f)
-    }
+    val progress = if (isLoading) 0f else (heroReadout.meterFraction ?: heroProgress.fraction).coerceIn(0f, 1f)
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(30.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 4.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = "Goal",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier.size(108.dp),
-                    contentAlignment = Alignment.Center,
+            if (isLoading) {
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.16f)
+                        .height(14.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    CircularProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxSize(),
-                        strokeWidth = 10.dp,
-                        color = heroProgress.tone.progressColor(),
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    SkeletonBlock(
+                        modifier = Modifier
+                            .fillMaxWidth(0.66f)
+                            .height(34.dp),
+                        shape = RoundedCornerShape(14.dp),
                     )
-                    Text(
-                        text = if (!isLoading) {
-                            "${(heroProgress.fraction.coerceIn(0f, 1f) * 100).toInt()}%"
-                        } else {
-                            "Goal"
-                        },
-                        style = MaterialTheme.typography.labelLarge,
-                        color = heroProgress.tone.progressColor(),
-                        fontWeight = FontWeight.Bold,
+                    SkeletonBlock(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(34.dp),
+                        shape = RoundedCornerShape(999.dp),
                     )
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SkeletonBlock(
+                        modifier = Modifier
+                            .fillMaxWidth(0.92f)
+                            .height(14.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                    SkeletonBlock(
+                        modifier = Modifier
+                            .fillMaxWidth(0.74f)
+                            .height(14.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                }
+            } else {
+                Text(
+                    text = "Goal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Top,
                 ) {
-                    Text(
-                        text = if (isLoading) "Loading today's goal" else heroTitle,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    StatusPill(
-                        text = statusLabel,
-                        containerColor = heroProgress.tone.pillContainerColor(),
-                        contentColor = heroProgress.tone.pillContentColor(),
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = heroTitle,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        StatusPill(
+                            text = statusLabel,
+                            containerColor = heroProgress.tone.pillContainerColor(),
+                            contentColor = heroProgress.tone.pillContentColor(),
+                        )
+                    }
+                }
+                Text(
+                    text = heroSupporting,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(24.dp),
+                tonalElevation = 1.dp,
+                border = innerCardBorder(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (isLoading) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                SkeletonBlock(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.34f)
+                                        .height(12.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                )
+                                SkeletonBlock(
+                                    modifier = Modifier
+                                        .width(56.dp)
+                                        .height(20.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                )
+                            }
+                            SkeletonBlock(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp),
+                                shape = RoundedCornerShape(999.dp),
+                            )
+                        }
+                        repeat(2) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                repeat(2) {
+                                    GoalHeroMetricSkeleton(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    } else {
+                        heroReadout.meterLabel?.let { label ->
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    heroReadout.meterValue?.let { value ->
+                                        Text(
+                                            text = value,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = heroProgress.tone.progressColor(),
+                                        )
+                                    }
+                                }
+                                LinearProgressIndicator(
+                                    progress = { progress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(999.dp)),
+                                    color = heroProgress.tone.progressColor(),
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                )
+                            }
+                        }
+                        heroReadout.metrics.take(4).chunked(2).forEach { rowMetrics ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                rowMetrics.forEach { metric ->
+                                    GoalHeroMetricCard(
+                                        label = metric.label,
+                                        value = metric.value,
+                                        supporting = metric.supporting,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun GoalHeroMetricCard(
+    label: String,
+    value: String,
+    supporting: String?,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 1.dp,
+        border = innerCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier
+                .heightIn(min = 114.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Text(
-                text = if (isLoading) "Bringing the latest goal context into focus." else heroSupporting,
-                style = MaterialTheme.typography.bodyMedium,
+                text = supporting ?: " ",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalHeroMetricSkeleton(
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 1.dp,
+        border = innerCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier
+                .heightIn(min = 114.dp)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.42f)
+                        .height(10.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.78f)
+                        .height(22.dp),
+                    shape = RoundedCornerShape(12.dp),
+                )
+            }
+            SkeletonBlock(
+                modifier = Modifier
+                    .fillMaxWidth(0.86f)
+                    .height(12.dp),
+                shape = RoundedCornerShape(8.dp),
             )
         }
     }
@@ -410,6 +603,7 @@ private fun LastCigaretteSection(
         shape = RoundedCornerShape(28.dp),
         tonalElevation = 2.dp,
         shadowElevation = 2.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -427,25 +621,36 @@ private fun LastCigaretteSection(
                 LastCigaretteValueCard(
                     modifier = Modifier.weight(1f),
                     label = "At",
-                    value = if (isLoading) "--:--" else ((lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--"),
+                    value = if (isLoading) "" else ((lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--"),
+                    loading = isLoading,
                 )
                 LastCigaretteValueCard(
                     modifier = Modifier.weight(1f),
                     label = "Time since",
-                    value = if (isLoading) "--" else timeSinceLastCigarette.toElapsedGapLabel(),
-                    emphasize = true,
+                    value = if (isLoading) "" else timeSinceLastCigarette.toElapsedGapLabel(),
+                    loading = isLoading,
                 )
             }
             Surface(
                 color = elapsedTone.containerColor(),
                 shape = RoundedCornerShape(20.dp),
             ) {
-                Text(
-                    text = if (isLoading) "Calculating the shape of the current gap." else gapFocus.pulseSummaryText,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = elapsedTone.contentColor(),
-                )
+                if (isLoading) {
+                    SkeletonBlock(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .height(20.dp),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                } else {
+                    Text(
+                        text = gapFocus.pulseSummaryText,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = elapsedTone.contentColor(),
+                    )
+                }
             }
         }
     }
@@ -456,28 +661,43 @@ private fun LastCigaretteValueCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    emphasize: Boolean = false,
+    loading: Boolean = false,
 ) {
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
         shape = RoundedCornerShape(22.dp),
+        tonalElevation = 1.dp,
+        border = innerCardBorder(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .height(104.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = value,
-                style = if (emphasize) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            if (loading) {
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.58f)
+                        .height(24.dp),
+                    shape = RoundedCornerShape(12.dp),
+                )
+            } else {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -490,8 +710,11 @@ private fun ConsistencySection(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(28.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 2.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -502,141 +725,46 @@ private fun ConsistencySection(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = if (isLoading) "Reading the steadier trend." else consistencyLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = if (isLoading) "Status pending" else statusLabel,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun NextActionSection(
-    secondaryLabel: String,
-    supporting: String,
-    elapsedTone: ElapsedTone,
-    isLoading: Boolean,
-    onAddSmoke: () -> Unit,
-    onOpenGoals: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(28.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = "Next action",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = if (isLoading) "Deciding the next step." else supporting,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Button(
-                onClick = onAddSmoke,
-                enabled = !isLoading,
-                modifier = Modifier
-                    .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE)
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = elapsedTone.buttonContainerColor(),
-                    contentColor = elapsedTone.contentColor(),
-                ),
-            ) {
+            if (isLoading) {
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.72f)
+                        .height(24.dp),
+                    shape = RoundedCornerShape(12.dp),
+                )
+                SkeletonBlock(
+                    modifier = Modifier
+                        .fillMaxWidth(0.34f)
+                        .height(12.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            } else {
                 Text(
-                    text = "Track",
+                    text = consistencyLabel,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = statusLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            OutlinedButton(
-                onClick = onOpenGoals,
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Text(secondaryLabel)
-            }
         }
     }
 }
 
 @Composable
-private fun SupportMetricsSection(
-    smokesPerDay: Int?,
-    financialSummary: FinancialSummary?,
-    isLoading: Boolean,
+private fun SkeletonBlock(
+    modifier: Modifier,
+    shape: RoundedCornerShape,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        CompactMetricCard(
-            modifier = Modifier.weight(1f),
-            label = "Today",
-            value = if (isLoading) "--" else (smokesPerDay?.toString() ?: "--"),
-            supporting = "Cigarettes",
-        )
-        CompactMetricCard(
-            modifier = Modifier.weight(1f),
-            label = "Spent",
-            value = if (isLoading || financialSummary == null) "--" else {
-                financialSummary.spentToday.formatMoney(financialSummary.currencySymbol)
-            },
-            supporting = "Today",
-        )
-    }
-}
-
-@Composable
-private fun CompactMetricCard(
-    label: String,
-    value: String,
-    supporting: String,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(22.dp),
-        tonalElevation = 1.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = supporting,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+    Spacer(
+        modifier = modifier
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.92f))
+            .shimmer()
+    )
 }
 
 @Composable
@@ -668,6 +796,9 @@ private fun EveningResetSection(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.28f),
         shape = RoundedCornerShape(24.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 4.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -705,6 +836,14 @@ private fun EveningResetSection(
         }
     }
 }
+
+@Composable
+private fun sectionCardBorder(): BorderStroke =
+    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f))
+
+@Composable
+private fun innerCardBorder(): BorderStroke =
+    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f))
 
 @Composable
 private fun ElapsedTone.containerColor(): Color = when (this) {
@@ -773,12 +912,6 @@ private fun HomeViewPreview() {
             timeSinceLastCigarette = 4L to 22L,
             greetingTitle = "Good morning",
             greetingMessage = "You are pacing well for a steadier Tuesday.",
-            financialSummary = FinancialSummary(
-                spentToday = 2.45,
-                spentWeek = 13.8,
-                spentMonth = 40.0,
-                currencySymbol = "$",
-            ),
             rateSummary = RateSummary(
                 latestIntervalMinutes = 262,
                 averageIntervalMinutesToday = 250,

@@ -142,13 +142,13 @@ private fun LocalDate.isInSameWeekAs(other: LocalDate): Boolean =
     startOfWeek().toEpochDays() == other.startOfWeek().toEpochDays()
 
 private fun LocalDate.daysElapsedInWeek(currentDate: LocalDate): Int =
-    max(1, currentDate.toEpochDays() - startOfWeek().toEpochDays() + 1)
+    max(1, (currentDate.toEpochDays() - startOfWeek().toEpochDays() + 1).toInt())
 
 private fun LocalDate.startOfWeek(): LocalDate =
     plus(DatePeriod(days = -(dayOfWeek.isoDayNumber - 1)))
 
 private fun LocalDate.daysInMonth(): Int =
-    LocalDate(year, monthNumber, 1).plus(DatePeriod(months = 1)).toEpochDays() - LocalDate(year, monthNumber, 1).toEpochDays()
+    (LocalDate(year, monthNumber, 1).plus(DatePeriod(months = 1)).toEpochDays() - LocalDate(year, monthNumber, 1).toEpochDays()).toInt()
 
 private fun LocalDate.daysInYear(): Int =
-    LocalDate(year + 1, 1, 1).toEpochDays() - LocalDate(year, 1, 1).toEpochDays()
+    (LocalDate(year + 1, 1, 1).toEpochDays() - LocalDate(year, 1, 1).toEpochDays()).toInt()

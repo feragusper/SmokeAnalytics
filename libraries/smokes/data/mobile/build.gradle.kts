@@ -1,7 +1,7 @@
 plugins {
     `android-lib`
-    id("kotlin-kapt")
-    id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
     alias(libs.plugins.compose.compiler)
 }
 
@@ -14,7 +14,7 @@ dependencies {
     implementation(project(":libraries:architecture:domain"))
     implementation(project(":libraries:wear:data"))
     implementation(libs.hilt)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)

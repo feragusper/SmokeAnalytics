@@ -36,7 +36,7 @@ class HomeGoalNarrativeTest {
         assertEquals("On track", narrative.statusLabel)
         assertEquals("Still within today's cap.", narrative.consistencyLabel)
         assertEquals(
-            "You need roughly 3h 20m between the remaining cigarettes to stay within today's cap.",
+            "~3h 20m between the remaining cigarettes.",
             narrative.heroSupporting,
         )
     }
@@ -56,7 +56,7 @@ class HomeGoalNarrativeTest {
         )
 
         assertEquals("Wait 1h 30m before the next cigarette", narrative.heroTitle)
-        assertEquals("Review your mindful gap in You", narrative.nextActionLabel)
+        assertEquals("On track", narrative.statusLabel)
     }
 
     @Test
@@ -110,6 +110,38 @@ class HomeGoalNarrativeTest {
     }
 
     @Test
+    fun `daily cap hero readout explains criterion instead of raw percent`() {
+        val readout = homeHeroReadout(
+            goalProgress = GoalProgress(
+                goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
+                title = "Daily cap",
+                targetLabel = "Target: at most 6 today",
+                progressLabel = "3 / 6 smoked today",
+                supportingText = "On track",
+                status = GoalStatus.OnTrack,
+                progressFraction = 0.5f,
+            ),
+            smokesPerDay = 3,
+            timeSinceLastCigarette = 1L to 15L,
+            awakeMinutesPerDay = 960,
+            dayStartHour = 6,
+            bedtimeHour = 22,
+            now = noon,
+            timeZone = utc,
+        )
+
+        assertEquals("Cap used today", readout.meterLabel)
+        assertEquals("3 of 6", readout.meterValue)
+        assertEquals("Pace", readout.metrics[0].label)
+        assertEquals("2", readout.metrics[0].value)
+        assertEquals(HomeHeroMetricIcon.Pace, readout.metrics[0].icon)
+        assertEquals("Margin", readout.metrics[1].label)
+        assertEquals("3 left", readout.metrics[1].value)
+        assertEquals("Every", readout.metrics[2].label)
+        assertEquals("~3h 20m", readout.metrics[2].value)
+    }
+
+    @Test
     fun `daily cap hero progress uses cumulative pace right after logging`() {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
@@ -157,6 +189,33 @@ class HomeGoalNarrativeTest {
 
         assertEquals(HomeHeroProgressTone.Red, progress.tone)
         assertEquals(0.08f, progress.fraction)
+    }
+
+    @Test
+    fun `mindful gap hero readout shows current gap target and remaining time`() {
+        val readout = homeHeroReadout(
+            goalProgress = GoalProgress(
+                goal = SmokingGoal.MindfulGap(targetMinutes = 90),
+                title = "Mindful gap",
+                targetLabel = "Target: wait 1h 30m between cigarettes",
+                progressLabel = "Current gap: 50m",
+                supportingText = "The current gap is building toward the target interval.",
+                status = GoalStatus.OnTrack,
+                progressFraction = 0.55f,
+            ),
+            smokesPerDay = 2,
+            timeSinceLastCigarette = 0L to 50L,
+            awakeMinutesPerDay = 960,
+        )
+
+        assertEquals("Gap built", readout.meterLabel)
+        assertEquals("50m of 1h 30m", readout.meterValue)
+        assertEquals("Current", readout.metrics[0].label)
+        assertEquals("50m", readout.metrics[0].value)
+        assertEquals("Target", readout.metrics[1].label)
+        assertEquals("1h 30m", readout.metrics[1].value)
+        assertEquals("Remaining", readout.metrics[2].label)
+        assertEquals("40m", readout.metrics[2].value)
     }
 
     @Test

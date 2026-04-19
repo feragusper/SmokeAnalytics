@@ -25,6 +25,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 
 class HistoryProcessHolder(
@@ -61,7 +62,7 @@ class HistoryProcessHolder(
                 manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
             )
         } else {
-            selectedDate.atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+            selectedDate.atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz).toDeprecatedInstant()
         }
         val nextDayStart = if (selectedDate == currentBucketDate) {
             nextDayStartInstant(
@@ -92,12 +93,12 @@ class HistoryProcessHolder(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
-                ).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                ).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz).toDeprecatedInstant()
                 val nextMonthStart = LocalDate(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
-                ).plus(DatePeriod(months = 1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                ).plus(DatePeriod(months = 1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz).toDeprecatedInstant()
                 val monthCounts = fetchSmokesUseCase(
                     start = monthStart,
                     end = nextMonthStart,
@@ -112,7 +113,7 @@ class HistoryProcessHolder(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
-                ).plus(DatePeriod(months = -1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz)
+                ).plus(DatePeriod(months = -1)).atStartOfDayIn(tz).plus(preferences.dayStartHour, DateTimeUnit.HOUR, tz).toDeprecatedInstant()
                 val previousMonthCounts = fetchSmokesUseCase(
                     start = previousMonthStart,
                     end = monthStart,
