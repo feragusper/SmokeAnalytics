@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.home.presentation
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
@@ -59,6 +60,7 @@ class HomeViewTest {
         composeTestRule.onNodeWithText("Last cigarette").assertIsDisplayed()
         composeTestRule.onNodeWithText("Time since").assertIsDisplayed()
         composeTestRule.onNodeWithText("2h 35m").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE).assertIsDisplayed()
     }
 
     private fun prepareScreen(

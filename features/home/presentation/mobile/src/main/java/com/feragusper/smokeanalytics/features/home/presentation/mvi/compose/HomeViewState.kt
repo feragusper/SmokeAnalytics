@@ -247,6 +247,12 @@ private fun HomeContent(
             )
         }
         item {
+            TrackActionSection(
+                isLoading = isLoading,
+                onAddSmoke = { intent(HomeIntent.AddSmoke) },
+            )
+        }
+        item {
             LastCigaretteSection(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 timeSinceLastCigarette = timeSinceLastCigarette,
@@ -271,6 +277,34 @@ private fun HomeContent(
             }
         }
         item { Spacer(modifier = Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun TrackActionSection(
+    isLoading: Boolean,
+    onAddSmoke: () -> Unit,
+) {
+    Button(
+        onClick = onAddSmoke,
+        enabled = !isLoading,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE),
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+    ) {
+        Text(
+            text = "Track cigarette",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

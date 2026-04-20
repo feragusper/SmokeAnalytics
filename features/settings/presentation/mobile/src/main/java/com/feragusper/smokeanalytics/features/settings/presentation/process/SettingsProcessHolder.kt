@@ -12,6 +12,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPrefe
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -59,7 +60,7 @@ class SettingsProcessHolder @Inject constructor(
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> {
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
                 emit(
                     SettingsResult.UserLoggedIn(
@@ -71,6 +72,8 @@ class SettingsProcessHolder @Inject constructor(
                 )
             }
         }
+    }.catch {
+        emit(SettingsResult.Error("Could not load your settings. Try again."))
     }
 
     /**
@@ -84,23 +87,28 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Loading)
         signOutUseCase()
         emit(SettingsResult.UserLoggedOut)
+    }.catch {
+        emit(SettingsResult.Error("Could not sign out. Try again."))
     }
 
     private fun processUpdatePreferences(preferences: UserPreferences): Flow<SettingsResult> = flow {
         emit(SettingsResult.Loading)
         updateUserPreferencesUseCase(preferences)
-        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
+        val savedPreferences = fetchUserPreferencesUseCase()
+        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(savedPreferences)) }.getOrDefault(emptyList())
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> emit(
                 SettingsResult.UserLoggedIn(
                     email = session.user.email,
                     displayName = session.user.displayName,
-                    preferences = preferences,
-                    goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, smokes, preferences),
+                    preferences = savedPreferences,
+                    goalProgress = evaluateGoalProgressUseCase(savedPreferences.activeGoal, smokes, savedPreferences),
                 )
             )
         }
         emit(SettingsResult.PreferencesSaved)
+    }.catch {
+        emit(SettingsResult.Error("Could not save your settings. Try again."))
     }
 }

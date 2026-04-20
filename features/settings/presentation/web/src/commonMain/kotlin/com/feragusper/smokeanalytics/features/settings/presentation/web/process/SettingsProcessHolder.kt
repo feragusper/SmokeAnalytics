@@ -9,7 +9,6 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -47,7 +46,7 @@ class SettingsProcessHolder(
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> {
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
                 emit(
                     SettingsResult.UserLoggedIn(
@@ -75,15 +74,16 @@ class SettingsProcessHolder(
         emit(SettingsResult.Loading)
         val preferences = intent.preferences
         updateUserPreferencesUseCase(preferences)
-        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
+        val savedPreferences = fetchUserPreferencesUseCase()
+        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(savedPreferences)) }.getOrDefault(emptyList())
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> emit(
                 SettingsResult.UserLoggedIn(
                     email = session.user.email,
                     displayName = session.user.displayName,
-                    preferences = preferences,
-                    goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, smokes, preferences),
+                    preferences = savedPreferences,
+                    goalProgress = evaluateGoalProgressUseCase(savedPreferences.activeGoal, smokes, savedPreferences),
                 )
             )
         }
