@@ -29,7 +29,11 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldBeEqualTo
 import org.junit.jupiter.api.AfterEach
@@ -98,7 +102,7 @@ class HistoryProcessHolderTest {
         @Test
         fun `WHEN adding smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val date: Instant = Clock.System.now()
-            coEvery { addSmokeUseCase(date) } just Runs
+            coEvery { addSmokeUseCase(any()) } just Runs
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
@@ -106,6 +110,25 @@ class HistoryProcessHolderTest {
                 awaitItem() shouldBe HistoryResult.Loading
                 awaitItem() shouldBe HistoryResult.AddSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        @Test
+        fun `WHEN adding smoke for historical date THEN keeps selected calendar day`() = runTest {
+            val timeZone = TimeZone.currentSystemDefault()
+            val selectedDate = Clock.System.now().minus(2, DateTimeUnit.DAY, timeZone)
+            var addedAt: Instant? = null
+            coEvery { addSmokeUseCase(any()) } answers {
+                addedAt = firstArg()
+            }
+
+            results = processHolder.processIntent(HistoryIntent.AddSmoke(selectedDate))
+
+            results.test {
+                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeSuccess
+                addedAt?.toLocalDateTime(timeZone)?.date shouldBeEqualTo selectedDate.toLocalDateTime(timeZone).date
                 cancelAndIgnoreRemainingEvents()
             }
         }

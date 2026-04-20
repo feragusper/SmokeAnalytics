@@ -16,7 +16,6 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessio
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.logging.AppLogger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
@@ -92,7 +91,7 @@ class HomeProcessHolder(
 
                 is Session.LoggedIn -> {
                     emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
-                    val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                    val preferences = fetchUserPreferencesUseCase()
                     val smokeCounts = fetchSmokeCountListUseCase(
                         dayStartHour = preferences.dayStartHour,
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
@@ -155,7 +154,7 @@ class HomeProcessHolder(
             is Session.LoggedIn -> {
                 AppLogger.i { "User logged in, adding smoke..." }
                 emit(HomeResult.Loading)
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val location = if (preferences.locationTrackingEnabled) {
                     locationCaptureService.captureCurrentLocation()?.let {
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
@@ -175,7 +174,7 @@ class HomeProcessHolder(
 
     private fun processStartNewDay(): Flow<HomeResult> = flow {
         emit(HomeResult.Loading)
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         updateUserPreferencesUseCase(
             preferences.copy(manualDayStartEpochMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
         )

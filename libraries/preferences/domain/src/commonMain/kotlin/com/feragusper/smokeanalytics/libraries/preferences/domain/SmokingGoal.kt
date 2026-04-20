@@ -51,3 +51,29 @@ fun smokingGoalOrNull(
     type == GoalType.MindfulGap -> SmokingGoal.MindfulGap(metricValue.toInt().coerceAtLeast(1))
     else -> null
 }
+
+fun goalTypeOrNull(rawType: String?): GoalType? {
+    val normalized = rawType
+        ?.trim()
+        ?.filter { it.isLetterOrDigit() }
+        ?.lowercase()
+        ?: return null
+
+    return when (normalized) {
+        "dailycap", "dailycapgoal", "cap", "daily" -> GoalType.DailyCap
+        "reductionvspreviousweek", "weeklyreduction", "weekreduction" -> GoalType.ReductionVsPreviousWeek
+        "reductionvspreviousmonth", "monthlyreduction", "monthreduction" -> GoalType.ReductionVsPreviousMonth
+        "mindfulgap", "gap", "steadygap" -> GoalType.MindfulGap
+        else -> GoalType.entries.firstOrNull {
+            it.name.filter { char -> char.isLetterOrDigit() }.lowercase() == normalized
+        }
+    }
+}
+
+fun smokingGoalOrNull(
+    type: String?,
+    metricValue: Double?,
+): SmokingGoal? = smokingGoalOrNull(
+    type = goalTypeOrNull(type),
+    metricValue = metricValue,
+)

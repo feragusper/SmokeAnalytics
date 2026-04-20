@@ -7,6 +7,7 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessio
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
@@ -20,6 +21,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldNotBe
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -106,5 +108,30 @@ class SettingsProcessHolderTest {
 
             // Verify that signOutUseCase() was actually called
             coVerify(exactly = 1) { signOutUseCase() }
+        }
+
+    @Test
+    fun `WHEN UpdatePreferences saves goal THEN emits persisted active goal`() =
+        runTest {
+            val email = "fernancho@gmail.com"
+            val displayName = "Fer"
+            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            coEvery { updateUserPreferencesUseCase(preferences) } just Runs
+            coEvery { fetchUserPreferencesUseCase() } returns preferences
+            coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
+                Session.User(id = "123", email = email, displayName = displayName)
+            )
+            coEvery { fetchSmokesUseCase(any(), any()) } returns emptyList()
+
+            processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                val loggedIn = awaitItem() as SettingsResult.UserLoggedIn
+                loggedIn.email shouldBeEqualTo email
+                loggedIn.displayName shouldBeEqualTo displayName
+                loggedIn.preferences shouldBeEqualTo preferences
+                loggedIn.goalProgress shouldNotBe null
+                awaitItem() shouldBeEqualTo SettingsResult.PreferencesSaved
+                awaitComplete()
+            }
         }
 }

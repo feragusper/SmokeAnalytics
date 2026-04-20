@@ -19,13 +19,17 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toDeprecatedInstant
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 class HistoryProcessHolder(
@@ -147,6 +151,7 @@ class HistoryProcessHolder(
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
                 val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val tz = TimeZone.currentSystemDefault()
                 val location = if (preferences.locationTrackingEnabled) {
                     locationCaptureService.captureCurrentLocation()?.let {
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
@@ -154,7 +159,7 @@ class HistoryProcessHolder(
                 } else {
                     null
                 }
-                addSmokeUseCase(intent.date, location)
+                addSmokeUseCase(intent.date.toVisibleAddTimestamp(tz), location)
                 emit(HistoryResult.AddSmokeSuccess)
             }
         }
@@ -171,4 +176,22 @@ class HistoryProcessHolder(
         deleteSmokeUseCase(intent.id)
         emit(HistoryResult.DeleteSmokeSuccess)
     }.catch { emit(HistoryResult.Error.Generic) }
+}
+
+private fun Instant.toVisibleAddTimestamp(timeZone: TimeZone): Instant {
+    val selectedDate = toLocalDateTime(timeZone).date
+    val now = Clock.System.now()
+    val nowLocal = now.toLocalDateTime(timeZone)
+
+    if (selectedDate == nowLocal.date) return now
+
+    return LocalDateTime(
+        year = selectedDate.year,
+        monthNumber = selectedDate.monthNumber,
+        dayOfMonth = selectedDate.dayOfMonth,
+        hour = nowLocal.hour,
+        minute = nowLocal.minute,
+        second = nowLocal.second,
+        nanosecond = 0,
+    ).toInstant(timeZone).toDeprecatedInstant()
 }
