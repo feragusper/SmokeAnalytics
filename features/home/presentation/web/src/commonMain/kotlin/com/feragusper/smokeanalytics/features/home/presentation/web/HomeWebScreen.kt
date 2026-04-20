@@ -341,7 +341,6 @@ private fun DetachedTrackAction(
             PrimaryButton(
                 text = "Track",
                 onClick = onAddSmoke,
-                extraClass = elapsedTone.buttonClass(),
             )
         }
     }
@@ -493,11 +492,4 @@ private fun ElapsedTone.pillForeground(): String = when (this) {
     ElapsedTone.Warning -> "var(--sa-color-on-tertiary-container)"
     ElapsedTone.Caution -> "var(--sa-color-on-secondary-container)"
     ElapsedTone.Calm -> "var(--sa-color-on-primary-container)"
-}
-
-private fun ElapsedTone.buttonClass(): String = when (this) {
-    ElapsedTone.Urgent -> SmokeWebStyles.elapsedCardUrgent
-    ElapsedTone.Warning -> SmokeWebStyles.elapsedCardWarning
-    ElapsedTone.Caution -> SmokeWebStyles.elapsedCardCaution
-    ElapsedTone.Calm -> SmokeWebStyles.elapsedCardCalm
 }
