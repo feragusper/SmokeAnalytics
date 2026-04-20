@@ -65,9 +65,9 @@ class HistoryWebStore(
 
             is HistoryResult.NotLoggedIn -> prev.copy(
                 displayLoading = false,
-                error = null,
+                error = HistoryResult.Error.NotLoggedIn,
                 selectedDate = result.selectedDate,
-                smokes = emptyList(),
+                smokes = null,
             )
 
             is HistoryResult.FetchSmokesSuccess -> prev.copy(

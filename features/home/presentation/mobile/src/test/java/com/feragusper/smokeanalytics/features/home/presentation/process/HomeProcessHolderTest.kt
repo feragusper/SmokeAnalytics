@@ -149,6 +149,17 @@ class HomeProcessHolderTest {
         }
 
         @Test
+        fun `WHEN goal smoke fetch fails THEN fetch returns error instead of empty progress`() = runTest {
+            coEvery { fetchSmokesUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
+
+            processHolder.processIntent(HomeIntent.FetchSmokes).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.FetchSmokesError
+                awaitComplete()
+            }
+        }
+
+        @Test
         fun `WHEN editing smoke fails THEN it returns error`() = runTest {
             val id = "id"
             val date: Instant = Clock.System.now()

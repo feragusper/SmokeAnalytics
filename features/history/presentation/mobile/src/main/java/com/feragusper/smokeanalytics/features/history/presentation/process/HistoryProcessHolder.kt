@@ -15,7 +15,6 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.process
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -117,7 +116,7 @@ class HistoryProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the fetch operation.
      */
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         val timeZone = TimeZone.currentSystemDefault()
         val selectedDate = intent.date.toLocalDateTime(timeZone).date
         val currentBucketDate = currentBucketDate(
@@ -223,7 +222,7 @@ class HistoryProcessHolder @Inject constructor(
 
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val timeZone = TimeZone.currentSystemDefault()
                 val location = if (preferences.locationTrackingEnabled) {
                     locationCaptureService.captureCurrentLocation()?.let {
@@ -243,7 +242,7 @@ class HistoryProcessHolder @Inject constructor(
     }
 
     private suspend fun refreshWidgetSnapshot() {
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         val smokeCounts = fetchSmokeCountListUseCase(
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,

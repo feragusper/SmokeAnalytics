@@ -69,6 +69,7 @@ class SettingsViewModel @Inject constructor(
             preferences = result.preferences,
             goalProgress = result.goalProgress,
             infoMessage = null,
+            errorMessage = null,
         )
 
         /**
@@ -81,19 +82,21 @@ class SettingsViewModel @Inject constructor(
             preferences = UserPreferences(),
             goalProgress = null,
             infoMessage = null,
+            errorMessage = null,
         )
 
         /**
          * Indicates that the application is currently loading or processing data.
          */
-        SettingsResult.Loading -> previous.copy(displayLoading = true, infoMessage = null)
+        SettingsResult.Loading -> previous.copy(displayLoading = true, infoMessage = null, errorMessage = null)
         SettingsResult.PreferencesSaved -> previous.copy(
             displayLoading = false,
             infoMessage = null,
+            errorMessage = null,
         )
         is SettingsResult.Error -> previous.copy(
             displayLoading = false,
-            infoMessage = result.message,
+            errorMessage = result.message,
         )
     }
 }

@@ -61,8 +61,9 @@ class HistoryViewModel @Inject constructor(
 
             is NotLoggedIn -> previous.copy(
                 displayLoading = false,
-                error = null,
+                error = Error.NotLoggedIn,
                 selectedDate = result.selectedDate,
+                smokes = null,
             )
 
             is FetchSmokesSuccess -> previous.copy(

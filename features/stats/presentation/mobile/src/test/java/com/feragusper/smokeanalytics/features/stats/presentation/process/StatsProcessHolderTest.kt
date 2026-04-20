@@ -117,4 +117,35 @@ class StatsProcessHolderTest {
                 )
             }
         }
+
+    @Test
+    fun `GIVEN preferences cannot be fetched WHEN fetching stats THEN emits loading and error states`() =
+        runTest {
+            val exception = RuntimeException("Quota exceeded")
+            coEvery { fetchUserPreferencesUseCase() } throws exception
+
+            processHolder.processIntent(
+                StatsIntent.LoadStats(
+                    year = 2025,
+                    month = 3,
+                    day = 2,
+                    period = FetchSmokeStatsUseCase.PeriodType.WEEK,
+                )
+            ).test {
+                awaitItem() shouldBeEqualTo StatsResult.Loading
+                awaitItem() shouldBeEqualTo StatsResult.Error(exception)
+                awaitComplete()
+            }
+
+            coVerify(exactly = 0) {
+                fetchSmokeStatsUseCase(
+                    year = any(),
+                    month = any(),
+                    day = any(),
+                    periodType = any(),
+                    dayStartHour = any(),
+                    bedtimeHour = any(),
+                )
+            }
+        }
 }
