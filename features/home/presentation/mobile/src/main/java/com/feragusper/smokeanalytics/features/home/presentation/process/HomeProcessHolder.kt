@@ -29,6 +29,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWea
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.toLocalDateTime
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -144,9 +145,9 @@ class HomeProcessHolder @Inject constructor(
     private fun processDeleteSmoke(intent: HomeIntent.DeleteSmoke) = flow {
         emit(HomeResult.Loading)
         deleteSmokeUseCase.invoke(intent.id)
-        refreshWidgetSnapshot()
         emit(HomeResult.DeleteSmokeSuccess)
-        syncWithWearUseCase.invoke()
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog {
         emit(HomeResult.Error.Generic)
     }
@@ -160,9 +161,9 @@ class HomeProcessHolder @Inject constructor(
     private fun processEditSmoke(intent: HomeIntent.EditSmoke) = flow {
         emit(HomeResult.Loading)
         editSmokeUseCase.invoke(intent.id, intent.date)
-        refreshWidgetSnapshot()
         emit(HomeResult.EditSmokeSuccess)
-        syncWithWearUseCase.invoke()
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog {
         emit(HomeResult.Error.Generic)
     }
@@ -207,9 +208,9 @@ class HomeProcessHolder @Inject constructor(
                     null
                 }
                 addSmokeUseCase.invoke(location = location)
-                refreshWidgetSnapshot()
                 emit(HomeResult.AddSmokeSuccess)
-                syncWithWearUseCase.invoke()
+                refreshWidgetSnapshotBestEffort()
+                syncWithWearBestEffort()
             }
         }
     }.catchAndLog {
@@ -234,6 +235,16 @@ class HomeProcessHolder @Inject constructor(
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
         widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
+    }
+
+    private suspend fun refreshWidgetSnapshotBestEffort() {
+        runCatching { refreshWidgetSnapshot() }
+            .onFailure { Timber.w(it, "Home mutation succeeded but widget refresh failed") }
+    }
+
+    private suspend fun syncWithWearBestEffort() {
+        runCatching { syncWithWearUseCase.invoke() }
+            .onFailure { Timber.w(it, "Home mutation succeeded but Wear sync failed") }
     }
 }
 

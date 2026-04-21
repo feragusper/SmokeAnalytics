@@ -47,6 +47,7 @@ dependencies {
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)
+    implementation(libs.timber)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
