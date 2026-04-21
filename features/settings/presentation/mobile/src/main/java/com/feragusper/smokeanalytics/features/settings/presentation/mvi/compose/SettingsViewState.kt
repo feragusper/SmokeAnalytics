@@ -86,9 +86,13 @@ data class SettingsViewState(
     ) {
         var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
         var showingGoals by remember(currentEmail, preferences.activeGoal) { mutableStateOf(false) }
+        var signInErrorMessage by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(preferences, currentEmail) {
             draftPreferences = preferences
+            if (currentEmail != null) {
+                signInErrorMessage = null
+            }
         }
 
         if (showingGoals) {
@@ -108,6 +112,8 @@ data class SettingsViewState(
                     intent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = null)))
                 },
                 onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+                onSignInError = { signInErrorMessage = it },
+                signInErrorMessage = signInErrorMessage,
             )
             return
         }
@@ -151,8 +157,10 @@ data class SettingsViewState(
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
                 displayLoading = displayLoading,
+                signInErrorMessage = signInErrorMessage,
                 onSignOut = { intent(SettingsIntent.SignOut) },
                 onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+                onSignInError = { signInErrorMessage = it },
             )
 
             HighlightsRow(tier = preferences.accountTier)
@@ -207,7 +215,8 @@ data class SettingsViewState(
 @Composable
 private fun SettingsErrorCard(
     message: String,
-    onRetry: () -> Unit,
+    onRetry: (() -> Unit)? = null,
+    title: String = "Your space is unavailable",
 ) {
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -221,7 +230,7 @@ private fun SettingsErrorCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "Your space is unavailable",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -229,8 +238,10 @@ private fun SettingsErrorCard(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onRetry) {
-                Text("Retry")
+            if (onRetry != null) {
+                Button(onClick = onRetry) {
+                    Text("Retry")
+                }
             }
         }
     }
@@ -449,8 +460,10 @@ private fun SessionCard(
     currentEmail: String?,
     currentDisplayName: String?,
     displayLoading: Boolean,
+    signInErrorMessage: String?,
     onSignOut: () -> Unit,
     onSignInSuccess: () -> Unit,
+    onSignInError: (String) -> Unit,
 ) {
     SettingsCard(
         title = "Session",
@@ -534,12 +547,19 @@ private fun SessionCard(
                     body = "Give the guide enough recent behavior to stay grounded instead of generic.",
                 )
 
+                signInErrorMessage?.let { message ->
+                    SettingsErrorCard(
+                        title = "Sign-in failed",
+                        message = message,
+                    )
+                }
+
                 GoogleSignInComponent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
                     onSignInSuccess = onSignInSuccess,
-                    onSignInError = {},
+                    onSignInError = onSignInError,
                 )
             }
         }

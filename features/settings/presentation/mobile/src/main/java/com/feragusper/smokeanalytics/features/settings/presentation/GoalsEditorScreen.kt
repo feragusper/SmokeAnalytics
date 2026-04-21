@@ -40,10 +40,12 @@ fun GoalsEditorScreen(
     goalProgress: GoalProgress?,
     displayLoading: Boolean,
     errorMessage: String? = null,
+    signInErrorMessage: String? = null,
     onBack: () -> Unit,
     onSaveGoal: (SmokingGoal) -> Unit,
     onClearGoal: () -> Unit,
     onSignInSuccess: () -> Unit,
+    onSignInError: (String) -> Unit,
 ) {
     var selectedType by remember(preferences.activeGoal) {
         mutableStateOf(preferences.activeGoal?.type ?: GoalType.DailyCap)
@@ -120,10 +122,33 @@ fun GoalsEditorScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    signInErrorMessage?.let { message ->
+                        Card(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Text(
+                                    text = "Sign-in failed",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    }
                     GoogleSignInComponent(
                         modifier = Modifier.fillMaxWidth(),
                         onSignInSuccess = onSignInSuccess,
-                        onSignInError = {},
+                        onSignInError = onSignInError,
                     )
                 }
             }

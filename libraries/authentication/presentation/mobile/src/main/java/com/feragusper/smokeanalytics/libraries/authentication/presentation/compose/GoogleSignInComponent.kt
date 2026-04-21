@@ -55,7 +55,7 @@ import java.util.UUID
 fun GoogleSignInComponent(
     modifier: Modifier = Modifier,
     onSignInSuccess: () -> Unit,
-    onSignInError: () -> Unit,
+    onSignInError: (String) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -109,8 +109,13 @@ private fun doGoogleSignIn(
     context: Context,
     startAddAccountIntentLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>?,
     onSignInSuccess: () -> Unit,
-    onSignInError: () -> Unit
+    onSignInError: (String) -> Unit,
 ) {
+    if (BuildConfig.GOOGLE_AUTH_SERVER_CLIENT_ID.isBlank()) {
+        onSignInError("Google sign-in is not configured for this app build: missing server client id.")
+        return
+    }
+
     val credentialManager = CredentialManager.create(context)
 
     // Create Google ID Option for sign-in
@@ -136,10 +141,14 @@ private fun doGoogleSignIn(
         } catch (e: NoCredentialException) {
             Timber.e(e, "No credentials found")
             // Prompt user to add Google account if no credentials are available
-            startAddAccountIntentLauncher?.launch(getAddGoogleAccountIntent())
+            if (startAddAccountIntentLauncher != null) {
+                startAddAccountIntentLauncher.launch(getAddGoogleAccountIntent())
+            } else {
+                onSignInError("No Google account is available on this device. Add an account and try again.")
+            }
         } catch (e: Exception) {
             Timber.e(e, "Unexpected error during sign-in")
-            onSignInError()
+            onSignInError(e.toUserVisibleSignInMessage())
         }
     }
 }
@@ -154,7 +163,7 @@ private fun doGoogleSignIn(
 private suspend fun handleSignIn(
     result: GetCredentialResponse,
     onSignInSuccess: () -> Unit,
-    onSignInError: () -> Unit
+    onSignInError: (String) -> Unit,
 ) {
     val credential = result.credential
 
@@ -172,21 +181,35 @@ private suspend fun handleSignIn(
                     onSignInSuccess()
                 } catch (e: GoogleIdTokenParsingException) {
                     Timber.e(e, "Invalid Google ID Token")
-                    onSignInError()
+                    onSignInError("Google returned an invalid sign-in token. Try again.")
                 } catch (e: Exception) {
                     Timber.e(e, "Unexpected error during sign-in")
-                    onSignInError()
+                    onSignInError(e.toUserVisibleSignInMessage())
                 }
             } else {
                 Timber.e("Unexpected credential type")
-                onSignInError()
+                onSignInError("Google returned an unsupported credential type. Try again.")
             }
         }
 
         else -> {
             Timber.e("Credential is not of the expected type")
-            onSignInError()
+            onSignInError("Google returned an unsupported credential. Try again.")
         }
+    }
+}
+
+private fun Throwable.toUserVisibleSignInMessage(): String {
+    val detail = message.orEmpty()
+    return when {
+        detail.contains("28444") || detail.contains("Developer console is not set up correctly", ignoreCase = true) ->
+            "Google sign-in is not configured for this app build ([28444]). Check the OAuth client, package name, and signing certificate in Google Cloud/Firebase."
+
+        detail.isNotBlank() ->
+            "Google sign-in failed: $detail"
+
+        else ->
+            "Google sign-in failed (${javaClass.simpleName}). Try again."
     }
 }
 
