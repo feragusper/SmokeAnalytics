@@ -46,10 +46,6 @@ data class AuthenticationViewState(
     fun Compose(intent: (AuthenticationIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
-        val genericErrorMessage = stringResource(
-            com.feragusper.smokeanalytics.libraries.design.mobile.R.string.error_general
-        )
-
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { contentPadding ->
@@ -66,8 +62,8 @@ data class AuthenticationViewState(
                     item {
                         AuthEntryCard(
                             onRefresh = { intent(AuthenticationIntent.FetchUser) },
-                            onSignInError = {
-                                scope.launch { snackbarHostState.showSnackbar(genericErrorMessage) }
+                            onSignInError = { message ->
+                                scope.launch { snackbarHostState.showSnackbar(message) }
                             },
                         )
                     }
@@ -156,7 +152,7 @@ private fun AuthHeroCard() {
 @Composable
 private fun AuthEntryCard(
     onRefresh: () -> Unit,
-    onSignInError: () -> Unit,
+    onSignInError: (String) -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(24.dp),

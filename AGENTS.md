@@ -28,6 +28,12 @@
 - Open feature/tranche PRs into `develop`.
 - Merge `develop` into `master` only when preparing a release.
 - Release flow is: open PR `develop -> master`, wait for green checks, merge, deploy Android and web from `master`, then bump `version.properties` on `develop` to the next version before resuming feature work.
+- Before opening a release PR, inspect the changes since the last released `master` and adjust `version.properties` on `develop` if needed:
+  - Use semantic versioning for `product.version`.
+  - `MAJOR` changes are reserved for breaking compatibility or intentionally disruptive product/API shifts.
+  - If the release includes at least one new feature and no breaking change, bump `MINOR` and reset `PATCH` to `0`.
+  - If the release only contains bugfixes, polish, docs, or operational fixes, bump `PATCH`.
+  - After a successful release, bump `develop` to the next default patch development version unless the next tranche is already known to require a minor or major bump.
 - Tags and deploys happen from the release state on `master`, not from feature branches.
 - If work is merged to `master` by mistake, bring `develop` forward before starting the next branch.
 - Never use PR auto-delete or `gh pr merge --delete-branch` when the PR head branch is `develop` or `master`.
