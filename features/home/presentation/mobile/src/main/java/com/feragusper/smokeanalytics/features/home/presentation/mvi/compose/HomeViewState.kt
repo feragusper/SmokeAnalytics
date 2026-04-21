@@ -38,7 +38,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -123,7 +122,9 @@ data class HomeViewState(
         }
 
         LaunchedEffect(displayLoading, elapsedTone) {
-            onFabConfigChanged(false, elapsedTone, null)
+            onFabConfigChanged(!displayLoading, elapsedTone) {
+                intent(HomeIntent.AddSmoke)
+            }
         }
 
         val nestedScrollConnection = remember {
@@ -163,6 +164,7 @@ data class HomeViewState(
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
                 isLoading = displayLoading,
+                error = error,
                 intent = intent,
             )
         }
@@ -186,8 +188,10 @@ private fun HomeContent(
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
     isLoading: Boolean,
+    error: HomeResult.Error?,
     intent: (HomeIntent) -> Unit,
 ) {
+    val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
     val narrative = homeGoalNarrative(
         goalProgress = goalProgress,
         smokesPerDay = smokesPerDay,
@@ -236,6 +240,19 @@ private fun HomeContent(
                 isLoading = isLoading,
             )
         }
+        if (error != null) {
+            item {
+                HomeErrorSection(
+                    error = error,
+                    hasLoadedContent = hasLoadedContent,
+                    onRetry = { intent(HomeIntent.FetchSmokes) },
+                )
+            }
+        }
+        if (!hasLoadedContent && error != null) {
+            item { Spacer(modifier = Modifier.height(24.dp)) }
+            return@LazyColumn
+        }
         item {
             GoalHeroSection(
                 heroTitle = narrative.heroTitle,
@@ -244,12 +261,6 @@ private fun HomeContent(
                 heroProgress = heroProgress,
                 heroReadout = heroReadout,
                 isLoading = isLoading,
-            )
-        }
-        item {
-            TrackActionSection(
-                isLoading = isLoading,
-                onAddSmoke = { intent(HomeIntent.AddSmoke) },
             )
         }
         item {
@@ -281,30 +292,45 @@ private fun HomeContent(
 }
 
 @Composable
-private fun TrackActionSection(
-    isLoading: Boolean,
-    onAddSmoke: () -> Unit,
+private fun HomeErrorSection(
+    error: HomeResult.Error,
+    hasLoadedContent: Boolean,
+    onRetry: () -> Unit,
 ) {
-    Button(
-        onClick = onAddSmoke,
-        enabled = !isLoading,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 1.dp,
     ) {
-        Text(
-            text = "Track cigarette",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = if (error == HomeResult.Error.NotLoggedIn) "Session required" else "Could not refresh home",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = when {
+                    error == HomeResult.Error.NotLoggedIn -> "Sign in again to keep Home, goals, and the latest gap synced."
+                    hasLoadedContent -> "Keeping the last visible state. Retry when the connection or quota recovers."
+                    else -> "Home could not load your smoke data. Retry when the connection or quota recovers."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onErrorContainer,
+                    contentColor = MaterialTheme.colorScheme.errorContainer,
+                ),
+            ) {
+                Text("Retry")
+            }
+        }
     }
 }
 

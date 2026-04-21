@@ -69,6 +69,7 @@ data class SettingsViewState(
     internal val preferences: UserPreferences = UserPreferences(),
     internal val goalProgress: GoalProgress? = null,
     internal val infoMessage: String? = null,
+    internal val errorMessage: String? = null,
 ) : MVIViewState<SettingsIntent> {
 
     interface TestTags {
@@ -96,6 +97,7 @@ data class SettingsViewState(
                 preferences = draftPreferences,
                 goalProgress = goalProgress,
                 displayLoading = displayLoading,
+                errorMessage = errorMessage,
                 onBack = { showingGoals = false },
                 onSaveGoal = { goal ->
                     draftPreferences = draftPreferences.copy(activeGoal = goal)
@@ -118,7 +120,7 @@ data class SettingsViewState(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            if (displayLoading && currentEmail == null) {
+            if (displayLoading && currentEmail == null && errorMessage == null) {
                 SettingsShimmerContent()
                 return@Column
             }
@@ -128,6 +130,17 @@ data class SettingsViewState(
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
             )
+
+            errorMessage?.let { message ->
+                SettingsErrorCard(
+                    message = message,
+                    onRetry = { intent(SettingsIntent.FetchUser) },
+                )
+            }
+
+            if (errorMessage != null && currentEmail == null) {
+                return@Column
+            }
 
             SettingsSectionHeader(
                 title = "Account",
@@ -186,6 +199,38 @@ data class SettingsViewState(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsErrorCard(
+    message: String,
+    onRetry: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "Your space is unavailable",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Button(onClick = onRetry) {
+                Text("Retry")
             }
         }
     }

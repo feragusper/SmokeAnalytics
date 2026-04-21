@@ -186,12 +186,25 @@ data class HistoryViewState(
                                 Text(
                                     text = if (currentError == HistoryResult.Error.NotLoggedIn) {
                                         "Sign back in to keep the archive synced."
+                                    } else if (smokes == null) {
+                                        "The selected day could not be loaded. Retry when the connection or quota recovers."
                                     } else {
                                         "Showing the last available state while the selected day could not be refreshed."
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (currentError != HistoryResult.Error.NotLoggedIn) {
+                                    Button(
+                                        onClick = { intent(HistoryIntent.FetchSmokes(selectedDate)) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError,
+                                        ),
+                                    ) {
+                                        Text("Retry")
+                                    }
+                                }
                             }
                         }
                     }
@@ -240,7 +253,7 @@ data class HistoryViewState(
                         }
                     }
 
-                    else -> {
+                    error == null -> {
                         item { EmptySmokes() }
                     }
                 }

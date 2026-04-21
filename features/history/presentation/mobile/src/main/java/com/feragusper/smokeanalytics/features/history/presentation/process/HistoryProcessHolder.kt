@@ -15,7 +15,6 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.process
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -36,6 +35,7 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -86,9 +86,9 @@ class HistoryProcessHolder @Inject constructor(
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {
         emit(HistoryResult.DeleteSmokeInFlight(intent.id))
         deleteSmokeUseCase.invoke(intent.id)
-        refreshWidgetSnapshot()
         emit(HistoryResult.DeleteSmokeSuccess)
-        syncWithWearUseCase.invoke()
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog {
         emit(HistoryResult.Error.Generic)
     }
@@ -102,9 +102,9 @@ class HistoryProcessHolder @Inject constructor(
     private fun processEditSmoke(intent: HistoryIntent.EditSmoke) = flow {
         emit(HistoryResult.EditSmokeInFlight(intent.id))
         editSmokeUseCase.invoke(intent.id, intent.date)
-        refreshWidgetSnapshot()
         emit(HistoryResult.EditSmokeSuccess)
-        syncWithWearUseCase.invoke()
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog {
         emit(HistoryResult.Error.Generic)
     }
@@ -117,7 +117,7 @@ class HistoryProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the fetch operation.
      */
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         val timeZone = TimeZone.currentSystemDefault()
         val selectedDate = intent.date.toLocalDateTime(timeZone).date
         val currentBucketDate = currentBucketDate(
@@ -223,7 +223,7 @@ class HistoryProcessHolder @Inject constructor(
 
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val timeZone = TimeZone.currentSystemDefault()
                 val location = if (preferences.locationTrackingEnabled) {
                     locationCaptureService.captureCurrentLocation()?.let {
@@ -233,9 +233,9 @@ class HistoryProcessHolder @Inject constructor(
                     null
                 }
                 addSmokeUseCase.invoke(intent.date.toVisibleAddTimestamp(timeZone), location)
-                refreshWidgetSnapshot()
                 emit(HistoryResult.AddSmokeSuccess)
-                syncWithWearUseCase.invoke()
+                refreshWidgetSnapshotBestEffort()
+                syncWithWearBestEffort()
             }
         }
     }.catchAndLog {
@@ -243,12 +243,22 @@ class HistoryProcessHolder @Inject constructor(
     }
 
     private suspend fun refreshWidgetSnapshot() {
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         val smokeCounts = fetchSmokeCountListUseCase(
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
         widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
+    }
+
+    private suspend fun refreshWidgetSnapshotBestEffort() {
+        runCatching { refreshWidgetSnapshot() }
+            .onFailure { Timber.w(it, "History mutation succeeded but widget refresh failed") }
+    }
+
+    private suspend fun syncWithWearBestEffort() {
+        runCatching { syncWithWearUseCase.invoke() }
+            .onFailure { Timber.w(it, "History mutation succeeded but Wear sync failed") }
     }
 }
 

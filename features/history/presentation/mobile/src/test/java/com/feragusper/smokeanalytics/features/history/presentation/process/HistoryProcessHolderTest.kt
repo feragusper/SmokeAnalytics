@@ -134,6 +134,51 @@ class HistoryProcessHolderTest {
         }
 
         @Test
+        fun `WHEN preferences cannot be fetched for add smoke THEN returns error without adding`() = runTest {
+            val date: Instant = Clock.System.now()
+            coEvery { fetchUserPreferencesUseCase() } throws IllegalStateException("Quota exceeded")
+
+            results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
+
+            results.test {
+                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.Error.Generic
+                coVerify(exactly = 0) { addSmokeUseCase(any()) }
+                coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        @Test
+        fun `WHEN widget refresh fails after add for date THEN tracking still succeeds`() = runTest {
+            val date: Instant = Clock.System.now()
+            coEvery { addSmokeUseCase(any()) } just Runs
+            coEvery { fetchSmokeCountListUseCase.invoke(any()) } throws IllegalStateException("Quota exceeded")
+
+            results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
+
+            results.test {
+                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        @Test
+        fun `WHEN preferences cannot be fetched for history THEN returns fetch error instead of empty archive`() =
+            runTest {
+                coEvery { fetchUserPreferencesUseCase() } throws IllegalStateException("Quota exceeded")
+
+                results = processHolder.processIntent(HistoryIntent.FetchSmokes(Clock.System.now()))
+
+                results.test {
+                    awaitItem() shouldBe HistoryResult.FetchSmokesError
+                    cancelAndIgnoreRemainingEvents()
+                }
+            }
+
+        @Test
         fun `WHEN editing smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val id = "id"
             val date: Instant = Clock.System.now()

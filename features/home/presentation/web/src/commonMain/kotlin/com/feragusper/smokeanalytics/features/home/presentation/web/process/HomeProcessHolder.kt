@@ -96,9 +96,7 @@ class HomeProcessHolder(
                         dayStartHour = preferences.dayStartHour,
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                     )
-                    val goalSmokes = runCatching {
-                        fetchSmokesUseCase(start = goalDataFetchStart(preferences))
-                    }.getOrDefault(emptyList())
+                    val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                     val greetingState = greetingStateFor(
                         hourOfDay = kotlinx.datetime.Clock.System.now()
                             .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,

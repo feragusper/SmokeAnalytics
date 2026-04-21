@@ -39,6 +39,7 @@ fun GoalsEditorScreen(
     preferences: UserPreferences,
     goalProgress: GoalProgress?,
     displayLoading: Boolean,
+    errorMessage: String? = null,
     onBack: () -> Unit,
     onSaveGoal: (SmokingGoal) -> Unit,
     onClearGoal: () -> Unit,
@@ -79,6 +80,30 @@ fun GoalsEditorScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+
+        errorMessage?.let { message ->
+            Card(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = "Could not update your goal",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
 
