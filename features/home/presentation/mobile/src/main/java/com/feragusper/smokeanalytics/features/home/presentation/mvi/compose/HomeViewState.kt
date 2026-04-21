@@ -38,7 +38,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -123,7 +122,9 @@ data class HomeViewState(
         }
 
         LaunchedEffect(displayLoading, elapsedTone) {
-            onFabConfigChanged(false, elapsedTone, null)
+            onFabConfigChanged(!displayLoading, elapsedTone) {
+                intent(HomeIntent.AddSmoke)
+            }
         }
 
         val nestedScrollConnection = remember {
@@ -263,12 +264,6 @@ private fun HomeContent(
             )
         }
         item {
-            TrackActionSection(
-                isLoading = isLoading,
-                onAddSmoke = { intent(HomeIntent.AddSmoke) },
-            )
-        }
-        item {
             LastCigaretteSection(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 timeSinceLastCigarette = timeSinceLastCigarette,
@@ -336,34 +331,6 @@ private fun HomeErrorSection(
                 Text("Retry")
             }
         }
-    }
-}
-
-@Composable
-private fun TrackActionSection(
-    isLoading: Boolean,
-    onAddSmoke: () -> Unit,
-) {
-    Button(
-        onClick = onAddSmoke,
-        enabled = !isLoading,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .testTag(HomeViewState.TestTags.BUTTON_ADD_SMOKE),
-        shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-    ) {
-        Text(
-            text = "Track cigarette",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
     }
 }
 

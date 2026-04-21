@@ -150,6 +150,22 @@ class HistoryProcessHolderTest {
         }
 
         @Test
+        fun `WHEN widget refresh fails after add for date THEN tracking still succeeds`() = runTest {
+            val date: Instant = Clock.System.now()
+            coEvery { addSmokeUseCase(any()) } just Runs
+            coEvery { fetchSmokeCountListUseCase.invoke(any()) } throws IllegalStateException("Quota exceeded")
+
+            results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
+
+            results.test {
+                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeSuccess
+                coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        @Test
         fun `WHEN preferences cannot be fetched for history THEN returns fetch error instead of empty archive`() =
             runTest {
                 coEvery { fetchUserPreferencesUseCase() } throws IllegalStateException("Quota exceeded")
