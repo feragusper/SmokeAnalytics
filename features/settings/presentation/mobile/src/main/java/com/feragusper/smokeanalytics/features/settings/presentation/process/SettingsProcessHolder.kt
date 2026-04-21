@@ -61,7 +61,7 @@ class SettingsProcessHolder @Inject constructor(
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> {
                 val preferences = fetchUserPreferencesUseCase()
-                val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(preferences)) }.getOrDefault(emptyList())
+                val smokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 emit(
                     SettingsResult.UserLoggedIn(
                         email = session.user.email,
@@ -95,7 +95,7 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Loading)
         updateUserPreferencesUseCase(preferences)
         val savedPreferences = fetchUserPreferencesUseCase()
-        val smokes = runCatching { fetchSmokesUseCase(start = goalDataFetchStart(savedPreferences)) }.getOrDefault(emptyList())
+        val smokes = fetchSmokesUseCase(start = goalDataFetchStart(savedPreferences))
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> emit(

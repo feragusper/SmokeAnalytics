@@ -76,6 +76,7 @@ class SettingsWebStore(
                 preferences = result.preferences,
                 goalProgress = result.goalProgress,
                 errorMessage = null,
+                infoMessage = null,
             )
 
             SettingsResult.UserLoggedOut -> previous.copy(
@@ -85,16 +86,19 @@ class SettingsWebStore(
                 preferences = previous.preferences,
                 goalProgress = null,
                 errorMessage = null,
+                infoMessage = null,
             )
 
             is SettingsResult.ErrorGeneric -> previous.copy(
                 displayLoading = false,
                 errorMessage = result.message,
+                infoMessage = null,
             )
 
             SettingsResult.PreferencesSaved -> previous.copy(
                 displayLoading = false,
                 infoMessage = "Saved",
+                errorMessage = null,
             )
         }
 

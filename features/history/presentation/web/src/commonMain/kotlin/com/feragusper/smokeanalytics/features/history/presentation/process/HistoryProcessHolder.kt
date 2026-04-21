@@ -10,7 +10,6 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartI
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -52,7 +51,7 @@ class HistoryProcessHolder(
 
     private fun processFetchSmokes(intent: HistoryIntent.FetchSmokes) = flow {
         val tz = TimeZone.Companion.currentSystemDefault()
-        val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+        val preferences = fetchUserPreferencesUseCase()
         val selectedDate = intent.date.toLocalDateTime(tz).date
         val currentBucketDate = currentBucketDate(
             timeZone = tz,
@@ -150,7 +149,7 @@ class HistoryProcessHolder(
 
             is Session.LoggedIn -> {
                 emit(HistoryResult.Loading)
-                val preferences = runCatching { fetchUserPreferencesUseCase() }.getOrDefault(UserPreferences())
+                val preferences = fetchUserPreferencesUseCase()
                 val tz = TimeZone.currentSystemDefault()
                 val location = if (preferences.locationTrackingEnabled) {
                     locationCaptureService.captureCurrentLocation()?.let {

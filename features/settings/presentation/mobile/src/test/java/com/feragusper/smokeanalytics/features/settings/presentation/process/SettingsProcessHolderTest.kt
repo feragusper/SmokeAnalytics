@@ -92,6 +92,22 @@ class SettingsProcessHolderTest {
             }
         }
 
+    @Test
+    fun `GIVEN session is logged in WHEN goal smokes fail THEN emit loading and load error`() =
+        runTest {
+            coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
+                Session.User(id = "123", email = "fernancho@gmail.com", displayName = "Fer")
+            )
+            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(activeGoal = SmokingGoal.DailyCap(10))
+            coEvery { fetchSmokesUseCase(any(), any()) } throws IllegalStateException("Quota exceeded")
+
+            processHolder.processIntent(SettingsIntent.FetchUser).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.Error("Could not load your settings. Try again.")
+                awaitComplete()
+            }
+        }
+
     /**
      * Ensures that when the sign-out intent is processed, it results in a logged-out state.
      */
@@ -131,6 +147,21 @@ class SettingsProcessHolderTest {
                 loggedIn.preferences shouldBeEqualTo preferences
                 loggedIn.goalProgress shouldNotBe null
                 awaitItem() shouldBeEqualTo SettingsResult.PreferencesSaved
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `WHEN UpdatePreferences cannot refresh goal progress THEN emits save error`() =
+        runTest {
+            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            coEvery { updateUserPreferencesUseCase(preferences) } just Runs
+            coEvery { fetchUserPreferencesUseCase() } returns preferences
+            coEvery { fetchSmokesUseCase(any(), any()) } throws IllegalStateException("Quota exceeded")
+
+            processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.Error("Could not save your settings. Try again.")
                 awaitComplete()
             }
         }

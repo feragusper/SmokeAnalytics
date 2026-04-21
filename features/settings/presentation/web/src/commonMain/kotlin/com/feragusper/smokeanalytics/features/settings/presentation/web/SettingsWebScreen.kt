@@ -101,6 +101,16 @@ private fun SettingsViewState.Render(
             currentDisplayName = currentDisplayName,
         )
 
+        if (errorMessage != null && currentEmail == null) {
+            EmptyStateCard(
+                title = "Your space is unavailable",
+                message = errorMessage,
+                actionLabel = "Try again",
+                onAction = { onIntent(SettingsIntent.FetchUser) },
+            )
+            return@Div
+        }
+
         SectionHeader(
             title = "Account",
             subtitle = "Session state and core product context stay together here instead of splitting You into old Settings/About leftovers.",

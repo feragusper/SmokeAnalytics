@@ -88,9 +88,10 @@ fun HomeViewState.Render(
         dayStartHour = dayStartHour,
         bedtimeHour = bedtimeHour,
     )
+    val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
     val showingInitialSkeleton = error == null && (
         displayLoading ||
-            (timeSinceLastCigarette == null && goalProgress == null && smokesPerDay == null)
+            !hasLoadedContent
     )
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
@@ -131,7 +132,9 @@ fun HomeViewState.Render(
             )
         }
 
-        if (showingInitialSkeleton) {
+        if (error != null && !hasLoadedContent) {
+            return@Div
+        } else if (showingInitialSkeleton) {
             LoadingSkeletonCard(heightPx = 260, lineWidths = listOf("34%", "74%", "60%"))
             LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("28%", "40%", "52%"))
             LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("26%", "52%", "62%"))
