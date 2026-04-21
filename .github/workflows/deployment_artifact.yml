@@ -32,7 +32,7 @@ jobs:
           GOOGLE_SERVICES_JSON_STAGING: ${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING > ./local.properties
+          echo google.auth.server.client.id.staging=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING > ./local.properties
           echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.staging=$GOOGLE_MAPS_ANDROID_API_KEY_STAGING >> ./local.properties
 

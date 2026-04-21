@@ -1,5 +1,14 @@
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 
+val localProperties = gradleLocalProperties(rootDir, providers)
+val requestedTasks = gradle.startParameter.taskNames.joinToString(" ").lowercase()
+val googleAuthServerClientId = when {
+    "staging" in requestedTasks -> localProperties.getProperty("google.auth.server.client.id.staging")
+        ?: localProperties.getProperty("google.auth.server.client.id")
+
+    else -> localProperties.getProperty("google.auth.server.client.id")
+}.orEmpty()
+
 plugins {
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
@@ -20,9 +29,7 @@ android {
         buildConfigField(
             "String",
             "GOOGLE_AUTH_SERVER_CLIENT_ID",
-            gradleLocalProperties(rootDir, providers)
-                .getProperty("google.auth.server.client.id")
-                .asBuildConfigString(),
+            googleAuthServerClientId.asBuildConfigString(),
         )
     }
 

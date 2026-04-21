@@ -45,6 +45,7 @@ jobs:
       - name: Configure API keys and google-services.json
         shell: bash
         env:
+          GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
           GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}
           GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}
           GOOGLE_MAPS_ANDROID_API_KEY_STAGING: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_STAGING }}
@@ -53,7 +54,8 @@ jobs:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING > ./local.properties
+          echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID > ./local.properties
+          echo google.auth.server.client.id.staging=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING >> ./local.properties
           echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.staging=$GOOGLE_MAPS_ANDROID_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.production=$GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION >> ./local.properties

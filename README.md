@@ -123,7 +123,8 @@ Each feature or library follows the same general split when needed:
 
 Local Android and product-specific keys live in `local.properties`. Typical entries include:
 
-- `google.auth.server.client.id`
+- `google.auth.server.client.id` for production
+- `google.auth.server.client.id.staging` for staging
 - `google.maps.android.api.key.staging`
 - `google.maps.android.api.key.production`
 - `google.ai.client.generativeai.api.key.staging`
