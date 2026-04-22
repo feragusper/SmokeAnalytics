@@ -78,7 +78,7 @@ class HomeProcessHolderTest {
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
         coEvery { updateUserPreferencesUseCase.invoke(any()) } just Runs
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
-        coEvery { fetchSmokeCountListUseCase.invoke(any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
+        coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
         coEvery { fetchSmokesUseCase.invoke(any(), any()) } returns emptyList()
         coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs
     }
@@ -102,8 +102,12 @@ class HomeProcessHolderTest {
             coEvery { addSmokeUseCase.invoke(any()) } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track saved. Refreshing home, widget, and Wear sync...")
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -138,11 +142,15 @@ class HomeProcessHolderTest {
 
         @Test
         fun `WHEN adding smoke fails THEN it returns error`() = runTest {
-            coEvery { addSmokeUseCase() } throws IllegalStateException("Error")
+            coEvery { addSmokeUseCase.invoke(any()) } throws IllegalStateException("Error")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -151,11 +159,18 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN widget refresh fails after adding smoke THEN tracking still succeeds`() = runTest {
             coEvery { addSmokeUseCase.invoke(any()) } just Runs
-            coEvery { fetchSmokeCountListUseCase.invoke(any()) } throws IllegalStateException("Quota exceeded")
+            coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track saved. Refreshing home, widget, and Wear sync...")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback(
+                    "Track saved, but widget refresh failed: IllegalStateException: Quota exceeded"
+                )
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -168,6 +183,7 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.FetchSmokes).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.FetchSmokesError
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Home refresh failed: IllegalStateException: Quota exceeded")
                 awaitComplete()
             }
         }
@@ -180,7 +196,8 @@ class HomeProcessHolderTest {
 
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Edit failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -193,7 +210,8 @@ class HomeProcessHolderTest {
 
             processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.Error.Generic
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Delete failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -212,7 +230,9 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN adding smoke THEN it returns not logged in error`() = runTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Error.NotLoggedIn
+                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track failed: no active session. Opening sign in.")
                 awaitItem() shouldBeEqualTo HomeResult.GoToAuthentication
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()

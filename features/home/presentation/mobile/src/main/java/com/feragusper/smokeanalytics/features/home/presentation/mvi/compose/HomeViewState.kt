@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi.compose
 
+import android.widget.Toast
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
@@ -38,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +87,8 @@ data class HomeViewState(
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     internal val error: HomeResult.Error? = null,
+    internal val toastMessage: String? = null,
+    internal val toastNonce: Int = 0,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
@@ -118,6 +123,13 @@ data class HomeViewState(
                 override suspend fun snapTo(targetValue: Float) {
                     anim.snapTo(targetValue)
                 }
+            }
+        }
+        val context = LocalContext.current
+
+        LaunchedEffect(toastNonce) {
+            toastMessage?.let {
+                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             }
         }
 
@@ -309,13 +321,14 @@ private fun HomeErrorSection(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = if (error == HomeResult.Error.NotLoggedIn) "Session required" else "Could not refresh home",
+                text = if (error == HomeResult.Error.NotLoggedIn) "Session required" else "Could not complete action",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = when {
                     error == HomeResult.Error.NotLoggedIn -> "Sign in again to keep Home, goals, and the latest gap synced."
+                    error is HomeResult.Error.Generic && error.debugMessage != null -> error.debugMessage
                     hasLoadedContent -> "Keeping the last visible state. Retry when the connection or quota recovers."
                     else -> "Home could not load your smoke data. Retry when the connection or quota recovers."
                 },

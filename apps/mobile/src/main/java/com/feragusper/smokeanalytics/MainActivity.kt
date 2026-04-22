@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics
 import android.content.Intent
 import android.os.Bundle
 import android.view.animation.OvershootInterpolator
+import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -259,11 +261,26 @@ private fun MainContainerScreen(
         BottomNavigationScreens.You,
     )
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     var fabAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showFab by remember { mutableStateOf(false) }
     var fabTone by remember { mutableStateOf(ElapsedTone.Urgent) }
     var lastHandledWidgetQuickAdd by remember { mutableStateOf(0) }
+
+    fun runHomeTrackAction(source: String): Boolean {
+        val action = fabAction
+        if (action == null) {
+            Toast.makeText(
+                context,
+                "Track $source ignored: Home action is not ready. route=${activeRoute ?: "none"} showFab=$showFab",
+                Toast.LENGTH_LONG,
+            ).show()
+            return false
+        }
+        action()
+        return true
+    }
 
     LaunchedEffect(widgetQuickAddRequestId, activeRoute, fabAction) {
         if (widgetQuickAddRequestId == 0 || widgetQuickAddRequestId == lastHandledWidgetQuickAdd) return@LaunchedEffect
@@ -277,9 +294,9 @@ private fun MainContainerScreen(
             }
             return@LaunchedEffect
         }
-        val action = fabAction ?: return@LaunchedEffect
-        action()
-        lastHandledWidgetQuickAdd = widgetQuickAddRequestId
+        if (runHomeTrackAction("from widget")) {
+            lastHandledWidgetQuickAdd = widgetQuickAddRequestId
+        }
     }
 
     if (inAppUpdatePrompt != null) {
@@ -309,7 +326,7 @@ private fun MainContainerScreen(
             ) {
                 ExtendedFloatingActionButton(
                     modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
-                    onClick = { fabAction?.invoke() },
+                    onClick = { runHomeTrackAction("from FAB") },
                     containerColor = fabTone.buttonContainerColor(),
                     contentColor = fabTone.contentColor(),
                     elevation = FloatingActionButtonDefaults.elevation(
