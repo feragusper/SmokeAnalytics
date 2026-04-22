@@ -52,6 +52,13 @@ sealed interface HomeResult : MVIResult {
     data object AddSmokeSuccess : HomeResult
 
     /**
+     * Emits visible diagnostic feedback for the mobile quick track flow.
+     */
+    data class TrackFeedback(
+        val message: String,
+    ) : HomeResult
+
+    /**
      * Indicates that the current day was manually restarted.
      */
     data object StartNewDaySuccess : HomeResult
@@ -73,7 +80,9 @@ sealed interface HomeResult : MVIResult {
         /**
          * A generic error result.
          */
-        data object Generic : Error
+        data class Generic(
+            val debugMessage: String? = null,
+        ) : Error
 
         /**
          * Error indicating that the user is not logged in.

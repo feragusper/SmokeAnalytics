@@ -172,7 +172,13 @@ class HomeViewModel @Inject constructor(
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess, StartNewDaySuccess -> {
                 // Re-fetch smokes when adding, editing, or deleting a smoke.
                 intents().trySend(HomeIntent.FetchSmokes)
-                previous
+                previous.copy(
+                    displayLoading = false,
+                    displayRefreshLoading = false,
+                    error = null,
+                    toastMessage = if (result == AddSmokeSuccess) "Track saved successfully." else previous.toastMessage,
+                    toastNonce = if (result == AddSmokeSuccess) previous.toastNonce + 1 else previous.toastNonce,
+                )
             }
 
             is Error -> previous.copy(
@@ -184,7 +190,12 @@ class HomeViewModel @Inject constructor(
             FetchSmokesError -> previous.copy(
                 displayLoading = false,
                 displayRefreshLoading = false,
-                error = Error.Generic,
+                error = Error.Generic(),
+            )
+
+            is HomeResult.TrackFeedback -> previous.copy(
+                toastMessage = result.message,
+                toastNonce = previous.toastNonce + 1,
             )
         }
 }
