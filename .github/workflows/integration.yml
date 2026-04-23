@@ -71,12 +71,22 @@ jobs:
           fi
 
           mkdir -p ./apps/mobile/src/production/
-          echo "$GOOGLE_SERVICES_JSON" > ./apps/mobile/src/production/google-services.json.asc
-          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/production/google-services.json.asc > ./apps/mobile/src/production/google-services.json
+          echo "$GOOGLE_SERVICES_JSON" > ./apps/mobile/src/production/google-services.json.input
+          if grep -q '"project_info"' ./apps/mobile/src/production/google-services.json.input; then
+            cp ./apps/mobile/src/production/google-services.json.input ./apps/mobile/src/production/google-services.json
+          else
+            gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/production/google-services.json.input > ./apps/mobile/src/production/google-services.json
+          fi
           if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (production)!"
             exit 1
           fi
+
+          echo "✅ Production google-services.json prepared."
+          echo "Firebase production project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
+          echo "Firebase production app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
+          echo "Firebase production package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
+          echo "Firebase production oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
 
       - name: Validate coach relay function syntax
         run: node --check functions/index.js
