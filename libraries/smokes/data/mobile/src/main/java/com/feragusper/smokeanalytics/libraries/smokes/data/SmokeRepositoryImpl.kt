@@ -14,12 +14,15 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,39 +41,45 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
-        smokesQuery().add(
-            SmokeEntity(
-                timestampMillis = date.toEpochMilliseconds().toDouble(),
-                latitude = location?.latitude,
-                longitude = location?.longitude,
-            )
-        ).await()
+        runFirestoreWrite("add smoke") {
+            smokesQuery().add(
+                SmokeEntity(
+                    timestampMillis = date.toEpochMilliseconds().toDouble(),
+                    latitude = location?.latitude,
+                    longitude = location?.longitude,
+                )
+            ).await()
+        }
     }
 
     override suspend fun editSmoke(id: String, date: Instant, location: GeoPoint?) {
-        val preservedLocation = location ?: smokesQuery()
-            .document(id)
-            .get()
-            .await()
-            .getGeoPoint()
+        runFirestoreWrite("edit smoke") {
+            val preservedLocation = location ?: smokesQuery()
+                .document(id)
+                .get()
+                .await()
+                .getGeoPoint()
 
-        smokesQuery()
-            .document(id)
-            .set(
-                SmokeEntity(
-                    timestampMillis = date.toEpochMilliseconds().toDouble(),
-                    latitude = preservedLocation?.latitude,
-                    longitude = preservedLocation?.longitude,
+            smokesQuery()
+                .document(id)
+                .set(
+                    SmokeEntity(
+                        timestampMillis = date.toEpochMilliseconds().toDouble(),
+                        latitude = preservedLocation?.latitude,
+                        longitude = preservedLocation?.longitude,
+                    )
                 )
-            )
-            .await()
+                .await()
+        }
     }
 
     override suspend fun deleteSmoke(id: String) {
-        smokesQuery()
-            .document(id)
-            .delete()
-            .await()
+        runFirestoreWrite("delete smoke") {
+            smokesQuery()
+                .document(id)
+                .delete()
+                .await()
+        }
     }
 
     override suspend fun fetchSmokes(
@@ -149,6 +158,23 @@ class SmokeRepositoryImpl @Inject constructor(
         firebaseFirestore.collection("$USERS/$uid/$SMOKES")
     } ?: throw IllegalStateException("User not logged in")
 
+    private suspend fun <T> runFirestoreWrite(operation: String, block: suspend () -> T): T =
+        try {
+            withTimeout(FIRESTORE_WRITE_TIMEOUT_MILLIS) {
+                block()
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw IllegalStateException(
+                "Firestore $operation timed out after ${FIRESTORE_WRITE_TIMEOUT_MILLIS / 1_000}s. ${firebaseDiagnostics()}",
+                e,
+            )
+        }
+
+    private fun firebaseDiagnostics(): String {
+        val options = FirebaseApp.getInstance().options
+        return "Firebase project=${options.projectId ?: "unknown"}, appId=${options.applicationId}."
+    }
+
     private fun DocumentSnapshot.getInstant(): Instant? {
         val millis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) ?: return null
         return Instant.fromEpochMilliseconds(millis.toLong())
@@ -158,5 +184,9 @@ class SmokeRepositoryImpl @Inject constructor(
         val latitude = getDouble(SmokeEntity.Fields.LATITUDE) ?: return null
         val longitude = getDouble(SmokeEntity.Fields.LONGITUDE) ?: return null
         return GeoPoint(latitude = latitude, longitude = longitude)
+    }
+
+    private companion object {
+        const val FIRESTORE_WRITE_TIMEOUT_MILLIS = 15_000L
     }
 }
