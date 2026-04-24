@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.features.settings.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsReport
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
 /**
@@ -40,6 +41,12 @@ sealed class SettingsResult : MVIResult {
     object UserLoggedOut : SettingsResult()
 
     data object PreferencesSaved : SettingsResult()
+
+    data object FirestoreDiagnosticsRunning : SettingsResult()
+
+    data class FirestoreDiagnosticsFinished(
+        val report: FirestoreDiagnosticsReport,
+    ) : SettingsResult()
 
     data class Error(val message: String) : SettingsResult()
 }

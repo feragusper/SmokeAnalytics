@@ -131,14 +131,43 @@ class SmokeRepositoryImplTest {
             }
 
         @Test
+        fun `GIVEN Play Store release wrote obfuscated smoke fields WHEN fetch smokes is called THEN it restores them`() =
+            runTest {
+                mockFetchSmokes(
+                    resultDocuments = emptyList(),
+                    legacyResultDocuments = listOf(
+                        mockDocumentSnapshot(
+                            id = id1,
+                            date = instant1,
+                            timestampMillis = null,
+                            legacyTimestampMillis = instant1.toEpochMilliseconds().toDouble(),
+                        )
+                    ),
+                )
+
+                val result = smokeRepository.fetchSmokes(instant1, Instant.fromEpochMilliseconds(1_672_580_000_000))
+
+                assertEquals(
+                    listOf(
+                        Smoke(
+                            id = id1,
+                            date = instant1,
+                            timeElapsedSincePreviousSmoke = timeAfterNothing,
+                        )
+                    ),
+                    result,
+                )
+            }
+
+        @Test
         fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() = runTest {
             val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
-            val smokeEntitySlot = slot<SmokeEntity>()
+            val smokePayloadSlot = slot<Map<String, Any?>>()
             val documentRef = mockk<DocumentReference>()
 
             every { collectionReference.document() } returns documentRef
             every { documentRef.path } returns "$USERS/$uid/$SMOKES/generated"
-            every { documentRef.set(capture(smokeEntitySlot)) } answers {
+            every { documentRef.set(capture(smokePayloadSlot)) } answers {
                 mockk<Task<Void>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -153,11 +182,13 @@ class SmokeRepositoryImplTest {
 
             smokeRepository.addSmoke(date)
 
-            assertTrue(smokeEntitySlot.isCaptured)
+            assertTrue(smokePayloadSlot.isCaptured)
             assertEquals(
                 date.toEpochMilliseconds().toDouble(),
-                smokeEntitySlot.captured.timestampMillis
+                smokePayloadSlot.captured[SmokeEntity.Fields.TIMESTAMP_MILLIS]
             )
+            assertTrue(smokePayloadSlot.captured.containsKey(SmokeEntity.Fields.LATITUDE))
+            assertTrue(smokePayloadSlot.captured.containsKey(SmokeEntity.Fields.LONGITUDE))
         }
 
         @Test
@@ -170,7 +201,7 @@ class SmokeRepositoryImplTest {
             every { documentRef.path } returns "$USERS/$uid/$SMOKES/$id"
             every { documentRef.get(Source.SERVER) } answers { taskOf(mockDocumentSnapshot(id, date)) }
 
-            every { documentRef.set(any<SmokeEntity>()) } answers {
+            every { documentRef.set(any<Map<String, Any?>>()) } answers {
                 mockk<Task<Void>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -182,6 +213,34 @@ class SmokeRepositoryImplTest {
 
             smokeRepository.editSmoke(id, date)
         }
+
+        @Test
+        fun `GIVEN server write omits timestamp WHEN add smoke verifies server state THEN it should throw`() =
+            runTest {
+                val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
+                val documentRef = mockk<DocumentReference>()
+
+                every { collectionReference.document() } returns documentRef
+                every { documentRef.path } returns "$USERS/$uid/$SMOKES/generated"
+                every { documentRef.set(any<Map<String, Any?>>()) } answers {
+                    mockk<Task<Void>>().apply {
+                        every { isComplete } returns true
+                        every { isSuccessful } returns true
+                        every { result } returns null
+                        every { exception } returns null
+                        every { isCanceled } returns false
+                    }
+                }
+                every { documentRef.get(Source.SERVER) } answers {
+                    taskOf(mockDocumentSnapshot("generated", date, timestampMillis = null))
+                }
+
+                val error = assertThrows<IllegalStateException> {
+                    smokeRepository.addSmoke(date)
+                }
+
+                assertTrue(error.message.orEmpty().contains("timestampMillis"))
+            }
 
         @Test
         fun `GIVEN user is logged in WHEN delete smoke is called THEN it should finish`() =
@@ -214,6 +273,25 @@ class SmokeRepositoryImplTest {
                 mockDocumentSnapshot(id2, instant2),
             ),
             previousDocument: DocumentSnapshot? = null,
+            legacyResultDocuments: List<DocumentSnapshot> = emptyList(),
+            legacyPreviousDocument: DocumentSnapshot? = null,
+        ) {
+            mockSmokeQuery(
+                field = SmokeEntity.Fields.TIMESTAMP_MILLIS,
+                resultDocuments = resultDocuments,
+                previousDocument = previousDocument,
+            )
+            mockSmokeQuery(
+                field = "a",
+                resultDocuments = legacyResultDocuments,
+                previousDocument = legacyPreviousDocument,
+            )
+        }
+
+        private fun mockSmokeQuery(
+            field: String,
+            resultDocuments: List<DocumentSnapshot>,
+            previousDocument: DocumentSnapshot?,
         ) {
             val query = mockk<Query>(relaxed = true)
             val finalQuery = mockk<Query>(relaxed = true)
@@ -222,20 +300,20 @@ class SmokeRepositoryImplTest {
 
             every {
                 collectionReference.orderBy(
-                    SmokeEntity.Fields.TIMESTAMP_MILLIS,
+                    field,
                     Query.Direction.DESCENDING
                 )
             } returns query
 
             every {
-                query.whereGreaterThanOrEqualTo(any<String>(), any())
+                query.whereGreaterThanOrEqualTo(field, any())
             } returns finalQuery
 
             every {
-                finalQuery.whereLessThan(any<String>(), any())
+                finalQuery.whereLessThan(field, any())
             } returns finalQuery
             every {
-                query.whereLessThan(any<String>(), any())
+                query.whereLessThan(field, any())
             } returns previousQuery
             every {
                 previousQuery.limit(1)
@@ -269,14 +347,22 @@ class SmokeRepositoryImplTest {
             }
         }
 
-        private fun mockDocumentSnapshot(id: String, date: Instant, exists: Boolean = true): DocumentSnapshot {
+        private fun mockDocumentSnapshot(
+            id: String,
+            date: Instant,
+            exists: Boolean = true,
+            timestampMillis: Double? = date.toEpochMilliseconds().toDouble(),
+            legacyTimestampMillis: Double? = null,
+        ): DocumentSnapshot {
             return mockk<DocumentSnapshot>().apply {
                 every { this@apply.id } returns id
                 every { exists() } returns exists
-                every { getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) } returns date.toEpochMilliseconds()
-                    .toDouble()
+                every { getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) } returns timestampMillis
                 every { getDouble(SmokeEntity.Fields.LATITUDE) } returns null
                 every { getDouble(SmokeEntity.Fields.LONGITUDE) } returns null
+                every { getDouble("a") } returns legacyTimestampMillis
+                every { getDouble("b") } returns null
+                every { getDouble("c") } returns null
             }
         }
 
@@ -288,5 +374,6 @@ class SmokeRepositoryImplTest {
                 every { exception } returns null
                 every { result } returns value
             }
+
     }
 }

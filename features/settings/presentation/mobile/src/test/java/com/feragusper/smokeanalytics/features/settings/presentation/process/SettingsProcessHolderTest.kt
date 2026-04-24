@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.process
 
 import app.cash.turbine.test
+import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsReport
+import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsRunner
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
@@ -35,6 +37,7 @@ class SettingsProcessHolderTest {
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
     private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
+    private val firestoreDiagnosticsRunner: FirestoreDiagnosticsRunner = mockk()
 
     /**
      * Sets up the test environment by initializing the process holder and configuring mock behaviors.
@@ -48,6 +51,7 @@ class SettingsProcessHolderTest {
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
             fetchSmokesUseCase = fetchSmokesUseCase,
+            firestoreDiagnosticsRunner = firestoreDiagnosticsRunner,
         )
     }
 
@@ -181,6 +185,36 @@ class SettingsProcessHolderTest {
                 awaitItem() shouldBeEqualTo SettingsResult.Error(
                     "Could not save your settings. IllegalStateException: Firestore update preferences timed out"
                 )
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `WHEN RunFirestoreDiagnostics succeeds THEN emits diagnostic report`() =
+        runTest {
+            val report = FirestoreDiagnosticsReport(
+                successful = true,
+                details = "result=PASS",
+            )
+            coEvery { firestoreDiagnosticsRunner() } returns report
+
+            processHolder.processIntent(SettingsIntent.RunFirestoreDiagnostics).test {
+                awaitItem() shouldBeEqualTo SettingsResult.FirestoreDiagnosticsRunning
+                awaitItem() shouldBeEqualTo SettingsResult.FirestoreDiagnosticsFinished(report)
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `WHEN RunFirestoreDiagnostics fails unexpectedly THEN emits diagnostic failure report`() =
+        runTest {
+            coEvery { firestoreDiagnosticsRunner() } throws IllegalStateException("boom")
+
+            processHolder.processIntent(SettingsIntent.RunFirestoreDiagnostics).test {
+                awaitItem() shouldBeEqualTo SettingsResult.FirestoreDiagnosticsRunning
+                val result = awaitItem() as SettingsResult.FirestoreDiagnosticsFinished
+                result.report.successful shouldBeEqualTo false
+                result.report.details.contains("boom") shouldBeEqualTo true
                 awaitComplete()
             }
         }

@@ -51,17 +51,9 @@ class SmokeRepositoryImpl @Inject constructor(
     override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
         runFirestoreCall("add smoke", smokesPath()) {
             val document = smokesQuery().document()
-            document.set(
-                SmokeEntity(
-                    timestampMillis = date.toEpochMilliseconds().toDouble(),
-                    latitude = location?.latitude,
-                    longitude = location?.longitude,
-                )
-            ).await()
+            document.set(smokePayload(date, location)).await()
             val serverSnapshot = document.get(Source.SERVER).await()
-            check(serverSnapshot.exists()) {
-                "Firestore add smoke verification failed: ${document.path} is missing on server."
-            }
+            serverSnapshot.requireSmokeFields(date, "add smoke", document.path)
         }
     }
 
@@ -73,17 +65,9 @@ class SmokeRepositoryImpl @Inject constructor(
                 .await()
                 .getGeoPoint()
 
-            document.set(
-                SmokeEntity(
-                    timestampMillis = date.toEpochMilliseconds().toDouble(),
-                    latitude = preservedLocation?.latitude,
-                    longitude = preservedLocation?.longitude,
-                )
-            ).await()
+            document.set(smokePayload(date, preservedLocation)).await()
             val serverSnapshot = document.get(Source.SERVER).await()
-            check(serverSnapshot.exists()) {
-                "Firestore edit smoke verification failed: ${document.path} is missing on server."
-            }
+            serverSnapshot.requireSmokeFields(date, "edit smoke", document.path)
         }
     }
 
@@ -105,34 +89,26 @@ class SmokeRepositoryImpl @Inject constructor(
         val startMillis = (startDate ?: firstInstantThisMonth()).toEpochMilliseconds().toDouble()
         val endMillis = (endDate ?: nextDayStartInstant()).toEpochMilliseconds().toDouble()
 
-        val query: Query = smokesQuery()
-            .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
-            .whereGreaterThanOrEqualTo(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
-            .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, endMillis)
-
         return runFirestoreCall("fetch smokes", smokesPath()) {
-            val result = query.get(Source.SERVER).await()
-            val previousDocument = smokesQuery()
-                .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
-                .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
-                .limit(1)
-                .get(Source.SERVER)
-                .await()
-                .documents
-                .firstOrNull()
+            val canonicalDocuments = fetchSmokeQuery(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis, endMillis)
+            val legacyDocuments = fetchSmokeQuery(LegacySmokeFields.TIMESTAMP_MILLIS, startMillis, endMillis)
 
-            val documents = previousDocument?.let { result.documents + it } ?: result.documents
-            val instants = documents.mapNotNull { it.getInstant() }
+            val currentRecords = (canonicalDocuments.current + legacyDocuments.current)
+                .mapNotNull { it.toSmokeRecord() }
+                .distinctBy { it.id }
+                .sortedByDescending { it.instant }
+            val previousRecord = listOfNotNull(canonicalDocuments.previous, legacyDocuments.previous)
+                .mapNotNull { it.toSmokeRecord() }
+                .maxByOrNull { it.instant }
+            val timelineInstants = currentRecords.map { it.instant } + listOfNotNull(previousRecord?.instant)
 
-            result.documents.mapIndexedNotNull { index, document ->
-                val currentInstant = instants.getOrNull(index) ?: return@mapIndexedNotNull null
-                val previousInstant = instants.getOrNull(index + 1)
-
+            currentRecords.mapIndexed { index, record ->
+                val previousInstant = timelineInstants.getOrNull(index + 1)
                 Smoke(
-                    id = document.id,
-                    date = currentInstant,
-                    timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant),
-                    location = document.getGeoPoint(),
+                    id = record.id,
+                    date = record.instant,
+                    timeElapsedSincePreviousSmoke = record.instant.timeAfter(previousInstant),
+                    location = record.location,
                 )
             }
         }
@@ -178,6 +154,30 @@ class SmokeRepositoryImpl @Inject constructor(
 
     private fun smokesPath(uid: String = firebaseAuth.currentUser?.uid ?: "missing") = "$USERS/$uid/$SMOKES"
 
+    private suspend fun fetchSmokeQuery(
+        timestampField: String,
+        startMillis: Double,
+        endMillis: Double,
+    ): SmokeDocuments {
+        val result = queryByTimestamp(timestampField)
+            .whereGreaterThanOrEqualTo(timestampField, startMillis)
+            .whereLessThan(timestampField, endMillis)
+            .get(Source.SERVER)
+            .await()
+        val previousDocument = queryByTimestamp(timestampField)
+            .whereLessThan(timestampField, startMillis)
+            .limit(1)
+            .get(Source.SERVER)
+            .await()
+            .documents
+            .firstOrNull()
+
+        return SmokeDocuments(current = result.documents, previous = previousDocument)
+    }
+
+    private fun queryByTimestamp(timestampField: String): Query =
+        smokesQuery().orderBy(timestampField, Direction.DESCENDING)
+
     private suspend fun <T> runFirestoreCall(operation: String, path: String, block: suspend () -> T): T =
         try {
             withTimeout(FIRESTORE_TIMEOUT_MILLIS) {
@@ -210,18 +210,65 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     private fun DocumentSnapshot.getInstant(): Instant? {
-        val millis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) ?: return null
+        val millis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS)
+            ?: getDouble(LegacySmokeFields.TIMESTAMP_MILLIS)
+            ?: return null
         return Instant.fromEpochMilliseconds(millis.toLong())
     }
 
     private fun DocumentSnapshot.getGeoPoint(): GeoPoint? {
-        val latitude = getDouble(SmokeEntity.Fields.LATITUDE) ?: return null
-        val longitude = getDouble(SmokeEntity.Fields.LONGITUDE) ?: return null
+        val latitude = getDouble(SmokeEntity.Fields.LATITUDE) ?: getDouble(LegacySmokeFields.LATITUDE) ?: return null
+        val longitude = getDouble(SmokeEntity.Fields.LONGITUDE) ?: getDouble(LegacySmokeFields.LONGITUDE) ?: return null
         return GeoPoint(latitude = latitude, longitude = longitude)
+    }
+
+    private fun DocumentSnapshot.toSmokeRecord(): SmokeRecord? {
+        val instant = getInstant() ?: return null
+        return SmokeRecord(
+            id = id,
+            instant = instant,
+            location = getGeoPoint(),
+        )
+    }
+
+    private fun smokePayload(date: Instant, location: GeoPoint?): Map<String, Any?> =
+        mapOf(
+            SmokeEntity.Fields.TIMESTAMP_MILLIS to date.toEpochMilliseconds().toDouble(),
+            SmokeEntity.Fields.LATITUDE to location?.latitude,
+            SmokeEntity.Fields.LONGITUDE to location?.longitude,
+        )
+
+    private fun DocumentSnapshot.requireSmokeFields(expectedDate: Instant, operation: String, path: String) {
+        check(exists()) {
+            "Firestore $operation verification failed: $path is missing on server."
+        }
+
+        val expectedMillis = expectedDate.toEpochMilliseconds().toDouble()
+        val actualMillis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS)
+        check(actualMillis == expectedMillis) {
+            "Firestore $operation verification failed: $path has timestampMillis=$actualMillis, expected=$expectedMillis."
+        }
     }
 
     private companion object {
         const val FIRESTORE_TIMEOUT_MILLIS = 15_000L
+    }
+
+    private data class SmokeDocuments(
+        val current: List<DocumentSnapshot>,
+        val previous: DocumentSnapshot?,
+    )
+
+    private data class SmokeRecord(
+        val id: String,
+        val instant: Instant,
+        val location: GeoPoint?,
+    )
+
+    private object LegacySmokeFields {
+        const val TIMESTAMP_MILLIS = "a"
+        const val LATITUDE = "b"
+        const val LONGITUDE = "c"
     }
 }
 
