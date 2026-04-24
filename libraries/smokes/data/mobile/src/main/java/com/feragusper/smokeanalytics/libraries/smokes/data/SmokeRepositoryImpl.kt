@@ -1,5 +1,8 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import com.feragusper.smokeanalytics.libraries.architecture.domain.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
@@ -17,13 +20,17 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
+import com.google.firebase.firestore.Source
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.Instant
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,6 +38,7 @@ import javax.inject.Singleton
 class SmokeRepositoryImpl @Inject constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
+    @ApplicationContext private val appContext: Context,
 ) : SmokeRepository {
 
     interface FirestoreCollection {
@@ -41,44 +49,52 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
-        runFirestoreWrite("add smoke") {
-            smokesQuery().add(
+        runFirestoreCall("add smoke", smokesPath()) {
+            val document = smokesQuery().document()
+            document.set(
                 SmokeEntity(
                     timestampMillis = date.toEpochMilliseconds().toDouble(),
                     latitude = location?.latitude,
                     longitude = location?.longitude,
                 )
             ).await()
+            val serverSnapshot = document.get(Source.SERVER).await()
+            check(serverSnapshot.exists()) {
+                "Firestore add smoke verification failed: ${document.path} is missing on server."
+            }
         }
     }
 
     override suspend fun editSmoke(id: String, date: Instant, location: GeoPoint?) {
-        runFirestoreWrite("edit smoke") {
-            val preservedLocation = location ?: smokesQuery()
-                .document(id)
-                .get()
+        runFirestoreCall("edit smoke", "${smokesPath()}/$id") {
+            val document = smokesQuery().document(id)
+            val preservedLocation = location ?: document
+                .get(Source.SERVER)
                 .await()
                 .getGeoPoint()
 
-            smokesQuery()
-                .document(id)
-                .set(
-                    SmokeEntity(
-                        timestampMillis = date.toEpochMilliseconds().toDouble(),
-                        latitude = preservedLocation?.latitude,
-                        longitude = preservedLocation?.longitude,
-                    )
+            document.set(
+                SmokeEntity(
+                    timestampMillis = date.toEpochMilliseconds().toDouble(),
+                    latitude = preservedLocation?.latitude,
+                    longitude = preservedLocation?.longitude,
                 )
-                .await()
+            ).await()
+            val serverSnapshot = document.get(Source.SERVER).await()
+            check(serverSnapshot.exists()) {
+                "Firestore edit smoke verification failed: ${document.path} is missing on server."
+            }
         }
     }
 
     override suspend fun deleteSmoke(id: String) {
-        runFirestoreWrite("delete smoke") {
-            smokesQuery()
-                .document(id)
-                .delete()
-                .await()
+        runFirestoreCall("delete smoke", "${smokesPath()}/$id") {
+            val document = smokesQuery().document(id)
+            document.delete().await()
+            val serverSnapshot = document.get(Source.SERVER).await()
+            check(!serverSnapshot.exists()) {
+                "Firestore delete smoke verification failed: ${document.path} still exists on server."
+            }
         }
     }
 
@@ -94,29 +110,31 @@ class SmokeRepositoryImpl @Inject constructor(
             .whereGreaterThanOrEqualTo(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
             .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, endMillis)
 
-        val result = query.get().await()
-        val previousDocument = smokesQuery()
-            .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
-            .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
-            .limit(1)
-            .get()
-            .await()
-            .documents
-            .firstOrNull()
+        return runFirestoreCall("fetch smokes", smokesPath()) {
+            val result = query.get(Source.SERVER).await()
+            val previousDocument = smokesQuery()
+                .orderBy(SmokeEntity.Fields.TIMESTAMP_MILLIS, Direction.DESCENDING)
+                .whereLessThan(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis)
+                .limit(1)
+                .get(Source.SERVER)
+                .await()
+                .documents
+                .firstOrNull()
 
-        val documents = previousDocument?.let { result.documents + it } ?: result.documents
-        val instants = documents.mapNotNull { it.getInstant() }
+            val documents = previousDocument?.let { result.documents + it } ?: result.documents
+            val instants = documents.mapNotNull { it.getInstant() }
 
-        return result.documents.mapIndexedNotNull { index, document ->
-            val currentInstant = instants.getOrNull(index) ?: return@mapIndexedNotNull null
-            val previousInstant = instants.getOrNull(index + 1)
+            result.documents.mapIndexedNotNull { index, document ->
+                val currentInstant = instants.getOrNull(index) ?: return@mapIndexedNotNull null
+                val previousInstant = instants.getOrNull(index + 1)
 
-            Smoke(
-                id = document.id,
-                date = currentInstant,
-                timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant),
-                location = document.getGeoPoint(),
-            )
+                Smoke(
+                    id = document.id,
+                    date = currentInstant,
+                    timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant),
+                    location = document.getGeoPoint(),
+                )
+            }
         }
     }
 
@@ -155,24 +173,40 @@ class SmokeRepositoryImpl @Inject constructor(
         filter { it.date.isInCurrentMonthBucket(dayStartHour = dayStartHour, manualDayStartEpochMillis = manualDayStartEpochMillis) }
 
     private fun smokesQuery() = firebaseAuth.currentUser?.uid?.let { uid ->
-        firebaseFirestore.collection("$USERS/$uid/$SMOKES")
+        firebaseFirestore.collection(smokesPath(uid))
     } ?: throw IllegalStateException("User not logged in")
 
-    private suspend fun <T> runFirestoreWrite(operation: String, block: suspend () -> T): T =
+    private fun smokesPath(uid: String = firebaseAuth.currentUser?.uid ?: "missing") = "$USERS/$uid/$SMOKES"
+
+    private suspend fun <T> runFirestoreCall(operation: String, path: String, block: suspend () -> T): T =
         try {
-            withTimeout(FIRESTORE_WRITE_TIMEOUT_MILLIS) {
+            withTimeout(FIRESTORE_TIMEOUT_MILLIS) {
                 block()
             }
         } catch (e: TimeoutCancellationException) {
             throw IllegalStateException(
-                "Firestore $operation timed out after ${FIRESTORE_WRITE_TIMEOUT_MILLIS / 1_000}s. ${firebaseDiagnostics()}",
+                "Firestore $operation timed out after ${FIRESTORE_TIMEOUT_MILLIS / 1_000}s. ${firebaseDiagnostics(path)}",
+                e,
+            )
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Firestore $operation failed: ${e.firestoreSummary()}. ${firebaseDiagnostics(path)}",
                 e,
             )
         }
 
-    private fun firebaseDiagnostics(): String {
-        val options = FirebaseApp.getInstance().options
-        return "Firebase project=${options.projectId ?: "unknown"}, appId=${options.applicationId}."
+    private fun firebaseDiagnostics(path: String): String {
+        val options = runCatching { FirebaseApp.getInstance().options }.getOrNull()
+        return buildString {
+            append("Firebase project=").append(options?.projectId ?: "unknown")
+            append(", appId=").append(options?.applicationId ?: "unknown")
+            append(", apiKey=").append((options?.apiKey).redactedApiKey())
+            append(", path=").append(path)
+            append(", package=").append(appContext.packageName)
+            append(", installer=").append(appContext.installerPackageName())
+            append(", ").append(appContext.signingDigestSummary())
+            append(".")
+        }
     }
 
     private fun DocumentSnapshot.getInstant(): Instant? {
@@ -187,6 +221,80 @@ class SmokeRepositoryImpl @Inject constructor(
     }
 
     private companion object {
-        const val FIRESTORE_WRITE_TIMEOUT_MILLIS = 15_000L
+        const val FIRESTORE_TIMEOUT_MILLIS = 15_000L
     }
 }
+
+private fun Throwable.firestoreSummary(): String {
+    val firestoreException = (this as? FirebaseFirestoreException) ?: (cause as? FirebaseFirestoreException)
+    val type = this::class.simpleName ?: "Throwable"
+    val code = firestoreException?.code?.name?.let { " code=$it" }.orEmpty()
+    val message = message?.takeIf { it.isNotBlank() } ?: cause?.message?.takeIf { it.isNotBlank() }
+    return buildString {
+        append(type).append(code)
+        if (message != null) append(": ").append(message)
+    }
+}
+
+private fun String?.redactedApiKey(): String =
+    when {
+        isNullOrBlank() -> "unknown"
+        length <= 8 -> "configured"
+        else -> "sha256:${sha256().take(12)},suffix:${takeLast(6)}"
+    }
+
+private fun String.sha256(): String =
+    MessageDigest.getInstance("SHA-256")
+        .digest(toByteArray())
+        .toHex()
+
+private fun Context.installerPackageName(): String =
+    runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            packageManager.getInstallSourceInfo(packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getInstallerPackageName(packageName)
+        }
+    }.getOrNull() ?: "unknown"
+
+private fun Context.signingDigestSummary(): String =
+    signingCertificateBytes()
+        .firstOrNull()
+        ?.let { bytes ->
+            "runtimeSha1=${bytes.digest("SHA-1")},runtimeSha256=${bytes.digest("SHA-256")}"
+        }
+        ?: "runtimeSha1=unknown,runtimeSha256=unknown"
+
+@Suppress("DEPRECATION")
+private fun Context.signingCertificateBytes(): List<ByteArray> =
+    runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageManager
+                .getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                .signingInfo
+                ?.let { signingInfo ->
+                    if (signingInfo.hasMultipleSigners()) {
+                        signingInfo.apkContentsSigners
+                    } else {
+                        signingInfo.signingCertificateHistory
+                    }
+                }
+                .orEmpty()
+                .map { it.toByteArray() }
+        } else {
+            packageManager
+                .getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                .signatures
+                .orEmpty()
+                .map { it.toByteArray() }
+        }
+    }.getOrDefault(emptyList())
+
+private fun ByteArray.digest(algorithm: String): String =
+    MessageDigest.getInstance(algorithm)
+        .digest(this)
+        .toHex()
+
+private fun ByteArray.toHex(): String =
+    joinToString(separator = "") { "%02x".format(it) }
