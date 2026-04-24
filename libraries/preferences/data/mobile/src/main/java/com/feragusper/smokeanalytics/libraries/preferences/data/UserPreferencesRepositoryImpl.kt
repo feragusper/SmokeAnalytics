@@ -1,14 +1,21 @@
 package com.feragusper.smokeanalytics.libraries.preferences.data
 
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Source
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,11 +23,12 @@ import javax.inject.Singleton
 class UserPreferencesRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
+    @ApplicationContext private val appContext: Context,
 ) : UserPreferencesRepository {
 
     override suspend fun fetch(): UserPreferences {
         val snapshot = runFirestoreProfileCall("fetch preferences") {
-            document().get().await()
+            document().get(Source.SERVER).await()
         }
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
     }
@@ -42,6 +50,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
                 )
             )
                 .await()
+            val serverSnapshot = document().get(Source.SERVER).await()
+            check(serverSnapshot.exists()) {
+                "Firestore update preferences verification failed: ${document().path} is missing on server."
+            }
         }
     }
 
@@ -60,11 +72,26 @@ class UserPreferencesRepositoryImpl @Inject constructor(
                 "Firestore $operation timed out after ${FIRESTORE_PROFILE_TIMEOUT_MILLIS / 1_000}s. ${firebaseDiagnostics()}",
                 e,
             )
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Firestore $operation failed: ${e.firestoreSummary()}. ${firebaseDiagnostics()}",
+                e,
+            )
         }
 
     private fun firebaseDiagnostics(): String {
-        val options = FirebaseApp.getInstance().options
-        return "Firebase project=${options.projectId ?: "unknown"}, appId=${options.applicationId}, path=users/${auth.currentUser?.uid ?: "missing"}/profile/${UserPreferencesEntity.DOCUMENT}."
+        val options = runCatching { FirebaseApp.getInstance().options }.getOrNull()
+        return buildString {
+            append("Firebase project=").append(options?.projectId ?: "unknown")
+            append(", appId=").append(options?.applicationId ?: "unknown")
+            append(", apiKey=").append((options?.apiKey).redactedApiKey())
+            append(", path=users/").append(auth.currentUser?.uid ?: "missing")
+            append("/profile/").append(UserPreferencesEntity.DOCUMENT)
+            append(", package=").append(appContext.packageName)
+            append(", installer=").append(appContext.installerPackageName())
+            append(", ").append(appContext.signingDigestSummary())
+            append(".")
+        }
     }
 
     private companion object {
@@ -99,3 +126,77 @@ private fun DocumentSnapshot.stringOrNull(field: String): String? =
 
 private fun DocumentSnapshot.booleanOrNull(field: String): Boolean? =
     runCatching { getBoolean(field) }.getOrNull()
+
+private fun Throwable.firestoreSummary(): String {
+    val firestoreException = (this as? FirebaseFirestoreException) ?: (cause as? FirebaseFirestoreException)
+    val type = this::class.simpleName ?: "Throwable"
+    val code = firestoreException?.code?.name?.let { " code=$it" }.orEmpty()
+    val message = message?.takeIf { it.isNotBlank() } ?: cause?.message?.takeIf { it.isNotBlank() }
+    return buildString {
+        append(type).append(code)
+        if (message != null) append(": ").append(message)
+    }
+}
+
+private fun String?.redactedApiKey(): String =
+    when {
+        isNullOrBlank() -> "unknown"
+        length <= 8 -> "configured"
+        else -> "sha256:${sha256().take(12)},suffix:${takeLast(6)}"
+    }
+
+private fun String.sha256(): String =
+    MessageDigest.getInstance("SHA-256")
+        .digest(toByteArray())
+        .toHex()
+
+private fun Context.installerPackageName(): String =
+    runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            packageManager.getInstallSourceInfo(packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getInstallerPackageName(packageName)
+        }
+    }.getOrNull() ?: "unknown"
+
+private fun Context.signingDigestSummary(): String =
+    signingCertificateBytes()
+        .firstOrNull()
+        ?.let { bytes ->
+            "runtimeSha1=${bytes.digest("SHA-1")},runtimeSha256=${bytes.digest("SHA-256")}"
+        }
+        ?: "runtimeSha1=unknown,runtimeSha256=unknown"
+
+@Suppress("DEPRECATION")
+private fun Context.signingCertificateBytes(): List<ByteArray> =
+    runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageManager
+                .getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                .signingInfo
+                ?.let { signingInfo ->
+                    if (signingInfo.hasMultipleSigners()) {
+                        signingInfo.apkContentsSigners
+                    } else {
+                        signingInfo.signingCertificateHistory
+                    }
+                }
+                .orEmpty()
+                .map { it.toByteArray() }
+        } else {
+            packageManager
+                .getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                .signatures
+                .orEmpty()
+                .map { it.toByteArray() }
+        }
+    }.getOrDefault(emptyList())
+
+private fun ByteArray.digest(algorithm: String): String =
+    MessageDigest.getInstance(algorithm)
+        .digest(this)
+        .toHex()
+
+private fun ByteArray.toHex(): String =
+    joinToString(separator = "") { "%02x".format(it) }

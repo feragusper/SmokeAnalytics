@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.SMOKES
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.FirestoreCollection.Companion.USERS
@@ -13,6 +14,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.Source
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -29,9 +31,11 @@ class SmokeRepositoryImplTest {
 
     private val firebaseAuth: FirebaseAuth = mockk()
     private val firebaseFirestore: FirebaseFirestore = mockk()
+    private val appContext: Context = mockk(relaxed = true)
     private val smokeRepository = SmokeRepositoryImpl(
         firebaseAuth = firebaseAuth,
-        firebaseFirestore = firebaseFirestore
+        firebaseFirestore = firebaseFirestore,
+        appContext = appContext,
     )
 
     @Test
@@ -130,15 +134,21 @@ class SmokeRepositoryImplTest {
         fun `GIVEN user is logged in WHEN add smoke is called THEN it should finish`() = runTest {
             val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
             val smokeEntitySlot = slot<SmokeEntity>()
+            val documentRef = mockk<DocumentReference>()
 
-            every { collectionReference.add(capture(smokeEntitySlot)) } answers {
-                mockk<Task<DocumentReference>>().apply {
+            every { collectionReference.document() } returns documentRef
+            every { documentRef.path } returns "$USERS/$uid/$SMOKES/generated"
+            every { documentRef.set(capture(smokeEntitySlot)) } answers {
+                mockk<Task<Void>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
-                    every { result } returns mockk()
+                    every { result } returns null
                     every { exception } returns null
                     every { isCanceled } returns false
                 }
+            }
+            every { documentRef.get(Source.SERVER) } answers {
+                taskOf(mockDocumentSnapshot("generated", date))
             }
 
             smokeRepository.addSmoke(date)
@@ -157,15 +167,8 @@ class SmokeRepositoryImplTest {
 
             val documentRef = mockk<DocumentReference>()
             every { collectionReference.document(id) } returns documentRef
-            every { documentRef.get() } answers {
-                mockk<Task<DocumentSnapshot>>().apply {
-                    every { isComplete } returns true
-                    every { isSuccessful } returns true
-                    every { exception } returns null
-                    every { isCanceled } returns false
-                    every { result } returns mockDocumentSnapshot(id, date)
-                }
-            }
+            every { documentRef.path } returns "$USERS/$uid/$SMOKES/$id"
+            every { documentRef.get(Source.SERVER) } answers { taskOf(mockDocumentSnapshot(id, date)) }
 
             every { documentRef.set(any<SmokeEntity>()) } answers {
                 mockk<Task<Void>>().apply {
@@ -187,6 +190,7 @@ class SmokeRepositoryImplTest {
 
                 val documentRef = mockk<DocumentReference>()
                 every { collectionReference.document(id) } returns documentRef
+                every { documentRef.path } returns "$USERS/$uid/$SMOKES/$id"
 
                 every { documentRef.delete() } answers {
                     mockk<Task<Void>>().apply {
@@ -196,6 +200,9 @@ class SmokeRepositoryImplTest {
                         every { isCanceled } returns false
                         every { result } returns mockk()
                     }
+                }
+                every { documentRef.get(Source.SERVER) } answers {
+                    taskOf(mockDocumentSnapshot(id, instant1, exists = false))
                 }
 
                 smokeRepository.deleteSmoke(id)
@@ -234,7 +241,7 @@ class SmokeRepositoryImplTest {
                 previousQuery.limit(1)
             } returns previousLimitedQuery
 
-            every { finalQuery.get() } answers {
+            every { finalQuery.get(Source.SERVER) } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -247,7 +254,7 @@ class SmokeRepositoryImplTest {
                     every { exception } returns null
                 }
             }
-            every { previousLimitedQuery.get() } answers {
+            every { previousLimitedQuery.get(Source.SERVER) } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -262,14 +269,24 @@ class SmokeRepositoryImplTest {
             }
         }
 
-        private fun mockDocumentSnapshot(id: String, date: Instant): DocumentSnapshot {
+        private fun mockDocumentSnapshot(id: String, date: Instant, exists: Boolean = true): DocumentSnapshot {
             return mockk<DocumentSnapshot>().apply {
                 every { this@apply.id } returns id
+                every { exists() } returns exists
                 every { getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS) } returns date.toEpochMilliseconds()
                     .toDouble()
                 every { getDouble(SmokeEntity.Fields.LATITUDE) } returns null
                 every { getDouble(SmokeEntity.Fields.LONGITUDE) } returns null
             }
         }
+
+        private fun <T> taskOf(value: T): Task<T> =
+            mockk<Task<T>>().apply {
+                every { isComplete } returns true
+                every { isSuccessful } returns true
+                every { isCanceled } returns false
+                every { exception } returns null
+                every { result } returns value
+            }
     }
 }
