@@ -19,3 +19,14 @@ fun <T> Flow<T>.catchAndLog(
     Timber.e(throwable, "Error caught")
     action(throwable)
 }
+
+fun Throwable.debugSummary(): String {
+    val type = this::class.simpleName ?: "Throwable"
+    val message = message?.takeIf { it.isNotBlank() } ?: cause?.message?.takeIf { it.isNotBlank() }
+    val causeType = cause?.let { it::class.simpleName }?.takeIf { it != type }
+    return buildString {
+        append(type)
+        if (causeType != null) append(" caused by ").append(causeType)
+        if (message != null) append(": ").append(message)
+    }
+}

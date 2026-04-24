@@ -57,6 +57,14 @@ jobs:
           echo "Firebase production package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
           echo "Firebase production oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
 
+          mkdir -p ./build/reports/release-diagnostics
+          {
+            echo "firebase_project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(\",\")' ./apps/mobile/src/production/google-services.json)"
+          } > ./build/reports/release-diagnostics/android-production-release.txt
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -85,6 +93,12 @@ jobs:
           echo "$PLAYSTORE_CREDENTIALS_ASC" > ./playstore.credentials.json.asc
           gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
+          store_password="$(sed -n 's/^storePassword=//p' ./release.keystore.properties)"
+          key_alias="$(sed -n 's/^keyAlias=//p' ./release.keystore.properties)"
+          key_password="$(sed -n 's/^keyPassword=//p' ./release.keystore.properties)"
+          release_sha1="$(keytool -list -v -keystore ./release.keystore -storepass "$store_password" -alias "$key_alias" -keypass "$key_password" | sed -n 's/^.*SHA1: //p' | head -n 1 | tr 'A-Z' 'a-z' | tr -d ':')"
+          echo "release_keystore_sha1=$release_sha1" >> ./build/reports/release-diagnostics/android-production-release.txt
+
       - name: Build Android App Bundle
         run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
 
@@ -96,6 +110,18 @@ jobs:
         run: |
           echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "android_version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)"
+            echo "android_release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)"
+          } >> ./build/reports/release-diagnostics/android-production-release.txt
+
+      - name: Upload release diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playstore-release-diagnostics
+          path: ./build/reports/release-diagnostics/android-production-release.txt
 
       - name: Push Git Tag
         id: push_android_tag

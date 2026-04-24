@@ -88,6 +88,14 @@ jobs:
           echo "Firebase production package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
           echo "Firebase production oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
 
+          mkdir -p ./build/reports/release-diagnostics
+          {
+            echo "firebase_project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(\",\")' ./apps/mobile/src/production/google-services.json)"
+          } > ./build/reports/release-diagnostics/android-production-firebase.txt
+
       - name: Validate coach relay function syntax
         run: node --check functions/index.js
 
@@ -103,6 +111,22 @@ jobs:
             fi
             echo "Gradle check failed on attempt $attempt. Retrying once..."
           done
+
+      - name: Capture Android release metadata
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "android_version_name=$(./gradlew -q :apps:mobile:printAndroidVersionName)"
+            echo "android_release_tag=$(./gradlew -q :apps:mobile:printAndroidReleaseTag)"
+          } >> ./build/reports/release-diagnostics/android-production-firebase.txt
+
+      - name: Upload release diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-release-diagnostics
+          path: ./build/reports/release-diagnostics/android-production-firebase.txt
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v3

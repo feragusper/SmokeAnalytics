@@ -15,6 +15,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferSt
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.debugSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -267,17 +268,6 @@ class HomeProcessHolder @Inject constructor(
             .onFailure { Timber.w(it, "Home mutation succeeded but Wear sync failed: ${it.debugSummary()}") }
             .exceptionOrNull()
             ?.debugSummary()
-    }
-}
-
-private fun Throwable.debugSummary(): String {
-    val type = this::class.simpleName ?: "Throwable"
-    val message = message?.takeIf { it.isNotBlank() } ?: cause?.message?.takeIf { it.isNotBlank() }
-    val causeType = cause?.let { it::class.simpleName }?.takeIf { it != type }
-    return buildString {
-        append(type)
-        if (causeType != null) append(" caused by ").append(causeType)
-        if (message != null) append(": ").append(message)
     }
 }
 
