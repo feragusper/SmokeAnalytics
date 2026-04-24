@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressU
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.debugSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -72,8 +73,8 @@ class SettingsProcessHolder @Inject constructor(
                 )
             }
         }
-    }.catch {
-        emit(SettingsResult.Error("Could not load your settings. Try again."))
+    }.catch { error ->
+        emit(SettingsResult.Error("Could not load your settings. ${error.debugSummary()}"))
     }
 
     /**
@@ -87,8 +88,8 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Loading)
         signOutUseCase()
         emit(SettingsResult.UserLoggedOut)
-    }.catch {
-        emit(SettingsResult.Error("Could not sign out. Try again."))
+    }.catch { error ->
+        emit(SettingsResult.Error("Could not sign out. ${error.debugSummary()}"))
     }
 
     private fun processUpdatePreferences(preferences: UserPreferences): Flow<SettingsResult> = flow {
@@ -108,7 +109,7 @@ class SettingsProcessHolder @Inject constructor(
             )
         }
         emit(SettingsResult.PreferencesSaved)
-    }.catch {
-        emit(SettingsResult.Error("Could not save your settings. Try again."))
+    }.catch { error ->
+        emit(SettingsResult.Error("Could not save your settings. ${error.debugSummary()}"))
     }
 }
