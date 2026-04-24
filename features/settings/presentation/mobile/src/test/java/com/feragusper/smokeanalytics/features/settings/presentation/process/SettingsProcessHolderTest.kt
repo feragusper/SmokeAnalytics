@@ -103,7 +103,9 @@ class SettingsProcessHolderTest {
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
-                awaitItem() shouldBeEqualTo SettingsResult.Error("Could not load your settings. Try again.")
+                awaitItem() shouldBeEqualTo SettingsResult.Error(
+                    "Could not load your settings. IllegalStateException: Quota exceeded"
+                )
                 awaitComplete()
             }
         }
@@ -161,7 +163,24 @@ class SettingsProcessHolderTest {
 
             processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
-                awaitItem() shouldBeEqualTo SettingsResult.Error("Could not save your settings. Try again.")
+                awaitItem() shouldBeEqualTo SettingsResult.Error(
+                    "Could not save your settings. IllegalStateException: Quota exceeded"
+                )
+                awaitComplete()
+            }
+        }
+
+    @Test
+    fun `WHEN UpdatePreferences write fails THEN emits diagnostic save error`() =
+        runTest {
+            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            coEvery { updateUserPreferencesUseCase(preferences) } throws IllegalStateException("Firestore update preferences timed out")
+
+            processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
+                awaitItem() shouldBeEqualTo SettingsResult.Loading
+                awaitItem() shouldBeEqualTo SettingsResult.Error(
+                    "Could not save your settings. IllegalStateException: Firestore update preferences timed out"
+                )
                 awaitComplete()
             }
         }

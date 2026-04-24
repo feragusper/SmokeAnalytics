@@ -2,10 +2,13 @@ package com.feragusper.smokeanalytics.libraries.preferences.data
 
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,31 +19,57 @@ class UserPreferencesRepositoryImpl @Inject constructor(
 ) : UserPreferencesRepository {
 
     override suspend fun fetch(): UserPreferences {
-        val snapshot = document().get().await()
+        val snapshot = runFirestoreProfileCall("fetch preferences") {
+            document().get().await()
+        }
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
     }
 
     override suspend fun update(preferences: UserPreferences) {
-        document().set(
-            UserPreferencesEntity(
-                packPrice = preferences.packPrice,
-                cigarettesPerPack = preferences.cigarettesPerPack.toLong(),
-                dayStartHour = preferences.dayStartHour.toLong(),
-                bedtimeHour = preferences.bedtimeHour.toLong(),
-                manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
-                locationTrackingEnabled = preferences.locationTrackingEnabled,
-                currencySymbol = preferences.currencySymbol,
-                accountTier = preferences.accountTier.name,
-                activeGoalType = preferences.activeGoal?.type?.name,
-                activeGoalMetricValue = preferences.activeGoal?.metricValue,
+        runFirestoreProfileCall("update preferences") {
+            document().set(
+                UserPreferencesEntity(
+                    packPrice = preferences.packPrice,
+                    cigarettesPerPack = preferences.cigarettesPerPack.toLong(),
+                    dayStartHour = preferences.dayStartHour.toLong(),
+                    bedtimeHour = preferences.bedtimeHour.toLong(),
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    locationTrackingEnabled = preferences.locationTrackingEnabled,
+                    currencySymbol = preferences.currencySymbol,
+                    accountTier = preferences.accountTier.name,
+                    activeGoalType = preferences.activeGoal?.type?.name,
+                    activeGoalMetricValue = preferences.activeGoal?.metricValue,
+                )
             )
-        ).await()
+                .await()
+        }
     }
 
     private fun document() = firestore.collection("users")
         .document(auth.currentUser?.uid ?: throw IllegalStateException("User not logged in"))
         .collection("profile")
         .document(UserPreferencesEntity.DOCUMENT)
+
+    private suspend fun <T> runFirestoreProfileCall(operation: String, block: suspend () -> T): T =
+        try {
+            withTimeout(FIRESTORE_PROFILE_TIMEOUT_MILLIS) {
+                block()
+            }
+        } catch (e: TimeoutCancellationException) {
+            throw IllegalStateException(
+                "Firestore $operation timed out after ${FIRESTORE_PROFILE_TIMEOUT_MILLIS / 1_000}s. ${firebaseDiagnostics()}",
+                e,
+            )
+        }
+
+    private fun firebaseDiagnostics(): String {
+        val options = FirebaseApp.getInstance().options
+        return "Firebase project=${options.projectId ?: "unknown"}, appId=${options.applicationId}, path=users/${auth.currentUser?.uid ?: "missing"}/profile/${UserPreferencesEntity.DOCUMENT}."
+    }
+
+    private companion object {
+        const val FIRESTORE_PROFILE_TIMEOUT_MILLIS = 15_000L
+    }
 }
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
