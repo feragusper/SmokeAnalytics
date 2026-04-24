@@ -35,25 +35,9 @@ class UserPreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun update(preferences: UserPreferences) {
         runFirestoreProfileCall("update preferences") {
-            document().set(
-                UserPreferencesEntity(
-                    packPrice = preferences.packPrice,
-                    cigarettesPerPack = preferences.cigarettesPerPack.toLong(),
-                    dayStartHour = preferences.dayStartHour.toLong(),
-                    bedtimeHour = preferences.bedtimeHour.toLong(),
-                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
-                    locationTrackingEnabled = preferences.locationTrackingEnabled,
-                    currencySymbol = preferences.currencySymbol,
-                    accountTier = preferences.accountTier.name,
-                    activeGoalType = preferences.activeGoal?.type?.name,
-                    activeGoalMetricValue = preferences.activeGoal?.metricValue,
-                )
-            )
-                .await()
+            document().set(preferences.toFirestorePayload()).await()
             val serverSnapshot = document().get(Source.SERVER).await()
-            check(serverSnapshot.exists()) {
-                "Firestore update preferences verification failed: ${document().path} is missing on server."
-            }
+            serverSnapshot.requirePreferenceFields(preferences, document().path)
         }
     }
 
@@ -99,33 +83,115 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     }
 }
 
+private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
+    mapOf(
+        UserPreferencesEntity.PACK_PRICE to packPrice,
+        UserPreferencesEntity.CIGARETTES_PER_PACK to cigarettesPerPack.toLong(),
+        UserPreferencesEntity.DAY_START_HOUR to dayStartHour.toLong(),
+        UserPreferencesEntity.BEDTIME_HOUR to bedtimeHour.toLong(),
+        UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS to manualDayStartEpochMillis,
+        UserPreferencesEntity.LOCATION_TRACKING_ENABLED to locationTrackingEnabled,
+        UserPreferencesEntity.CURRENCY_SYMBOL to currencySymbol,
+        UserPreferencesEntity.ACCOUNT_TIER to accountTier.name,
+        UserPreferencesEntity.ACTIVE_GOAL_TYPE to activeGoal?.type?.name,
+        UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE to activeGoal?.metricValue,
+    )
+
+private fun DocumentSnapshot.requirePreferenceFields(expected: UserPreferences, path: String) {
+    check(exists()) {
+        "Firestore update preferences verification failed: $path is missing on server."
+    }
+
+    check(numberOrNull(UserPreferencesEntity.PACK_PRICE)?.toDouble() == expected.packPrice) {
+        "Firestore update preferences verification failed: $path has invalid packPrice."
+    }
+    check(numberOrNull(UserPreferencesEntity.CIGARETTES_PER_PACK)?.toInt() == expected.cigarettesPerPack) {
+        "Firestore update preferences verification failed: $path has invalid cigarettesPerPack."
+    }
+    check(numberOrNull(UserPreferencesEntity.DAY_START_HOUR)?.toInt() == expected.dayStartHour) {
+        "Firestore update preferences verification failed: $path has invalid dayStartHour."
+    }
+    check(numberOrNull(UserPreferencesEntity.BEDTIME_HOUR)?.toInt() == expected.bedtimeHour) {
+        "Firestore update preferences verification failed: $path has invalid bedtimeHour."
+    }
+    check(numberOrNull(UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS)?.toLong() == expected.manualDayStartEpochMillis) {
+        "Firestore update preferences verification failed: $path has invalid manualDayStartEpochMillis."
+    }
+    check(booleanOrNull(UserPreferencesEntity.LOCATION_TRACKING_ENABLED) == expected.locationTrackingEnabled) {
+        "Firestore update preferences verification failed: $path has invalid locationTrackingEnabled."
+    }
+    check(stringOrNull(UserPreferencesEntity.CURRENCY_SYMBOL) == expected.currencySymbol) {
+        "Firestore update preferences verification failed: $path has invalid currencySymbol."
+    }
+    check(stringOrNull(UserPreferencesEntity.ACCOUNT_TIER) == expected.accountTier.name) {
+        "Firestore update preferences verification failed: $path has invalid accountTier."
+    }
+    check(stringOrNull(UserPreferencesEntity.ACTIVE_GOAL_TYPE) == expected.activeGoal?.type?.name) {
+        "Firestore update preferences verification failed: $path has invalid activeGoalType."
+    }
+    check(numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble() == expected.activeGoal?.metricValue) {
+        "Firestore update preferences verification failed: $path has invalid activeGoalMetricValue."
+    }
+}
+
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
     if (!exists()) return null
 
     return UserPreferencesEntity(
-        packPrice = numberOrNull(UserPreferencesEntity.PACK_PRICE)?.toDouble() ?: 0.0,
-        cigarettesPerPack = numberOrNull(UserPreferencesEntity.CIGARETTES_PER_PACK)?.toLong() ?: 20,
-        dayStartHour = numberOrNull(UserPreferencesEntity.DAY_START_HOUR)?.toLong() ?: 6,
-        bedtimeHour = numberOrNull(UserPreferencesEntity.BEDTIME_HOUR)?.toLong() ?: 22,
-        manualDayStartEpochMillis = numberOrNull(UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS)?.toLong(),
-        locationTrackingEnabled = booleanOrNull(UserPreferencesEntity.LOCATION_TRACKING_ENABLED) ?: false,
-        currencySymbol = stringOrNull(UserPreferencesEntity.CURRENCY_SYMBOL) ?: "€",
-        accountTier = stringOrNull(UserPreferencesEntity.ACCOUNT_TIER) ?: "Free",
-        activeGoalType = stringOrNull(UserPreferencesEntity.ACTIVE_GOAL_TYPE),
-        activeGoalMetricValue = numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble(),
+        packPrice = numberOrNull(UserPreferencesEntity.PACK_PRICE, LegacyUserPreferencesFields.PACK_PRICE)?.toDouble() ?: 0.0,
+        cigarettesPerPack = numberOrNull(
+            UserPreferencesEntity.CIGARETTES_PER_PACK,
+            LegacyUserPreferencesFields.CIGARETTES_PER_PACK,
+        )?.toLong() ?: 20,
+        dayStartHour = numberOrNull(UserPreferencesEntity.DAY_START_HOUR, LegacyUserPreferencesFields.DAY_START_HOUR)
+            ?.toLong() ?: 6,
+        bedtimeHour = numberOrNull(UserPreferencesEntity.BEDTIME_HOUR, LegacyUserPreferencesFields.BEDTIME_HOUR)
+            ?.toLong() ?: 22,
+        manualDayStartEpochMillis = numberOrNull(
+            UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS,
+            LegacyUserPreferencesFields.MANUAL_DAY_START_EPOCH_MILLIS,
+        )?.toLong(),
+        locationTrackingEnabled = booleanOrNull(
+            UserPreferencesEntity.LOCATION_TRACKING_ENABLED,
+            LegacyUserPreferencesFields.LOCATION_TRACKING_ENABLED,
+        ) ?: false,
+        currencySymbol = stringOrNull(UserPreferencesEntity.CURRENCY_SYMBOL, LegacyUserPreferencesFields.CURRENCY_SYMBOL)
+            ?: "€",
+        accountTier = stringOrNull(UserPreferencesEntity.ACCOUNT_TIER, LegacyUserPreferencesFields.ACCOUNT_TIER) ?: "Free",
+        activeGoalType = stringOrNull(UserPreferencesEntity.ACTIVE_GOAL_TYPE, LegacyUserPreferencesFields.ACTIVE_GOAL_TYPE),
+        activeGoalMetricValue = numberOrNull(
+            UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE,
+            LegacyUserPreferencesFields.ACTIVE_GOAL_METRIC_VALUE,
+        )?.toDouble(),
     )
 }
 
-private fun DocumentSnapshot.numberOrNull(field: String): Number? =
+private object LegacyUserPreferencesFields {
+    const val PACK_PRICE = "a"
+    const val CIGARETTES_PER_PACK = "b"
+    const val DAY_START_HOUR = "c"
+    const val BEDTIME_HOUR = "d"
+    const val MANUAL_DAY_START_EPOCH_MILLIS = "e"
+    const val LOCATION_TRACKING_ENABLED = "f"
+    const val CURRENCY_SYMBOL = "g"
+    const val ACCOUNT_TIER = "h"
+    const val ACTIVE_GOAL_TYPE = "i"
+    const val ACTIVE_GOAL_METRIC_VALUE = "j"
+}
+
+private fun DocumentSnapshot.numberOrNull(field: String, legacyField: String? = null): Number? =
     runCatching { getDouble(field) }.getOrNull()
         ?: runCatching { getLong(field) }.getOrNull()
         ?: stringOrNull(field)?.toDoubleOrNull()
+        ?: legacyField?.let { numberOrNull(it) }
 
-private fun DocumentSnapshot.stringOrNull(field: String): String? =
+private fun DocumentSnapshot.stringOrNull(field: String, legacyField: String? = null): String? =
     runCatching { getString(field) }.getOrNull()
+        ?: legacyField?.let { stringOrNull(it) }
 
-private fun DocumentSnapshot.booleanOrNull(field: String): Boolean? =
+private fun DocumentSnapshot.booleanOrNull(field: String, legacyField: String? = null): Boolean? =
     runCatching { getBoolean(field) }.getOrNull()
+        ?: legacyField?.let { booleanOrNull(it) }
 
 private fun Throwable.firestoreSummary(): String {
     val firestoreException = (this as? FirebaseFirestoreException) ?: (cause as? FirebaseFirestoreException)

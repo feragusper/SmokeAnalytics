@@ -22,6 +22,8 @@ sealed class SettingsIntent : MVIIntent {
         val preferences: UserPreferences,
     ) : SettingsIntent()
 
+    data object RunFirestoreDiagnostics : SettingsIntent()
+
     /**
      * Represents an intent to sign out the current user.
      *
