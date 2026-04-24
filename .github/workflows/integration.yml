@@ -89,11 +89,12 @@ jobs:
           echo "Firebase production oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
 
           mkdir -p ./build/reports/release-diagnostics
+          firebase_oauth_sha1="$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
           {
             echo "firebase_project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
             echo "firebase_app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
             echo "firebase_package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
-            echo "firebase_oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(\",\")' ./apps/mobile/src/production/google-services.json)"
+            echo "firebase_oauth_sha1=$firebase_oauth_sha1"
           } > ./build/reports/release-diagnostics/android-production-firebase.txt
 
       - name: Validate coach relay function syntax
