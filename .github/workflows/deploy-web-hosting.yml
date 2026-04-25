@@ -125,7 +125,6 @@ jobs:
         with:
           tag_name: ${{ steps.web_version.outputs.release_tag }}
           release_name: "Web ${{ steps.web_version.outputs.version_name }}"
-          generate_release_notes: true
           draft: false
           prerelease: false
 
