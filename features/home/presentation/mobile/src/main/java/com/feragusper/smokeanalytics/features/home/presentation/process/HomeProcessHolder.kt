@@ -134,8 +134,7 @@ class HomeProcessHolder @Inject constructor(
             }
         }
     }.catchAndLog { e ->
-        emit(HomeResult.FetchSmokesError)
-        emit(HomeResult.TrackFeedback("Home refresh failed: ${e.debugSummary()}"))
+        emit(HomeResult.Error.Generic(e.debugSummary()))
     }
 
     /**
@@ -148,11 +147,10 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.Loading)
         deleteSmokeUseCase.invoke(intent.id)
         emit(HomeResult.DeleteSmokeSuccess)
-        refreshWidgetSnapshotBestEffort()?.let { emit(HomeResult.TrackFeedback("Delete saved, but widget refresh failed: $it")) }
-        syncWithWearBestEffort()?.let { emit(HomeResult.TrackFeedback("Delete saved, but Wear sync failed: $it")) }
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
-        emit(HomeResult.TrackFeedback("Delete failed: ${e.debugSummary()}"))
     }
 
     /**
@@ -165,11 +163,10 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.Loading)
         editSmokeUseCase.invoke(intent.id, intent.date)
         emit(HomeResult.EditSmokeSuccess)
-        refreshWidgetSnapshotBestEffort()?.let { emit(HomeResult.TrackFeedback("Edit saved, but widget refresh failed: $it")) }
-        syncWithWearBestEffort()?.let { emit(HomeResult.TrackFeedback("Edit saved, but Wear sync failed: $it")) }
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
-        emit(HomeResult.TrackFeedback("Edit failed: ${e.debugSummary()}"))
     }
 
     /**
@@ -195,44 +192,31 @@ class HomeProcessHolder @Inject constructor(
      * @return A [Flow] emitting the result of the add operation.
      */
     private fun processAddSmoke(): Flow<HomeResult> = flow {
-        Timber.i("Track smoke requested from Home")
-        emit(HomeResult.TrackFeedback("Track requested. Checking session..."))
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> {
-                Timber.w("Track smoke blocked: anonymous session")
                 emit(HomeResult.Error.NotLoggedIn)
-                emit(HomeResult.TrackFeedback("Track failed: no active session. Opening sign in."))
                 emit(HomeResult.GoToAuthentication)
             }
 
             is Session.LoggedIn -> {
                 emit(HomeResult.Loading)
-                emit(HomeResult.TrackFeedback("Session ok. Reading preferences..."))
                 val preferences = fetchUserPreferencesUseCase()
-                Timber.i("Track smoke preferences loaded: locationTrackingEnabled=${preferences.locationTrackingEnabled}")
                 val location = if (preferences.locationTrackingEnabled) {
-                    emit(HomeResult.TrackFeedback("Location tracking enabled. Capturing location..."))
                     locationCaptureService.captureCurrentLocation()?.let {
-                        Timber.i("Track smoke location captured")
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
                     }
                 } else {
-                    Timber.i("Track smoke location capture skipped: disabled")
                     null
                 }
-                emit(HomeResult.TrackFeedback("Saving smoke to Firestore..."))
                 addSmokeUseCase.invoke(location = location)
-                Timber.i("Track smoke saved successfully")
                 emit(HomeResult.AddSmokeSuccess)
-                emit(HomeResult.TrackFeedback("Track saved. Refreshing home, widget, and Wear sync..."))
-                refreshWidgetSnapshotBestEffort()?.let { emit(HomeResult.TrackFeedback("Track saved, but widget refresh failed: $it")) }
-                syncWithWearBestEffort()?.let { emit(HomeResult.TrackFeedback("Track saved, but Wear sync failed: $it")) }
+                refreshWidgetSnapshotBestEffort()
+                syncWithWearBestEffort()
             }
         }
     }.catchAndLog { e ->
         Timber.e(e, "Track smoke failed")
         emit(HomeResult.Error.Generic(e.debugSummary()))
-        emit(HomeResult.TrackFeedback("Track failed: ${e.debugSummary()}"))
     }
 
     private fun processStartNewDay(): Flow<HomeResult> = flow {
@@ -244,7 +228,6 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.StartNewDaySuccess)
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
-        emit(HomeResult.TrackFeedback("Start new day failed: ${e.debugSummary()}"))
     }
 
     private suspend fun refreshWidgetSnapshot() {
@@ -256,18 +239,14 @@ class HomeProcessHolder @Inject constructor(
         widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
     }
 
-    private suspend fun refreshWidgetSnapshotBestEffort(): String? {
-        return runCatching { refreshWidgetSnapshot() }
+    private suspend fun refreshWidgetSnapshotBestEffort() {
+        runCatching { refreshWidgetSnapshot() }
             .onFailure { Timber.w(it, "Home mutation succeeded but widget refresh failed: ${it.debugSummary()}") }
-            .exceptionOrNull()
-            ?.debugSummary()
     }
 
-    private suspend fun syncWithWearBestEffort(): String? {
-        return runCatching { syncWithWearUseCase.invoke() }
+    private suspend fun syncWithWearBestEffort() {
+        runCatching { syncWithWearUseCase.invoke() }
             .onFailure { Timber.w(it, "Home mutation succeeded but Wear sync failed: ${it.debugSummary()}") }
-            .exceptionOrNull()
-            ?.debugSummary()
     }
 }
 

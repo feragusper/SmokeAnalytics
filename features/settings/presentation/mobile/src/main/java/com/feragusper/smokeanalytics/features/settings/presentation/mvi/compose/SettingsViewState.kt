@@ -21,7 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -46,7 +45,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -55,7 +53,6 @@ import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
 import com.feragusper.smokeanalytics.features.settings.presentation.GoalsEditorScreen
 import com.feragusper.smokeanalytics.features.settings.presentation.R
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
-import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsReport
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
@@ -73,8 +70,6 @@ data class SettingsViewState(
     internal val goalProgress: GoalProgress? = null,
     internal val infoMessage: String? = null,
     internal val errorMessage: String? = null,
-    internal val firestoreDiagnosticsRunning: Boolean = false,
-    internal val firestoreDiagnosticsReport: FirestoreDiagnosticsReport? = null,
 ) : MVIViewState<SettingsIntent> {
 
     interface TestTags {
@@ -192,18 +187,6 @@ data class SettingsViewState(
                 onPreferencesChange = { draftPreferences = it },
                 onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
                 onReset = { draftPreferences = preferences },
-            )
-
-            SettingsSectionHeader(
-                title = "Diagnostics",
-                subtitle = "Runtime Firestore write/read probes for the installed app build.",
-            )
-
-            FirestoreDiagnosticsCard(
-                enabled = !displayLoading && !firestoreDiagnosticsRunning && currentEmail != null,
-                running = firestoreDiagnosticsRunning,
-                report = firestoreDiagnosticsReport,
-                onRun = { intent(SettingsIntent.RunFirestoreDiagnostics) },
             )
 
             SettingsSectionHeader(
@@ -904,71 +887,6 @@ private fun TimePreferenceRow(
             enabled = enabled,
         ) {
             Text("Change")
-        }
-    }
-}
-
-@Composable
-private fun FirestoreDiagnosticsCard(
-    enabled: Boolean,
-    running: Boolean,
-    report: FirestoreDiagnosticsReport?,
-    onRun: () -> Unit,
-) {
-    SettingsCard(
-        title = "Firestore diagnostics",
-        subtitle = "Production identity, smoke write/delete, and preferences merge verification.",
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                StatusBadge(
-                    text = when {
-                        running -> "Running"
-                        report?.successful == true -> "Pass"
-                        report?.successful == false -> "Fail"
-                        else -> "Ready"
-                    }
-                )
-                Button(
-                    onClick = onRun,
-                    enabled = enabled,
-                ) {
-                    Text(if (running) "Running" else "Run")
-                }
-            }
-
-            report?.let {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (it.successful) {
-                            MaterialTheme.colorScheme.surfaceContainerLow
-                        } else {
-                            MaterialTheme.colorScheme.errorContainer
-                        },
-                        contentColor = if (it.successful) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onErrorContainer
-                        },
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    SelectionContainer {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            text = it.details,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                        )
-                    }
-                }
-            }
         }
     }
 }

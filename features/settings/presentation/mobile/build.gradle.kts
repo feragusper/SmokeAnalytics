@@ -51,7 +51,6 @@ dependencies {
     // Firebase dependencies for authentication
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
 
     // Dependency injection with Hilt
     implementation(libs.hilt)

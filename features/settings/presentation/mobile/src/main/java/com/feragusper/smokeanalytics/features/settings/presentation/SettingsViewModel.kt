@@ -94,17 +94,6 @@ class SettingsViewModel @Inject constructor(
             infoMessage = null,
             errorMessage = null,
         )
-        SettingsResult.FirestoreDiagnosticsRunning -> previous.copy(
-            displayLoading = false,
-            firestoreDiagnosticsRunning = true,
-            errorMessage = null,
-        )
-        is SettingsResult.FirestoreDiagnosticsFinished -> previous.copy(
-            displayLoading = false,
-            firestoreDiagnosticsRunning = false,
-            firestoreDiagnosticsReport = result.report,
-            errorMessage = null,
-        )
         is SettingsResult.Error -> previous.copy(
             displayLoading = false,
             errorMessage = result.message,

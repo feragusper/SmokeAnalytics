@@ -2,8 +2,6 @@ package com.feragusper.smokeanalytics.features.settings.presentation.process
 
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
-import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsReport
-import com.feragusper.smokeanalytics.features.settings.presentation.diagnostics.FirestoreDiagnosticsRunner
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.debugSummary
@@ -36,7 +34,6 @@ class SettingsProcessHolder @Inject constructor(
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
-    private val firestoreDiagnosticsRunner: FirestoreDiagnosticsRunner,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) : MVIProcessHolder<SettingsIntent, SettingsResult> {
 
@@ -50,7 +47,6 @@ class SettingsProcessHolder @Inject constructor(
         SettingsIntent.FetchUser -> processFetchUser()
         SettingsIntent.SignOut -> processSignOut()
         is SettingsIntent.UpdatePreferences -> processUpdatePreferences(intent.preferences)
-        SettingsIntent.RunFirestoreDiagnostics -> processFirestoreDiagnostics()
     }
 
     /**
@@ -117,17 +113,4 @@ class SettingsProcessHolder @Inject constructor(
         emit(SettingsResult.Error("Could not save your settings. ${error.debugSummary()}"))
     }
 
-    private fun processFirestoreDiagnostics(): Flow<SettingsResult> = flow {
-        emit(SettingsResult.FirestoreDiagnosticsRunning)
-        emit(SettingsResult.FirestoreDiagnosticsFinished(firestoreDiagnosticsRunner()))
-    }.catch { error ->
-        emit(
-            SettingsResult.FirestoreDiagnosticsFinished(
-                FirestoreDiagnosticsReport(
-                    successful = false,
-                    details = "SmokeAnalytics Firestore diagnostics\nresult=FAIL reason=${error.debugSummary()}",
-                )
-            )
-        )
-    }
 }

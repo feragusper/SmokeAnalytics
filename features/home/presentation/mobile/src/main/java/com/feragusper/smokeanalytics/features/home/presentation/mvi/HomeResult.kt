@@ -52,13 +52,6 @@ sealed interface HomeResult : MVIResult {
     data object AddSmokeSuccess : HomeResult
 
     /**
-     * Emits visible diagnostic feedback for the mobile quick track flow.
-     */
-    data class TrackFeedback(
-        val message: String,
-    ) : HomeResult
-
-    /**
      * Indicates that the current day was manually restarted.
      */
     data object StartNewDaySuccess : HomeResult
@@ -105,11 +98,6 @@ sealed interface HomeResult : MVIResult {
         val goalProgress: GoalProgress?,
         val canStartNewDay: Boolean,
     ) : HomeResult
-
-    /**
-     * Indicates an error occurred while fetching smoke data.
-     */
-    data object FetchSmokesError : HomeResult
 
     /**
      * Updates the time elapsed since the last cigarette.
