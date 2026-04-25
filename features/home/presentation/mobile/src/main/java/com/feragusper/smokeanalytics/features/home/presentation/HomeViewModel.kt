@@ -6,7 +6,6 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.A
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.DeleteSmokeSuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.EditSmokeSuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.Error
-import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesError
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.FetchSmokesSuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToAuthentication
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.GoToGoals
@@ -176,8 +175,6 @@ class HomeViewModel @Inject constructor(
                     displayLoading = false,
                     displayRefreshLoading = false,
                     error = null,
-                    toastMessage = if (result == AddSmokeSuccess) "Track saved successfully." else previous.toastMessage,
-                    toastNonce = if (result == AddSmokeSuccess) previous.toastNonce + 1 else previous.toastNonce,
                 )
             }
 
@@ -185,17 +182,6 @@ class HomeViewModel @Inject constructor(
                 displayLoading = false,
                 displayRefreshLoading = false,
                 error = result,
-            )
-
-            FetchSmokesError -> previous.copy(
-                displayLoading = false,
-                displayRefreshLoading = false,
-                error = Error.Generic(),
-            )
-
-            is HomeResult.TrackFeedback -> previous.copy(
-                toastMessage = result.message,
-                toastNonce = previous.toastNonce + 1,
             )
         }
 }

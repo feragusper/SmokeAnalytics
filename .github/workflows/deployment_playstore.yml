@@ -52,26 +52,6 @@ jobs:
           fi
 
           echo "✅ Production google-services.json prepared."
-          echo "Firebase production project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
-          echo "Firebase production app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
-          echo "Firebase production package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
-          echo "Firebase production oauth_sha1=$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
-          firebase_api_key="$(jq -r '.client[0].api_key[0].current_key // ""' ./apps/mobile/src/production/google-services.json)"
-          firebase_api_key_sha256="$(printf '%s' "$firebase_api_key" | shasum -a 256 | awk '{print $1}')"
-          firebase_api_key_suffix="${firebase_api_key: -6}"
-          echo "Firebase production api_key_sha256=${firebase_api_key_sha256:0:12}"
-          echo "Firebase production api_key_suffix=$firebase_api_key_suffix"
-
-          mkdir -p ./build/reports/release-diagnostics
-          firebase_oauth_sha1="$(jq -r '[.client[0].oauth_client[]? | select(.client_type == 1) | .android_info.certificate_hash] | join(",")' ./apps/mobile/src/production/google-services.json)"
-          {
-            echo "firebase_project_id=$(jq -r '.project_info.project_id' ./apps/mobile/src/production/google-services.json)"
-            echo "firebase_app_id=$(jq -r '.client[0].client_info.mobilesdk_app_id' ./apps/mobile/src/production/google-services.json)"
-            echo "firebase_package=$(jq -r '.client[0].client_info.android_client_info.package_name' ./apps/mobile/src/production/google-services.json)"
-            echo "firebase_oauth_sha1=$firebase_oauth_sha1"
-            echo "firebase_api_key_sha256=$firebase_api_key_sha256"
-            echo "firebase_api_key_suffix=$firebase_api_key_suffix"
-          } > ./build/reports/release-diagnostics/android-production-release.txt
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -101,60 +81,8 @@ jobs:
           echo "$PLAYSTORE_CREDENTIALS_ASC" > ./playstore.credentials.json.asc
           gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
-          store_password="$(sed -n 's/^storePassword=//p' ./release.keystore.properties)"
-          key_alias="$(sed -n 's/^keyAlias=//p' ./release.keystore.properties)"
-          key_password="$(sed -n 's/^keyPassword=//p' ./release.keystore.properties)"
-          release_sha1="$(keytool -list -v -keystore ./release.keystore -storepass "$store_password" -alias "$key_alias" -keypass "$key_password" | sed -n 's/^.*SHA1: //p' | head -n 1 | tr 'A-Z' 'a-z' | tr -d ':')"
-          echo "release_keystore_sha1=$release_sha1" >> ./build/reports/release-diagnostics/android-production-release.txt
-
       - name: Build Android App Bundle
         run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
-
-      - name: Capture built AAB diagnostics
-        if: always()
-        shell: bash
-        run: |
-          diagnostics_dir="./build/reports/release-diagnostics"
-          aab_path="./apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab"
-          mkdir -p "$diagnostics_dir"
-
-          if [ -f "$aab_path" ]; then
-            aab_sha256="$(shasum -a 256 "$aab_path" | awk '{print $1}')"
-            {
-              echo "aab_path=$aab_path"
-              echo "aab_sha256=$aab_sha256"
-              echo "aab_size_bytes=$(wc -c < "$aab_path" | tr -d ' ')"
-            } >> "$diagnostics_dir/android-production-release.txt"
-            unzip -l "$aab_path" > "$diagnostics_dir/aab-contents.txt"
-          else
-            echo "aab_missing=$aab_path" >> "$diagnostics_dir/android-production-release.txt"
-          fi
-
-          generated_google_services_files="$(find ./apps/mobile/build/generated/res -path '*processProductionReleaseGoogleServices*' -type f | sort || true)"
-          if [ -n "$generated_google_services_files" ]; then
-            {
-              echo "# Generated Google Services resource files"
-              printf '%s\n' "$generated_google_services_files"
-              echo
-              printf '%s\n' "$generated_google_services_files" | while read -r file; do
-                echo "## $file"
-                sed -E 's/(name="[^"]*api[^"]*"[^>]*>)[^<]+(<\/string>)/\1[redacted]\2/g' "$file"
-                echo
-              done
-            } > "$diagnostics_dir/generated-google-services.txt"
-          else
-            echo "generated_google_services_missing=processProductionReleaseGoogleServices" > "$diagnostics_dir/generated-google-services.txt"
-          fi
-
-          merged_manifest="$(find ./apps/mobile/build/intermediates/merged_manifest -path '*productionRelease*AndroidManifest.xml' -type f | sort | head -n 1 || true)"
-          if [ -n "$merged_manifest" ]; then
-            {
-              echo "# $merged_manifest"
-              sed -n '1,260p' "$merged_manifest"
-            } > "$diagnostics_dir/merged-manifest.txt"
-          else
-            echo "merged_manifest_missing=productionRelease" > "$diagnostics_dir/merged-manifest.txt"
-          fi
 
       - name: Build & deploy Android release to Play Store
         run: bundler exec fastlane android deploy_playstore
@@ -164,27 +92,6 @@ jobs:
         run: |
           echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
-
-          {
-            echo "android_version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)"
-            echo "android_release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)"
-          } >> ./build/reports/release-diagnostics/android-production-release.txt
-
-      - name: Upload release diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playstore-release-diagnostics
-          path: ./build/reports/release-diagnostics/
-          if-no-files-found: warn
-
-      - name: Upload production AAB
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playstore-production-aab
-          path: ./apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab
-          if-no-files-found: warn
 
       - name: Push Git Tag
         id: push_android_tag
@@ -217,7 +124,6 @@ jobs:
         with:
           tag_name: ${{ steps.android_version.outputs.release_tag }}
           release_name: "Android ${{ steps.android_version.outputs.version_name }}"
-          generate_release_notes: true
           draft: false
           prerelease: false
 

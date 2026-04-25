@@ -102,12 +102,8 @@ class HomeProcessHolderTest {
             coEvery { addSmokeUseCase.invoke(any()) } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track saved. Refreshing home, widget, and Wear sync...")
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -145,12 +141,8 @@ class HomeProcessHolderTest {
             coEvery { addSmokeUseCase.invoke(any()) } throws IllegalStateException("Error")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -162,15 +154,8 @@ class HomeProcessHolderTest {
             coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Session ok. Reading preferences...")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Saving smoke to Firestore...")
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track saved. Refreshing home, widget, and Wear sync...")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback(
-                    "Track saved, but widget refresh failed: IllegalStateException: Quota exceeded"
-                )
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -182,8 +167,7 @@ class HomeProcessHolderTest {
 
             processHolder.processIntent(HomeIntent.FetchSmokes).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.FetchSmokesError
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Home refresh failed: IllegalStateException: Quota exceeded")
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Quota exceeded")
                 awaitComplete()
             }
         }
@@ -197,7 +181,6 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.EditSmoke(id, date)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Edit failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -211,7 +194,6 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.DeleteSmoke(id)).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Error")
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Delete failed: IllegalStateException: Error")
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -230,9 +212,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN adding smoke THEN it returns not logged in error`() = runTest {
             processHolder.processIntent(HomeIntent.AddSmoke).test {
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track requested. Checking session...")
                 awaitItem() shouldBeEqualTo HomeResult.Error.NotLoggedIn
-                awaitItem() shouldBeEqualTo HomeResult.TrackFeedback("Track failed: no active session. Opening sign in.")
                 awaitItem() shouldBeEqualTo HomeResult.GoToAuthentication
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
                 awaitComplete()
