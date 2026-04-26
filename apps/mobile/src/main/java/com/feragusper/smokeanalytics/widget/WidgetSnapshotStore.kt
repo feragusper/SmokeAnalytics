@@ -1,7 +1,9 @@
 package com.feragusper.smokeanalytics.widget
 
 import android.content.Context
+import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
+import dagger.hilt.android.EntryPointAccessors
 
 internal object WidgetSnapshotStore {
 
@@ -23,6 +25,11 @@ internal object WidgetSnapshotStore {
         )
     }
 
+    suspend fun readFreshOrStored(context: Context): WidgetSnapshot =
+        runCatching { readFresh(context) }
+            .onSuccess { write(context, it) }
+            .getOrElse { read(context) }
+
     fun write(context: Context, snapshot: WidgetSnapshot) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -32,5 +39,18 @@ internal object WidgetSnapshotStore {
             .putInt(KEY_TARGET_GAP_MINUTES, snapshot.targetGapMinutes)
             .putFloat(KEY_AVERAGE_SMOKES_PER_DAY_WEEK, snapshot.averageSmokesPerDayWeek.toFloat())
             .apply()
+    }
+
+    private suspend fun readFresh(context: Context): WidgetSnapshot {
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            HomeStatusWidgetEntryPoint::class.java,
+        )
+        val preferences = entryPoint.fetchUserPreferencesUseCase().invoke()
+        val smokeCounts = entryPoint.fetchSmokeCountListUseCase().invoke(
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        return smokeCounts.toWidgetSnapshot(preferences)
     }
 }
