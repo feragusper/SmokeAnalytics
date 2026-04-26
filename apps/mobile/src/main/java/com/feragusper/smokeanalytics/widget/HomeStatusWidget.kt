@@ -1,7 +1,7 @@
 package com.feragusper.smokeanalytics.widget
 
-import android.content.Intent
 import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -31,12 +31,17 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.feragusper.smokeanalytics.MainActivity
+import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 
 class HomeStatusWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val snapshot = WidgetSnapshotStore.read(context)
+        val snapshot = WidgetSnapshotStore.readFreshOrStored(context)
         val openAppIntent = Intent(context, MainActivity::class.java)
         val quickAddIntent = Intent(context, MainActivity::class.java).apply {
             action = MainActivity.ACTION_WIDGET_QUICK_ADD
@@ -57,6 +62,13 @@ class HomeStatusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HomeStatusWidget()
 }
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+internal interface HomeStatusWidgetEntryPoint {
+    fun fetchSmokeCountListUseCase(): FetchSmokeCountListUseCase
+    fun fetchUserPreferencesUseCase(): FetchUserPreferencesUseCase
+}
+
 @Composable
 private fun WidgetContent(
     snapshot: WidgetSnapshot,
@@ -66,6 +78,7 @@ private fun WidgetContent(
     val widgetSize = LocalSize.current
     val compact = widgetSize.height < 150.dp || widgetSize.width < 220.dp
     val elapsedMinutes = snapshot.elapsedHours * 60L + snapshot.elapsedMinutes
+    val remainingMinutes = snapshot.remainingMinutesUntilNextSmoke()
     val progressFraction = snapshot.progressFraction()
     val status = snapshot.gapStatus()
 
@@ -85,7 +98,7 @@ private fun WidgetContent(
         )
         Spacer(GlanceModifier.height(if (compact) 6.dp else 10.dp))
         GapHeroCard(
-            elapsedLabel = elapsedMinutes.toDurationLabel(),
+            remainingLabel = remainingMinutes.toNextSmokeLabel(),
             status = status,
             targetLabel = snapshot.targetGapMinutes.toGapLabel(),
             progressFraction = progressFraction,
@@ -113,9 +126,9 @@ private fun WidgetContent(
             if (!compact) {
                 Spacer(GlanceModifier.width(6.dp))
                 MetricCard(
-                    marker = "GAP",
-                    label = "Target",
-                    value = snapshot.targetGapMinutes.toGapLabel(),
+                    marker = "SIN",
+                    label = "Since last",
+                    value = elapsedMinutes.toDurationLabel(),
                     modifier = GlanceModifier.defaultWeight(),
                 )
             }
@@ -167,7 +180,7 @@ private fun WidgetHeader(
 
 @Composable
 private fun GapHeroCard(
-    elapsedLabel: String,
+    remainingLabel: String,
     status: GapStatus,
     targetLabel: String,
     progressFraction: Float,
@@ -198,7 +211,7 @@ private fun GapHeroCard(
                 horizontalAlignment = Alignment.Horizontal.Start,
             ) {
                 Text(
-                    text = elapsedLabel,
+                    text = remainingLabel,
                     style = TextStyle(
                         color = WidgetColors.Text,
                         fontSize = if (compact) 20.sp else 26.sp,
@@ -358,6 +371,15 @@ private fun Long.toDurationLabel(): String {
     }
 }
 
+private fun Long.toNextSmokeLabel(): String =
+    if (this <= 0L) "Ready now" else "${toDurationLabel()} left"
+
+private fun WidgetSnapshot.remainingMinutesUntilNextSmoke(): Long {
+    val target = targetGapMinutes.takeIf { it > 0 } ?: return 0L
+    val elapsed = elapsedHours * 60L + elapsedMinutes
+    return (target - elapsed).coerceAtLeast(0L)
+}
+
 private fun WidgetSnapshot.progressFraction(): Float {
     val target = targetGapMinutes.takeIf { it > 0 } ?: return 1f
     val elapsed = elapsedHours * 60L + elapsedMinutes
@@ -404,10 +426,10 @@ private enum class GapStatus(
     );
 
     fun message(targetLabel: String): String = when (this) {
-        Ready -> "Past target $targetLabel"
-        Near -> "Close to target $targetLabel"
-        Building -> "Building toward $targetLabel"
-        Steady -> "Keep the gap steady"
+        Ready -> "Next smoke is past target $targetLabel"
+        Near -> "Almost at target $targetLabel"
+        Building -> "Wait until target $targetLabel"
+        Steady -> "Live countdown from latest data"
     }
 }
 
