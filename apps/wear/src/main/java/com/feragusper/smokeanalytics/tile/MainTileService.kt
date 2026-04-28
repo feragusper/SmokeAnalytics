@@ -28,9 +28,8 @@ import java.util.concurrent.TimeUnit
 class MainTileService : SuspendingTileService() {
 
     // ViewModel for the tile UI state management
-    private val viewModel = TileViewModel.apply {
-        initialize(this@MainTileService)
-    }
+    private val viewModel = TileViewModel
+    private var lastAddSmokeClickMillis: Long = 0L
 
     // Tile update requester to request updates
     private val tileUpdateRequester: TileUpdateRequester by lazy {
@@ -40,6 +39,7 @@ class MainTileService : SuspendingTileService() {
     // Called when the service is created
     override fun onCreate() {
         super.onCreate()
+        viewModel.initialize(this)
 
         // Debugging setup for Timber logging in debug mode
         if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
@@ -55,7 +55,8 @@ class MainTileService : SuspendingTileService() {
                     old.todayCount == new.todayCount &&
                         old.targetGapMinutes == new.targetGapMinutes &&
                         old.averageSmokesPerDayWeek == new.averageSmokesPerDayWeek &&
-                        old.lastSmokeTimestamp == new.lastSmokeTimestamp
+                        old.lastSmokeTimestamp == new.lastSmokeTimestamp &&
+                        old.addSmokePendingSinceMillis == new.addSmokePendingSinceMillis
                 }
                 .collect {
                     Timber.d("onCreate: collect: $it")
@@ -70,8 +71,19 @@ class MainTileService : SuspendingTileService() {
 
         // Handle action when "add_smoke_action" is clicked
         if (requestParams.currentState.lastClickableId == ADD_SMOKE_ACTION_ID) {
-            Timber.d("Add Smoke clicked! Updating ViewModel...")
-            viewModel.intents().trySend(TileIntent.AddSmoke)
+            val now = System.currentTimeMillis()
+            if (
+                state.addSmokePendingSinceMillis == null &&
+                now - lastAddSmokeClickMillis >= ADD_SMOKE_CLICK_DEBOUNCE_MILLIS
+            ) {
+                Timber.d("Add Smoke clicked! Updating ViewModel...")
+                lastAddSmokeClickMillis = now
+                viewModel.intents().trySend(TileIntent.AddSmoke(now))
+            } else {
+                Timber.d("Add Smoke clicked while a request is pending; ignoring.")
+            }
+        } else {
+            viewModel.intents().trySend(TileIntent.RefreshSmokes)
         }
 
         // Return the tile based on the state
@@ -141,18 +153,7 @@ class MainTileService : SuspendingTileService() {
             .setMaxLines(3)
             .build()
 
-        // Create the "Add Smoke" chip button
-        val addSmokeChip = CompactChip.Builder(
-            this,
-            androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
-                .setId(ADD_SMOKE_ACTION_ID)
-                .setOnClick(ActionBuilders.LoadAction.Builder().build())
-                .build(),
-            deviceParameters
-        )
-            .setIconContent("smoke_icon")
-            .setChipColors(ChipDefaults.PRIMARY_COLORS)
-            .build()
+        val addSmokeChip = addSmokeChip(deviceParameters, state.addSmokePendingSinceMillis != null)
 
         // Build the layout using the created elements
         return LayoutElementBuilders.Layout.Builder()
@@ -166,6 +167,23 @@ class MainTileService : SuspendingTileService() {
             )
             .build()
     }
+
+    private fun addSmokeChip(
+        deviceParameters: DeviceParametersBuilders.DeviceParameters,
+        isPending: Boolean,
+    ): CompactChip =
+        CompactChip.Builder(
+            this,
+            androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
+                .setId(ADD_SMOKE_ACTION_ID)
+                .setOnClick(ActionBuilders.LoadAction.Builder().build())
+                .build(),
+            deviceParameters
+        )
+            .setTextContent(if (isPending) getString(R.string.add_smoke_saving) else getString(R.string.add_smoke_track))
+            .setIconContent("smoke_icon")
+            .setChipColors(ChipDefaults.PRIMARY_COLORS)
+            .build()
 
     // Formats the last smoke time into a human-readable format
     private fun formatLastSmokeTime(timestamp: Long?): String {
@@ -192,6 +210,7 @@ class MainTileService : SuspendingTileService() {
 
     companion object {
         private const val ADD_SMOKE_ACTION_ID = "add_smoke_action"
+        private const val ADD_SMOKE_CLICK_DEBOUNCE_MILLIS = 5_000L
         private const val RESOURCES_VERSION = "1"
     }
 

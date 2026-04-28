@@ -7,4 +7,6 @@
     <string name="stats_today_short">Today %1$d</string>
     <string name="target_gap_short">Target gap %1$s</string>
     <string name="average_week_short">7d avg %1$s</string>
+    <string name="add_smoke_track">Track</string>
+    <string name="add_smoke_saving">Saving</string>
 </resources>
