@@ -96,6 +96,7 @@ class HomeProcessHolder @Inject constructor(
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 )
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+                val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
                 val greetingState = greetingStateFor(
                     hourOfDay = kotlinx.datetime.Clock.System.now()
                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
@@ -123,14 +124,14 @@ class HomeProcessHolder @Inject constructor(
                             preferences = preferences,
                         ),
                         gamificationSummary = gamificationSummary(smokeCounts.todaysSmokes),
-                        goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences),
+                        goalProgress = goalProgress,
                         canStartNewDay = shouldOfferStartNewDay(
                             dayStartHour = preferences.dayStartHour,
                             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                         ),
                     )
                 )
-                widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
+                widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
             }
         }
     }.catchAndLog { e ->
@@ -236,7 +237,9 @@ class HomeProcessHolder @Inject constructor(
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
-        widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences))
+        val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+        val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
+        widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
     }
 
     private suspend fun refreshWidgetSnapshotBestEffort() {

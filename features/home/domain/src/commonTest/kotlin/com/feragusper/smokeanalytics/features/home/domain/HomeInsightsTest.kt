@@ -121,6 +121,50 @@ class HomeInsightsTest {
     }
 
     @Test
+    fun `toWidgetSnapshot uses active daily cap pace for next smoke wait`() {
+        val now = Instant.parse("2026-03-25T15:34:00Z")
+        val smokeCount = SmokeCountListResult(
+            todaysSmokes = List(13) { index ->
+                Smoke(
+                    id = "$index",
+                    date = now,
+                    timeElapsedSincePreviousSmoke = 1L to 0L,
+                )
+            },
+            countByWeek = 21,
+            countByMonth = 64,
+            lastSmoke = Smoke(
+                id = "last",
+                date = now,
+                timeElapsedSincePreviousSmoke = 1L to 0L,
+            ),
+        )
+        val preferences = UserPreferences(
+            dayStartHour = 9,
+            bedtimeHour = 22,
+            activeGoal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
+        )
+        val goalProgress = GoalProgress(
+            goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
+            title = "Daily cap",
+            targetLabel = "Target: at most 15 today",
+            progressLabel = "13 / 15 smoked today",
+            supportingText = "2 left before reaching today's cap.",
+            status = GoalStatus.OnTrack,
+        )
+
+        val snapshot = smokeCount.toWidgetSnapshot(
+            preferences = preferences,
+            goalProgress = goalProgress,
+            now = now,
+            timeZone = utc,
+        )
+
+        assertEquals(13, snapshot.todayCount)
+        assertEquals(193, snapshot.targetGapMinutes)
+    }
+
+    @Test
     fun `gapFocusSummary uses mindful gap goal as the source of truth when active`() {
         val now = Instant.parse("2026-03-25T12:00:00Z")
         val summary = gapFocusSummary(

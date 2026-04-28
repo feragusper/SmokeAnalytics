@@ -576,11 +576,11 @@ private fun GoalHeroMetricCard(
     ) {
         Column(
             modifier = Modifier
-                .heightIn(min = 114.dp)
-                .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+                .heightIn(min = 86.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,
@@ -597,13 +597,15 @@ private fun GoalHeroMetricCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = supporting ?: " ",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            supporting?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -621,9 +623,9 @@ private fun GoalHeroMetricSkeleton(
     ) {
         Column(
             modifier = Modifier
-                .heightIn(min = 114.dp)
-                .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+                .heightIn(min = 86.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SkeletonBlock(
@@ -732,9 +734,9 @@ private fun LastCigaretteValueCard(
     ) {
         Column(
             modifier = Modifier
-                .height(104.dp)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+                .heightIn(min = 74.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = label,

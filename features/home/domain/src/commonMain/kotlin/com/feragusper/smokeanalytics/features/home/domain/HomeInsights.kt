@@ -237,6 +237,7 @@ fun gamificationSummary(smokes: List<Smoke>): GamificationSummary {
 
 fun SmokeCountListResult.toWidgetSnapshot(
     preferences: UserPreferences,
+    goalProgress: GoalProgress? = null,
     now: Instant = Clock.System.now(),
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): WidgetSnapshot {
@@ -247,11 +248,23 @@ fun SmokeCountListResult.toWidgetSnapshot(
         timeZone = timeZone,
     )
     val elapsed = timeSinceLastCigarette
+    val elapsedMinutes = elapsed.first * 60L + elapsed.second
+    val gapFocus = gapFocusSummary(
+        elapsedMinutes = elapsedMinutes,
+        rateSummary = rate,
+        goalProgress = goalProgress,
+        smokesPerDay = countByToday,
+        awakeMinutesPerDay = preferences.awakeMinutesPerDay,
+        dayStartHour = preferences.dayStartHour,
+        bedtimeHour = preferences.bedtimeHour,
+        now = now,
+        timeZone = timeZone,
+    )
     return WidgetSnapshot(
         todayCount = countByToday,
         elapsedHours = elapsed.first,
         elapsedMinutes = elapsed.second,
-        targetGapMinutes = rate.averageIntervalMinutesToday ?: preferences.awakeMinutesPerDay,
+        targetGapMinutes = gapFocus.targetMinutes ?: rate.averageIntervalMinutesToday ?: preferences.awakeMinutesPerDay,
         averageSmokesPerDayWeek = rate.averageSmokesPerDayWeek,
     )
 }

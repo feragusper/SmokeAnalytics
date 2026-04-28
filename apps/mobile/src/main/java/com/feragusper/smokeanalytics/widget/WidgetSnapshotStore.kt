@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.widget
 
 import android.content.Context
+import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
 import dagger.hilt.android.EntryPointAccessors
@@ -51,6 +52,12 @@ internal object WidgetSnapshotStore {
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
-        return smokeCounts.toWidgetSnapshot(preferences)
+        val goalSmokes = entryPoint.fetchSmokesUseCase().invoke(start = goalDataFetchStart(preferences))
+        val goalProgress = entryPoint.evaluateGoalProgressUseCase().invoke(
+            activeGoal = preferences.activeGoal,
+            smokes = goalSmokes,
+            preferences = preferences,
+        )
+        return smokeCounts.toWidgetSnapshot(preferences, goalProgress)
     }
 }
