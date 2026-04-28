@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.wear.domain
 
+import java.io.Closeable
+
 /**
  * Defines the contract for synchronizing smoke data between a mobile app and a Wear OS device.
  *
@@ -15,6 +17,11 @@ sealed interface WearSyncManager {
          * Synchronizes smoke data with the connected Wear OS device.
          */
         suspend fun syncWithWear()
+
+        /**
+         * Handles a message sent by a Wear OS device.
+         */
+        suspend fun handleWearRequest(path: String)
     }
 
     /**
@@ -40,6 +47,6 @@ sealed interface WearSyncManager {
                 averageSmokesPerDayWeek: Double,
                 lastSmokeTimestamp: Long?,
             ) -> Unit
-        )
+        ): Closeable
     }
 }

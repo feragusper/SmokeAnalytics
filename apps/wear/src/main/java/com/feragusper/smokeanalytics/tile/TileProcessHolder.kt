@@ -37,15 +37,31 @@ class TileProcessHolder @Inject constructor(
                     emit(TileResult.Error)  // Emitting an error result in case of failure
                 }
 
+        TileIntent.RefreshSmokes -> callbackFlow {
+            launch {
+                try {
+                    wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                } catch (e: Exception) {
+                    Timber.e(e, "Error requesting smoke count from mobile.")
+                    trySend(TileResult.Error)
+                } finally {
+                    close()
+                }
+            }
+
+            awaitClose { Timber.d("Closed refresh smoke action.") }
+        }
+
         // Handles the "Add Smoke" action by sending a request to the mobile app.
         is TileIntent.AddSmoke -> callbackFlow {
             Timber.d("Adding smoke.")
+            trySend(TileResult.AddSmokeStarted(intent.requestedAtMillis))
             // Launched within the callbackFlow to ensure it runs as a coroutine
             launch {
                 try {
                     wearSyncManager.sendRequestToMobile(WearPaths.ADD_SMOKE)
                     // Emit success after sending the request
-                    trySend(TileResult.AddSmokeSuccess)  // Emit success result here
+                    trySend(TileResult.AddSmokeRequestSent)
                 } catch (e: Exception) {
                     Timber.e(e, "Error sending request to mobile.")
                     trySend(TileResult.Error)  // Emitting error if the request fails
@@ -62,11 +78,8 @@ class TileProcessHolder @Inject constructor(
     private fun listenForSmokeUpdates(): Flow<TileResult> = callbackFlow {
         Timber.d("Fetching smoke count.")
 
-        // Request initial data from the mobile app
-        wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
-
-        // Listen for real-time updates
-        wearSyncManager.listenForDataUpdates { todayCount, targetGapMinutes, averageSmokesPerDayWeek, lastSmokeTimestamp ->
+        // Listen before requesting data so the first mobile response cannot be missed.
+        val subscription = wearSyncManager.listenForDataUpdates { todayCount, targetGapMinutes, averageSmokesPerDayWeek, lastSmokeTimestamp ->
             trySend(
                 TileResult.FetchSmokesSuccess(
                     todayCount = todayCount,
@@ -77,9 +90,18 @@ class TileProcessHolder @Inject constructor(
             )
         }
 
-        // Close the callbackFlow when cancelled
+        launch {
+            try {
+                wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+            } catch (e: Exception) {
+                Timber.e(e, "Error requesting smoke count from mobile.")
+                trySend(TileResult.Error)
+            }
+        }
+
         awaitClose {
             Timber.d("Stopped listening for data updates.")
+            subscription.close()
         }
     }
 }

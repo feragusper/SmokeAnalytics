@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.tile
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 
 sealed class TileResult : MVIResult {
+    data class AddSmokeStarted(val requestedAtMillis: Long) : TileResult()
+
     data class FetchSmokesSuccess(
         val todayCount: Int,
         val targetGapMinutes: Int,
@@ -10,7 +12,7 @@ sealed class TileResult : MVIResult {
         val lastSmokeTimestamp: Long?,
     ) : TileResult()
 
-    data object AddSmokeSuccess : TileResult()
+    data object AddSmokeRequestSent : TileResult()
 
     data object Error : TileResult()
 }

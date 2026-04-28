@@ -18,11 +18,10 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
     // Lazy initialization for the WearSyncManager
     @SuppressLint("StaticFieldLeak")
     private lateinit var wearSyncManager: WearSyncManager.Wear
+    private var isListeningForData = false
 
     // The TileProcessHolder is responsible for handling the intents for the tile
-    private val processHolder: TileProcessHolder by lazy {
-        TileProcessHolder(wearSyncManager)
-    }
+    private lateinit var processHolder: TileProcessHolder
 
     // Navigator to handle navigation actions
     override lateinit var navigator: MVINavigator
@@ -30,15 +29,18 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
     // Initialize the WearSyncManager with the given context
     fun initialize(context: Context) {
         wearSyncManager = WearSyncManagerImpl(
-            context = context,
+            context = context.applicationContext,
             dispatcherProvider = DispatcherProviderImpl()
         ).Wear()
+        processHolder = TileProcessHolder(wearSyncManager)
+        if (!isListeningForData) {
+            isListeningForData = true
+            intents().trySend(TileIntent.FetchSmokes)
+        }
     }
 
     init {
         Timber.d("TileViewModel initialized")
-        // Send an initial intent to fetch smoke data
-        intents().trySend(TileIntent.FetchSmokes)
     }
 
     // Transformer function to process the TileIntent and return the corresponding TileResult
@@ -50,15 +52,37 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
         previous: TileViewState,
         result: TileResult
     ): TileViewState = when (result) {
+        is TileResult.AddSmokeStarted -> previous.copy(
+            addSmokePendingSinceMillis = result.requestedAtMillis,
+            error = null,
+        )
+
         is TileResult.FetchSmokesSuccess -> previous.copy(
             todayCount = result.todayCount,
             targetGapMinutes = result.targetGapMinutes,
             averageSmokesPerDayWeek = result.averageSmokesPerDayWeek,
             lastSmokeTimestamp = result.lastSmokeTimestamp,
+            addSmokePendingSinceMillis = previous.addSmokePendingSinceMillis
+                ?.takeIf { previous.shouldKeepAddSmokePending(result) },
+            error = null,
         )
 
-        is TileResult.AddSmokeSuccess -> previous.copy()
+        is TileResult.AddSmokeRequestSent -> previous.copy()
 
-        is TileResult.Error -> previous.copy(error = result)
+        is TileResult.Error -> previous.copy(
+            addSmokePendingSinceMillis = null,
+            error = result,
+        )
     }
+
+    private fun TileViewState.shouldKeepAddSmokePending(result: TileResult.FetchSmokesSuccess): Boolean {
+        val pendingSince = addSmokePendingSinceMillis ?: return false
+        val todayCountAdvanced = todayCount != null && result.todayCount > todayCount
+        val timestampAcknowledged = result.lastSmokeTimestamp != null &&
+            result.lastSmokeTimestamp >= pendingSince - ADD_SMOKE_CLOCK_SKEW_TOLERANCE_MILLIS
+
+        return !todayCountAdvanced && !timestampAcknowledged
+    }
+
+    private const val ADD_SMOKE_CLOCK_SKEW_TOLERANCE_MILLIS = 30_000L
 }

@@ -11,15 +11,13 @@ import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
-import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import timber.log.Timber
+import java.io.Closeable
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -38,20 +36,11 @@ class WearSyncManagerImpl(
      * Handles communication from the mobile app to the Wear OS device.
      *
      * @param smokeRepository The repository to fetch smoke data.
-     * @param coroutineScope The coroutine scope to execute async operations.
      */
     inner class Mobile(
         private val smokeRepository: SmokeRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
-        private val coroutineScope: CoroutineScope,
-    ) : WearSyncManager.Mobile, MessageClient.OnMessageReceivedListener {
-
-        /**
-         * Initializes the WearSyncManager by registering the message listener.
-         */
-        init {
-            Wearable.getMessageClient(context).addListener(this)
-        }
+    ) : WearSyncManager.Mobile {
 
         /**
          * Synchronizes the smoke count data with the connected Wear OS device.
@@ -69,21 +58,14 @@ class WearSyncManagerImpl(
             )
         }
 
-        /**
-         * Handles incoming messages from Wear OS devices.
-         *
-         * @param messageEvent The received message event.
-         */
-        override fun onMessageReceived(messageEvent: MessageEvent) {
-            Timber.d("onMessageReceived: ${messageEvent.path}")
-            coroutineScope.launch(dispatcherProvider.io()) {
-                when (messageEvent.path) {
-                    WearPaths.REQUEST_SMOKES -> syncWithWear()
-                    WearPaths.ADD_SMOKE -> {
-                        smokeRepository.addSmoke(Clock.System.now())
-                        syncWithWear()
-                    }
+        override suspend fun handleWearRequest(path: String) {
+            when (path) {
+                WearPaths.REQUEST_SMOKES -> syncWithWear()
+                WearPaths.ADD_SMOKE -> {
+                    smokeRepository.addSmoke(Clock.System.now())
+                    syncWithWear()
                 }
+                else -> Timber.w("Ignoring unknown Wear request: $path")
             }
         }
 
@@ -141,27 +123,43 @@ class WearSyncManagerImpl(
                 averageSmokesPerDayWeek: Double,
                 lastSmokeTimestamp: Long?,
             ) -> Unit
-        ) {
+        ): Closeable {
             Timber.d("listenForDataUpdates")
+
+            fun dispatchDataItem(dataItem: com.google.android.gms.wearable.DataItem) {
+                if (dataItem.uri.path != WearPaths.SMOKE_DATA) return
+
+                val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
+                onDataReceived(
+                    dataMap.getInt(WearPaths.SMOKE_COUNT_TODAY),
+                    dataMap.getInt(WearPaths.TARGET_GAP_MINUTES),
+                    dataMap.getDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK),
+                    dataMap.takeIf { it.containsKey(WearPaths.LAST_SMOKE_TIMESTAMP) }
+                        ?.getLong(WearPaths.LAST_SMOKE_TIMESTAMP),
+                )
+            }
 
             val dataChangedListener = DataClient.OnDataChangedListener { dataEvents ->
                 for (event in dataEvents) {
                     if (event.type == DataEvent.TYPE_CHANGED) {
-                        val dataItem = event.dataItem
-                        if (dataItem.uri.path == WearPaths.SMOKE_DATA) {
-                            val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-
-                            onDataReceived(
-                                dataMap.getInt(WearPaths.SMOKE_COUNT_TODAY),
-                                dataMap.getInt(WearPaths.TARGET_GAP_MINUTES),
-                                dataMap.getDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK),
-                                dataMap.getLong(WearPaths.LAST_SMOKE_TIMESTAMP),
-                            )
-                        }
+                        dispatchDataItem(event.dataItem)
                     }
                 }
             }
             dataClient.addListener(dataChangedListener)
+
+            dataClient.dataItems
+                .addOnSuccessListener { dataItems ->
+                    dataItems.forEach(::dispatchDataItem)
+                    dataItems.release()
+                }
+                .addOnFailureListener { error ->
+                    Timber.w(error, "Could not read latest Wear data item")
+                }
+
+            return Closeable {
+                dataClient.removeListener(dataChangedListener)
+            }
         }
 
         /**

@@ -16,8 +16,13 @@ sealed class TileIntent : MVIIntent {
     data object FetchSmokes : TileIntent()
 
     /**
+     * Requests a fresh mobile snapshot without creating another DataLayer listener.
+     */
+    data object RefreshSmokes : TileIntent()
+
+    /**
      * Represents the intent to add a new smoke entry.
      * This is triggered when the user performs the "Add Smoke" action on the tile.
      */
-    data object AddSmoke : TileIntent()
+    data class AddSmoke(val requestedAtMillis: Long) : TileIntent()
 }

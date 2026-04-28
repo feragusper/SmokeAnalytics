@@ -8,5 +8,6 @@ data class TileViewState(
     val targetGapMinutes: Int? = null,
     val averageSmokesPerDayWeek: Double? = null,
     val lastSmokeTimestamp: Long? = null,
+    val addSmokePendingSinceMillis: Long? = null,
     val error: TileResult? = null,
 ) : MVIViewState<TileIntent>
