@@ -169,12 +169,14 @@ fun properties(propertiesFileName: String): Properties {
 
 dependencies {
     implementation(project(":libraries:architecture:domain"))
+    implementation(project(":libraries:architecture:common"))
     implementation(project(":libraries:architecture:presentation:mobile"))
     implementation(project(":libraries:authentication:domain"))
     implementation(project(":libraries:design:mobile"))
     implementation(project(":libraries:preferences:domain"))
     implementation(project(":libraries:preferences:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:wear:domain"))
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:chatbot:presentation"))
     implementation(project(":features:chatbot:domain"))
@@ -198,6 +200,7 @@ dependencies {
     implementation(libs.play.app.update.ktx)
     implementation(libs.play.review.ktx)
     implementation(libs.play.services.maps)
+    implementation(libs.play.services.wearable)
 
     debugImplementation(project(":features:devtools:presentation"))
 
