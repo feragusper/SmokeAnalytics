@@ -28,9 +28,7 @@ import java.util.concurrent.TimeUnit
 class MainTileService : SuspendingTileService() {
 
     // ViewModel for the tile UI state management
-    private val viewModel = TileViewModel.apply {
-        initialize(this@MainTileService)
-    }
+    private val viewModel = TileViewModel
 
     // Tile update requester to request updates
     private val tileUpdateRequester: TileUpdateRequester by lazy {
@@ -40,6 +38,7 @@ class MainTileService : SuspendingTileService() {
     // Called when the service is created
     override fun onCreate() {
         super.onCreate()
+        viewModel.initialize(this)
 
         // Debugging setup for Timber logging in debug mode
         if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
@@ -55,7 +54,8 @@ class MainTileService : SuspendingTileService() {
                     old.todayCount == new.todayCount &&
                         old.targetGapMinutes == new.targetGapMinutes &&
                         old.averageSmokesPerDayWeek == new.averageSmokesPerDayWeek &&
-                        old.lastSmokeTimestamp == new.lastSmokeTimestamp
+                        old.lastSmokeTimestamp == new.lastSmokeTimestamp &&
+                        old.addSmokePendingCount == new.addSmokePendingCount
                 }
                 .collect {
                     Timber.d("onCreate: collect: $it")
@@ -66,12 +66,16 @@ class MainTileService : SuspendingTileService() {
 
     // Handles tile request to render the tile UI based on current state
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
-        val state = viewModel.states().value
+        var state = viewModel.states().value
 
         // Handle action when "add_smoke_action" is clicked
         if (requestParams.currentState.lastClickableId == ADD_SMOKE_ACTION_ID) {
+            val now = System.currentTimeMillis()
             Timber.d("Add Smoke clicked! Updating ViewModel...")
-            viewModel.intents().trySend(TileIntent.AddSmoke)
+            state = state.withOptimisticAddSmoke(now)
+            viewModel.intents().trySend(TileIntent.AddSmoke(now))
+        } else {
+            viewModel.intents().trySend(TileIntent.RefreshSmokes)
         }
 
         // Return the tile based on the state
@@ -118,41 +122,31 @@ class MainTileService : SuspendingTileService() {
             .setScreenHeightDp(resources.configuration.screenHeightDp)
             .build()
 
-        // Format last smoke time
         val lastSmokeText = formatLastSmokeTime(state.lastSmokeTimestamp)
+        val nextSmokeText = formatNextSmokePaceTime(
+            targetMinutes = state.targetGapMinutes,
+            lastSmokeTimestamp = state.lastSmokeTimestamp,
+        )
         val statsText = Text.Builder(this, getString(R.string.stats_today_short, state.todayCount ?: 0))
             .setTypography(Typography.TYPOGRAPHY_TITLE3)
-            .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
+            .setColor(androidx.wear.protolayout.ColorBuilders.argb(WEAR_PRIMARY))
             .setMaxLines(1)
             .build()
 
         val content = Text.Builder(
             this,
             buildString {
-                append(lastSmokeText)
+                append(getString(R.string.next_pace_short, nextSmokeText))
                 append('\n')
-                append(getString(R.string.target_gap_short, (state.targetGapMinutes ?: 0).toGapLabel()))
-                append('\n')
-                append(getString(R.string.average_week_short, (state.averageSmokesPerDayWeek ?: 0.0).formatOneDecimal()))
+                append(getString(R.string.last_smoke_short, lastSmokeText))
             }
         )
             .setTypography(Typography.TYPOGRAPHY_BODY2)
-            .setColor(androidx.wear.protolayout.ColorBuilders.argb(0xFF00897B.toInt()))
-            .setMaxLines(3)
+            .setColor(androidx.wear.protolayout.ColorBuilders.argb(WEAR_ON_SURFACE))
+            .setMaxLines(2)
             .build()
 
-        // Create the "Add Smoke" chip button
-        val addSmokeChip = CompactChip.Builder(
-            this,
-            androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
-                .setId(ADD_SMOKE_ACTION_ID)
-                .setOnClick(ActionBuilders.LoadAction.Builder().build())
-                .build(),
-            deviceParameters
-        )
-            .setIconContent("smoke_icon")
-            .setChipColors(ChipDefaults.PRIMARY_COLORS)
-            .build()
+        val addSmokeChip = addSmokeChip(deviceParameters)
 
         // Build the layout using the created elements
         return LayoutElementBuilders.Layout.Builder()
@@ -166,6 +160,22 @@ class MainTileService : SuspendingTileService() {
             )
             .build()
     }
+
+    private fun addSmokeChip(
+        deviceParameters: DeviceParametersBuilders.DeviceParameters,
+    ): CompactChip =
+        CompactChip.Builder(
+            this,
+            androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
+                .setId(ADD_SMOKE_ACTION_ID)
+                .setOnClick(ActionBuilders.LoadAction.Builder().build())
+                .build(),
+            deviceParameters
+        )
+            .setTextContent(getString(R.string.add_smoke_track))
+            .setIconContent("smoke_icon")
+            .setChipColors(ChipDefaults.PRIMARY_COLORS)
+            .build()
 
     // Formats the last smoke time into a human-readable format
     private fun formatLastSmokeTime(timestamp: Long?): String {
@@ -190,15 +200,34 @@ class MainTileService : SuspendingTileService() {
         }
     }
 
+    private fun formatNextSmokePaceTime(
+        targetMinutes: Int?,
+        lastSmokeTimestamp: Long?,
+    ): String {
+        if (targetMinutes == null || targetMinutes <= 0 || lastSmokeTimestamp == null || lastSmokeTimestamp == 0L) {
+            return getString(R.string.pace_time_na)
+        }
+
+        val elapsedMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - lastSmokeTimestamp)
+        val remainingMinutes = (targetMinutes.toLong() - elapsedMinutes).coerceAtLeast(0L)
+
+        return if (remainingMinutes == 0L) {
+            getString(R.string.pace_ready_now)
+        } else {
+            remainingMinutes.toDurationLabel()
+        }
+    }
+
     companion object {
         private const val ADD_SMOKE_ACTION_ID = "add_smoke_action"
         private const val RESOURCES_VERSION = "1"
+        private const val WEAR_PRIMARY = 0xFF80F2D7.toInt()
+        private const val WEAR_ON_SURFACE = 0xFFF5FAF8.toInt()
     }
 
 }
 
-private fun Int.toGapLabel(): String {
-    if (this <= 0) return "--"
+private fun Long.toDurationLabel(): String {
     val hours = this / 60
     val minutes = this % 60
     return when {
@@ -207,5 +236,3 @@ private fun Int.toGapLabel(): String {
         else -> "${minutes}m"
     }
 }
-
-private fun Double.formatOneDecimal(): String = String.format("%.1f", this)
