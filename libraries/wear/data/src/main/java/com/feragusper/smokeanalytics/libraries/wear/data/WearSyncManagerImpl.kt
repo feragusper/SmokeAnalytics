@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.libraries.wear.data
 import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
 import com.feragusper.smokeanalytics.libraries.architecture.domain.utcMillis
+import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
@@ -11,15 +13,15 @@ import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
-import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
+import java.io.Closeable
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -38,20 +40,11 @@ class WearSyncManagerImpl(
      * Handles communication from the mobile app to the Wear OS device.
      *
      * @param smokeRepository The repository to fetch smoke data.
-     * @param coroutineScope The coroutine scope to execute async operations.
      */
     inner class Mobile(
         private val smokeRepository: SmokeRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
-        private val coroutineScope: CoroutineScope,
-    ) : WearSyncManager.Mobile, MessageClient.OnMessageReceivedListener {
-
-        /**
-         * Initializes the WearSyncManager by registering the message listener.
-         */
-        init {
-            Wearable.getMessageClient(context).addListener(this)
-        }
+    ) : WearSyncManager.Mobile {
 
         /**
          * Synchronizes the smoke count data with the connected Wear OS device.
@@ -64,26 +57,20 @@ class WearSyncManagerImpl(
             )
             respondToWearWithSmokeCount(
                 smokeCount = smokeCount,
-                targetGapMinutes = smokeCount.targetGapMinutes(preferences.awakeMinutesPerDay),
+                targetGapMinutes = smokeCount.dailyCapPaceMinutes(preferences)
+                    ?: smokeCount.targetGapMinutes(preferences.awakeMinutesPerDay),
                 averageSmokesPerDayWeek = smokeCount.averageSmokesPerDayWeek(),
             )
         }
 
-        /**
-         * Handles incoming messages from Wear OS devices.
-         *
-         * @param messageEvent The received message event.
-         */
-        override fun onMessageReceived(messageEvent: MessageEvent) {
-            Timber.d("onMessageReceived: ${messageEvent.path}")
-            coroutineScope.launch(dispatcherProvider.io()) {
-                when (messageEvent.path) {
-                    WearPaths.REQUEST_SMOKES -> syncWithWear()
-                    WearPaths.ADD_SMOKE -> {
-                        smokeRepository.addSmoke(Clock.System.now())
-                        syncWithWear()
-                    }
+        override suspend fun handleWearRequest(path: String) {
+            when (path) {
+                WearPaths.REQUEST_SMOKES -> syncWithWear()
+                WearPaths.ADD_SMOKE -> {
+                    smokeRepository.addSmoke(Clock.System.now())
+                    syncWithWear()
                 }
+                else -> Timber.w("Ignoring unknown Wear request: $path")
             }
         }
 
@@ -141,27 +128,43 @@ class WearSyncManagerImpl(
                 averageSmokesPerDayWeek: Double,
                 lastSmokeTimestamp: Long?,
             ) -> Unit
-        ) {
+        ): Closeable {
             Timber.d("listenForDataUpdates")
+
+            fun dispatchDataItem(dataItem: com.google.android.gms.wearable.DataItem) {
+                if (dataItem.uri.path != WearPaths.SMOKE_DATA) return
+
+                val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
+                onDataReceived(
+                    dataMap.getInt(WearPaths.SMOKE_COUNT_TODAY),
+                    dataMap.getInt(WearPaths.TARGET_GAP_MINUTES),
+                    dataMap.getDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK),
+                    dataMap.takeIf { it.containsKey(WearPaths.LAST_SMOKE_TIMESTAMP) }
+                        ?.getLong(WearPaths.LAST_SMOKE_TIMESTAMP),
+                )
+            }
 
             val dataChangedListener = DataClient.OnDataChangedListener { dataEvents ->
                 for (event in dataEvents) {
                     if (event.type == DataEvent.TYPE_CHANGED) {
-                        val dataItem = event.dataItem
-                        if (dataItem.uri.path == WearPaths.SMOKE_DATA) {
-                            val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-
-                            onDataReceived(
-                                dataMap.getInt(WearPaths.SMOKE_COUNT_TODAY),
-                                dataMap.getInt(WearPaths.TARGET_GAP_MINUTES),
-                                dataMap.getDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK),
-                                dataMap.getLong(WearPaths.LAST_SMOKE_TIMESTAMP),
-                            )
-                        }
+                        dispatchDataItem(event.dataItem)
                     }
                 }
             }
             dataClient.addListener(dataChangedListener)
+
+            dataClient.dataItems
+                .addOnSuccessListener { dataItems ->
+                    dataItems.forEach(::dispatchDataItem)
+                    dataItems.release()
+                }
+                .addOnFailureListener { error ->
+                    Timber.w(error, "Could not read latest Wear data item")
+                }
+
+            return Closeable {
+                dataClient.removeListener(dataChangedListener)
+            }
         }
 
         /**
@@ -210,6 +213,41 @@ class WearSyncManagerImpl(
 private fun SmokeCount.targetGapMinutes(awakeMinutesPerDay: Int): Int = when (val count = today.size) {
     0 -> awakeMinutesPerDay
     else -> (awakeMinutesPerDay / count).coerceAtLeast(1)
+}
+
+private fun SmokeCount.dailyCapPaceMinutes(preferences: UserPreferences): Int? {
+    val goal = preferences.activeGoal as? SmokingGoal.DailyCap ?: return null
+    val remainingSmokes = goal.maxCigarettesPerDay - today.size
+    if (remainingSmokes <= 0) return null
+
+    val remainingMinutes = preferences.remainingActiveMinutes()
+    return (remainingMinutes / remainingSmokes).coerceAtLeast(1)
+}
+
+private fun UserPreferences.remainingActiveMinutes(): Int {
+    if (dayStartHour !in 0..23 || bedtimeHour !in 0..23 || awakeMinutesPerDay <= 0) {
+        return awakeMinutesPerDay.coerceAtLeast(0)
+    }
+
+    val localTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time
+    val currentMinutes = localTime.hour * 60 + localTime.minute
+    val dayStartMinutes = dayStartHour * 60
+    val bedtimeMinutes = bedtimeHour * 60
+
+    if (bedtimeHour > dayStartHour) {
+        return when {
+            currentMinutes <= dayStartMinutes -> awakeMinutesPerDay
+            currentMinutes >= bedtimeMinutes -> 0
+            else -> (awakeMinutesPerDay - (currentMinutes - dayStartMinutes)).coerceAtLeast(0)
+        }
+    }
+
+    val minutesSinceStart = (currentMinutes - dayStartMinutes).mod(24 * 60)
+    return if (minutesSinceStart >= awakeMinutesPerDay) {
+        0
+    } else {
+        (awakeMinutesPerDay - minutesSinceStart).coerceAtLeast(0)
+    }
 }
 
 private fun SmokeCount.averageSmokesPerDayWeek(): Double = week / 7.0

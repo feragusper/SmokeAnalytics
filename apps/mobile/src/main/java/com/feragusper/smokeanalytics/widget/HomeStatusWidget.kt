@@ -1,7 +1,11 @@
 package com.feragusper.smokeanalytics.widget
 
-import android.content.Intent
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.SystemClock
+import android.util.TypedValue
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -9,8 +13,10 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.action.actionStartActivity
@@ -31,12 +37,20 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.feragusper.smokeanalytics.MainActivity
+import com.feragusper.smokeanalytics.R
+import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
+import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 
 class HomeStatusWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val snapshot = WidgetSnapshotStore.read(context)
+        val snapshot = WidgetSnapshotStore.readFreshOrStored(context)
         val openAppIntent = Intent(context, MainActivity::class.java)
         val quickAddIntent = Intent(context, MainActivity::class.java).apply {
             action = MainActivity.ACTION_WIDGET_QUICK_ADD
@@ -57,6 +71,15 @@ class HomeStatusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HomeStatusWidget()
 }
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+internal interface HomeStatusWidgetEntryPoint {
+    fun evaluateGoalProgressUseCase(): EvaluateGoalProgressUseCase
+    fun fetchSmokeCountListUseCase(): FetchSmokeCountListUseCase
+    fun fetchSmokesUseCase(): FetchSmokesUseCase
+    fun fetchUserPreferencesUseCase(): FetchUserPreferencesUseCase
+}
+
 @Composable
 private fun WidgetContent(
     snapshot: WidgetSnapshot,
@@ -66,8 +89,8 @@ private fun WidgetContent(
     val widgetSize = LocalSize.current
     val compact = widgetSize.height < 150.dp || widgetSize.width < 220.dp
     val elapsedMinutes = snapshot.elapsedHours * 60L + snapshot.elapsedMinutes
+    val remainingMinutes = snapshot.remainingMinutesUntilNextSmoke()
     val progressFraction = snapshot.progressFraction()
-    val status = snapshot.gapStatus()
 
     Column(
         modifier = GlanceModifier
@@ -85,8 +108,7 @@ private fun WidgetContent(
         )
         Spacer(GlanceModifier.height(if (compact) 6.dp else 10.dp))
         GapHeroCard(
-            elapsedLabel = elapsedMinutes.toDurationLabel(),
-            status = status,
+            remainingMinutes = remainingMinutes,
             targetLabel = snapshot.targetGapMinutes.toGapLabel(),
             progressFraction = progressFraction,
             compact = compact,
@@ -98,14 +120,12 @@ private fun WidgetContent(
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         ) {
             MetricCard(
-                marker = "TOD",
                 label = "Today",
                 value = snapshot.todayCount.toString(),
                 modifier = GlanceModifier.defaultWeight(),
             )
             Spacer(GlanceModifier.width(6.dp))
             MetricCard(
-                marker = "AVG",
                 label = "7d avg",
                 value = snapshot.averageSmokesPerDayWeek.formatOneDecimal(),
                 modifier = GlanceModifier.defaultWeight(),
@@ -113,9 +133,8 @@ private fun WidgetContent(
             if (!compact) {
                 Spacer(GlanceModifier.width(6.dp))
                 MetricCard(
-                    marker = "GAP",
-                    label = "Target",
-                    value = snapshot.targetGapMinutes.toGapLabel(),
+                    label = "Since last",
+                    value = elapsedMinutes.toDurationLabel(),
                     modifier = GlanceModifier.defaultWeight(),
                 )
             }
@@ -167,8 +186,7 @@ private fun WidgetHeader(
 
 @Composable
 private fun GapHeroCard(
-    elapsedLabel: String,
-    status: GapStatus,
+    remainingMinutes: Long,
     targetLabel: String,
     progressFraction: Float,
     compact: Boolean,
@@ -190,24 +208,26 @@ private fun GapHeroCard(
             verticalAlignment = Alignment.Vertical.CenterVertically,
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         ) {
-            StatusMarker(status)
-            Spacer(GlanceModifier.width(8.dp))
             Column(
                 modifier = GlanceModifier.defaultWeight(),
                 verticalAlignment = Alignment.Vertical.CenterVertically,
                 horizontalAlignment = Alignment.Horizontal.Start,
             ) {
                 Text(
-                    text = elapsedLabel,
+                    text = "Next smoke",
                     style = TextStyle(
-                        color = WidgetColors.Text,
-                        fontSize = if (compact) 20.sp else 26.sp,
+                        color = WidgetColors.Primary,
+                        fontSize = if (compact) 11.sp else 12.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                     maxLines = 1,
                 )
+                NextSmokeCountdown(
+                    remainingMinutes = remainingMinutes,
+                    compact = compact,
+                )
                 Text(
-                    text = status.message(targetLabel),
+                    text = "Target wait $targetLabel",
                     style = TextStyle(
                         color = WidgetColors.Muted,
                         fontSize = if (compact) 11.sp else 12.sp,
@@ -224,20 +244,51 @@ private fun GapHeroCard(
 }
 
 @Composable
-private fun StatusMarker(status: GapStatus) {
-    Text(
-        text = status.marker,
-        modifier = GlanceModifier
-            .background(status.container)
-            .cornerRadius(14.dp)
-            .padding(horizontal = 7.dp, vertical = 5.dp),
-        style = TextStyle(
-            color = status.content,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
+private fun NextSmokeCountdown(
+    remainingMinutes: Long,
+    compact: Boolean,
+) {
+    if (remainingMinutes <= 0L) {
+        Text(
+            text = "Ready now",
+            style = TextStyle(
+                color = WidgetColors.Text,
+                fontSize = if (compact) 22.sp else 28.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            maxLines = 1,
+        )
+        return
+    }
+
+    AndroidRemoteViews(
+        remoteViews = nextSmokeChronometerRemoteViews(
+            context = LocalContext.current,
+            remainingMinutes = remainingMinutes,
+            compact = compact,
         ),
-        maxLines = 1,
+        modifier = GlanceModifier.fillMaxWidth(),
     )
+}
+
+private fun nextSmokeChronometerRemoteViews(
+    context: Context,
+    remainingMinutes: Long,
+    compact: Boolean,
+): RemoteViews {
+    val base = SystemClock.elapsedRealtime() + remainingMinutes * MILLIS_PER_MINUTE
+    return RemoteViews(context.packageName, R.layout.widget_next_smoke_chronometer).apply {
+        setChronometer(R.id.widgetNextSmokeChronometer, base, null, true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            setChronometerCountDown(R.id.widgetNextSmokeChronometer, true)
+        }
+        setTextColor(R.id.widgetNextSmokeChronometer, WidgetColorInts.Text)
+        setTextViewTextSize(
+            R.id.widgetNextSmokeChronometer,
+            TypedValue.COMPLEX_UNIT_SP,
+            if (compact) 22f else 28f,
+        )
+    }
 }
 
 @Composable
@@ -275,7 +326,6 @@ private fun ProgressDot(
 
 @Composable
 private fun MetricCard(
-    marker: String,
     label: String,
     value: String,
     modifier: GlanceModifier = GlanceModifier,
@@ -288,15 +338,6 @@ private fun MetricCard(
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.Start,
     ) {
-        Text(
-            text = marker,
-            style = TextStyle(
-                color = WidgetColors.Primary,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-            ),
-            maxLines = 1,
-        )
         Text(
             text = value,
             style = TextStyle(
@@ -328,10 +369,10 @@ private fun QuickAddChip(
             .background(WidgetColors.Primary)
             .cornerRadius(999.dp)
             .clickable(actionStartActivity(intent))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         style = TextStyle(
             color = WidgetColors.OnPrimary,
-            fontSize = 12.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
         ),
         maxLines = 1,
@@ -358,60 +399,26 @@ private fun Long.toDurationLabel(): String {
     }
 }
 
+private fun WidgetSnapshot.remainingMinutesUntilNextSmoke(): Long {
+    val target = targetGapMinutes.takeIf { it > 0 } ?: return 0L
+    val elapsed = elapsedHours * 60L + elapsedMinutes
+    return (target - elapsed).coerceAtLeast(0L)
+}
+
 private fun WidgetSnapshot.progressFraction(): Float {
     val target = targetGapMinutes.takeIf { it > 0 } ?: return 1f
     val elapsed = elapsedHours * 60L + elapsedMinutes
     return (elapsed.toFloat() / target.toFloat()).coerceIn(0f, 1f)
 }
 
-private fun WidgetSnapshot.gapStatus(): GapStatus {
-    val target = targetGapMinutes
-    val elapsed = elapsedHours * 60L + elapsedMinutes
-    return when {
-        target <= 0 -> GapStatus.Steady
-        elapsed >= target -> GapStatus.Ready
-        progressFraction() >= 0.66f -> GapStatus.Near
-        else -> GapStatus.Building
-    }
-}
-
 private fun Double.formatOneDecimal(): String = String.format("%.1f", this)
 
-private enum class GapStatus(
-    val marker: String,
-    val container: ColorProvider,
-    val content: ColorProvider,
-) {
-    Ready(
-        marker = "OK",
-        container = ColorProvider(Color(0xFFD9F1E3)),
-        content = ColorProvider(Color(0xFF0E5B35)),
-    ),
-    Near(
-        marker = "GAP",
-        container = ColorProvider(Color(0xFFFFE8C2)),
-        content = ColorProvider(Color(0xFF7A4A00)),
-    ),
-    Building(
-        marker = "GAP",
-        container = ColorProvider(Color(0xFFFFDAD6)),
-        content = ColorProvider(Color(0xFF8C1D18)),
-    ),
-    Steady(
-        marker = "NOW",
-        container = ColorProvider(Color(0xFFE0EEF0)),
-        content = ColorProvider(Color(0xFF234F55)),
-    );
-
-    fun message(targetLabel: String): String = when (this) {
-        Ready -> "Past target $targetLabel"
-        Near -> "Close to target $targetLabel"
-        Building -> "Building toward $targetLabel"
-        Steady -> "Keep the gap steady"
-    }
-}
-
 private const val ProgressDotCount = 5
+private const val MILLIS_PER_MINUTE = 60_000L
+
+private object WidgetColorInts {
+    const val Text = 0xFF101414.toInt()
+}
 
 private object WidgetColors {
     val Background = ColorProvider(Color(0xFFF5FAF8))
