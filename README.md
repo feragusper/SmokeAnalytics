@@ -210,6 +210,8 @@ GitHub Actions drive the main repository automation:
 - `deployment_playstore.yml`: Android release path
 - `deploy-web-hosting.yml`: production web deploy path
 
+Wear OS Play setup is documented in [docs/play-store-wear-os.md](docs/play-store-wear-os.md).
+
 Release notes are expected in GitHub Releases, not as a growing set of historical markdown files in the repo.
 
 ## Contributor Notes

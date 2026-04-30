@@ -1,6 +1,5 @@
 import com.google.common.base.Charsets
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.util.Properties
@@ -12,26 +11,8 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
-val gitCode: Int by lazy {
-    val stdout = ByteArrayOutputStream()
-    val process = ProcessBuilder("git", "rev-list", "--count", "HEAD")
-        .directory(rootProject.projectDir)
-        .redirectErrorStream(true)
-        .start()
-
-    process.inputStream.use { inputStream ->
-        inputStream.copyTo(stdout)
-    }
-
-    val exitCode = process.waitFor()
-    if (exitCode != 0) {
-        throw IllegalStateException("Git command failed with exit code $exitCode")
-    }
-
-    stdout.toString().trim().toInt()
-}
-
-val majorMinorPatchVersionName = "0.3.0.$gitCode"
+val wearVersionCode: Int by lazy { smokeWearVersionCode(rootProject.projectDir) }
+val wearVersionName = smokeAndroidVersionName(rootProject.projectDir)
 
 android {
     namespace = "com.feragusper.smokeanalytics"
@@ -41,8 +22,8 @@ android {
         applicationId = "com.feragusper.smokeanalytics"
         minSdk = Android.MIN_SDK
         targetSdk = Android.TARGET_SDK
-        versionCode = gitCode
-        versionName = majorMinorPatchVersionName
+        versionCode = wearVersionCode
+        versionName = wearVersionName
     }
 
     signingConfigs {
@@ -154,4 +135,12 @@ dependencies {
     implementation(libs.androidx.tiles.material)
 
     ksp(libs.hilt.compiler)
+}
+
+tasks.register("printWearVersionCode") {
+    doLast { println(wearVersionCode) }
+}
+
+tasks.register("printWearVersionName") {
+    doLast { println(wearVersionName) }
 }

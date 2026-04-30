@@ -84,6 +84,9 @@ jobs:
       - name: Build Android App Bundle
         run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
 
+      - name: Build Wear OS App Bundle
+        run: ./gradlew :apps:wear:bundleProductionRelease --stacktrace
+
       - name: Build & deploy Android release to Play Store
         run: bundler exec fastlane android deploy_playstore
 
@@ -92,6 +95,8 @@ jobs:
         run: |
           echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
+          echo "wear_version_name=$(${{ github.workspace }}/gradlew -q :apps:wear:printWearVersionName)" >> "$GITHUB_OUTPUT"
+          echo "wear_version_code=$(${{ github.workspace }}/gradlew -q :apps:wear:printWearVersionCode)" >> "$GITHUB_OUTPUT"
 
       - name: Push Git Tag
         id: push_android_tag

@@ -45,6 +45,9 @@ fun smokeProductVersion(rootDir: File): String =
 fun smokeAndroidVersionName(rootDir: File): String =
     "${smokeProductVersion(rootDir)}.${smokeGitCode(rootDir)}"
 
+fun smokeWearVersionCode(rootDir: File): Int =
+    1_000_000_000 + smokeGitCode(rootDir)
+
 fun smokeWebVersionName(
     rootDir: File,
     env: String,
