@@ -1,21 +1,28 @@
 default_platform(:android)
 
 platform :android do
-  desc "Deploy the production release to Google Play Store beta channel"
+  desc "Deploy the production release to Google Play Store open testing tracks"
   lane :deploy_playstore do |options|
-    upload_options = {
+    common_upload_options = {
       release_status: "completed",                       # Marks the release as final.
-      track: "beta",                                     # Deploys to the beta channel.
       timeout: 600,                                      # Timeout for the upload process (in seconds).
       json_key: "playstore.credentials.json",            # Path to the service account JSON key.
       package_name: "com.feragusper.smokeanalytics",     # The package name of the application.
-      aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab", # Path to the AAB file.
       skip_upload_apk: true
     }
 
-    # Upload the Android App Bundle (AAB) to Google Play.
-    # Ensure the service account JSON key is available at the specified path.
-    # This lane deploys to the beta track with a 'completed' release status.
-    upload_to_play_store(upload_options)
+    upload_to_play_store(
+      common_upload_options.merge(
+        track: "wear:beta",
+        aab: "apps/wear/build/outputs/bundle/productionRelease/wear-production-release.aab"
+      )
+    )
+
+    upload_to_play_store(
+      common_upload_options.merge(
+        track: "beta",
+        aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab"
+      )
+    )
   end
 end
