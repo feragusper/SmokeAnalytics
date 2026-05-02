@@ -17,6 +17,30 @@ Before the GitHub release workflow can publish Wear OS, configure the form facto
 
 Google reviews the Wear OS experience before it becomes available on Play.
 
+## Store Listing Requirements
+
+The Wear OS app includes a launchable watch app and a Tile. Google Play Wear OS quality requirement `WO-G2` requires the Play listing description to:
+
+- list the main app features
+- mention `tile` when a Tile is included
+- mention `complication` only if a complication is included
+- avoid the deprecated term `Android Wear`
+- be localized in every language offered by the app listing
+
+SmokeAnalytics does not currently include a Wear OS complication. Do not mention complications unless one is added.
+
+Use listing copy that explicitly mentions the Tile. Example English copy:
+
+```text
+Smoke Analytics helps you track smoking activity and monitor your daily pace from your phone and Wear OS watch. The watch app lets you check today's count, see your next pace target, and quickly record a smoke. The included Wear OS tile shows your current status at a glance and provides a quick Track action from the tile surface.
+```
+
+Example Spanish copy:
+
+```text
+Smoke Analytics te ayuda a registrar tu consumo y seguir tu ritmo diario desde el movil y desde tu reloj Wear OS. La app del reloj permite consultar el conteo de hoy, ver el proximo objetivo de ritmo y registrar un consumo rapidamente. El tile de Wear OS incluido muestra tu estado de un vistazo y ofrece una accion rapida para registrar desde el tile.
+```
+
 ## Automated Release Behavior
 
 The `deployment_playstore.yml` workflow builds:
