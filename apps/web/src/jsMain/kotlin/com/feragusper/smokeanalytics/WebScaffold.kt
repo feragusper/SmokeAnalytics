@@ -25,7 +25,6 @@ fun WebScaffold(
         NavItem("/icons/nav-home.svg", "Home", WebRoute.Home),
         NavItem("/icons/nav-analytics.svg", "Analytics & Map", WebRoute.Analytics),
         NavItem("/icons/nav-history.svg", "History", WebRoute.History),
-        NavItem("/icons/nav-guide.svg", "The Guide", WebRoute.Coach),
         NavItem("/icons/nav-you.svg", "You", WebRoute.Settings),
     )
 

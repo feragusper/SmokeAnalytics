@@ -74,7 +74,7 @@ fun AuthenticationViewState.Render(
                 Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;max-width:720px;") }) {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Restore the product shell") }
                     Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                        Text("Sign in with Google to recover synced history, settings, coach context, and the full multi-device product flow.")
+                        Text("Sign in with Google to recover synced history, settings, and the full multi-device product flow.")
                     }
                 }
 
@@ -92,9 +92,9 @@ fun AuthenticationViewState.Render(
                         body = "Restore preferences like day-start hour, pack price, and location tracking."
                     )
                     AuthValueCard(
-                        title = "Coach",
+                        title = "Goals",
                         value = "Context-aware",
-                        body = "Give the guide enough recent behavior to produce relevant prompts and fallback insight."
+                        body = "Keep reduction targets and product preferences tied to the same account."
                     )
                 }
 
@@ -121,7 +121,7 @@ fun AuthenticationViewState.Render(
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Before you continue") }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("The redesign keeps the same product capabilities: fast smoke logging, analytics and map insights, archive editing, coach guidance, and settings sync.")
+                    Text("The redesign keeps the same product capabilities: fast smoke logging, analytics and map insights, archive editing, goals, and settings sync.")
                 }
             }
         }
