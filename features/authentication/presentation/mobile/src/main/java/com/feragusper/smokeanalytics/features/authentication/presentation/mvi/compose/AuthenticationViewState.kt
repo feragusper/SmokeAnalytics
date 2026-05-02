@@ -141,7 +141,7 @@ private fun AuthHeroCard() {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Sign in with Google to recover history, restore preferences, and keep the coach grounded in your recent smoking context.",
+                text = "Sign in with Google to recover history, restore preferences, and keep your product state synced across devices.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -211,8 +211,8 @@ private fun AuthHighlightsCard() {
                 body = "Pack price, day-start hour, and map preferences stay stable across devices.",
             )
             AuthHighlightRow(
-                title = "Coach",
-                body = "Insights keep their context instead of starting from a blank session.",
+                title = "Goals",
+                body = "Reduction targets and product preferences stay tied to the same account.",
             )
         }
     }
@@ -256,7 +256,7 @@ private fun SupportCard() {
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Logging, analytics, map insights, archive editing, and coaching all stay intact. This screen only restores the account context around them.",
+                text = "Logging, analytics, map insights, archive editing, goals, and settings all stay intact. This screen only restores the account context around them.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

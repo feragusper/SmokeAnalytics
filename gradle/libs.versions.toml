@@ -16,7 +16,6 @@ firebaseApp = "2.4.0"
 firebaseAuth = "2.4.0"
 firebaseBOM = "34.12.0"
 firebaseFirestore = "2.4.0"
-generativeai = "0.9.0"
 googleid = "1.2.0"
 glance = "1.1.1"
 gradle = "9.2.0"
@@ -92,7 +91,6 @@ firebase-app = { module = "dev.gitlive:firebase-app", version.ref = "firebaseApp
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBOM" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
 gitlive-firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebaseAuth" }
 gitlive-firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebaseFirestore" }
 hilt = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }

@@ -1,14 +1,10 @@
 {
-  "functions": {
-    "source": "functions"
-  },
   "hosting": [
     {
       "target": "staging",
       "public": "apps/web/build/firebaseHosting",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
-        { "source": "/api/coach", "function": "coachRelay" },
         { "source": "**", "destination": "/index.html" }
       ]
     },
@@ -17,7 +13,6 @@
       "public": "apps/web/build/firebaseHosting",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
-        { "source": "/api/coach", "function": "coachRelay" },
         { "source": "**", "destination": "/index.html" }
       ]
     }

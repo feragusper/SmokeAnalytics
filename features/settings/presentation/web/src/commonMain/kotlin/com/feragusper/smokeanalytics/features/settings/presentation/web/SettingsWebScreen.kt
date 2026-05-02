@@ -388,7 +388,7 @@ private fun SignInCard(
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;max-width:720px;") }) {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Session") }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and the right context for coach insights.")
+                    Text("Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and goals across devices.")
                 }
             }
 
@@ -406,9 +406,9 @@ private fun SignInCard(
                     body = "Keep edits and older smoke entries connected to the same account."
                 )
                 SessionValueCard(
-                    title = "Coach",
-                    value = "Relevant context",
-                    body = "Give the guide enough recent behavior to stay grounded instead of generic."
+                    title = "Goals",
+                    value = "Stable targets",
+                    body = "Keep reduction targets and product preferences connected to the same account."
                 )
             }
 

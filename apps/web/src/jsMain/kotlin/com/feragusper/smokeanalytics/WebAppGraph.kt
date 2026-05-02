@@ -1,7 +1,5 @@
 package com.feragusper.smokeanalytics
 
-import com.feragusper.smokeanalytics.apps.web.CoachRelayRepository
-import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
@@ -53,7 +51,6 @@ data class WebAppGraph(
     val deleteSmokeUseCase: DeleteSmokeUseCase,
     val fetchSmokesUseCase: FetchSmokesUseCase,
     val fetchSmokeStatsUseCase: FetchSmokeStatsUseCase,
-    val chatbotUseCase: ChatbotUseCase,
     val signInWithGoogleWeb: suspend () -> Unit,
 ) {
     companion object {
@@ -104,13 +101,6 @@ data class WebAppGraph(
             val fetchSmokes = FetchSmokesUseCase(smokeRepo)
             val fetchStats = FetchSmokeStatsUseCase(smokeRepo)
             val fetchSmokeCounts = FetchSmokeCountListUseCase(smokeRepo)
-            val chatbotRepository = CoachRelayRepository()
-            val chatbotUseCase = ChatbotUseCase(
-                smokeRepository = smokeRepo,
-                authRepository = authRepo,
-                chatbotRepository = chatbotRepository,
-            )
-
             val homeProcessHolder = HomeProcessHolder(
                 addSmokeUseCase = addSmoke,
                 editSmokeUseCase = editSmoke,
@@ -140,7 +130,6 @@ data class WebAppGraph(
                 deleteSmokeUseCase = deleteSmoke,
                 fetchSmokesUseCase = fetchSmokes,
                 fetchSmokeStatsUseCase = fetchStats,
-                chatbotUseCase = chatbotUseCase,
                 signInWithGoogleWeb = signInWithGoogleWeb,
             )
         }

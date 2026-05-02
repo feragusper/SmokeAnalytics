@@ -1,7 +1,5 @@
 package com.feragusper.smokeanalytics
 
-import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotRepository
-import com.feragusper.smokeanalytics.features.chatbot.domain.ChatbotUseCase
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
@@ -78,14 +76,4 @@ object UseCasesModule {
         repo: UserPreferencesRepository
     ) = UpdateUserPreferencesUseCase(repo)
 
-    @Provides
-    fun provideChatbotUseCase(
-        smokeRepository: SmokeRepository,
-        authenticationRepository: AuthenticationRepository,
-        chatbotRepository: ChatbotRepository
-    ) = ChatbotUseCase(
-        smokeRepository = smokeRepository,
-        authRepository = authenticationRepository,
-        chatbotRepository = chatbotRepository
-    )
 }

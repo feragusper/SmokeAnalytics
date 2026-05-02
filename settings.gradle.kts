@@ -41,9 +41,6 @@ include(":features:settings:presentation:mobile")
 include(":features:settings:presentation:web")
 include(":features:stats:presentation:mobile")
 include(":features:stats:presentation:web")
-include(":features:chatbot:presentation")
-include(":features:chatbot:domain")
-include(":features:chatbot:data")
 
 // Include library modules
 include(":libraries:architecture:common")

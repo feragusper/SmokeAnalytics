@@ -39,16 +39,12 @@ jobs:
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
-          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}
-          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY }}
           GOOGLE_MAPS_ANDROID_API_KEY_STAGING: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_STAGING }}
           GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION }}
         shell: bash
         run: |
           echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID > ./local.properties
           echo google.auth.server.client.id.staging=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING >> ./local.properties
-          echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY >> ./local.properties
-          echo google.ai.client.generativeai.api.key.staging=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.production=$GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION >> ./local.properties
           echo google.maps.android.api.key.staging=$GOOGLE_MAPS_ANDROID_API_KEY_STAGING >> ./local.properties
           ./gradlew :apps:web:prepareFirebaseHosting -Psmoke.env=${{ inputs.env }} --no-configuration-cache --rerun-tasks
@@ -60,39 +56,27 @@ jobs:
           echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:web:printWebVersionName -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
           echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:web:printWebReleaseTag -Psmoke.env=prod)" >> "$GITHUB_OUTPUT"
 
-      - name: Install Firebase Functions dependencies
-        run: npm --prefix functions install
-
       - name: Select Firebase project settings
         id: firebase_env
         shell: bash
         env:
           FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS_STAGING: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS_STAGING }}
           FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS }}
-          WEB_COACH_GEMINI_API_KEY_STAGING: ${{ secrets.WEB_COACH_GEMINI_API_KEY_STAGING }}
-          WEB_COACH_GEMINI_API_KEY_PROD: ${{ secrets.WEB_COACH_GEMINI_API_KEY_PROD }}
         run: |
           if [ "${{ inputs.env }}" = "prod" ]; then
             echo "$FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS" > "$RUNNER_TEMP/firebase-service-account.json"
-            printf "%s" "$WEB_COACH_GEMINI_API_KEY_PROD" > "$RUNNER_TEMP/coach-gemini-api-key.txt"
             echo "project_id=smoke-analytics" >> "$GITHUB_OUTPUT"
             echo "hosting_target=prod" >> "$GITHUB_OUTPUT"
           else
             echo "$FIREBASE_SERVICE_ACCOUNT_SMOKE_ANALYTICS_STAGING" > "$RUNNER_TEMP/firebase-service-account.json"
-            printf "%s" "$WEB_COACH_GEMINI_API_KEY_STAGING" > "$RUNNER_TEMP/coach-gemini-api-key.txt"
             echo "project_id=smoke-analytics-staging" >> "$GITHUB_OUTPUT"
             echo "hosting_target=staging" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Sync coach relay secret
+      - name: Deploy Firebase Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools@15.13.0 functions:secrets:set COACH_GEMINI_API_KEY --project "${{ steps.firebase_env.outputs.project_id }}" --data-file "${{ runner.temp }}/coach-gemini-api-key.txt" --force
-
-      - name: Deploy Firebase Hosting + coach relay
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: npx firebase-tools@15.13.0 deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "functions:coachRelay,hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive --force
+        run: npx firebase-tools@15.13.0 deploy --project "${{ steps.firebase_env.outputs.project_id }}" --only "hosting:${{ steps.firebase_env.outputs.hosting_target }}" --non-interactive
 
       - name: Push Web Git Tag
         if: ${{ inputs.env == 'prod' }}

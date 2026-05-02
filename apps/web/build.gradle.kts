@@ -77,7 +77,6 @@ kotlin {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:smokes:data:web"))
                 implementation(project(":features:authentication:presentation:web"))
-                implementation(project(":features:chatbot:domain"))
                 implementation(project(":features:goals:domain"))
                 implementation(project(":features:history:presentation:web"))
                 implementation(project(":features:home:domain"))

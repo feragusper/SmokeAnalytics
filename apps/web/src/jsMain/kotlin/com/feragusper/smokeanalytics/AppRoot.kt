@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.apps.web.AnalyticsTab
 import com.feragusper.smokeanalytics.apps.web.AnalyticsWebScreen
-import com.feragusper.smokeanalytics.apps.web.CoachWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebStateHolder
 import com.feragusper.smokeanalytics.apps.web.SettingsAboutWebScreen
@@ -116,7 +115,6 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> "Smoke Analytics | Home"
             WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
-            WebRoute.Coach -> "Smoke Analytics | The Guide"
             WebRoute.Settings -> "Smoke Analytics | You"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
@@ -181,10 +179,6 @@ fun AppRoot(graph: WebAppGraph) {
                         embedded = true,
                     )
                 },
-            )
-
-            WebRoute.Coach -> CoachWebScreen(
-                chatbotUseCase = graph.chatbotUseCase,
             )
 
             WebRoute.Settings -> SettingsAboutWebScreen(
