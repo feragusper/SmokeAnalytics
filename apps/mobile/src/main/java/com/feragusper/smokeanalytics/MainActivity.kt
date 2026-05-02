@@ -255,7 +255,6 @@ private fun MainContainerScreen(
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Analytics,
         BottomNavigationScreens.History,
-        BottomNavigationScreens.Coach,
         BottomNavigationScreens.You,
     )
     val snackbarHostState = remember { SnackbarHostState() }
@@ -536,10 +535,6 @@ private fun MainScreenNavigationConfigurations(
                 navigateToAuthentication = navigateToAuthentication,
             )
         }
-        composable(route = BottomNavigationScreens.Coach.route) {
-            onFabConfigChanged(false, ElapsedTone.Urgent, null)
-            CoachMobileDestination()
-        }
         composable(route = BottomNavigationScreens.You.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             SettingsMobileDestination()
@@ -609,8 +604,6 @@ private sealed class BottomNavigationScreens(
         route = "history",
         iconId = R.drawable.ic_history,
     )
-
-    data object Coach : BottomNavigationScreens(route = "coach", iconId = R.drawable.ic_chatbot)
 
     /**
      * The personal destination for account, preferences, and goals entry.

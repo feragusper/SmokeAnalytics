@@ -517,7 +517,7 @@ private fun SessionCard(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(
-                    text = "Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and the right context for coach insights.",
+                    text = "Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and goals across devices.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -542,9 +542,9 @@ private fun SessionCard(
 
                 SessionBenefitCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = "Coach",
-                    value = "Context",
-                    body = "Give the guide enough recent behavior to stay grounded instead of generic.",
+                    title = "Goals",
+                    value = "Targets",
+                    body = "Keep reduction targets and product preferences connected to the same account.",
                 )
 
                 signInErrorMessage?.let { message ->

@@ -47,7 +47,6 @@ jobs:
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
           GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING }}
-          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING }}
           GOOGLE_MAPS_ANDROID_API_KEY_STAGING: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_STAGING }}
           GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION }}
           GOOGLE_SERVICES_JSON_STAGING: ${{ secrets.GOOGLE_SERVICES_JSON_STAGING }}
@@ -56,7 +55,6 @@ jobs:
         run: |
           echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID > ./local.properties
           echo google.auth.server.client.id.staging=$GOOGLE_AUTH_SERVER_CLIENT_ID_STAGING >> ./local.properties
-          echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.staging=$GOOGLE_MAPS_ANDROID_API_KEY_STAGING >> ./local.properties
           echo google.maps.android.api.key.production=$GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION >> ./local.properties
 
@@ -83,9 +81,6 @@ jobs:
           fi
 
           echo "✅ Production google-services.json prepared."
-
-      - name: Validate coach relay function syntax
-        run: node --check functions/index.js
 
       - name: Run Gradle checks
         shell: bash

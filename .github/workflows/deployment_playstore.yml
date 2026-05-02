@@ -27,13 +27,11 @@ jobs:
         shell: bash
         env:
           GOOGLE_AUTH_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_AUTH_SERVER_CLIENT_ID }}
-          GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY: ${{ secrets.GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY }}
           GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION: ${{ secrets.GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           echo google.auth.server.client.id=$GOOGLE_AUTH_SERVER_CLIENT_ID > ./local.properties
-          echo google.ai.client.generativeai.api.key=$GOOGLE_AI_CLIENT_GENERATIVEAI_API_KEY >> ./local.properties
           echo google.maps.android.api.key.production=$GOOGLE_MAPS_ANDROID_API_KEY_PRODUCTION >> ./local.properties
 
           echo "✅ local.properties configured for production."

@@ -11,12 +11,11 @@
 
 Smoke Analytics is a Kotlin Multiplatform smoking journal focused on one thing: making patterns visible without turning the product into noise.
 
-The current `0.12.0` product is organized around five core destinations:
+The current `0.12.0` product is organized around four core destinations:
 
 - `The Pulse`: today, the last cigarette, pace, goals, and short status cues
 - `Analytics & Map`: smoking frequency and geographic clustering from one destination
 - `The Archive`: list and calendar views for the detailed smoking log
-- `The Guide`: contextual coaching with live-model or fallback guidance
 - `You`: account, preferences, goals, and product actions in one place
 
 ## Platforms
@@ -45,12 +44,6 @@ The current `0.12.0` product is organized around five core destinations:
 - add, edit, and delete entries
 - date navigation and archive scanning
 
-### The Guide
-- initial insight based on recent smoking context
-- intent-based prompts for cravings, stress, and progress
-- live-model replies when available
-- graceful fallback guidance when live replies are unavailable
-
 ### You
 - authentication state
 - goals
@@ -69,7 +62,6 @@ apps/
 
 features/
   authentication/
-  chatbot/
   goals/
   history/
   home/
@@ -84,9 +76,6 @@ libraries/
   preferences/
   smokes/
   wear/
-
-functions/
-  Firebase Functions used by the web product
 
 docs/
   releases/
@@ -109,7 +98,6 @@ Each feature or library follows the same general split when needed:
 - Firebase
 - Kotlin Coroutines / Flow
 - Compose for Web
-- Firebase Functions for the secure web coach relay
 
 ## Local Setup
 
@@ -117,7 +105,7 @@ Each feature or library follows the same general split when needed:
 
 - Java 17
 - Android Studio with Android SDK installed
-- Node.js available for the Firebase Functions and web deploy tooling
+- Node.js available for web deploy tooling
 
 ### Android / shared app configuration
 
@@ -127,26 +115,11 @@ Local Android and product-specific keys live in `local.properties`. Typical entr
 - `google.auth.server.client.id.staging` for staging
 - `google.maps.android.api.key.staging`
 - `google.maps.android.api.key.production`
-- `google.ai.client.generativeai.api.key.staging`
-- `google.ai.client.generativeai.api.key.production`
 
 The mobile Firebase configs used by the current repo live at:
 
 - `apps/mobile/src/staging/google-services.json`
 - `apps/mobile/src/production/google-services.json`
-
-### Web coach relay
-
-The web coach no longer uses a browser-side Gemini key. It goes through Firebase Functions.
-
-For GitHub-hosted deploys, the required repository secrets are:
-
-- `WEB_COACH_GEMINI_API_KEY_STAGING`
-- `WEB_COACH_GEMINI_API_KEY_PROD`
-
-Those are used by the release workflow to populate the Firebase Functions secret `COACH_GEMINI_API_KEY`.
-
-You do not need to add those web relay secrets to `local.properties` unless you are intentionally building your own manual deploy path outside the repository workflows.
 
 ## Build And Run
 

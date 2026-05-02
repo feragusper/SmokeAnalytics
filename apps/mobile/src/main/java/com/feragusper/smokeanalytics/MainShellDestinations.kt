@@ -19,9 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
-import com.feragusper.smokeanalytics.features.chatbot.presentation.ChatbotView
-import com.feragusper.smokeanalytics.features.chatbot.presentation.ChatbotViewModel
-import com.feragusper.smokeanalytics.features.chatbot.presentation.navigation.ChatbotNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryView
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryViewModel
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
@@ -139,13 +136,6 @@ fun AnalyticsMobileDestination(
             )
         }
     }
-}
-
-@Composable
-fun CoachMobileDestination() {
-    val viewModel = hiltViewModel<ChatbotViewModel>()
-    viewModel.navigator = remember { ChatbotNavigator() }
-    ChatbotView(viewModel = viewModel)
 }
 
 @Composable
