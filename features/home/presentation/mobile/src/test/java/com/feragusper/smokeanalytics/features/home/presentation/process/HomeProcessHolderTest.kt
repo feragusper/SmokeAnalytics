@@ -5,23 +5,27 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import io.mockk.Runs
-import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -77,6 +81,14 @@ class HomeProcessHolderTest {
         coEvery { syncWithWearUseCase.invoke() } just Runs
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
         coEvery { updateUserPreferencesUseCase.invoke(any()) } just Runs
+        coEvery { locationCaptureService.locationTrackingAvailability(any()) } answers {
+            val preferenceEnabled = firstArg<Boolean>()
+            LocationTrackingAvailability(
+                preferenceEnabled = preferenceEnabled,
+                permissionGranted = preferenceEnabled,
+                providerEnabled = preferenceEnabled,
+            )
+        }
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
         coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
         coEvery { fetchSmokesUseCase.invoke(any(), any()) } returns emptyList()
@@ -108,6 +120,45 @@ class HomeProcessHolderTest {
                 awaitComplete()
             }
         }
+
+        @Test
+        fun `WHEN location preference is enabled and ready THEN add smoke captures location`() = runTest {
+            val locationSlot = slot<GeoPoint>()
+            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
+            coEvery { locationCaptureService.captureCurrentLocation() } returns Coordinate(12.3, 45.6)
+            coEvery { addSmokeUseCase.invoke(any(), any()) } just Runs
+
+            processHolder.processIntent(HomeIntent.AddSmoke).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                coVerify(exactly = 1) {
+                    addSmokeUseCase.invoke(any(), capture(locationSlot))
+                }
+                locationSlot.captured.latitude shouldBeEqualTo 12.3
+                locationSlot.captured.longitude shouldBeEqualTo 45.6
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN location preference is enabled but permission is missing THEN add smoke skips location capture`() =
+            runTest {
+                coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
+                coEvery { locationCaptureService.locationTrackingAvailability(true) } returns LocationTrackingAvailability(
+                    preferenceEnabled = true,
+                    permissionGranted = false,
+                    providerEnabled = true,
+                )
+                coEvery { addSmokeUseCase.invoke(any(), null) } just Runs
+
+                processHolder.processIntent(HomeIntent.AddSmoke).test {
+                    awaitItem() shouldBeEqualTo HomeResult.Loading
+                    awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                    coVerify(exactly = 0) { locationCaptureService.captureCurrentLocation() }
+                    coVerify(exactly = 1) { addSmokeUseCase.invoke(any(), null) }
+                    awaitComplete()
+                }
+            }
 
         @Test
         fun `WHEN editing smoke THEN it returns success and syncs with Wear`() = runTest {

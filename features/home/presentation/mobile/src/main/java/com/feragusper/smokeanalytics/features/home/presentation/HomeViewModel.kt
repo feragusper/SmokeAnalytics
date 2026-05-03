@@ -150,6 +150,7 @@ class HomeViewModel @Inject constructor(
                     dayStartHour = result.preferences.dayStartHour,
                     bedtimeHour = result.preferences.bedtimeHour,
                     canStartNewDay = result.canStartNewDay,
+                    locationTrackingAvailability = result.locationTrackingAvailability,
                     elapsedTone = elapsedToneFrom(
                         result.smokeCountListResult.timeSinceLastCigarette.first,
                         result.smokeCountListResult.timeSinceLastCigarette.second,

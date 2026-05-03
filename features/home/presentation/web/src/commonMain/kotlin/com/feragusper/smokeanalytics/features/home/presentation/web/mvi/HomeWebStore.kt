@@ -105,6 +105,7 @@ class HomeWebStore(
                 bedtimeHour = result.preferences.bedtimeHour,
                 currencySymbol = result.preferences.currencySymbol,
                 canStartNewDay = result.canStartNewDay,
+                locationTrackingAvailability = result.locationTrackingAvailability,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
                     result.smokeCountListResult.timeSinceLastCigarette.second,
