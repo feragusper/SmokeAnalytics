@@ -225,7 +225,10 @@ class HistoryProcessHolder @Inject constructor(
                 emit(HistoryResult.Loading)
                 val preferences = fetchUserPreferencesUseCase()
                 val timeZone = TimeZone.currentSystemDefault()
-                val location = if (preferences.locationTrackingEnabled) {
+                val locationAvailability = locationCaptureService.locationTrackingAvailability(
+                    preferences.locationTrackingEnabled
+                )
+                val location = if (locationAvailability.isReady) {
                     locationCaptureService.captureCurrentLocation()?.let {
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
                     }

@@ -91,6 +91,9 @@ class HomeProcessHolder @Inject constructor(
             is Session.LoggedIn -> {
                 emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
                 val preferences = fetchUserPreferencesUseCase()
+                val locationTrackingAvailability = locationCaptureService.locationTrackingAvailability(
+                    preferences.locationTrackingEnabled
+                )
                 val smokeCounts = fetchSmokeCountListUseCase.invoke(
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
@@ -129,6 +132,7 @@ class HomeProcessHolder @Inject constructor(
                             dayStartHour = preferences.dayStartHour,
                             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                         ),
+                        locationTrackingAvailability = locationTrackingAvailability,
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
@@ -202,7 +206,10 @@ class HomeProcessHolder @Inject constructor(
             is Session.LoggedIn -> {
                 emit(HomeResult.Loading)
                 val preferences = fetchUserPreferencesUseCase()
-                val location = if (preferences.locationTrackingEnabled) {
+                val locationAvailability = locationCaptureService.locationTrackingAvailability(
+                    preferences.locationTrackingEnabled
+                )
+                val location = if (locationAvailability.isReady) {
                     locationCaptureService.captureCurrentLocation()?.let {
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
                     }

@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
@@ -41,6 +42,11 @@ data class HomeViewState(
     val currencySymbol: String = "€",
     val canStartNewDay: Boolean = false,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
+    val locationTrackingAvailability: LocationTrackingAvailability = LocationTrackingAvailability(
+        preferenceEnabled = false,
+        permissionGranted = false,
+        providerEnabled = false,
+    ),
     val error: HomeError? = null,
 ) {
 
