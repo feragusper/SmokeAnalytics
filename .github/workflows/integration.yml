@@ -83,19 +83,6 @@ jobs:
 
           echo "✅ Production google-services.json prepared."
 
-      - name: Run Gradle checks
-        shell: bash
-        run: |
-          for attempt in 1 2; do
-            if ./gradlew check --stacktrace; then
-              exit 0
-            fi
-            if [ "$attempt" -eq 2 ]; then
-              exit 1
-            fi
-            echo "Gradle check failed on attempt $attempt. Retrying once..."
-          done
-
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
@@ -110,8 +97,18 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
 
-      - name: Build and analyze with SonarQube
+      - name: Build, check and analyze with SonarQube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar --stacktrace
+        shell: bash
+        run: |
+          for attempt in 1 2; do
+            if ./gradlew check sonar --stacktrace; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 2 ]; then
+              exit 1
+            fi
+            echo "Gradle check+sonar failed on attempt $attempt. Retrying once..."
+          done
