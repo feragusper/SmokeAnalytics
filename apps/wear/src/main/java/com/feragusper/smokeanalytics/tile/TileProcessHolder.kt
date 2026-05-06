@@ -38,9 +38,11 @@ class TileProcessHolder @Inject constructor(
                 }
 
         TileIntent.RefreshSmokes -> callbackFlow {
+            trySend(TileResult.RefreshStarted)
             launch {
                 try {
                     wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                    trySend(TileResult.RefreshRequestSent)
                 } catch (e: Exception) {
                     Timber.e(e, "Error requesting smoke count from mobile.")
                     trySend(TileResult.Error)
