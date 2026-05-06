@@ -1,7 +1,7 @@
 # SmokeAnalytics Agent Guide
 
 ## Repository Purpose
-- Kotlin Multiplatform product with `apps/mobile`, `apps/web`, and shared feature/library modules.
+- Kotlin Multiplatform product with `apps/mobile`, `apps/wear`, `apps/web`, and shared feature/library modules.
 - Mobile is the visual source of truth unless the task explicitly calls for platform-specific divergence.
 - Web uses Compose for Web. Do not assume React, Vite, or a Node-first frontend stack.
 
@@ -20,7 +20,16 @@
 ## Verification Defaults
 - Web work: run `./gradlew :apps:web:jsBrowserDevelopmentWebpack`.
 - Mobile work: run the closest feature compile/test task and at least one app-level build when the UI shell changes materially.
+- Web deploy or release-metadata work: validate the nearest `:apps:web:prepareFirebaseHosting -Psmoke.env=...` path, and use `:apps:web:printWebVersionName` plus `:apps:web:printWebReleaseTag` when changing web release/tag behavior.
+- Android or Wear release work: validate `./gradlew :apps:mobile:bundleProductionRelease` and `./gradlew :apps:wear:bundleProductionRelease`, and use the matching `printAndroid*` or `printWear*` tasks when changing release metadata or tag generation.
 - Release or CI work: validate the nearest real task or workflow path, not only a lightweight development compile.
+
+## Automation Publishing Policy
+- Recurring automations should treat the worktree as an execution sandbox, not as the final destination for results.
+- When an automation makes a safe, minimal, validated change, it should commit the change on a short-lived feature branch from `develop`, push it, and open a PR into `develop`.
+- When an automation finds additional risky, larger, or cross-cutting follow-up work that should not be bundled into the PR, it should create or update a GitHub issue that captures the deferred work, migration risk, and validation needed.
+- When no safe code change is available, the automation should still leave durable output by creating or updating a GitHub issue instead of stopping at local notes only.
+- PRs and issues created by automations should reference each other when both are part of the same sweep so the repository history captures what was changed now versus deferred.
 
 ## Branch Flow
 - The repository branch model is `master <- develop <- feature branch`.

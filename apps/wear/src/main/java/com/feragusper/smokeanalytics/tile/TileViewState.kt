@@ -8,6 +8,7 @@ data class TileViewState(
     val targetGapMinutes: Int? = null,
     val averageSmokesPerDayWeek: Double? = null,
     val lastSmokeTimestamp: Long? = null,
+    val refreshRequestInFlight: Boolean = false,
     val addSmokePendingCount: Int = 0,
     val addSmokePendingBaseline: TileSmokeSnapshot? = null,
     val error: TileResult? = null,
@@ -43,6 +44,7 @@ fun TileViewState.withOptimisticAddSmoke(requestedAtMillis: Long): TileViewState
 
 fun TileViewState.withPendingAddSmokeRolledBack(): TileViewState {
     val baseline = addSmokePendingBaseline ?: return copy(
+        refreshRequestInFlight = false,
         addSmokePendingCount = 0,
         error = TileResult.Error,
     )
@@ -52,6 +54,7 @@ fun TileViewState.withPendingAddSmokeRolledBack(): TileViewState {
         targetGapMinutes = baseline.targetGapMinutes,
         averageSmokesPerDayWeek = baseline.averageSmokesPerDayWeek,
         lastSmokeTimestamp = baseline.lastSmokeTimestamp,
+        refreshRequestInFlight = false,
         addSmokePendingCount = 0,
         addSmokePendingBaseline = null,
         error = TileResult.Error,

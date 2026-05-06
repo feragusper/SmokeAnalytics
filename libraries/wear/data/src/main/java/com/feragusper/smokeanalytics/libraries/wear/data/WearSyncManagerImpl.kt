@@ -88,6 +88,7 @@ class WearSyncManagerImpl(
                 dataMap.putInt(WearPaths.SMOKE_COUNT_TODAY, smokeCount.today.size)
                 dataMap.putInt(WearPaths.TARGET_GAP_MINUTES, targetGapMinutes)
                 dataMap.putDouble(WearPaths.AVERAGE_SMOKES_PER_DAY_WEEK, averageSmokesPerDayWeek)
+                dataMap.putLong(WearPaths.SYNC_SENT_AT, Clock.System.now().toEpochMilliseconds())
                 smokeCount.lastSmoke?.date?.utcMillis()?.let {
                     dataMap.putLong(WearPaths.LAST_SMOKE_TIMESTAMP, it)
                 }

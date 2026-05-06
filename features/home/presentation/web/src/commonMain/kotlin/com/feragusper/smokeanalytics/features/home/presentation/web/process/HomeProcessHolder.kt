@@ -92,6 +92,9 @@ class HomeProcessHolder(
                 is Session.LoggedIn -> {
                     emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
                     val preferences = fetchUserPreferencesUseCase()
+                    val locationTrackingAvailability = locationCaptureService.locationTrackingAvailability(
+                        preferences.locationTrackingEnabled
+                    )
                     val smokeCounts = fetchSmokeCountListUseCase(
                         dayStartHour = preferences.dayStartHour,
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
@@ -129,6 +132,7 @@ class HomeProcessHolder(
                                 dayStartHour = preferences.dayStartHour,
                                 manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                             ),
+                            locationTrackingAvailability = locationTrackingAvailability,
                         )
                     )
                     return@flow
@@ -153,7 +157,10 @@ class HomeProcessHolder(
                 AppLogger.i { "User logged in, adding smoke..." }
                 emit(HomeResult.Loading)
                 val preferences = fetchUserPreferencesUseCase()
-                val location = if (preferences.locationTrackingEnabled) {
+                val locationAvailability = locationCaptureService.locationTrackingAvailability(
+                    preferences.locationTrackingEnabled
+                )
+                val location = if (locationAvailability.isReady) {
                     locationCaptureService.captureCurrentLocation()?.let {
                         GeoPoint(latitude = it.latitude, longitude = it.longitude)
                     }
