@@ -13,6 +13,17 @@ sonar {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.projectName", "SmokeAnalytics")
         property("sonar.projectKey", "feragusper_SmokeAnalytics")
+
+        // Aggregate coverage from ALL subprojects (including AGP 9 modules skipped from per-module analysis).
+        val coverageFiles = rootProject.subprojects.flatMap { sub ->
+            listOf(
+                "${sub.layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
+                "${sub.layout.buildDirectory.get()}/reports/kover/report.xml",
+            )
+        }.filter { File(it).exists() }
+        if (coverageFiles.isNotEmpty()) {
+            property("sonar.coverage.jacoco.xmlReportPaths", coverageFiles.joinToString(","))
+        }
     }
 }
 
