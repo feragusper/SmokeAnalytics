@@ -54,9 +54,16 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
     ): TileViewState = when (result) {
         is TileResult.AddSmokeStarted -> previous.withOptimisticAddSmoke(result.requestedAtMillis)
 
+        TileResult.RefreshStarted -> previous.copy(
+            refreshRequestInFlight = true,
+            error = null,
+        )
+
         is TileResult.FetchSmokesSuccess -> previous.updatedWithSmokeSnapshot(result)
 
         is TileResult.AddSmokeRequestSent -> previous.copy()
+
+        TileResult.RefreshRequestSent -> previous.copy(refreshRequestInFlight = false)
 
         is TileResult.Error -> previous.withPendingAddSmokeRolledBack()
     }
@@ -70,6 +77,7 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
             targetGapMinutes = result.targetGapMinutes,
             averageSmokesPerDayWeek = result.averageSmokesPerDayWeek,
             lastSmokeTimestamp = result.lastSmokeTimestamp,
+            refreshRequestInFlight = false,
             addSmokePendingCount = 0,
             addSmokePendingBaseline = null,
             error = null,

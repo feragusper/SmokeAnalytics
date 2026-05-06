@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.features.home.presentation.web.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.authentication.data.AuthenticationRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
@@ -70,6 +71,56 @@ data class WebAppGraph(
             val fetchPreferences = FetchUserPreferencesUseCase(prefsRepo)
             val updatePreferences = UpdateUserPreferencesUseCase(prefsRepo)
             val locationCaptureService = object : LocationCaptureService {
+                override suspend fun locationTrackingAvailability(
+                    preferenceEnabled: Boolean,
+                ): LocationTrackingAvailability = suspendCancellableCoroutine { continuation ->
+                    val navigator = js("window.navigator")
+                    val geolocation = navigator?.geolocation
+                    if (geolocation == null) {
+                        continuation.resume(
+                            LocationTrackingAvailability(
+                                preferenceEnabled = preferenceEnabled,
+                                permissionGranted = false,
+                                providerEnabled = false,
+                            )
+                        )
+                        return@suspendCancellableCoroutine
+                    }
+
+                    val permissions = navigator.permissions
+                    if (permissions == null) {
+                        continuation.resume(
+                            LocationTrackingAvailability(
+                                preferenceEnabled = preferenceEnabled,
+                                permissionGranted = preferenceEnabled,
+                                providerEnabled = true,
+                            )
+                        )
+                        return@suspendCancellableCoroutine
+                    }
+
+                    permissions.query(js("{ name: 'geolocation' }")).then(
+                        { status: dynamic ->
+                            continuation.resume(
+                                LocationTrackingAvailability(
+                                    preferenceEnabled = preferenceEnabled,
+                                    permissionGranted = status.state == "granted",
+                                    providerEnabled = true,
+                                )
+                            )
+                        },
+                        { _: dynamic ->
+                            continuation.resume(
+                                LocationTrackingAvailability(
+                                    preferenceEnabled = preferenceEnabled,
+                                    permissionGranted = false,
+                                    providerEnabled = true,
+                                )
+                            )
+                        },
+                    )
+                }
+
                 override suspend fun captureCurrentLocation(): Coordinate? = suspendCancellableCoroutine { continuation ->
                     val navigator = js("window.navigator")
                     val geolocation = navigator?.geolocation

@@ -9,5 +9,7 @@
     <string name="pace_ready_now">now</string>
     <string name="pace_time_na">--</string>
     <string name="stats_today_short">Today %1$d</string>
+    <string name="sync_smokes">Sync</string>
+    <string name="sync_smokes_syncing">Syncing</string>
     <string name="add_smoke_track">Track</string>
 </resources>

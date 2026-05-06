@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.settings.presentation
+package com.feragusper.smokeanalytics.features.goals.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -70,7 +70,7 @@ fun GoalsEditorScreen(
         GoalsPanelCard {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(onClick = onBack) {
-                    Text("Back to You")
+                    Text("Back")
                 }
                 Text(
                     text = "Goals",

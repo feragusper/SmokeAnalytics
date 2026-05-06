@@ -5,7 +5,23 @@ data class Coordinate(
     val longitude: Double,
 )
 
+data class LocationTrackingAvailability(
+    val preferenceEnabled: Boolean,
+    val permissionGranted: Boolean,
+    val providerEnabled: Boolean,
+) {
+    val isReady: Boolean
+        get() = preferenceEnabled && permissionGranted && providerEnabled
+}
+
 interface LocationCaptureService {
+    suspend fun locationTrackingAvailability(preferenceEnabled: Boolean): LocationTrackingAvailability =
+        LocationTrackingAvailability(
+            preferenceEnabled = preferenceEnabled,
+            permissionGranted = preferenceEnabled,
+            providerEnabled = preferenceEnabled,
+        )
+
     suspend fun captureCurrentLocation(): Coordinate?
 }
 

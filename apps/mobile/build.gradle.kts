@@ -179,6 +179,7 @@ dependencies {
     implementation(project(":libraries:wear:domain"))
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:goals:domain"))
+    implementation(project(":features:goals:presentation:mobile"))
     implementation(project(":features:history:presentation:mobile"))
     implementation(project(":features:home:presentation:mobile"))
     implementation(project(":features:home:domain"))

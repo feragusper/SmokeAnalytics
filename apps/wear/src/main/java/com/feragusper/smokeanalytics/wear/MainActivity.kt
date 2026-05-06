@@ -77,6 +77,7 @@ private fun WearApp(
         ) {
             WearHomeContent(
                 state = state,
+                onRefresh = onRefresh,
                 onAddSmoke = onAddSmoke,
             )
         }
@@ -86,6 +87,7 @@ private fun WearApp(
 @Composable
 private fun WearHomeContent(
     state: TileViewState,
+    onRefresh: () -> Unit,
     onAddSmoke: () -> Unit,
 ) {
     Box(
@@ -117,18 +119,48 @@ private fun WearHomeContent(
                 maxLines = 1,
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = onAddSmoke,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = WearPrimary,
-                    contentColor = WearPrimaryContent,
-                ),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResourceCompat(R.string.add_smoke_track),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                )
+                Button(
+                    onClick = onRefresh,
+                    modifier = Modifier.weight(1f),
+                    enabled = !state.refreshRequestInFlight,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WearSurface,
+                        contentColor = WearOnSurface,
+                        disabledContainerColor = WearSurface,
+                        disabledContentColor = WearMuted,
+                    ),
+                ) {
+                    Text(
+                        text = stringResourceCompat(
+                            if (state.refreshRequestInFlight) {
+                                R.string.sync_smokes_syncing
+                            } else {
+                                R.string.sync_smokes
+                            },
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                    )
+                }
+                Button(
+                    onClick = onAddSmoke,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WearPrimary,
+                        contentColor = WearPrimaryContent,
+                    ),
+                ) {
+                    Text(
+                        text = stringResourceCompat(R.string.add_smoke_track),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }

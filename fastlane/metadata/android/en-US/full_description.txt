@@ -1,0 +1,10 @@
+Smoke Analytics helps you track your smoking habits, analyze patterns, and reduce consumption with insightful statistics. The app supports your phone and Wear OS watch, so you can log cigarettes and check your progress from either device.
+
+Features:
+- Mobile and Wear OS support: log and monitor smoking from your phone or smartwatch.
+- Wear OS tile: see today's status at a glance and use the quick Track action directly from the tile.
+- Daily and weekly analytics: understand smoking trends with detailed insights.
+- Reminders and goals: set personal goals and receive notifications to stay on track.
+- Cloud sync: keep your data backed up and available across devices.
+
+Take control of your smoking habits with Smoke Analytics on mobile, Wear OS, and the included Wear OS tile.

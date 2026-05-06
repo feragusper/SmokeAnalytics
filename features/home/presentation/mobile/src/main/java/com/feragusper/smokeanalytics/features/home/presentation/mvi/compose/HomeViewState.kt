@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,6 +58,7 @@ import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -83,6 +85,11 @@ data class HomeViewState(
     internal val bedtimeHour: Int = 0,
     internal val canStartNewDay: Boolean = false,
     internal val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
+    internal val locationTrackingAvailability: LocationTrackingAvailability = LocationTrackingAvailability(
+        preferenceEnabled = false,
+        permissionGranted = false,
+        providerEnabled = false,
+    ),
     internal val error: HomeResult.Error? = null,
 ) : MVIViewState<HomeIntent> {
 
@@ -162,6 +169,7 @@ data class HomeViewState(
                 bedtimeHour = bedtimeHour,
                 canStartNewDay = canStartNewDay,
                 elapsedTone = elapsedTone,
+                locationTrackingAvailability = locationTrackingAvailability,
                 isLoading = displayLoading,
                 error = error,
                 intent = intent,
@@ -186,6 +194,7 @@ private fun HomeContent(
     bedtimeHour: Int,
     canStartNewDay: Boolean,
     elapsedTone: ElapsedTone,
+    locationTrackingAvailability: LocationTrackingAvailability,
     isLoading: Boolean,
     error: HomeResult.Error?,
     intent: (HomeIntent) -> Unit,
@@ -236,6 +245,7 @@ private fun HomeContent(
             HomeHeaderSection(
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
+                locationTrackingAvailability = locationTrackingAvailability,
                 isLoading = isLoading,
             )
         }
@@ -338,6 +348,7 @@ private fun HomeErrorSection(
 private fun HomeHeaderSection(
     greetingTitle: String?,
     greetingMessage: String?,
+    locationTrackingAvailability: LocationTrackingAvailability,
     isLoading: Boolean,
 ) {
     Column(
@@ -360,6 +371,59 @@ private fun HomeHeaderSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        LocationTrackingChip(locationTrackingAvailability = locationTrackingAvailability)
+    }
+}
+
+@Composable
+private fun LocationTrackingChip(
+    locationTrackingAvailability: LocationTrackingAvailability,
+) {
+    val isReady = locationTrackingAvailability.isReady
+    val label = when {
+        isReady -> "Location On"
+        !locationTrackingAvailability.preferenceEnabled -> "Location Off"
+        !locationTrackingAvailability.permissionGranted -> "Location Off - permission"
+        !locationTrackingAvailability.providerEnabled -> "Location Off - system"
+        else -> "Location Off"
+    }
+    val containerColor = if (isReady) {
+        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.52f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val contentColor = if (isReady) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(999.dp),
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(if (isReady) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

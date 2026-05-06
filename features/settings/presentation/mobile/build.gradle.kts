@@ -37,8 +37,6 @@ dependencies {
     implementation(project(":libraries:authentication:data:mobile"))
     implementation(project(":libraries:architecture:domain"))
     implementation(project(":libraries:preferences:domain"))
-    implementation(project(":libraries:smokes:domain"))
-    implementation(project(":features:goals:domain"))
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)

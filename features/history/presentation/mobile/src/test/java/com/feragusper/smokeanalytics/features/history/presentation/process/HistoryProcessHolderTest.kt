@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -81,6 +82,14 @@ class HistoryProcessHolderTest {
         coEvery { syncWithWearUseCase.invoke() } just Runs
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
         coEvery { fetchSmokeCountListUseCase.invoke(any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
+        coEvery { locationCaptureService.locationTrackingAvailability(any()) } answers {
+            val preferenceEnabled = firstArg<Boolean>()
+            LocationTrackingAvailability(
+                preferenceEnabled = preferenceEnabled,
+                permissionGranted = preferenceEnabled,
+                providerEnabled = preferenceEnabled,
+            )
+        }
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
         coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs
     }

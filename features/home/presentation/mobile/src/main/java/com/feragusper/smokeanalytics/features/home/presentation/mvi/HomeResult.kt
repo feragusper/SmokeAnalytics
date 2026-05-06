@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GreetingState
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
@@ -97,6 +98,7 @@ sealed interface HomeResult : MVIResult {
         val gamificationSummary: GamificationSummary,
         val goalProgress: GoalProgress?,
         val canStartNewDay: Boolean,
+        val locationTrackingAvailability: LocationTrackingAvailability,
     ) : HomeResult
 
     /**
