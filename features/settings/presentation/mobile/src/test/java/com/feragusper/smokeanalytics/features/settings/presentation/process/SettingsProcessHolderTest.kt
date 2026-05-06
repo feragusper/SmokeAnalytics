@@ -7,10 +7,8 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessio
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,7 +19,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.amshove.kluent.shouldBeEqualTo
-import org.amshove.kluent.shouldNotBe
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -34,7 +31,6 @@ class SettingsProcessHolderTest {
     private val signOutUseCase: SignOutUseCase = mockk()
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase = mockk()
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
-    private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
 
     /**
      * Sets up the test environment by initializing the process holder and configuring mock behaviors.
@@ -47,7 +43,6 @@ class SettingsProcessHolderTest {
             signOutUseCase = signOutUseCase,
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
-            fetchSmokesUseCase = fetchSmokesUseCase,
         )
     }
 
@@ -78,7 +73,6 @@ class SettingsProcessHolderTest {
                 Session.User(id = "123", email = email, displayName = displayName)
             )
             coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
-            coEvery { fetchSmokesUseCase(any(), any()) } returns emptyList()
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
@@ -86,20 +80,18 @@ class SettingsProcessHolderTest {
                     email = email,
                     displayName = displayName,
                     preferences = UserPreferences(),
-                    goalProgress = null,
                 )
                 awaitComplete()
             }
         }
 
     @Test
-    fun `GIVEN session is logged in WHEN goal smokes fail THEN emit loading and load error`() =
+    fun `GIVEN session is logged in WHEN preferences fail THEN emit loading and load error`() =
         runTest {
             coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
                 Session.User(id = "123", email = "fernancho@gmail.com", displayName = "Fer")
             )
-            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(activeGoal = SmokingGoal.DailyCap(10))
-            coEvery { fetchSmokesUseCase(any(), any()) } throws IllegalStateException("Quota exceeded")
+            coEvery { fetchUserPreferencesUseCase() } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(SettingsIntent.FetchUser).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
@@ -129,17 +121,16 @@ class SettingsProcessHolderTest {
         }
 
     @Test
-    fun `WHEN UpdatePreferences saves goal THEN emits persisted active goal`() =
+    fun `WHEN UpdatePreferences saves settings THEN emits persisted preferences`() =
         runTest {
             val email = "fernancho@gmail.com"
             val displayName = "Fer"
-            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            val preferences = UserPreferences(dayStartHour = 6)
             coEvery { updateUserPreferencesUseCase(preferences) } just Runs
             coEvery { fetchUserPreferencesUseCase() } returns preferences
             coEvery { fetchSessionUseCase() } returns Session.LoggedIn(
                 Session.User(id = "123", email = email, displayName = displayName)
             )
-            coEvery { fetchSmokesUseCase(any(), any()) } returns emptyList()
 
             processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
@@ -147,19 +138,17 @@ class SettingsProcessHolderTest {
                 loggedIn.email shouldBeEqualTo email
                 loggedIn.displayName shouldBeEqualTo displayName
                 loggedIn.preferences shouldBeEqualTo preferences
-                loggedIn.goalProgress shouldNotBe null
                 awaitItem() shouldBeEqualTo SettingsResult.PreferencesSaved
                 awaitComplete()
             }
         }
 
     @Test
-    fun `WHEN UpdatePreferences cannot refresh goal progress THEN emits save error`() =
+    fun `WHEN UpdatePreferences cannot refresh saved preferences THEN emits save error`() =
         runTest {
-            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            val preferences = UserPreferences(dayStartHour = 6)
             coEvery { updateUserPreferencesUseCase(preferences) } just Runs
-            coEvery { fetchUserPreferencesUseCase() } returns preferences
-            coEvery { fetchSmokesUseCase(any(), any()) } throws IllegalStateException("Quota exceeded")
+            coEvery { fetchUserPreferencesUseCase() } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {
                 awaitItem() shouldBeEqualTo SettingsResult.Loading
@@ -173,7 +162,7 @@ class SettingsProcessHolderTest {
     @Test
     fun `WHEN UpdatePreferences write fails THEN emits save error`() =
         runTest {
-            val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(15))
+            val preferences = UserPreferences(dayStartHour = 6)
             coEvery { updateUserPreferencesUseCase(preferences) } throws IllegalStateException("Firestore update preferences timed out")
 
             processHolder.processIntent(SettingsIntent.UpdatePreferences(preferences)).test {

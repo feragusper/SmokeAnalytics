@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsWebStore
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
@@ -54,44 +53,14 @@ private fun SettingsViewState.Render(
     onShare: suspend () -> Unit,
 ) {
     var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
-    var showingGoals by remember(currentEmail, preferences.activeGoal) { mutableStateOf(false) }
 
     LaunchedEffect(preferences, currentEmail) {
         draftPreferences = preferences
     }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
-        if (showingGoals) {
-            GoalsWebEditorPanel(
-                currentEmail = currentEmail,
-                preferences = draftPreferences,
-                goalProgress = goalProgress,
-                displayLoading = displayLoading,
-                onBack = { showingGoals = false },
-                onSaveGoal = { goal ->
-                    draftPreferences = draftPreferences.copy(activeGoal = goal)
-                    onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = goal)))
-                },
-                onClearGoal = {
-                    draftPreferences = draftPreferences.copy(activeGoal = null)
-                    onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = null)))
-                },
-            )
-            errorMessage?.let { msg ->
-                EmptyStateCard(
-                    title = "Could not save your goal",
-                    message = msg,
-                    actionLabel = "Try again",
-                    onAction = {
-                        draftPreferences.activeGoal?.let { goal ->
-                            onIntent(SettingsIntent.UpdatePreferences(draftPreferences.copy(activeGoal = goal)))
-                        }
-                    },
-                )
-            }
-            infoMessage?.let { msg ->
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(msg) }
-            }
+        if (displayLoading && currentEmail == null && errorMessage == null) {
+            YouLoadingSkeleton()
             return@Div
         }
 
@@ -144,17 +113,6 @@ private fun SettingsViewState.Render(
             )
         }
 
-        SectionHeader(
-            title = "Goals",
-            subtitle = "The active target stays visible here, with the full editor still nested inside You.",
-        )
-
-        GoalsCard(
-            goalProgress = goalProgress,
-            activeGoal = preferences.activeGoal,
-            onOpenGoals = { showingGoals = true },
-        )
-
         errorMessage?.let { msg ->
             EmptyStateCard(
                 title = "Your space is unavailable",
@@ -162,11 +120,6 @@ private fun SettingsViewState.Render(
                 actionLabel = "Try again",
                 onAction = { onIntent(SettingsIntent.FetchUser) },
             )
-        }
-
-        if (displayLoading && currentEmail == null) {
-            LoadingSkeletonCard(heightPx = 120, lineWidths = listOf("42%", "70%", "36%"))
-            return@Div
         }
 
         SectionHeader(
@@ -213,6 +166,20 @@ private fun SettingsViewState.Render(
             Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(msg) }
         }
     }
+}
+
+@Composable
+private fun YouLoadingSkeleton() {
+    LoadingSkeletonCard(heightPx = 176, lineWidths = listOf("30%", "68%", "44%"))
+    LoadingSkeletonCard(heightPx = 128, lineWidths = listOf("24%", "54%", "38%"))
+    Div(attrs = {
+        attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
+    }) {
+        LoadingSkeletonCard(heightPx = 116, lineWidths = listOf("28%", "48%"))
+        LoadingSkeletonCard(heightPx = 116, lineWidths = listOf("30%", "52%"))
+    }
+    LoadingSkeletonCard(heightPx = 148, lineWidths = listOf("24%", "62%", "42%"))
+    LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("22%", "58%", "46%"))
 }
 
 @Composable
@@ -269,36 +236,6 @@ private fun HeroCard(
                         currentEmail != null -> "Signed in"
                         else -> "Guest mode"
                     }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GoalsCard(
-    goalProgress: GoalProgress?,
-    activeGoal: com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal?,
-    onOpenGoals: () -> Unit,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-            Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                Text("Goals")
-            }
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                Text(goalProgress?.title ?: "Your next personal targets start here.")
-            }
-            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text(goalProgress?.supportingText ?: "Daily caps, reduction plans, and mindful-gap targets live here inside You.")
-            }
-            goalProgress?.targetLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
-            }
-            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                PrimaryButton(
-                    text = if (activeGoal == null) "Set up goals" else "Review goals",
-                    onClick = onOpenGoals,
                 )
             }
         }

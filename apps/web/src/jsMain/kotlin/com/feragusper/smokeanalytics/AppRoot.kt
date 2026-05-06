@@ -14,6 +14,8 @@ import com.feragusper.smokeanalytics.apps.web.MapWebStateHolder
 import com.feragusper.smokeanalytics.apps.web.SettingsAboutWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
 import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
+import com.feragusper.smokeanalytics.features.goals.presentation.web.GoalsWebScreen
+import com.feragusper.smokeanalytics.features.goals.presentation.web.createGoalsWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebScreen
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
@@ -106,6 +108,13 @@ fun AppRoot(graph: WebAppGraph) {
             signOutUseCase = graph.signOutUseCase,
             fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
+        )
+    }
+    val goalsDeps = remember(graph) {
+        createGoalsWebDependencies(
+            fetchSessionUseCase = graph.fetchSessionUseCase,
+            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
+            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
             fetchSmokesUseCase = graph.fetchSmokesUseCase,
         )
     }
@@ -115,6 +124,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> "Smoke Analytics | Home"
             WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
             WebRoute.History -> "Smoke Analytics | History"
+            WebRoute.Goals -> "Smoke Analytics | Goals"
             WebRoute.Settings -> "Smoke Analytics | You"
             WebRoute.Auth -> "Smoke Analytics | Sign in"
         }
@@ -157,7 +167,7 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Home -> HomeWebScreen(
                 store = homeStore,
                 onNavigateToHistory = { navigateTo(WebRoute.History) },
-                onNavigateToGoals = { navigateTo(WebRoute.Settings) },
+                onNavigateToGoals = { navigateTo(WebRoute.Goals) },
             )
 
             WebRoute.Analytics -> AnalyticsWebScreen(
@@ -184,6 +194,11 @@ fun AppRoot(graph: WebAppGraph) {
             WebRoute.Settings -> SettingsAboutWebScreen(
                 settingsDeps = settingsDeps,
                 onShare = { shareSmokeAnalytics() },
+            )
+
+            WebRoute.Goals -> GoalsWebScreen(
+                deps = goalsDeps,
+                onNavigateBack = { navigateTo(WebRoute.Home) },
             )
 
             WebRoute.Auth -> AuthenticationWebScreen(

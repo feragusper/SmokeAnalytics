@@ -28,7 +28,7 @@ class SettingsWebStore(
     private var started = false
     private val intents = Channel<SettingsIntent>(capacity = Channel.Factory.BUFFERED)
 
-    private val _state = MutableStateFlow(SettingsViewState())
+    private val _state = MutableStateFlow(SettingsViewState(displayLoading = true))
 
     /**
      * The current state of the Settings screen.
@@ -74,7 +74,6 @@ class SettingsWebStore(
                 currentEmail = result.email,
                 currentDisplayName = result.displayName,
                 preferences = result.preferences,
-                goalProgress = result.goalProgress,
                 errorMessage = null,
                 infoMessage = null,
             )
@@ -84,7 +83,6 @@ class SettingsWebStore(
                 currentEmail = null,
                 currentDisplayName = null,
                 preferences = previous.preferences,
-                goalProgress = null,
                 errorMessage = null,
                 infoMessage = null,
             )
