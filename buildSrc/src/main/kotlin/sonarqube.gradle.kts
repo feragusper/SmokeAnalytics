@@ -21,16 +21,25 @@ subprojects {
     afterEvaluate {
         sonar {
             properties {
-                // Safely set source directories if they exist.
-                filesSafeProperty(
-                    "sonar.sources",
-                    "$projectDir/src/main",
-                    "$projectDir/src/commonMain",
-                    "$projectDir/src/jvmMain",
-                    "$projectDir/src/jsMain",
-                    "$projectDir/src/webMain",
-                    "$projectDir/src/wasmJsMain",
-                )
+                // Set source directories. For Android modules, avoid including the entire
+                // src/main directory to prevent double-indexing with the plugin's auto-detection.
+                if (hasAndroidExtension()) {
+                    filesSafeProperty(
+                        "sonar.sources",
+                        "$projectDir/src/main/java",
+                        "$projectDir/src/main/kotlin",
+                    )
+                } else {
+                    filesSafeProperty(
+                        "sonar.sources",
+                        "$projectDir/src/main",
+                        "$projectDir/src/commonMain",
+                        "$projectDir/src/jvmMain",
+                        "$projectDir/src/jsMain",
+                        "$projectDir/src/webMain",
+                        "$projectDir/src/wasmJsMain",
+                    )
+                }
                 filesSafeProperty(
                     "sonar.tests",
                     "$projectDir/src/test/java",
