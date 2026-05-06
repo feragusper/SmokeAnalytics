@@ -13,31 +13,6 @@ sonar {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.projectName", "SmokeAnalytics")
         property("sonar.projectKey", "feragusper_SmokeAnalytics")
-
-        // Aggregate coverage from ALL subprojects (including AGP 9 modules skipped from per-module analysis).
-        val coverageFiles = rootProject.subprojects.flatMap { sub ->
-            listOf(
-                "${sub.layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
-                "${sub.layout.buildDirectory.get()}/reports/kover/report.xml",
-            )
-        }.filter { File(it).exists() }
-        if (coverageFiles.isNotEmpty()) {
-            property("sonar.coverage.jacoco.xmlReportPaths", coverageFiles.joinToString(","))
-        }
-
-        // Include sources from AGP 9 Android modules that are skipped from per-module analysis.
-        // This allows SonarCloud to index their source code and map coverage data.
-        val androidSources = rootProject.subprojects
-            .filter { it.plugins.hasPlugin("com.android.library") || it.plugins.hasPlugin("com.android.application") }
-            .flatMap { sub ->
-                listOf(
-                    "${sub.projectDir}/src/main/java",
-                    "${sub.projectDir}/src/main/kotlin",
-                ).filter { File(it).exists() }
-            }
-        if (androidSources.isNotEmpty()) {
-            property("sonar.sources", androidSources.joinToString(","))
-        }
     }
 }
 
@@ -45,11 +20,6 @@ sonar {
 subprojects {
     afterEvaluate {
         sonar {
-            if (hasUnsupportedAgp9AndroidPlugin()) {
-                setSkipProject(true)
-                return@sonar
-            }
-
             properties {
                 // Safely set source directories if they exist.
                 filesSafeProperty(
@@ -111,19 +81,11 @@ subprojects {
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
                     )
-                    property(
-                        "sonar.coverage.jacoco.xmlReportPaths",
-                        "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
-                    )
                 } else if (plugins.hasPlugin(JavaPlugin::class.java)) {
-                    // Configure settings for non-Android (pure Java) projects.
+                    // Configure settings for non-Android (pure Java/KMP) projects.
                     property(
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/test"
-                    )
-                    property(
-                        "sonar.coverage.jacoco.xmlReportPaths",
-                        "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
                     )
                 }
             }
@@ -146,11 +108,3 @@ fun SonarProperties.filesSafeProperty(name: String, vararg files: String) {
 
 // Helper function to determine if the Android extension is applied to the project.
 fun Project.hasAndroidExtension() = extensions.findByType(BaseExtension::class.java) != null
-
-fun Project.hasUnsupportedAgp9AndroidPlugin() = listOf(
-    "com.android.application",
-    "com.android.library",
-    "com.android.test",
-    "com.android.dynamic-feature",
-    "com.android.kotlin.multiplatform.library",
-).any(plugins::hasPlugin)
