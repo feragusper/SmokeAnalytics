@@ -255,6 +255,7 @@ private fun MainContainerScreen(
         BottomNavigationScreens.Home,
         BottomNavigationScreens.Analytics,
         BottomNavigationScreens.History,
+        BottomNavigationScreens.Goals,
         BottomNavigationScreens.You,
     )
     val snackbarHostState = remember { SnackbarHostState() }
@@ -502,7 +503,7 @@ private fun MainScreenNavigationConfigurations(
                 active = currentRoute(navController) == BottomNavigationScreens.Home.route,
                 navigateToAuthentication = navigateToAuthentication,
                 navigateToSettings = {
-                    navController.navigate(BottomNavigationScreens.You.route) {
+                    navController.navigate(BottomNavigationScreens.Goals.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
@@ -533,6 +534,20 @@ private fun MainScreenNavigationConfigurations(
             HistoryMobileDestination(
                 active = currentRoute(navController) == BottomNavigationScreens.History.route,
                 navigateToAuthentication = navigateToAuthentication,
+            )
+        }
+        composable(route = BottomNavigationScreens.Goals.route) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            GoalsMobileDestination(
+                navigateBack = {
+                    navController.navigate(BottomNavigationScreens.Home.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
             )
         }
         composable(route = BottomNavigationScreens.You.route) {
@@ -605,8 +620,10 @@ private sealed class BottomNavigationScreens(
         iconId = R.drawable.ic_history,
     )
 
+    data object Goals : BottomNavigationScreens(route = "goals", iconId = R.drawable.ic_goals)
+
     /**
-     * The personal destination for account, preferences, and goals entry.
+     * The personal destination for account and preferences.
      */
     data object You : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_you)
 }

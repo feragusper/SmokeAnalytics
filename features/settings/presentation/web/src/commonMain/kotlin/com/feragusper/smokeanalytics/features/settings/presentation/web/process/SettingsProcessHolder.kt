@@ -1,7 +1,5 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.web.process
 
-import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
-import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.web.mvi.SettingsResult
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
@@ -9,7 +7,6 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
-import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -25,8 +22,6 @@ class SettingsProcessHolder(
     private val signOutUseCase: SignOutUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
-    private val fetchSmokesUseCase: FetchSmokesUseCase,
-    private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) {
 
     /**
@@ -47,13 +42,11 @@ class SettingsProcessHolder(
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> {
                 val preferences = fetchUserPreferencesUseCase()
-                val smokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 emit(
                     SettingsResult.UserLoggedIn(
                         email = session.user.email,
                         displayName = session.user.displayName,
                         preferences = preferences,
-                        goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, smokes, preferences),
                     )
                 )
             }
@@ -75,7 +68,6 @@ class SettingsProcessHolder(
         val preferences = intent.preferences
         updateUserPreferencesUseCase(preferences)
         val savedPreferences = fetchUserPreferencesUseCase()
-        val smokes = fetchSmokesUseCase(start = goalDataFetchStart(savedPreferences))
         when (val session = fetchSessionUseCase()) {
             is Session.Anonymous -> emit(SettingsResult.UserLoggedOut)
             is Session.LoggedIn -> emit(
@@ -83,7 +75,6 @@ class SettingsProcessHolder(
                     email = session.user.email,
                     displayName = session.user.displayName,
                     preferences = savedPreferences,
-                    goalProgress = evaluateGoalProgressUseCase(savedPreferences.activeGoal, smokes, savedPreferences),
                 )
             )
         }

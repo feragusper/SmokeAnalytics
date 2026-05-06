@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
+import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
+import com.feragusper.smokeanalytics.features.goals.presentation.GoalsViewModel
+import com.feragusper.smokeanalytics.features.goals.presentation.navigation.GoalsNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryView
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryViewModel
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
@@ -144,6 +147,18 @@ fun SettingsMobileDestination() {
     val navController = rememberNavController()
     viewModel.navigator = remember(navController) { SettingsNavigator(navController) }
     SettingsView(viewModel = viewModel)
+}
+
+@Composable
+fun GoalsMobileDestination(
+    navigateBack: () -> Unit,
+) {
+    val viewModel = hiltViewModel<GoalsViewModel>()
+    viewModel.navigator = remember(navigateBack) { GoalsNavigator(navigateBack) }
+    GoalsView(
+        viewModel = viewModel,
+        navigateBack = navigateBack,
+    )
 }
 
 @Composable

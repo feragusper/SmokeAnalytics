@@ -1,4 +1,4 @@
-package com.feragusper.smokeanalytics.features.settings.presentation.web
+package com.feragusper.smokeanalytics.features.goals.presentation.web
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponentWeb
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
@@ -29,6 +30,8 @@ fun GoalsWebEditorPanel(
     onBack: () -> Unit,
     onSaveGoal: (SmokingGoal) -> Unit,
     onClearGoal: () -> Unit,
+    onSignInSuccess: () -> Unit,
+    onSignInError: (Throwable) -> Unit,
 ) {
     var selectedType by remember(preferences.activeGoal) {
         mutableStateOf(preferences.activeGoal?.type ?: GoalType.DailyCap)
@@ -44,7 +47,7 @@ fun GoalsWebEditorPanel(
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            GhostButton(text = "Back to You", onClick = onBack)
+            GhostButton(text = "Back", onClick = onBack)
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Goals") }
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
                 Text("Choose one active target and keep its progress visible from Home.")
@@ -57,8 +60,12 @@ fun GoalsWebEditorPanel(
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
                 Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Goals need an account") }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Sign in from You to save one active goal and sync it across platforms.")
+                    Text("Sign in to save one active goal and sync it across platforms.")
                 }
+                GoogleSignInComponentWeb(
+                    onSignInSuccess = onSignInSuccess,
+                    onSignInError = onSignInError,
+                )
             }
         }
         return
