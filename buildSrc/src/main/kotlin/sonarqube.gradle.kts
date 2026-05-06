@@ -21,36 +21,14 @@ subprojects {
     afterEvaluate {
         sonar {
             properties {
-                // For Android modules, let the Sonar plugin 7.3.0 handle source detection
-                // automatically. Only configure sources manually for non-Android modules.
-                if (!hasAndroidExtension()) {
-                    filesSafeProperty(
-                        "sonar.sources",
-                        "$projectDir/src/main",
-                        "$projectDir/src/commonMain",
-                        "$projectDir/src/jvmMain",
-                        "$projectDir/src/jsMain",
-                        "$projectDir/src/webMain",
-                        "$projectDir/src/wasmJsMain",
-                    )
-                }
-                filesSafeProperty(
-                    "sonar.tests",
-                    "$projectDir/src/test/java",
-                    "$projectDir/src/test/kotlin",
-                    "$projectDir/src/commonTest",
-                    "$projectDir/src/jvmTest",
-                    "$projectDir/src/jsTest",
-                    "$projectDir/src/webTest",
-                    "$projectDir/src/wasmJsTest",
-                )
+                // Coverage paths apply to all modules.
                 filesSafeProperty(
                     "sonar.coverage.jacoco.xmlReportPaths",
                     "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
                     "${layout.buildDirectory.get()}/reports/kover/report.xml",
                 )
 
-                // Exclude specific classes from coverage reports using KoverConfig settings.
+                // Exclude specific classes from coverage reports.
                 property(
                     "sonar.exclusions",
                     KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
@@ -60,23 +38,43 @@ subprojects {
                     KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
                 )
 
-                // Specify the coverage plugin.
-                property("sonar.java.coveragePlugin", "jacoco")
-                // Import files that SonarQube might not recognize by default.
-                property("sonar.import_unknown_files", true)
-
-                // Configure settings specific to Android projects.
                 if (hasAndroidExtension()) {
+                    // For Android modules, let plugin 7.3.0 auto-detect sources/binaries/tests.
+                    // Only configure test result and coverage report paths.
                     property(
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
                     )
-                } else if (plugins.hasPlugin(JavaPlugin::class.java)) {
-                    // Configure settings for non-Android (pure Java/KMP) projects.
-                    property(
-                        "sonar.junit.reportPaths",
-                        "${layout.buildDirectory.get()}/test-results/test"
+                } else {
+                    // Non-Android modules: configure sources, tests, and settings manually.
+                    filesSafeProperty(
+                        "sonar.sources",
+                        "$projectDir/src/main",
+                        "$projectDir/src/commonMain",
+                        "$projectDir/src/jvmMain",
+                        "$projectDir/src/jsMain",
+                        "$projectDir/src/webMain",
+                        "$projectDir/src/wasmJsMain",
                     )
+                    filesSafeProperty(
+                        "sonar.tests",
+                        "$projectDir/src/test/java",
+                        "$projectDir/src/test/kotlin",
+                        "$projectDir/src/commonTest",
+                        "$projectDir/src/jvmTest",
+                        "$projectDir/src/jsTest",
+                        "$projectDir/src/webTest",
+                        "$projectDir/src/wasmJsTest",
+                    )
+                    property("sonar.java.coveragePlugin", "jacoco")
+                    property("sonar.import_unknown_files", true)
+
+                    if (plugins.hasPlugin(JavaPlugin::class.java)) {
+                        property(
+                            "sonar.junit.reportPaths",
+                            "${layout.buildDirectory.get()}/test-results/test"
+                        )
+                    }
                 }
             }
         }
