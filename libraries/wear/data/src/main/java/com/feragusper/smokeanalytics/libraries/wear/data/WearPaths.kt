@@ -15,4 +15,5 @@ object WearPaths {
     const val AVERAGE_SMOKES_PER_DAY_WEEK = "average_smokes_per_day_week"
     const val TARGET_GAP_MINUTES = "target_gap_minutes"
     const val LAST_SMOKE_TIMESTAMP = "last_smoke_timestamp"
+    const val SYNC_SENT_AT = "sync_sent_at"
 }
