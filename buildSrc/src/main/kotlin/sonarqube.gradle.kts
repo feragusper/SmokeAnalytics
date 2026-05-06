@@ -24,6 +24,20 @@ sonar {
         if (coverageFiles.isNotEmpty()) {
             property("sonar.coverage.jacoco.xmlReportPaths", coverageFiles.joinToString(","))
         }
+
+        // Include sources from AGP 9 Android modules that are skipped from per-module analysis.
+        // This allows SonarCloud to index their source code and map coverage data.
+        val androidSources = rootProject.subprojects
+            .filter { it.plugins.hasPlugin("com.android.library") || it.plugins.hasPlugin("com.android.application") }
+            .flatMap { sub ->
+                listOf(
+                    "${sub.projectDir}/src/main/java",
+                    "${sub.projectDir}/src/main/kotlin",
+                ).filter { File(it).exists() }
+            }
+        if (androidSources.isNotEmpty()) {
+            property("sonar.sources", androidSources.joinToString(","))
+        }
     }
 }
 
