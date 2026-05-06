@@ -21,15 +21,9 @@ subprojects {
     afterEvaluate {
         sonar {
             properties {
-                // Set source directories. For Android modules, avoid including the entire
-                // src/main directory to prevent double-indexing with the plugin's auto-detection.
-                if (hasAndroidExtension()) {
-                    filesSafeProperty(
-                        "sonar.sources",
-                        "$projectDir/src/main/java",
-                        "$projectDir/src/main/kotlin",
-                    )
-                } else {
+                // For Android modules, let the Sonar plugin 7.3.0 handle source detection
+                // automatically. Only configure sources manually for non-Android modules.
+                if (!hasAndroidExtension()) {
                     filesSafeProperty(
                         "sonar.sources",
                         "$projectDir/src/main",
@@ -73,19 +67,6 @@ subprojects {
 
                 // Configure settings specific to Android projects.
                 if (hasAndroidExtension()) {
-                    val kotlinClasses = "${layout.buildDirectory.get()}/tmp/kotlin-classes"
-                    val javaClasses = "${layout.buildDirectory.get()}/intermediates/javac"
-
-                    filesSafeProperty(
-                        "sonar.java.binaries",
-                        "$kotlinClasses/debug",
-                        "$javaClasses/debug"
-                    )
-                    filesSafeProperty(
-                        "sonar.java.test.binaries",
-                        "$kotlinClasses/debugUnitTest",
-                        "$javaClasses/debugUnitTest"
-                    )
                     property(
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
