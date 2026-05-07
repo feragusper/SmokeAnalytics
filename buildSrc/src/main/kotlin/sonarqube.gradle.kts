@@ -20,6 +20,13 @@ sonar {
 subprojects {
     afterEvaluate {
         sonar {
+            // Skip application modules (apps with flavors) — plugin 7.3.0 double-indexes
+            // their manifest due to variant source sets. Library modules are fine.
+            if (plugins.hasPlugin("com.android.application")) {
+                setSkipProject(true)
+                return@sonar
+            }
+
             properties {
                 // Coverage paths apply to all modules.
                 filesSafeProperty(
