@@ -1,4 +1,3 @@
-import com.android.build.gradle.BaseExtension
 import org.sonarqube.gradle.SonarExtension
 import org.sonarqube.gradle.SonarProperties
 
@@ -22,7 +21,7 @@ subprojects {
         sonar {
             // Plugin 7.3.0 has a double-indexing bug with AndroidManifest.xml on AGP 9.
             // Skip all Android modules until the plugin fixes this upstream.
-            if (hasAndroidExtension()) {
+            if (isAndroidModule()) {
                 setSkipProject(true)
                 return@sonar
             }
@@ -90,5 +89,11 @@ fun SonarProperties.filesSafeProperty(name: String, vararg files: String) {
         ?.let { property(name, it) }
 }
 
-// Helper function to determine if the Android extension is applied to the project.
-fun Project.hasAndroidExtension() = extensions.findByType(BaseExtension::class.java) != null
+// Helper: detect Android modules by plugin ID (works with AGP 9 where BaseExtension is gone).
+fun Project.isAndroidModule() = listOf(
+    "com.android.application",
+    "com.android.library",
+    "com.android.test",
+    "com.android.dynamic-feature",
+    "com.android.kotlin.multiplatform.library",
+).any(plugins::hasPlugin)
