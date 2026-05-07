@@ -20,60 +20,58 @@ sonar {
 subprojects {
     afterEvaluate {
         sonar {
+            // Plugin 7.3.0 has a double-indexing bug with AndroidManifest.xml on AGP 9.
+            // Skip all Android modules until the plugin fixes this upstream.
+            if (hasAndroidExtension()) {
+                setSkipProject(true)
+                return@sonar
+            }
+
             properties {
-                // Coverage paths apply to all modules.
+                // Non-Android modules (KMP, Java): configure sources, tests, coverage.
+                filesSafeProperty(
+                    "sonar.sources",
+                    "$projectDir/src/main",
+                    "$projectDir/src/commonMain",
+                    "$projectDir/src/jvmMain",
+                    "$projectDir/src/jsMain",
+                    "$projectDir/src/webMain",
+                    "$projectDir/src/wasmJsMain",
+                )
+                filesSafeProperty(
+                    "sonar.tests",
+                    "$projectDir/src/test/java",
+                    "$projectDir/src/test/kotlin",
+                    "$projectDir/src/commonTest",
+                    "$projectDir/src/jvmTest",
+                    "$projectDir/src/jsTest",
+                    "$projectDir/src/webTest",
+                    "$projectDir/src/wasmJsTest",
+                )
                 filesSafeProperty(
                     "sonar.coverage.jacoco.xmlReportPaths",
                     "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
                     "${layout.buildDirectory.get()}/reports/kover/report.xml",
                 )
 
-                // Exclude specific classes from coverage reports.
-                val exclusions = KoverConfig.koverReportExclusionsClasses.toMutableList()
+                property(
+                    "sonar.exclusions",
+                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                )
+                property(
+                    "sonar.coverage.exclusions",
+                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                )
 
-                if (hasAndroidExtension()) {
-                    // Plugin 7.3.0 double-indexes AndroidManifest.xml — exclude it.
-                    exclusions.add("**/AndroidManifest.xml")
+                property("sonar.java.coveragePlugin", "jacoco")
+                property("sonar.import_unknown_files", true)
 
-                    // Let plugin auto-detect sources/binaries; only set test results.
+                if (plugins.hasPlugin(JavaPlugin::class.java)) {
                     property(
                         "sonar.junit.reportPaths",
-                        "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
+                        "${layout.buildDirectory.get()}/test-results/test"
                     )
-                } else {
-                    // Non-Android modules: configure sources, tests, and settings manually.
-                    filesSafeProperty(
-                        "sonar.sources",
-                        "$projectDir/src/main",
-                        "$projectDir/src/commonMain",
-                        "$projectDir/src/jvmMain",
-                        "$projectDir/src/jsMain",
-                        "$projectDir/src/webMain",
-                        "$projectDir/src/wasmJsMain",
-                    )
-                    filesSafeProperty(
-                        "sonar.tests",
-                        "$projectDir/src/test/java",
-                        "$projectDir/src/test/kotlin",
-                        "$projectDir/src/commonTest",
-                        "$projectDir/src/jvmTest",
-                        "$projectDir/src/jsTest",
-                        "$projectDir/src/webTest",
-                        "$projectDir/src/wasmJsTest",
-                    )
-                    property("sonar.java.coveragePlugin", "jacoco")
-                    property("sonar.import_unknown_files", true)
-
-                    if (plugins.hasPlugin(JavaPlugin::class.java)) {
-                        property(
-                            "sonar.junit.reportPaths",
-                            "${layout.buildDirectory.get()}/test-results/test"
-                        )
-                    }
                 }
-
-                property("sonar.exclusions", exclusions.joinToString(","))
-                property("sonar.coverage.exclusions", exclusions.joinToString(","))
             }
         }
     }
