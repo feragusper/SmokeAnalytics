@@ -20,13 +20,6 @@ sonar {
 subprojects {
     afterEvaluate {
         sonar {
-            // Skip application modules (apps with flavors) — plugin 7.3.0 double-indexes
-            // their manifest due to variant source sets. Library modules are fine.
-            if (plugins.hasPlugin("com.android.application")) {
-                setSkipProject(true)
-                return@sonar
-            }
-
             properties {
                 // Coverage paths apply to all modules.
                 filesSafeProperty(
@@ -36,18 +29,13 @@ subprojects {
                 )
 
                 // Exclude specific classes from coverage reports.
-                property(
-                    "sonar.exclusions",
-                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
-                )
-                property(
-                    "sonar.coverage.exclusions",
-                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
-                )
+                val exclusions = KoverConfig.koverReportExclusionsClasses.toMutableList()
 
                 if (hasAndroidExtension()) {
-                    // For Android modules, let plugin 7.3.0 auto-detect sources/binaries/tests.
-                    // Only configure test result and coverage report paths.
+                    // Plugin 7.3.0 double-indexes AndroidManifest.xml — exclude it.
+                    exclusions.add("**/AndroidManifest.xml")
+
+                    // Let plugin auto-detect sources/binaries; only set test results.
                     property(
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
@@ -83,6 +71,9 @@ subprojects {
                         )
                     }
                 }
+
+                property("sonar.exclusions", exclusions.joinToString(","))
+                property("sonar.coverage.exclusions", exclusions.joinToString(","))
             }
         }
     }
