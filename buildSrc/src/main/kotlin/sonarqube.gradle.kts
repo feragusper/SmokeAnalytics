@@ -21,7 +21,9 @@ subprojects {
         sonar {
             // Plugin 7.3.0 has a double-indexing bug with AndroidManifest.xml on AGP 9.
             // Skip all Android modules until the plugin fixes this upstream.
-            if (isAndroidModule()) {
+            // Also skip web/JS modules — no JS test runner produces coverage reports,
+            // so including them drags the overall metric down artificially.
+            if (isAndroidModule() || isWebModule()) {
                 setSkipProject(true)
                 return@sonar
             }
@@ -92,6 +94,18 @@ fun SonarProperties.filesSafeProperty(name: String, vararg files: String) {
         .takeIf { it.isNotEmpty() }
         ?.joinToString(",")
         ?.let { property(name, it) }
+}
+
+// Helper: detect web/JS-only modules that lack a test runner capable of producing coverage.
+fun Project.isWebModule(): Boolean {
+    // Convention: web source sets live under paths ending in /web or the app is :apps:web.
+    val isWebPath = projectDir.absolutePath.endsWith("/web")
+    val hasJsMain = file("$projectDir/src/jsMain").exists()
+    val hasWebMain = file("$projectDir/src/webMain").exists()
+    // Only skip if there is NO commonTest or jvmTest (which Kover can cover).
+    val hasTestableTests = file("$projectDir/src/commonTest").exists() ||
+        file("$projectDir/src/jvmTest").exists()
+    return (isWebPath || hasJsMain || hasWebMain) && !hasTestableTests
 }
 
 // Helper: detect Android modules by plugin ID (works with AGP 9 where BaseExtension is gone).
