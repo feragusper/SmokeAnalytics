@@ -47,10 +47,15 @@ subprojects {
                     "$projectDir/src/webTest",
                     "$projectDir/src/wasmJsTest",
                 )
-                filesSafeProperty(
+                // Coverage reports are generated at execution time by Kover, so
+                // they won't exist during configuration. Use property() directly
+                // and let Sonar ignore missing files at scan time.
+                property(
                     "sonar.coverage.jacoco.xmlReportPaths",
-                    "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
-                    "${layout.buildDirectory.get()}/reports/kover/report.xml",
+                    listOf(
+                        "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}",
+                        "${layout.buildDirectory.get()}/reports/kover/report.xml",
+                    ).joinToString(",")
                 )
 
                 property(
