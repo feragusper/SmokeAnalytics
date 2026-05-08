@@ -1,6 +1,12 @@
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+
 plugins {
     kotlin("multiplatform")
+    id("org.jetbrains.kotlinx.kover")
+    id("org.sonarqube")
 }
+
+extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
 
 kotlin {
     jvm()
@@ -20,6 +26,11 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.kotlinx.datetime)
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
             }
         }
         val jsMain by getting
