@@ -35,6 +35,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.amshove.kluent.shouldBeEqualTo
+import org.amshove.kluent.shouldBeInstanceOf
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -219,6 +220,70 @@ class HomeProcessHolderTest {
             processHolder.processIntent(HomeIntent.FetchSmokes).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: Quota exceeded")
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN starting new day THEN it updates preferences and returns success`() = runTest {
+            processHolder.processIntent(HomeIntent.StartNewDay).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.StartNewDaySuccess
+                coVerify(exactly = 1) { updateUserPreferencesUseCase.invoke(any()) }
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN starting new day fails THEN it returns error`() = runTest {
+            coEvery { updateUserPreferencesUseCase.invoke(any()) } throws IllegalStateException("DB error")
+
+            processHolder.processIntent(HomeIntent.StartNewDay).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.Error.Generic("IllegalStateException: DB error")
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN ticking time since last cigarette with null smoke THEN it returns zero time`() = runTest {
+            processHolder.processIntent(HomeIntent.TickTimeSinceLastCigarette(lastCigarette = null)).test {
+                val result = awaitItem()
+                result shouldBeInstanceOf HomeResult.UpdateTimeSinceLastCigarette::class
+                (result as HomeResult.UpdateTimeSinceLastCigarette).timeSinceLastCigarette shouldBeEqualTo (0L to 0L)
+                result.lastSmoke shouldBeEqualTo null
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN clicking history THEN it returns GoToHistory`() = runTest {
+            processHolder.processIntent(HomeIntent.OnClickHistory).test {
+                awaitItem() shouldBeEqualTo HomeResult.GoToHistory
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN clicking goals THEN it returns GoToGoals`() = runTest {
+            processHolder.processIntent(HomeIntent.OnClickGoals).test {
+                awaitItem() shouldBeEqualTo HomeResult.GoToGoals
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN refresh fetching smokes THEN it emits RefreshLoading`() = runTest {
+            coEvery { fetchSessionUseCase() } returns mockk<Session.LoggedIn> {
+                coEvery { user } returns mockk {
+                    coEvery { displayName } returns "Test"
+                }
+            }
+
+            processHolder.processIntent(HomeIntent.RefreshFetchSmokes).test {
+                awaitItem() shouldBeEqualTo HomeResult.RefreshLoading
+                val result = awaitItem()
+                result shouldBeInstanceOf HomeResult.FetchSmokesSuccess::class
                 awaitComplete()
             }
         }

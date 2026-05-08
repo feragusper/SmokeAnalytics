@@ -1,8 +1,13 @@
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
+
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.kotlinx.kover")
     id("org.sonarqube")
 }
+
+// Configure Kover code coverage reports using the centralized KoverConfig.
+extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
 
 kotlin {
     jvm()

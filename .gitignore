@@ -38,3 +38,4 @@ compose-build/
 # Firebase local cache
 .firebase/
 /firebase-debug.log
+coverage_report.py

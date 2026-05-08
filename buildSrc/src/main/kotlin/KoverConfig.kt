@@ -13,8 +13,35 @@ class KoverConfig(private val layout: ProjectLayout) {
         internal const val KOVER_REPORT_DIR = "smoke-analytics-report"
         internal const val KOVER_REPORT_XML_FILE = "result.xml"
         internal val koverReportExclusionsClasses = listOf(
-            "**/*Application.*","**/*Activity.*","**/*Navigator.*","**/*NavigationGraph.*",
-            "**/*View.*","**/*Color.kt","**/*Typography.kt","**/compose/**","**/di/**","**/extensions/**",
+            // Android components & generated Hilt wiring
+            "*.Application", "*.Application\$*", "*.*Activity", "*.*Activity\$*", "*.Hilt_*",
+            // Navigation graphs
+            "*.*Navigator", "*.*Navigator\$*", "*.*NavigationGraph*",
+            // Compose UI code (not unit-testable without instrumentation)
+            "*.*View", "*.*ViewKt", "*.*ViewKt\$*",
+            "*.*ViewState*Kt", "*.*ViewState*Kt\$*",
+            "*.ComposableSingletons\$*",
+            "*.*ScreenKt", "*.*ScreenKt\$*", "*.*Screen\$*",
+            // Design tokens (Color, Typography, Theme)
+            "*.ColorKt", "*.ColorKt\$*", "*.TypographyKt", "*.TypographyKt\$*",
+            "*.ThemeKt", "*.ThemeKt\$*", "*.PaletteTokens", "*.PaletteTokens\$*",
+            // Compose shared presentation components
+            "*.DatePickerDialog*", "*.EmptySmokes*", "*.SwipeToDismissRow*",
+            "*.StatKt", "*.StatKt\$*",
+            // Google Sign-In Compose component
+            "*.GoogleSignInComponent*",
+            // About screen (pure Compose UI)
+            "*.*AboutView*",
+            // Standard exclusion directories
+            "*.compose.*", "*.di.*", "*.extensions.*",
+            // BuildConfig generated
+            "*.BuildConfig",
+            // WearSync platform-specific
+            "*.WearSyncManagerImpl*",
+            // Abstract MVI framework (tested transitively through concrete ViewModels)
+            "*.MVIViewModel", "*.MVIViewModel\$*",
+            // Hilt generated code
+            "hilt_aggregated_deps.*", "*_HiltModules*", "*_Factory*", "*_MembersInjector*",
         )
     }
 
@@ -46,7 +73,9 @@ class KoverConfig(private val layout: ProjectLayout) {
                             .onFailure { /* fallback for older API: */
                                 @Suppress("UNUSED_EXPRESSION") (GroupingEntityType.APPLICATION)
                             }
-                        minBound(0, CoverageUnit.LINE, AggregationType.COVERED_PERCENTAGE)
+                        // Per-module floor: no individual module may drop below 65%.
+                        // The project-wide aggregate target is 80% (enforced by Sonar).
+                        minBound(65, CoverageUnit.LINE, AggregationType.COVERED_PERCENTAGE)
                         maxBound(100, CoverageUnit.LINE, AggregationType.COVERED_PERCENTAGE)
                     }
                 }

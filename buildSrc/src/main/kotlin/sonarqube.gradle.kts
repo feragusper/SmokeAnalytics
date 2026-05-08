@@ -1,4 +1,3 @@
-import com.android.build.gradle.BaseExtension
 import org.sonarqube.gradle.SonarExtension
 import org.sonarqube.gradle.SonarProperties
 
@@ -20,13 +19,15 @@ sonar {
 subprojects {
     afterEvaluate {
         sonar {
-            if (hasUnsupportedAgp9AndroidPlugin()) {
+            // Plugin 7.3.0 has a double-indexing bug with AndroidManifest.xml on AGP 9.
+            // Skip all Android modules until the plugin fixes this upstream.
+            if (isAndroidModule()) {
                 setSkipProject(true)
                 return@sonar
             }
 
             properties {
-                // Safely set source directories if they exist.
+                // Non-Android modules (KMP, Java): configure sources, tests, coverage.
                 filesSafeProperty(
                     "sonar.sources",
                     "$projectDir/src/main",
@@ -52,7 +53,6 @@ subprojects {
                     "${layout.buildDirectory.get()}/reports/kover/report.xml",
                 )
 
-                // Exclude specific classes from coverage reports using KoverConfig settings.
                 property(
                     "sonar.exclusions",
                     KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
@@ -62,43 +62,13 @@ subprojects {
                     KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
                 )
 
-                // Specify the coverage plugin.
                 property("sonar.java.coveragePlugin", "jacoco")
-                // Import files that SonarQube might not recognize by default.
                 property("sonar.import_unknown_files", true)
 
-                // Configure settings specific to Android projects.
-                if (hasAndroidExtension()) {
-                    val kotlinClasses = "${layout.buildDirectory.get()}/tmp/kotlin-classes"
-                    val javaClasses = "${layout.buildDirectory.get()}/intermediates/javac"
-
-                    filesSafeProperty(
-                        "sonar.java.binaries",
-                        "$kotlinClasses/debug",
-                        "$javaClasses/debug"
-                    )
-                    filesSafeProperty(
-                        "sonar.java.test.binaries",
-                        "$kotlinClasses/debugUnitTest",
-                        "$javaClasses/debugUnitTest"
-                    )
-                    property(
-                        "sonar.junit.reportPaths",
-                        "${layout.buildDirectory.get()}/test-results/testDebugUnitTest"
-                    )
-                    property(
-                        "sonar.coverage.jacoco.xmlReportPaths",
-                        "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
-                    )
-                } else if (plugins.hasPlugin(JavaPlugin::class.java)) {
-                    // Configure settings for non-Android (pure Java) projects.
+                if (plugins.hasPlugin(JavaPlugin::class.java)) {
                     property(
                         "sonar.junit.reportPaths",
                         "${layout.buildDirectory.get()}/test-results/test"
-                    )
-                    property(
-                        "sonar.coverage.jacoco.xmlReportPaths",
-                        "${layout.buildDirectory.get()}/${KoverConfig.KOVER_REPORT_DIR}/${KoverConfig.KOVER_REPORT_XML_FILE}"
                     )
                 }
             }
@@ -119,10 +89,8 @@ fun SonarProperties.filesSafeProperty(name: String, vararg files: String) {
         ?.let { property(name, it) }
 }
 
-// Helper function to determine if the Android extension is applied to the project.
-fun Project.hasAndroidExtension() = extensions.findByType(BaseExtension::class.java) != null
-
-fun Project.hasUnsupportedAgp9AndroidPlugin() = listOf(
+// Helper: detect Android modules by plugin ID (works with AGP 9 where BaseExtension is gone).
+fun Project.isAndroidModule() = listOf(
     "com.android.application",
     "com.android.library",
     "com.android.test",
