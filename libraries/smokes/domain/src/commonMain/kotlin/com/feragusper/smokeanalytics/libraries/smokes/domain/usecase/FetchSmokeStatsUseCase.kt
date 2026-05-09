@@ -8,7 +8,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
-import kotlinx.datetime.toDeprecatedInstant
 
 class FetchSmokeStatsUseCase(
     private val smokeRepository: SmokeRepository,
@@ -28,10 +27,9 @@ class FetchSmokeStatsUseCase(
                 requireNotNull(day) { "day is required for PeriodType.DAY" }
                 val date = LocalDate(year, month, day)
                 date.atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone).toDeprecatedInstant() to
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
                     date.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone)
                         .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
             }
 
             PeriodType.WEEK -> {
@@ -40,30 +38,27 @@ class FetchSmokeStatsUseCase(
                 val startOfWeek = date.minusDaysToMonday()
                 val endOfWeek = startOfWeek.plus(DatePeriod(days = 7))
                 startOfWeek.atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone).toDeprecatedInstant() to
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
                     endOfWeek.atStartOfDayIn(timeZone)
                         .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
             }
 
             PeriodType.MONTH -> {
                 val date = LocalDate(year, month, 1)
                 val endOfMonth = date.plus(DatePeriod(months = 1))
                 date.atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone).toDeprecatedInstant() to
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
                     endOfMonth.atStartOfDayIn(timeZone)
                         .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
             }
 
             PeriodType.YEAR -> {
                 val date = LocalDate(year, 1, 1)
                 val endOfYear = date.plus(DatePeriod(years = 1))
                 date.atStartOfDayIn(timeZone)
-                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone).toDeprecatedInstant() to
+                    .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone) to
                     endOfYear.atStartOfDayIn(timeZone)
                         .plus(dayStartHour, kotlinx.datetime.DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
             }
         }
 

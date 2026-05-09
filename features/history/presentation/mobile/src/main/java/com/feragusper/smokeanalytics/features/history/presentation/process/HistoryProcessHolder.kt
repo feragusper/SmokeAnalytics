@@ -23,7 +23,6 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -32,11 +31,11 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Clock
 
 /**
  * Handles the business logic of processing intents for the History feature.
@@ -134,7 +133,6 @@ class HistoryProcessHolder @Inject constructor(
         } else {
             selectedDate.atStartOfDayIn(timeZone)
                 .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
-                .toDeprecatedInstant()
         }
         val nextDayStart = if (selectedDate == currentBucketDate) {
             nextDayStartInstant(
@@ -160,14 +158,12 @@ class HistoryProcessHolder @Inject constructor(
                     dayOfMonth = 1,
                 ).atStartOfDayIn(timeZone)
                     .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
-                    .toDeprecatedInstant()
                 val nextMonthStart = LocalDate(
                     year = selectedBucketDate.year,
                     monthNumber = selectedBucketDate.monthNumber,
                     dayOfMonth = 1,
                 ).plus(DatePeriod(months = 1)).atStartOfDayIn(timeZone)
                     .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
-                    .toDeprecatedInstant()
                 val monthCounts = fetchSmokesUseCase.invoke(monthStart, nextMonthStart)
                     .groupingBy { smoke ->
                         smoke.date.dayBucketDate(
@@ -183,7 +179,6 @@ class HistoryProcessHolder @Inject constructor(
                     dayOfMonth = 1,
                 ).plus(DatePeriod(months = -1)).atStartOfDayIn(timeZone)
                     .plus(preferences.dayStartHour, DateTimeUnit.HOUR, timeZone)
-                    .toDeprecatedInstant()
                 val previousMonthCounts = fetchSmokesUseCase.invoke(previousMonthStart, monthStart)
                     .groupingBy { smoke ->
                         smoke.date.dayBucketDate(
@@ -280,5 +275,5 @@ private fun Instant.toVisibleAddTimestamp(timeZone: TimeZone): Instant {
         minute = nowLocal.minute,
         second = nowLocal.second,
         nanosecond = 0,
-    ).toInstant(timeZone).toDeprecatedInstant()
+    ).toInstant(timeZone)
 }

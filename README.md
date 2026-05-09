@@ -11,12 +11,29 @@
 
 Smoke Analytics is a Kotlin Multiplatform smoking journal focused on one thing: making patterns visible without turning the product into noise.
 
-The current `0.12.0` product is organized around four core destinations:
+The product is organized around four core destinations:
 
-- `The Pulse`: today, the last cigarette, pace, goals, and short status cues
-- `Analytics & Map`: smoking frequency and geographic clustering from one destination
-- `The Archive`: list and calendar views for the detailed smoking log
-- `You`: account, preferences, goals, and product actions in one place
+- **The Pulse**: today, the last cigarette, pace, goals, and short status cues
+- **Analytics & Map**: smoking frequency and geographic clustering from one destination
+- **The Archive**: list and calendar views for the detailed smoking log
+- **You**: account, preferences, goals, and product actions in one place
+
+## Screenshots
+
+### Mobile
+
+| The Pulse | Analytics & Map | The Archive | You |
+|:-:|:-:|:-:|:-:|
+| ![The Pulse](misc/image/mobile-pulse.png) | ![Analytics & Map](misc/image/mobile-analytics.png) | ![The Archive](misc/image/mobile-archive.png) | ![You](misc/image/mobile-you.png) |
+
+### Web
+
+![Web Home](misc/image/web-home.png)
+
+### Wear OS
+
+<!-- TODO: Add wear-home.png once the Wear screenshot is available -->
+<!-- ![Wear Home](misc/image/wear-home.png) -->
 
 ## Platforms
 
@@ -62,6 +79,7 @@ apps/
 
 features/
   authentication/
+  devtools/
   goals/
   history/
   home/
@@ -78,7 +96,6 @@ libraries/
   wear/
 
 docs/
-  releases/
   discovery/
 ```
 
@@ -171,17 +188,14 @@ Rules:
 - deploy Android and web from `master`
 - bump `develop` to the next version only after the release is merged and deployed
 
-Current product version:
-
-- `product.version=0.12.0`
-
 ## CI And Automation
 
 GitHub Actions drive the main repository automation:
 
 - `integration.yml`: validation on PRs
-- `deployment_playstore.yml`: Android release path
+- `deployment_playstore.yml`: Android and Wear OS release path
 - `deploy-web-hosting.yml`: production web deploy path
+- `deployment_artifact.yml`: build artifact generation
 
 Wear OS Play setup is documented in [docs/play-store-wear-os.md](docs/play-store-wear-os.md).
 
@@ -201,10 +215,6 @@ Companion docs:
 - [SKILLS.md](SKILLS.md)
 - [docs/agent-workflow.md](docs/agent-workflow.md)
 
-## Screenshots
-
-The old screenshots previously referenced by this README were removed because they no longer represented the current product. The next README asset pass should add refreshed captures from the current `0.12` app surfaces instead of reusing pre-revamp images.
-
 ## Support
 
 - Issues: [github.com/feragusper/SmokeAnalytics/issues](https://github.com/feragusper/SmokeAnalytics/issues)
@@ -214,7 +224,7 @@ The old screenshots previously referenced by this README were removed because th
 ## License
 
 ```text
-Copyright 2025 feragusper
+Copyright 2024-2026 feragusper
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

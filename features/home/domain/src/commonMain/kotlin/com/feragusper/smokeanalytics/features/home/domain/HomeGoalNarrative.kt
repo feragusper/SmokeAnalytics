@@ -3,12 +3,12 @@ package com.feragusper.smokeanalytics.features.home.domain
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+import kotlin.time.Clock
 
 data class HomeGoalNarrative(
     val heroTitle: String,

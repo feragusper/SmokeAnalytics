@@ -6,11 +6,11 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekSt
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextWeekStartInstant
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlin.math.pow
 import kotlin.math.round
+import kotlin.time.Clock
 
 enum class SmokeMapPeriod {
     Day,

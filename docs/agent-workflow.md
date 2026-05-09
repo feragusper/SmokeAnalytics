@@ -12,19 +12,13 @@
   - subtree-specific overrides for specialized work
 - `.agents/skills/`
   - repository-scoped skills discoverable by Codex
-- `.codex/agents/`
-  - project-scoped custom agents for subagent workflows
-- `.codex/config.example.toml`
-  - example project-scoped configuration, intended to be copied or adapted rather than assumed
-- `codex/rules/*.rules.example`
-  - example approval-policy rules, not auto-enforced by this repository alone
+- `.codex/skills/`
+  - OpenSpec workflow skills for Codex
 
 ## When To Reach For Each Tooling Layer
 - Use `AGENTS.md` for stable repo expectations that should apply to almost every task.
 - Use nested `AGENTS.md` files when a subtree has specialized constraints such as Compose Web UX, Android app wiring, or GitHub workflow behavior.
 - Use repo skills for repeated, focused workflows such as web polish, KMP feature passes, and release hygiene.
-- Use custom agents when a task benefits from clearly scoped delegation such as exploration or release verification.
-- Use MCP when external context or tools materially improve correctness, especially for current docs, product metadata, or remote systems.
 
 ## Repository-Specific Defaults
 - Check the matching mobile surface before pushing web design changes.

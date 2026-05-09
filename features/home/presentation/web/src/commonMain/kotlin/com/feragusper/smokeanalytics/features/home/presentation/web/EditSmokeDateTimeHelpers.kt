@@ -3,7 +3,6 @@ package com.feragusper.smokeanalytics.features.home.presentation.web
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
@@ -43,5 +42,5 @@ internal fun dateTimeInputsToInstant(
         nanosecond = 0,
     )
 
-    return localDateTime.toInstant(timeZone).toDeprecatedInstant()
+    return localDateTime.toInstant(timeZone)
 }

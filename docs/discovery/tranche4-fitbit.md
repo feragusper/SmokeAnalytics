@@ -23,7 +23,7 @@
   - activity summary
   - resting heart rate or heart time series where permitted
   - sleep summary
-- Use these only for correlation and contextual insights, not for automated coaching claims.
+- Use these only for correlation and contextual insights, not for automated health claims.
 
 ## Required architecture
 - OAuth redirect handling with PKCE

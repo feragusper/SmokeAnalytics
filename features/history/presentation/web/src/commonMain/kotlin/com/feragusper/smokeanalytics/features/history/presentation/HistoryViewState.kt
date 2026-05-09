@@ -2,8 +2,8 @@ package com.feragusper.smokeanalytics.features.history.presentation
 
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Clock
 
 data class HistoryViewState(
     val displayLoading: Boolean = false,

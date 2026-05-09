@@ -22,7 +22,6 @@ internal fun parseRouteFromHash(hash: String): WebRoute = when (hash.removePrefi
     "/analytics", "/stats", "/map" -> WebRoute.Analytics
     "/history" -> WebRoute.History
     "/goals" -> WebRoute.Goals
-    "/coach" -> WebRoute.Home
     "/you", "/settings", "/about" -> WebRoute.Settings
     "/auth" -> WebRoute.Auth
     "/home", "/", "" -> WebRoute.Home
