@@ -2,7 +2,7 @@
 
 ## Automatic Vs Companion Context
 - `AGENTS.md` is the primary repository instruction file Codex reads automatically.
-- `RULES.md`, `SKILLS.md`, and the files under `.codex/` and `.agents/` are companion assets that clarify structure, reusable workflows, and opt-in local setup.
+- `RULES.md`, `SKILLS.md`, and the files under `.codex/` and `.agents/` are companion assets that clarify structure and reusable workflows.
 - Keep critical repository expectations in `AGENTS.md`. Do not hide mandatory guidance only in companion files.
 
 ## Repository Layout For Codex

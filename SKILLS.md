@@ -22,6 +22,8 @@ OpenSpec skills live in:
   - Use for shared feature work that spans domain, process holders, and multiple platform presentation layers.
 - `release-hygiene`
   - Use for versioning, GitHub Actions, release tags, deploy workflows, and backlog synchronization.
+- `branch-flow-hygiene`
+  - Use for deciding branch bases, updating `develop`, and preparing release merges into `master`.
 
 ## Guidance
 - Prefer narrow skills with one job over broad catch-all instructions.
