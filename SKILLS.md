@@ -7,13 +7,13 @@ Codex-compatible repo skills live in:
 - `.agents/skills/web-ux-pass/`
 - `.agents/skills/kmp-feature-pass/`
 - `.agents/skills/release-hygiene/`
+- `.agents/skills/branch-flow-hygiene/`
 
-Project-scoped custom subagents live in:
-- `.codex/agents/repo-explorer.toml`
-- `.codex/agents/release-guardian.toml`
-
-Project-scoped configuration examples live in:
-- `.codex/config.example.toml`
+OpenSpec skills live in:
+- `.codex/skills/openspec-explore/`
+- `.codex/skills/openspec-propose/`
+- `.codex/skills/openspec-apply-change/`
+- `.codex/skills/openspec-archive-change/`
 
 ## Intended Skill Usage
 - `web-ux-pass`
@@ -22,6 +22,8 @@ Project-scoped configuration examples live in:
   - Use for shared feature work that spans domain, process holders, and multiple platform presentation layers.
 - `release-hygiene`
   - Use for versioning, GitHub Actions, release tags, deploy workflows, and backlog synchronization.
+- `branch-flow-hygiene`
+  - Use for deciding branch bases, updating `develop`, and preparing release merges into `master`.
 
 ## Guidance
 - Prefer narrow skills with one job over broad catch-all instructions.

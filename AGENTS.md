@@ -51,8 +51,7 @@
 ## Repo-Specific Agent Assets
 - Subtree-specific overrides live in `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`, and `.github/workflows/AGENTS.md`.
 - Repository skills live in `.agents/skills/`.
-- Project-scoped custom agents live in `.codex/agents/`.
-- Opt-in examples for project-scoped Codex config and MCP setup live in `.codex/`.
+- Project-scoped OpenSpec workflow skills live in `.codex/skills/`.
 - Human-readable companion docs live in `docs/agent-workflow.md`, `RULES.md`, and `SKILLS.md`.
 
 ## Guardrails

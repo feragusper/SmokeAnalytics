@@ -12,13 +12,13 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlin.math.roundToInt
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.until
+import kotlin.time.Clock
 
 class EvaluateGoalProgressUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),

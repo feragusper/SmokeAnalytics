@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.model
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
@@ -11,8 +10,8 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.periodUntil
 import kotlinx.datetime.plus
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 data class SmokeStats(
     val daily: Map<String, Int>,
@@ -137,11 +136,9 @@ data class SmokeStats(
                     val start = shiftedNow.date.plus(DatePeriod(days = -6))
                         .atStartOfDayIn(timeZone)
                         .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
                     val end = shiftedNow.date.plus(DatePeriod(days = 1))
                         .atStartOfDayIn(timeZone)
                         .plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
-                        .toDeprecatedInstant()
                     smokes.count { it.date >= start && it.date < end }
                 }
             }

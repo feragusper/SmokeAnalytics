@@ -32,10 +32,10 @@ import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIn
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import kotlinx.browser.document
 import kotlinx.browser.window
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.w3c.dom.events.Event
+import kotlin.time.Clock
 
 @Composable
 fun AppRoot(graph: WebAppGraph) {

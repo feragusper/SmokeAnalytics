@@ -19,7 +19,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.navigation.Hi
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import javax.inject.Inject
 
 @HiltViewModel

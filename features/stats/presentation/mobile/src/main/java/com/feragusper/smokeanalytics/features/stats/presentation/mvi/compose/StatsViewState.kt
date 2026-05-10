@@ -59,6 +59,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.VicoTheme
+import androidx.compose.ui.platform.LocalLocale
 import java.time.LocalDate as JavaLocalDate
 import java.util.Locale
 import kotlin.math.max
@@ -314,6 +315,7 @@ private fun SummaryCards(
     selectedDate: JavaLocalDate,
 ) {
     val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
+    val locale = LocalLocale.current.platformLocale
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -342,7 +344,7 @@ private fun SummaryCards(
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     title = averageSummary.title,
-                    headline = String.format(Locale.getDefault(), "%.1f", averageSummary.value),
+                    headline = String.format(locale, "%.1f", averageSummary.value),
                     supporting = averageSummary.supporting,
                     highlighted = true,
                     compact = true,
@@ -447,6 +449,7 @@ fun HeaderNavigation(
     selectedDate: JavaLocalDate,
     onDateChange: (JavaLocalDate) -> Unit
 ) {
+    val locale = LocalLocale.current.platformLocale
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -473,7 +476,7 @@ fun HeaderNavigation(
                 StatsViewState.StatsPeriod.WEEK -> "Week of $selectedDate"
                 StatsViewState.StatsPeriod.MONTH -> selectedDate.month.getDisplayName(
                     java.time.format.TextStyle.FULL,
-                    Locale.getDefault()
+                    locale
                 )
 
                 StatsViewState.StatsPeriod.YEAR -> selectedDate.year.toString()
