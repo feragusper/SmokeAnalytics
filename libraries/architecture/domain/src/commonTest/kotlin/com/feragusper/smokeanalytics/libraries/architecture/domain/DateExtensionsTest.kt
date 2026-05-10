@@ -6,7 +6,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,7 +71,7 @@ class DateExtensionsTest {
     fun dayStartInstant_withDayStartHour6_returnsCorrectInstant() {
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, now.dayStartInstant(timeZone = utc, dayStartHour = 6))
     }
 
@@ -93,7 +92,7 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val nextDay = nextDayStartInstant(now = now, timeZone = utc, dayStartHour = 6)
         val expected = LocalDate(2026, 5, 8).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, nextDay)
     }
 
@@ -104,7 +103,7 @@ class DateExtensionsTest {
         // 2026-05-07 is a Thursday
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val weekStart = currentWeekStartInstant(now = now, timeZone = utc, dayStartHour = 0)
-        val expected = LocalDate(2026, 5, 4).atStartOfDayIn(utc).toDeprecatedInstant()
+        val expected = LocalDate(2026, 5, 4).atStartOfDayIn(utc)
         assertEquals(expected, weekStart)
     }
 
@@ -113,7 +112,7 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val weekStart = currentWeekStartInstant(now = now, timeZone = utc, dayStartHour = 6)
         val expected = LocalDate(2026, 5, 4).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, weekStart)
     }
 
@@ -134,7 +133,7 @@ class DateExtensionsTest {
     fun currentMonthStartInstant_returnsFirstOfMonth() {
         val now = Instant.parse("2026-05-15T12:00:00Z")
         val monthStart = currentMonthStartInstant(now = now, timeZone = utc, dayStartHour = 0)
-        val expected = LocalDate(2026, 5, 1).atStartOfDayIn(utc).toDeprecatedInstant()
+        val expected = LocalDate(2026, 5, 1).atStartOfDayIn(utc)
         assertEquals(expected, monthStart)
     }
 
@@ -143,7 +142,7 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-15T12:00:00Z")
         val monthStart = currentMonthStartInstant(now = now, timeZone = utc, dayStartHour = 6)
         val expected = LocalDate(2026, 5, 1).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, monthStart)
     }
 
@@ -153,7 +152,7 @@ class DateExtensionsTest {
     fun nextMonthStartInstant_returnsFirstOfNextMonth() {
         val now = Instant.parse("2026-05-15T12:00:00Z")
         val nextMonth = nextMonthStartInstant(now = now, timeZone = utc, dayStartHour = 0)
-        val expected = LocalDate(2026, 6, 1).atStartOfDayIn(utc).toDeprecatedInstant()
+        val expected = LocalDate(2026, 6, 1).atStartOfDayIn(utc)
         assertEquals(expected, nextMonth)
     }
 
@@ -161,7 +160,7 @@ class DateExtensionsTest {
     fun nextMonthStartInstant_decemberWrapsToJanuary() {
         val now = Instant.parse("2026-12-15T12:00:00Z")
         val nextMonth = nextMonthStartInstant(now = now, timeZone = utc, dayStartHour = 0)
-        val expected = LocalDate(2027, 1, 1).atStartOfDayIn(utc).toDeprecatedInstant()
+        val expected = LocalDate(2027, 1, 1).atStartOfDayIn(utc)
         assertEquals(expected, nextMonth)
     }
 
@@ -256,7 +255,7 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val result = activeCurrentDayStartInstant(now = now, timeZone = utc, dayStartHour = 6)
         val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, result)
     }
 
@@ -284,7 +283,7 @@ class DateExtensionsTest {
             manualDayStartEpochMillis = manualStart.toEpochMilliseconds(),
         )
         val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, result)
     }
 
@@ -373,7 +372,7 @@ class DateExtensionsTest {
             manualDayStartEpochMillis = manualStart.toEpochMilliseconds(),
         )
         val expected = LocalDate(2026, 5, 8).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, nextDay)
     }
 
@@ -391,7 +390,7 @@ class DateExtensionsTest {
         )
         // 2026-05-07 is a Thursday, so Monday is May 4
         val expected = LocalDate(2026, 5, 4).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, weekStart)
     }
 
@@ -429,7 +428,7 @@ class DateExtensionsTest {
             manualDayStartEpochMillis = manualStart.toEpochMilliseconds(),
         )
         val expected = LocalDate(2026, 5, 1).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, monthStart)
     }
 
@@ -440,7 +439,7 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-15T12:00:00Z")
         val nextMonth = nextMonthStartInstant(now = now, timeZone = utc, dayStartHour = 6)
         val expected = LocalDate(2026, 6, 1).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, nextMonth)
     }
 
@@ -457,7 +456,7 @@ class DateExtensionsTest {
             manualDayStartEpochMillis = manualStart.toEpochMilliseconds(),
         )
         val expected = LocalDate(2027, 1, 1).atStartOfDayIn(utc)
-            .plus(6, DateTimeUnit.HOUR, utc).toDeprecatedInstant()
+            .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, nextMonth)
     }
 
@@ -508,8 +507,7 @@ class DateExtensionsTest {
     @Test
     fun dayStartInstant_withDayStartHour0_returnsStartOfDay() {
         val now = Instant.parse("2026-05-07T12:00:00Z")
-        val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc).toDeprecatedInstant()
+        val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc)
         assertEquals(expected, now.dayStartInstant(timeZone = utc, dayStartHour = 0))
     }
 }
-
