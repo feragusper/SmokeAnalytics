@@ -53,7 +53,6 @@ import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DateP
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import com.valentinilk.shimmer.shimmer
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -62,8 +61,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 data class HistoryViewState(
     internal val displayLoading: Boolean = false,
@@ -150,12 +149,11 @@ data class HistoryViewState(
                                 HistoryIntent.FetchSmokes(
                                     LocalDate(shifted.year, shifted.monthNumber, 1)
                                         .atStartOfDayIn(timeZone)
-                                        .toDeprecatedInstant()
                                 )
                             )
                         },
                         onPickDay = { picked ->
-                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone).toDeprecatedInstant()))
+                            intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
                     )
                 }

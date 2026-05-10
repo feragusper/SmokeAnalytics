@@ -26,7 +26,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 /**
  * Represents the process holder for the Home screen.
@@ -101,8 +103,8 @@ class HomeProcessHolder(
                     )
                     val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                     val greetingState = greetingStateFor(
-                        hourOfDay = kotlinx.datetime.Clock.System.now()
-                            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
+                        hourOfDay = Clock.System.now()
+                            .toLocalDateTime(TimeZone.currentSystemDefault()).hour,
                         todayCount = smokeCounts.countByToday,
                         currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
                     )
@@ -181,7 +183,7 @@ class HomeProcessHolder(
         emit(HomeResult.Loading)
         val preferences = fetchUserPreferencesUseCase()
         updateUserPreferencesUseCase(
-            preferences.copy(manualDayStartEpochMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
+            preferences.copy(manualDayStartEpochMillis = Clock.System.now().toEpochMilliseconds())
         )
         emit(HomeResult.StartNewDaySuccess)
     }.catch {

@@ -1,11 +1,7 @@
 # Repo Rules
 
 ## What This File Is
-This file documents repository guardrails for agents and humans. It is not a Codex execution-policy `.rules` file.
-
-For executable approval-policy examples, see:
-- `codex/rules/repo-default.rules.example`
-- `codex/rules/release-ops.rules.example`
+This file documents repository guardrails for agents and humans.
 
 ## Product Rules
 - Mobile is the product baseline for visual language.

@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Clock
 
 /**
  * Processes intents from the Home feature, invoking the appropriate use cases and updating the result.
@@ -101,7 +102,7 @@ class HomeProcessHolder @Inject constructor(
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
                 val greetingState = greetingStateFor(
-                    hourOfDay = kotlinx.datetime.Clock.System.now()
+                    hourOfDay = Clock.System.now()
                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
                     todayCount = smokeCounts.countByToday,
                     currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
@@ -231,7 +232,7 @@ class HomeProcessHolder @Inject constructor(
         emit(HomeResult.Loading)
         val preferences = fetchUserPreferencesUseCase()
         updateUserPreferencesUseCase(
-            preferences.copy(manualDayStartEpochMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds())
+            preferences.copy(manualDayStartEpochMillis = Clock.System.now().toEpochMilliseconds())
         )
         emit(HomeResult.StartNewDaySuccess)
     }.catchAndLog { e ->

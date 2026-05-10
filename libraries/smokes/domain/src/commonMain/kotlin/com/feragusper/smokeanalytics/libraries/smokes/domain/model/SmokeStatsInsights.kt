@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.model
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -9,6 +8,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.max
+import kotlin.time.Clock
 
 enum class SmokeStatsPeriod {
     DAY,

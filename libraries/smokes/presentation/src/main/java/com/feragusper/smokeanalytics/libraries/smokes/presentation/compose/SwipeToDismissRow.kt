@@ -47,7 +47,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toLocalDateTime
 
 /**
@@ -181,7 +180,7 @@ fun SwipeToDismissRow(
                         second = selectedDateTime.second,
                         nanosecond = selectedDateTime.nanosecond,
                     )
-                    onEdit(updatedLocalDateTime.toInstant(timeZone).toDeprecatedInstant())
+                    onEdit(updatedLocalDateTime.toInstant(timeZone))
                 }
             )
         } else {
@@ -199,7 +198,7 @@ fun SwipeToDismissRow(
                         second = base.second,
                         nanosecond = base.nanosecond,
                     )
-                    onEdit(updatedLocalDateTime.toInstant(timeZone).toDeprecatedInstant())
+                    onEdit(updatedLocalDateTime.toInstant(timeZone))
                 },
                 onDismiss = { showDatePicker = false },
             )

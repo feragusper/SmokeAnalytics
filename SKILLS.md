@@ -7,13 +7,13 @@ Codex-compatible repo skills live in:
 - `.agents/skills/web-ux-pass/`
 - `.agents/skills/kmp-feature-pass/`
 - `.agents/skills/release-hygiene/`
+- `.agents/skills/branch-flow-hygiene/`
 
-Project-scoped custom subagents live in:
-- `.codex/agents/repo-explorer.toml`
-- `.codex/agents/release-guardian.toml`
-
-Project-scoped configuration examples live in:
-- `.codex/config.example.toml`
+OpenSpec skills live in:
+- `.codex/skills/openspec-explore/`
+- `.codex/skills/openspec-propose/`
+- `.codex/skills/openspec-apply-change/`
+- `.codex/skills/openspec-archive-change/`
 
 ## Intended Skill Usage
 - `web-ux-pass`

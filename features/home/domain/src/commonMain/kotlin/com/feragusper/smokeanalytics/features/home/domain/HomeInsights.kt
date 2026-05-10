@@ -8,12 +8,12 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekSt
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.max
+import kotlin.time.Clock
 
 enum class ElapsedTone {
     Urgent,

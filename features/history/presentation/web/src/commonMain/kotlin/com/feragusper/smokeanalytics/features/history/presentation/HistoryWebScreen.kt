@@ -26,15 +26,14 @@ import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.isoDayNumber
-import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
@@ -105,7 +104,7 @@ fun HistoryWebScreen(
             entriesCount = state.smokes?.size ?: 0,
             onPrevious = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz))) },
             onNext = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz))) },
-            onPickDate = { picked -> store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz).toDeprecatedInstant())) },
+            onPickDate = { picked -> store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz))) },
             onAdd = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
         )
 
@@ -117,12 +116,12 @@ fun HistoryWebScreen(
                     val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
                     store.send(
                         HistoryIntent.FetchSmokes(
-                            LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz).toDeprecatedInstant()
+                            LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz)
                         )
                     )
                 },
                 onPickDay = { picked ->
-                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz).toDeprecatedInstant()))
+                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
                     calendarMode = false
                 },
             )
@@ -609,5 +608,5 @@ private fun String.toInstantFromHtmlDateTimeLocalOrNull(timeZone: TimeZone): Ins
         nanosecond = 0,
     )
 
-    return runCatching { ldt.toInstant(timeZone).toDeprecatedInstant() }.getOrNull()
+    return runCatching { ldt.toInstant(timeZone) }.getOrNull()
 }
