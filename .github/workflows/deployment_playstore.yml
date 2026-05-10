@@ -60,7 +60,9 @@ jobs:
         run: |
           gem install bundler:2.2.27
           bundle config path vendor/bundle
-          bundle install --jobs 4 --retry 3
+          bundle config set --local deployment true
+          bundle config set --local frozen true
+          bundle install --jobs 4 --retry 3 --deployment
 
       - name: Configure keystore and Play Store credentials
         shell: bash
