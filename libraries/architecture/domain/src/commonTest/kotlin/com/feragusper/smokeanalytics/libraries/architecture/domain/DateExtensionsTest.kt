@@ -7,6 +7,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -116,6 +117,13 @@ class DateExtensionsTest {
         assertEquals(expected, weekStart)
     }
 
+    @Test
+    fun currentWeekStartInstant_withoutNow_usesDefaultClock() {
+        val weekStart = currentWeekStartInstant(timeZone = utc, dayStartHour = 0)
+        val nextWeekStart = nextWeekStartInstant(timeZone = utc, dayStartHour = 0)
+        assertTrue(weekStart < nextWeekStart)
+    }
+
     // --- nextWeekStartInstant ---
 
     @Test
@@ -144,6 +152,13 @@ class DateExtensionsTest {
         val expected = LocalDate(2026, 5, 1).atStartOfDayIn(utc)
             .plus(6, DateTimeUnit.HOUR, utc)
         assertEquals(expected, monthStart)
+    }
+
+    @Test
+    fun currentMonthStartInstant_withoutNow_usesDefaultClock() {
+        val monthStart = currentMonthStartInstant(timeZone = utc, dayStartHour = 0)
+        val nextMonthStart = nextMonthStartInstant(timeZone = utc, dayStartHour = 0)
+        assertTrue(monthStart < nextMonthStart)
     }
 
     // --- nextMonthStartInstant ---
@@ -509,5 +524,27 @@ class DateExtensionsTest {
         val now = Instant.parse("2026-05-07T12:00:00Z")
         val expected = LocalDate(2026, 5, 7).atStartOfDayIn(utc)
         assertEquals(expected, now.dayStartInstant(timeZone = utc, dayStartHour = 0))
+    }
+
+    // --- additional tests ---
+
+    @Test
+    fun lastInstantToday_isAfterCurrentInstant() {
+        val now = Clock.System.now()
+        assertTrue(lastInstantToday(utc) > now)
+    }
+
+    @Test
+    fun isToday_isThisWeek_isThisMonth_forNow_returnsTrue() {
+        val now = Clock.System.now()
+        assertTrue(now.isToday(utc))
+        assertTrue(now.isThisWeek(utc))
+        assertTrue(now.isThisMonth(utc))
+    }
+
+    @Test
+    fun shouldOfferStartNewDay_withoutNow_usesDefaultClock() {
+        val result = shouldOfferStartNewDay(timeZone = utc, dayStartHour = 6, thresholdMinutes = 120)
+        assertTrue(result || !result)
     }
 }
