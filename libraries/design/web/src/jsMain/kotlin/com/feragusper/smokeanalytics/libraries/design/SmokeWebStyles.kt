@@ -540,6 +540,11 @@ object SmokeWebStyles : StyleSheet() {
         }
     }
 
+    val statCardPressed by style {
+        property("transform", "scale(0.985)")
+        property("box-shadow", "var(--sa-shadow-1)")
+    }
+
     val statTitle by style {
         fontSize(12.px)
         fontWeight(700)
@@ -645,6 +650,11 @@ object SmokeWebStyles : StyleSheet() {
             property("box-shadow", "var(--sa-shadow-1)")
             property("border-color", "var(--sa-color-outline-strong)")
         }
+    }
+
+    val buttonPressed by style {
+        property("transform", "scale(0.97)")
+        property("box-shadow", "none")
     }
 
     val buttonPrimary by style {
