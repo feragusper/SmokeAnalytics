@@ -59,6 +59,7 @@ import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
+import com.feragusper.smokeanalytics.libraries.design.compose.pressScaleMicroInteraction
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
@@ -317,7 +318,9 @@ private fun MainContainerScreen(
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
                 ExtendedFloatingActionButton(
-                    modifier = Modifier.testTag(BUTTON_ADD_SMOKE),
+                    modifier = Modifier
+                        .testTag(BUTTON_ADD_SMOKE)
+                        .pressScaleMicroInteraction(pressedScale = 0.95f),
                     onClick = { runHomeTrackAction() },
                     containerColor = fabTone.buttonContainerColor(),
                     contentColor = fabTone.contentColor(),
@@ -457,7 +460,8 @@ private fun BottomNavigation(
             DropletButton(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.surface)
+                    .pressScaleMicroInteraction(pressedScale = 0.94f),
                 isSelected = selectedIndex == index,
                 icon = screen.iconId,
                 iconColor = MaterialTheme.colorScheme.onSurface,
