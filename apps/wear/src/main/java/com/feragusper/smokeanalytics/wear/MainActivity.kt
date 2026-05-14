@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,7 +102,9 @@ private fun WearHomeContent(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -109,24 +115,24 @@ private fun WearHomeContent(
                 color = WearOnSurface,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
             )
             Text(
                 text = state.lastSmokeLabel(),
                 color = WearMuted,
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Button(
                     onClick = onRefresh,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 40.dp),
                     enabled = !state.refreshRequestInFlight,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = WearSurface,
@@ -144,12 +150,14 @@ private fun WearHomeContent(
                             },
                         ),
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
+                        textAlign = TextAlign.Center,
                     )
                 }
                 Button(
                     onClick = onAddSmoke,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 40.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = WearPrimary,
                         contentColor = WearPrimaryContent,
@@ -158,7 +166,7 @@ private fun WearHomeContent(
                     Text(
                         text = stringResourceCompat(R.string.add_smoke_track),
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -170,9 +178,10 @@ private fun WearHomeContent(
 private fun SmokeCount(todayCount: Int?) {
     Box(
         modifier = Modifier
-            .size(58.dp)
+            .sizeIn(minWidth = 58.dp, minHeight = 58.dp)
             .clip(CircleShape)
-            .background(WearSurface),
+            .background(WearSurface)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         if (todayCount == null) {
@@ -191,7 +200,7 @@ private fun SmokeCount(todayCount: Int?) {
                     color = WearPrimary,
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -257,7 +266,7 @@ private fun Long.toDurationLabel(): String {
     }
 }
 
-private val WearBackground = Color(0xFF071311)
+private val WearBackground = Color.Black
 private val WearSurface = Color(0xFF10241F)
 private val WearPrimary = Color(0xFF80F2D7)
 private val WearPrimaryContent = Color(0xFF05201A)
