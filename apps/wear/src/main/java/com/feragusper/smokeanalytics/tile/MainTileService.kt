@@ -2,8 +2,11 @@ package com.feragusper.smokeanalytics.tile
 
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ActionBuilders
+import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DeviceParametersBuilders
+import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.protolayout.material.ChipDefaults
@@ -129,8 +132,7 @@ class MainTileService : SuspendingTileService() {
         )
         val statsText = Text.Builder(this, getString(R.string.stats_today_short, state.todayCount ?: 0))
             .setTypography(Typography.TYPOGRAPHY_TITLE3)
-            .setColor(androidx.wear.protolayout.ColorBuilders.argb(WEAR_PRIMARY))
-            .setMaxLines(1)
+            .setColor(ColorBuilders.argb(WEAR_PRIMARY))
             .build()
 
         val content = Text.Builder(
@@ -142,8 +144,7 @@ class MainTileService : SuspendingTileService() {
             }
         )
             .setTypography(Typography.TYPOGRAPHY_BODY2)
-            .setColor(androidx.wear.protolayout.ColorBuilders.argb(WEAR_ON_SURFACE))
-            .setMaxLines(2)
+            .setColor(ColorBuilders.argb(WEAR_ON_SURFACE))
             .build()
 
         val addSmokeChip = addSmokeChip(deviceParameters)
@@ -151,11 +152,26 @@ class MainTileService : SuspendingTileService() {
         // Build the layout using the created elements
         return LayoutElementBuilders.Layout.Builder()
             .setRoot(
-                PrimaryLayout.Builder(deviceParameters)
-                    .setPrimaryLabelTextContent(statsText)
-                    .setContent(content)
-                    .setPrimaryChipContent(addSmokeChip)
-                    .setResponsiveContentInsetEnabled(true)
+                LayoutElementBuilders.Box.Builder()
+                    .setWidth(DimensionBuilders.expand())
+                    .setHeight(DimensionBuilders.expand())
+                    .setModifiers(
+                        ModifiersBuilders.Modifiers.Builder()
+                            .setBackground(
+                                ModifiersBuilders.Background.Builder()
+                                    .setColor(ColorBuilders.argb(WEAR_BLACK))
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .addContent(
+                        PrimaryLayout.Builder(deviceParameters)
+                            .setPrimaryLabelTextContent(statsText)
+                            .setContent(content)
+                            .setPrimaryChipContent(addSmokeChip)
+                            .setResponsiveContentInsetEnabled(true)
+                            .build()
+                    )
                     .build()
             )
             .build()
@@ -221,6 +237,7 @@ class MainTileService : SuspendingTileService() {
     companion object {
         private const val ADD_SMOKE_ACTION_ID = "add_smoke_action"
         private const val RESOURCES_VERSION = "1"
+        private const val WEAR_BLACK = 0xFF000000.toInt()
         private const val WEAR_PRIMARY = 0xFF80F2D7.toInt()
         private const val WEAR_ON_SURFACE = 0xFFF5FAF8.toInt()
     }

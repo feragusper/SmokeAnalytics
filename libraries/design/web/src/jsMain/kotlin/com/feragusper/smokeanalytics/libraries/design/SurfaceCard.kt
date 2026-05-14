@@ -1,6 +1,10 @@
 package com.feragusper.smokeanalytics.libraries.design
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
@@ -29,9 +33,20 @@ fun StatCard(
     value: String,
     onClick: (() -> Unit)? = null,
 ) {
-    SurfaceCard(SmokeWebStyles.statCard) {
+    var pressed by remember { mutableStateOf(false) }
+    val extraClasses = listOfNotNull(
+        SmokeWebStyles.statCard,
+        SmokeWebStyles.statCardPressed.takeIf { pressed },
+    )
+
+    SurfaceCard(*extraClasses.toTypedArray()) {
         Div(
             attrs = {
+                if (onClick != null) {
+                    onMouseDown { pressed = true }
+                    onMouseUp { pressed = false }
+                    onMouseLeave { pressed = false }
+                }
                 if (onClick != null) {
                     onClick { onClick() }
                 }
@@ -116,14 +131,22 @@ private fun ActionButton(
     enabled: Boolean,
     extraClass: String? = null,
 ) {
+    var pressed by remember { mutableStateOf(false) }
+
     Button(
         attrs = {
             classes(SmokeWebStyles.button)
             extraClass?.split(" ")?.filter { it.isNotBlank() }?.let { classes(*it.toTypedArray()) }
+            if (pressed && enabled) {
+                classes(SmokeWebStyles.buttonPressed)
+            }
             if (!enabled) {
                 attr("disabled", "true")
                 classes(SmokeWebStyles.buttonDisabled)
             }
+            onMouseDown { if (enabled) pressed = true }
+            onMouseUp { pressed = false }
+            onMouseLeave { pressed = false }
             onClick { if (enabled) onClick() }
         }
     ) { Text(text) }
