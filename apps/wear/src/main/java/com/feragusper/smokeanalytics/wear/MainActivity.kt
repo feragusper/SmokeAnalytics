@@ -4,10 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,10 +31,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material.PositionIndicator
+import androidx.wear.compose.material.Scaffold
 import com.feragusper.smokeanalytics.R
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.BuildConfig
 import com.feragusper.smokeanalytics.tile.TileIntent
@@ -94,82 +98,118 @@ private fun WearHomeContent(
     onRefresh: () -> Unit,
     onAddSmoke: () -> Unit,
 ) {
-    Box(
+    val listState = rememberScalingLazyListState()
+    val configuration = LocalConfiguration.current
+    val horizontalInset = if (configuration.isScreenRound) 30.dp else 18.dp
+
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(WearBackground)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center,
+            .background(WearBackground),
+        positionIndicator = {
+            PositionIndicator(scalingLazyListState = listState)
+        },
     ) {
-        Column(
+        ScalingLazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(WearBackground),
+            contentPadding = PaddingValues(
+                start = horizontalInset,
+                top = 16.dp,
+                end = horizontalInset,
+                bottom = 18.dp,
+            ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        ) {
+            item {
+                SmokeCount(state.todayCount)
+            }
+            item {
+                Text(
+                    text = stringResourceCompat(R.string.next_pace_short, state.nextSmokeLabel()),
+                    modifier = Modifier.fillMaxWidth(),
+                    color = WearOnSurface,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            item {
+                Text(
+                    text = state.lastSmokeLabel(),
+                    modifier = Modifier.fillMaxWidth(),
+                    color = WearMuted,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            item {
+                Spacer(modifier = Modifier.height(6.dp))
+            }
+            item {
+                WearActionButtons(
+                    state = state,
+                    onRefresh = onRefresh,
+                    onAddSmoke = onAddSmoke,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WearActionButtons(
+    state: TileViewState,
+    onRefresh: () -> Unit,
+    onAddSmoke: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Button(
+            onClick = onRefresh,
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                .heightIn(min = 40.dp),
+            enabled = !state.refreshRequestInFlight,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = WearSurface,
+                contentColor = WearOnSurface,
+                disabledContainerColor = WearSurface,
+                disabledContentColor = WearMuted,
+            ),
         ) {
-            SmokeCount(state.todayCount)
-            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResourceCompat(R.string.next_pace_short, state.nextSmokeLabel()),
-                color = WearOnSurface,
-                style = MaterialTheme.typography.bodyMedium,
+                text = stringResourceCompat(
+                    if (state.refreshRequestInFlight) {
+                        R.string.sync_smokes_syncing
+                    } else {
+                        R.string.sync_smokes
+                    },
+                ),
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
+        }
+        Button(
+            onClick = onAddSmoke,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 40.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = WearPrimary,
+                contentColor = WearPrimaryContent,
+            ),
+        ) {
             Text(
-                text = state.lastSmokeLabel(),
-                color = WearMuted,
-                style = MaterialTheme.typography.bodySmall,
+                text = stringResourceCompat(R.string.add_smoke_track),
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Button(
-                    onClick = onRefresh,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 40.dp),
-                    enabled = !state.refreshRequestInFlight,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WearSurface,
-                        contentColor = WearOnSurface,
-                        disabledContainerColor = WearSurface,
-                        disabledContentColor = WearMuted,
-                    ),
-                ) {
-                    Text(
-                        text = stringResourceCompat(
-                            if (state.refreshRequestInFlight) {
-                                R.string.sync_smokes_syncing
-                            } else {
-                                R.string.sync_smokes
-                            },
-                        ),
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                Button(
-                    onClick = onAddSmoke,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 40.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WearPrimary,
-                        contentColor = WearPrimaryContent,
-                    ),
-                ) {
-                    Text(
-                        text = stringResourceCompat(R.string.add_smoke_track),
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
         }
     }
 }
