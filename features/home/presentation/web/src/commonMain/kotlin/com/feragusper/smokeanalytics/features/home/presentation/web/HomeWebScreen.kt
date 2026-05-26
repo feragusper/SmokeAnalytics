@@ -28,6 +28,7 @@ import org.jetbrains.compose.web.attributes.AttrsScope
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -376,18 +377,57 @@ private fun ConsistencyCard(
     consistencyLabel: String,
     statusLabel: String,
 ) {
+    val streakDays = consistencyLabel.completedStreakDays()
+
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
             HomeSectionChip("↗", "Consistency", "var(--sa-color-primary)")
             Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
                 Text(consistencyLabel)
             }
+            ConsistencyMilestones(streakDays = streakDays)
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                 Text(statusLabel)
             }
         }
     }
 }
+
+@Composable
+private fun ConsistencyMilestones(
+    streakDays: Int?,
+) {
+    val milestones = listOf(
+        ConsistencyMilestone(days = 7, glyph = "✓"),
+        ConsistencyMilestone(days = 14, glyph = "↟"),
+        ConsistencyMilestone(days = 30, glyph = "★"),
+        ConsistencyMilestone(days = 60, glyph = "◇"),
+    )
+    Div(attrs = { attr("style", "display:flex;flex-wrap:wrap;gap:8px;") }) {
+        milestones.forEach { milestone ->
+            val completed = streakDays != null && streakDays >= milestone.days
+            Div(
+                attrs = {
+                    attr(
+                        "style",
+                        "display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;" +
+                            "background:${if (completed) "var(--sa-color-primary-container)" else "var(--sa-color-surface-strong)"};" +
+                            "color:${if (completed) "var(--sa-color-on-primary-container)" else "var(--sa-color-secondary)"};" +
+                            "box-shadow:inset 0 0 0 1px rgba(17, 69, 75, 0.08);font-size:12px;font-weight:800;"
+                    )
+                }
+            ) {
+                Span { Text(milestone.glyph) }
+                Span { Text("${milestone.days}d") }
+            }
+        }
+    }
+}
+
+private data class ConsistencyMilestone(
+    val days: Int,
+    val glyph: String,
+)
 
 @Composable
 private fun EveningResetCard(
@@ -461,6 +501,13 @@ private fun metricGlyph(icon: HomeHeroMetricIcon): String = when (icon) {
     HomeHeroMetricIcon.Target -> "◎"
     HomeHeroMetricIcon.Window -> "◌"
 }
+
+private fun String.completedStreakDays(): Int? =
+    Regex("""(\d+)\s+days?\s+completed\s+in\s+a\s+row""")
+        .find(this)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
 
 private fun HomeHeroProgressTone.accentColor(): String = when (this) {
     HomeHeroProgressTone.Green -> "var(--sa-color-primary)"

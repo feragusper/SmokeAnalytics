@@ -77,6 +77,9 @@ class MainTileService : SuspendingTileService() {
             Timber.d("Add Smoke clicked! Updating ViewModel...")
             state = state.withOptimisticAddSmoke(now)
             viewModel.intents().trySend(TileIntent.AddSmoke(now))
+        } else if (requestParams.currentState.lastClickableId == SYNC_SMOKES_ACTION_ID) {
+            Timber.d("Sync clicked! Requesting fresh data...")
+            viewModel.intents().trySend(TileIntent.RefreshSmokes)
         } else {
             viewModel.intents().trySend(TileIntent.RefreshSmokes)
         }
@@ -97,6 +100,15 @@ class MainTileService : SuspendingTileService() {
                     .setAndroidResourceByResId(
                         ResourceBuilders.AndroidImageResourceByResId.Builder()
                             .setResourceId(com.feragusper.smokeanalytics.libraries.design.mobile.R.drawable.ic_cigarette)
+                            .build()
+                    ).build()
+            )
+            .addIdToImageMapping(
+                "sync_icon",
+                ResourceBuilders.ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.drawable.ic_sync)
                             .build()
                     ).build()
             )
@@ -135,19 +147,30 @@ class MainTileService : SuspendingTileService() {
             .setColor(ColorBuilders.argb(WEAR_PRIMARY))
             .build()
 
-        val content = Text.Builder(
-            this,
-            buildString {
-                append(getString(R.string.next_pace_short, nextSmokeText))
-                append('\n')
-                append(getString(R.string.last_smoke_short, lastSmokeText))
-            }
-        )
+        val nextSmokeLabel = Text.Builder(this, getString(R.string.next_pace_short, nextSmokeText))
             .setTypography(Typography.TYPOGRAPHY_BODY2)
             .setColor(ColorBuilders.argb(WEAR_ON_SURFACE))
             .build()
-
-        val addSmokeChip = addSmokeChip(deviceParameters)
+        val lastSmokeLabel = Text.Builder(this, getString(R.string.last_smoke_short, lastSmokeText))
+            .setTypography(Typography.TYPOGRAPHY_CAPTION1)
+            .setColor(ColorBuilders.argb(WEAR_MUTED))
+            .build()
+        val content = LayoutElementBuilders.Column.Builder()
+            .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
+            .addContent(nextSmokeLabel)
+            .addContent(
+                LayoutElementBuilders.Spacer.Builder()
+                    .setHeight(DimensionBuilders.dp(6f))
+                    .build()
+            )
+            .addContent(lastSmokeLabel)
+            .addContent(
+                LayoutElementBuilders.Spacer.Builder()
+                    .setHeight(DimensionBuilders.dp(18f))
+                    .build()
+            )
+            .addContent(actionChips(deviceParameters))
+            .build()
 
         // Build the layout using the created elements
         return LayoutElementBuilders.Layout.Builder()
@@ -168,7 +191,6 @@ class MainTileService : SuspendingTileService() {
                         PrimaryLayout.Builder(deviceParameters)
                             .setPrimaryLabelTextContent(statsText)
                             .setContent(content)
-                            .setPrimaryChipContent(addSmokeChip)
                             .setResponsiveContentInsetEnabled(true)
                             .build()
                     )
@@ -176,6 +198,35 @@ class MainTileService : SuspendingTileService() {
             )
             .build()
     }
+
+    private fun actionChips(
+        deviceParameters: DeviceParametersBuilders.DeviceParameters,
+    ): LayoutElementBuilders.Row =
+        LayoutElementBuilders.Row.Builder()
+            .addContent(syncSmokeChip(deviceParameters))
+            .addContent(
+                LayoutElementBuilders.Spacer.Builder()
+                    .setWidth(DimensionBuilders.dp(8f))
+                    .build()
+            )
+            .addContent(addSmokeChip(deviceParameters))
+            .build()
+
+    private fun syncSmokeChip(
+        deviceParameters: DeviceParametersBuilders.DeviceParameters,
+    ): CompactChip =
+        CompactChip.Builder(
+            this,
+            androidx.wear.protolayout.ModifiersBuilders.Clickable.Builder()
+                .setId(SYNC_SMOKES_ACTION_ID)
+                .setOnClick(ActionBuilders.LoadAction.Builder().build())
+                .build(),
+            deviceParameters
+        )
+            .setIconContent("sync_icon")
+            .setContentDescription(getString(R.string.sync_smokes))
+            .setChipColors(ChipDefaults.SECONDARY_COLORS)
+            .build()
 
     private fun addSmokeChip(
         deviceParameters: DeviceParametersBuilders.DeviceParameters,
@@ -188,8 +239,8 @@ class MainTileService : SuspendingTileService() {
                 .build(),
             deviceParameters
         )
-            .setTextContent(getString(R.string.add_smoke_track))
             .setIconContent("smoke_icon")
+            .setContentDescription(getString(R.string.add_smoke_track))
             .setChipColors(ChipDefaults.PRIMARY_COLORS)
             .build()
 
@@ -236,10 +287,12 @@ class MainTileService : SuspendingTileService() {
 
     companion object {
         private const val ADD_SMOKE_ACTION_ID = "add_smoke_action"
+        private const val SYNC_SMOKES_ACTION_ID = "sync_smokes_action"
         private const val RESOURCES_VERSION = "1"
         private const val WEAR_BLACK = 0xFF000000.toInt()
         private const val WEAR_PRIMARY = 0xFF80F2D7.toInt()
         private const val WEAR_ON_SURFACE = 0xFFF5FAF8.toInt()
+        private const val WEAR_MUTED = 0xFF9FB6AF.toInt()
     }
 
 }

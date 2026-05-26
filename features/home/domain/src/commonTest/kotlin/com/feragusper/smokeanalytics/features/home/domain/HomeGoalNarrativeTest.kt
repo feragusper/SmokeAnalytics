@@ -133,13 +133,13 @@ class HomeGoalNarrativeTest {
 
         assertEquals("Cap used today", readout.meterLabel)
         assertEquals("3 of 6", readout.meterValue)
-        assertEquals("Pace", readout.metrics[0].label)
-        assertEquals("2", readout.metrics[0].value)
-        assertEquals(HomeHeroMetricIcon.Pace, readout.metrics[0].icon)
-        assertEquals("Margin", readout.metrics[1].label)
-        assertEquals("3 left", readout.metrics[1].value)
-        assertEquals("Every", readout.metrics[2].label)
-        assertEquals("~3h 20m", readout.metrics[2].value)
+        assertEquals(2, readout.metrics.size)
+        assertEquals("Every", readout.metrics[0].label)
+        assertEquals("~3h 20m", readout.metrics[0].value)
+        assertEquals(HomeHeroMetricIcon.Gap, readout.metrics[0].icon)
+        assertEquals("Pace", readout.metrics[1].label)
+        assertEquals("2", readout.metrics[1].value)
+        assertEquals(HomeHeroMetricIcon.Pace, readout.metrics[1].icon)
     }
 
     @Test
@@ -705,7 +705,7 @@ class HomeGoalNarrativeTest {
     }
 
     @Test
-    fun `daily cap readout over cap shows correct margin metric`() {
+    fun `daily cap readout over cap keeps every and pace metrics`() {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
@@ -724,12 +724,15 @@ class HomeGoalNarrativeTest {
             now = noon,
             timeZone = utc,
         )
-        assertEquals("2 over", readout.metrics[1].value)
-        assertEquals("--", readout.metrics[2].value)
+        assertEquals(2, readout.metrics.size)
+        assertEquals("Every", readout.metrics[0].label)
+        assertEquals("--", readout.metrics[0].value)
+        assertEquals("Pace", readout.metrics[1].label)
+        assertEquals("2", readout.metrics[1].value)
     }
 
     @Test
-    fun `daily cap readout 0 left shows hold metric`() {
+    fun `daily cap readout 0 left keeps every and pace metrics`() {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
@@ -748,7 +751,12 @@ class HomeGoalNarrativeTest {
             now = noon,
             timeZone = utc,
         )
-        assertEquals("0 left", readout.metrics[1].value)
+        assertEquals(2, readout.metrics.size)
+        assertEquals("Every", readout.metrics[0].label)
+        assertEquals("--", readout.metrics[0].value)
+        assertEquals("Cap already used", readout.metrics[0].supporting)
+        assertEquals("Pace", readout.metrics[1].label)
+        assertEquals("2", readout.metrics[1].value)
     }
 
     @Test
