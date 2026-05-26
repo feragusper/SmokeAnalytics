@@ -19,9 +19,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
@@ -559,14 +566,12 @@ private fun GoalHeroSection(
                                 shape = RoundedCornerShape(999.dp),
                             )
                         }
-                        repeat(2) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                repeat(2) {
-                                    GoalHeroMetricSkeleton(modifier = Modifier.weight(1f))
-                                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            repeat(2) {
+                                GoalHeroMetricSkeleton(modifier = Modifier.weight(1f))
                             }
                         }
                     } else {
@@ -834,6 +839,8 @@ private fun ConsistencySection(
     statusLabel: String,
     isLoading: Boolean,
 ) {
+    val streakDays = consistencyLabel.completedStreakDays()
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -870,6 +877,7 @@ private fun ConsistencySection(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
+                ConsistencyMilestoneRow(streakDays = streakDays)
                 Text(
                     text = statusLabel,
                     style = MaterialTheme.typography.bodySmall,
@@ -879,6 +887,69 @@ private fun ConsistencySection(
         }
     }
 }
+
+@Composable
+private fun ConsistencyMilestoneRow(
+    streakDays: Int?,
+) {
+    val milestones = listOf(
+        ConsistencyMilestone(days = 7, icon = Icons.Filled.CheckCircle),
+        ConsistencyMilestone(days = 14, icon = Icons.Filled.LocalFireDepartment),
+        ConsistencyMilestone(days = 30, icon = Icons.Filled.Star),
+        ConsistencyMilestone(days = 60, icon = Icons.Filled.EmojiEvents),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        milestones.forEach { milestone ->
+            val completed = streakDays != null && streakDays >= milestone.days
+            Surface(
+                color = if (completed) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                },
+                contentColor = if (completed) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                shape = RoundedCornerShape(999.dp),
+                border = innerCardBorder(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = milestone.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Text(
+                        text = "${milestone.days}d",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class ConsistencyMilestone(
+    val days: Int,
+    val icon: ImageVector,
+)
+
+private fun String.completedStreakDays(): Int? =
+    Regex("""(\d+)\s+days?\s+completed\s+in\s+a\s+row""")
+        .find(this)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
 
 @Composable
 private fun SkeletonBlock(
