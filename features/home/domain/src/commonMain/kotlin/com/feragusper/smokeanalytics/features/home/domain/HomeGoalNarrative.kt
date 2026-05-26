@@ -282,26 +282,6 @@ fun homeHeroReadout(
                 meterFraction = (smokedToday.toFloat() / goal.maxCigarettesPerDay.toFloat()).coerceIn(0f, 1f),
                 metrics = listOf(
                     HomeHeroMetric(
-                        label = "Pace",
-                        value = expectedByNow.toString(),
-                        supporting = "Ideal by now",
-                        icon = HomeHeroMetricIcon.Pace,
-                    ),
-                    HomeHeroMetric(
-                        label = "Margin",
-                        value = when {
-                            remaining > 0 -> "$remaining left"
-                            remaining == 0 -> "0 left"
-                            else -> "${remaining.absoluteValue} over"
-                        },
-                        supporting = when {
-                            remaining > 0 -> "Room before the cap"
-                            remaining == 0 -> "Hold here"
-                            else -> "Past today's cap"
-                        },
-                        icon = HomeHeroMetricIcon.Margin,
-                    ),
-                    HomeHeroMetric(
                         label = "Every",
                         value = remainingGapMinutes?.let { "~${it.toDurationLabel()}" } ?: "--",
                         supporting = when {
@@ -312,10 +292,10 @@ fun homeHeroReadout(
                         icon = HomeHeroMetricIcon.Gap,
                     ),
                     HomeHeroMetric(
-                        label = "Day left",
-                        value = dayWindow.remainingMinutes.toDurationLabel(),
-                        supporting = "Active time remaining",
-                        icon = HomeHeroMetricIcon.Window,
+                        label = "Pace",
+                        value = expectedByNow.toString(),
+                        supporting = "Ideal by now",
+                        icon = HomeHeroMetricIcon.Pace,
                     ),
                 ),
             )
