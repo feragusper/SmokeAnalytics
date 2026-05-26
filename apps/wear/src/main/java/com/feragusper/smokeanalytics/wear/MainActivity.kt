@@ -3,6 +3,13 @@ package com.feragusper.smokeanalytics.wear
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,11 +34,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +59,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.BuildCo
 import com.feragusper.smokeanalytics.tile.TileIntent
 import com.feragusper.smokeanalytics.tile.TileViewModel
 import com.feragusper.smokeanalytics.tile.TileViewState
+import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -101,6 +116,7 @@ private fun WearHomeContent(
     val listState = rememberScalingLazyListState()
     val configuration = LocalConfiguration.current
     val horizontalInset = if (configuration.isScreenRound) 30.dp else 18.dp
+    var trackFeedbackNonce by remember { mutableIntStateOf(0) }
 
     Scaffold(
         modifier = Modifier
@@ -125,7 +141,10 @@ private fun WearHomeContent(
             verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
         ) {
             item {
-                SmokeCount(state.todayCount)
+                SmokeCount(
+                    todayCount = state.todayCount,
+                    trackFeedbackNonce = trackFeedbackNonce,
+                )
             }
             item {
                 Text(
@@ -152,7 +171,10 @@ private fun WearHomeContent(
                 WearActionButtons(
                     state = state,
                     onRefresh = onRefresh,
-                    onAddSmoke = onAddSmoke,
+                    onAddSmoke = {
+                        trackFeedbackNonce += 1
+                        onAddSmoke()
+                    },
                 )
             }
         }
@@ -165,6 +187,8 @@ private fun WearActionButtons(
     onRefresh: () -> Unit,
     onAddSmoke: () -> Unit,
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -196,7 +220,10 @@ private fun WearActionButtons(
             )
         }
         Button(
-            onClick = onAddSmoke,
+            onClick = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                onAddSmoke()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 40.dp),
@@ -215,15 +242,46 @@ private fun WearActionButtons(
 }
 
 @Composable
-private fun SmokeCount(todayCount: Int?) {
+private fun SmokeCount(
+    todayCount: Int?,
+    trackFeedbackNonce: Int,
+) {
+    val countScale = remember { Animatable(1f) }
+    var showTrackFeedback by remember { mutableStateOf(false) }
+
+    LaunchedEffect(trackFeedbackNonce) {
+        if (trackFeedbackNonce > 0) {
+            showTrackFeedback = true
+            countScale.snapTo(1f)
+            countScale.animateTo(1.14f, animationSpec = tween(durationMillis = 140))
+            countScale.animateTo(1f, animationSpec = tween(durationMillis = 260))
+            delay(320)
+            showTrackFeedback = false
+        }
+    }
+
     Box(
         modifier = Modifier
             .sizeIn(minWidth = 58.dp, minHeight = 58.dp)
+            .scale(countScale.value)
             .clip(CircleShape)
             .background(WearSurface)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
+        AnimatedVisibility(
+            visible = showTrackFeedback,
+            enter = fadeIn(animationSpec = tween(120)) + scaleIn(initialScale = 0.72f),
+            exit = fadeOut(animationSpec = tween(220)) + scaleOut(targetScale = 1.18f),
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
+            Text(
+                text = "+1",
+                color = WearPrimary,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.ExtraBold,
+            )
+        }
         if (todayCount == null) {
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
