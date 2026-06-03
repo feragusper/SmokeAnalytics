@@ -45,18 +45,9 @@ fun MapWebScreen(
                             if (state.isRefreshing) {
                                 "Refreshing clusters in background."
                             } else {
-                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected period."
+                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected ${state.period.name.lowercase()}."
                             }
                         )
-                    }
-                    Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                        SmokeMapPeriod.entries.forEach { candidate ->
-                            PrimaryButton(
-                                text = candidate.name,
-                                onClick = { stateHolder.onPeriodChange(candidate) },
-                                enabled = !state.isLoading && candidate != state.period,
-                            )
-                        }
                     }
                 }
             }

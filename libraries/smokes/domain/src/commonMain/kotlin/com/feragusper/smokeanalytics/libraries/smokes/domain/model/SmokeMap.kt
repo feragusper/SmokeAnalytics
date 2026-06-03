@@ -7,7 +7,14 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.nextDayStartI
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.nextWeekStartInstant
 import kotlinx.datetime.Instant
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.plus
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.pow
 import kotlin.math.round
 import kotlin.time.Clock
@@ -16,6 +23,7 @@ enum class SmokeMapPeriod {
     Day,
     Week,
     Month,
+    Year,
 }
 
 data class SmokeMapCluster(
@@ -31,36 +39,62 @@ fun smokeMapRange(
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
     now: Instant = Clock.System.now(),
-): Pair<Instant, Instant> = when (period) {
-    SmokeMapPeriod.Day -> currentDayStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    ) to nextDayStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    )
+    selectedDate: LocalDate? = null,
+): Pair<Instant, Instant> {
+    if (selectedDate != null) {
+        return selectedDate.smokeMapRangeFor(period, timeZone, dayStartHour)
+    }
 
-    SmokeMapPeriod.Week -> currentWeekStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    ) to nextWeekStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    )
+    return when (period) {
+        SmokeMapPeriod.Day -> currentDayStartInstant(
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        ) to nextDayStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        )
 
-    SmokeMapPeriod.Month -> currentMonthStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    ) to nextMonthStartInstant(
-        timeZone = timeZone,
-        dayStartHour = dayStartHour,
-        manualDayStartEpochMillis = manualDayStartEpochMillis,
-    )
+        SmokeMapPeriod.Week -> currentWeekStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        ) to nextWeekStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        )
+
+        SmokeMapPeriod.Month -> currentMonthStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        ) to nextMonthStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = dayStartHour,
+            manualDayStartEpochMillis = manualDayStartEpochMillis,
+        )
+
+        SmokeMapPeriod.Year -> {
+            val currentMonthStart = currentMonthStartInstant(
+                now = now,
+                timeZone = timeZone,
+                dayStartHour = dayStartHour,
+                manualDayStartEpochMillis = manualDayStartEpochMillis,
+            )
+            val current = currentMonthStart.minus(dayStartHour, DateTimeUnit.HOUR, timeZone)
+                .toLocalDateTime(timeZone)
+                .date
+            LocalDate(current.year, 1, 1).atShiftedStartOfDay(timeZone, dayStartHour) to
+                LocalDate(current.year + 1, 1, 1).atShiftedStartOfDay(timeZone, dayStartHour)
+        }
+    }
 }
 
 fun clusterSmokesForMap(
@@ -71,11 +105,13 @@ fun clusterSmokesForMap(
         SmokeMapPeriod.Day -> 3
         SmokeMapPeriod.Week -> 2
         SmokeMapPeriod.Month -> 1
+        SmokeMapPeriod.Year -> 1
     }
     val radiusMeters = when (period) {
         SmokeMapPeriod.Day -> 120
         SmokeMapPeriod.Week -> 350
         SmokeMapPeriod.Month -> 900
+        SmokeMapPeriod.Year -> 1200
     }
 
     return smokes
@@ -99,6 +135,35 @@ fun clusterSmokesForMap(
             )
         }
 }
+
+private fun LocalDate.smokeMapRangeFor(
+    period: SmokeMapPeriod,
+    timeZone: TimeZone,
+    dayStartHour: Int,
+): Pair<Instant, Instant> = when (period) {
+    SmokeMapPeriod.Day -> atShiftedStartOfDay(timeZone, dayStartHour) to
+        plus(1, DateTimeUnit.DAY).atShiftedStartOfDay(timeZone, dayStartHour)
+
+    SmokeMapPeriod.Week -> {
+        val weekStart = minus(dayOfWeek.isoDayNumber - 1, DateTimeUnit.DAY)
+        weekStart.atShiftedStartOfDay(timeZone, dayStartHour) to
+            weekStart.plus(7, DateTimeUnit.DAY).atShiftedStartOfDay(timeZone, dayStartHour)
+    }
+
+    SmokeMapPeriod.Month -> {
+        val monthStart = LocalDate(year, monthNumber, 1)
+        monthStart.atShiftedStartOfDay(timeZone, dayStartHour) to
+            monthStart.plus(1, DateTimeUnit.MONTH).atShiftedStartOfDay(timeZone, dayStartHour)
+    }
+
+    SmokeMapPeriod.Year -> LocalDate(year, 1, 1).atShiftedStartOfDay(timeZone, dayStartHour) to
+        LocalDate(year + 1, 1, 1).atShiftedStartOfDay(timeZone, dayStartHour)
+}
+
+private fun LocalDate.atShiftedStartOfDay(
+    timeZone: TimeZone,
+    dayStartHour: Int,
+): Instant = atStartOfDayIn(timeZone).plus(dayStartHour, DateTimeUnit.HOUR, timeZone)
 
 private fun GeoPoint.rounded(decimals: Int): Pair<Double, Double> {
     val scale = 10.0.pow(decimals.toDouble())
