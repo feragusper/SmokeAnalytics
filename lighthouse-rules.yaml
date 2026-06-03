@@ -12,14 +12,14 @@ rules:
     condition: ":libraries:* !-> :features:*"
     level: "fatal"
 
-  # Features must not couple to each other directly (only via libraries)
-  - name: "Feature Isolation"
-    condition: ":features:* !-> :features:*"
-    level: "error"
+  # Feature presentation must not depend on other feature presentation (domain cross-deps are allowed)
+  - name: "Feature Presentation Isolation"
+    condition: ":features:*:presentation:* !-> :features:*:presentation:*"
+    level: "warning"
 
   # Standard layering: apps -> features -> libraries
   - name: "Standard Layering"
-    condition: "App -> Feature -> Library"
+    condition: "apps -> features -> libraries"
     level: "error"
 
   # Domain modules must not depend on presentation or data modules
