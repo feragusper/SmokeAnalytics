@@ -173,8 +173,16 @@ data class StatsViewState(
                             )
                         }
 
+                        HeaderNavigation(
+                            currentPeriod = currentPeriod,
+                            selectedDate = selectedDate,
+                            onDateChange = { newDate ->
+                                selectedDate = newDate
+                            }
+                        )
+
                         TabRow(
-                            modifier = Modifier.padding(bottom = 8.dp),
+                            modifier = Modifier.padding(top = 4.dp),
                             selectedTabIndex = currentPeriod.ordinal,
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.primary,
@@ -205,14 +213,6 @@ data class StatsViewState(
                                 }
                             }
                         }
-
-                        HeaderNavigation(
-                            currentPeriod = currentPeriod,
-                            selectedDate = selectedDate,
-                            onDateChange = { newDate ->
-                                selectedDate = newDate
-                            }
-                        )
                     }
                 }
 
@@ -453,7 +453,9 @@ fun HeaderNavigation(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(top = 12.dp, bottom = 8.dp)
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -481,7 +483,8 @@ fun HeaderNavigation(
 
                 StatsViewState.StatsPeriod.YEAR -> selectedDate.year.toString()
             },
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
         )
 
         IconButton(onClick = {

@@ -30,6 +30,7 @@ import com.feragusper.smokeanalytics.features.stats.presentation.web.toDomainPer
 import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.datetime.TimeZone
@@ -152,7 +153,10 @@ fun AppRoot(graph: WebAppGraph) {
                     )
                 )
 
-                AnalyticsTab.Map -> mapStateHolder.refresh()
+                AnalyticsTab.Map -> mapStateHolder.refresh(
+                    period = statsPeriod.toSmokeMapPeriod(),
+                    selectedDate = statsSelectedDate,
+                )
             }
 
             else -> Unit
@@ -172,7 +176,11 @@ fun AppRoot(graph: WebAppGraph) {
 
             WebRoute.Analytics -> AnalyticsWebScreen(
                 selectedTab = analyticsTab,
+                selectedPeriod = statsPeriod,
+                selectedDate = statsSelectedDate,
                 onSelectTab = { analyticsTab = it },
+                onPeriodChange = { statsPeriod = it },
+                onDateChange = { statsSelectedDate = it },
                 statsContent = {
                     StatsWebScreen(
                         store = statsStore,
@@ -235,4 +243,11 @@ private suspend fun shareSmokeAnalytics() {
         }
     } catch (_: Throwable) {
     }
+}
+
+private fun StatsPeriod.toSmokeMapPeriod(): SmokeMapPeriod = when (this) {
+    StatsPeriod.DAY -> SmokeMapPeriod.Day
+    StatsPeriod.WEEK -> SmokeMapPeriod.Week
+    StatsPeriod.MONTH -> SmokeMapPeriod.Month
+    StatsPeriod.YEAR -> SmokeMapPeriod.Year
 }

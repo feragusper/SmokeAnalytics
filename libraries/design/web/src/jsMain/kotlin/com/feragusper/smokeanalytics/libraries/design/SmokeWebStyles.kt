@@ -717,6 +717,51 @@ object SmokeWebStyles : StyleSheet() {
         alignItems(AlignItems.Center)
     }
 
+    val analyticsDateBand by style {
+        display(DisplayStyle.Grid)
+        property("grid-template-columns", "auto minmax(0, 1fr) auto auto")
+        gap(10.px)
+        alignItems(AlignItems.Center)
+        property("width", "100%")
+
+        media(mediaMaxWidth(700.px)) {
+            self style {
+                property("grid-template-columns", "auto minmax(0, 1fr) auto")
+            }
+        }
+    }
+
+    val analyticsDateLabel by style {
+        fontWeight(800)
+        property("text-align", "center")
+        property("min-width", "0")
+        property("font-size", "18px")
+        color(Color("var(--sa-color-onSurface)"))
+    }
+
+    val analyticsPeriodBand by style {
+        display(DisplayStyle.Flex)
+        property("flex-wrap", "wrap")
+        gap(8.px)
+        alignItems(AlignItems.Center)
+        marginTop(12.px)
+    }
+
+    val analyticsDateInputSlot by style {
+        media(mediaMaxWidth(700.px)) {
+            self style {
+                property("grid-column", "1 / -1")
+            }
+        }
+    }
+
+    val analyticsTabBand by style {
+        display(DisplayStyle.Flex)
+        property("flex-wrap", "wrap")
+        gap(8.px)
+        alignItems(AlignItems.Center)
+    }
+
     val periodPills by style {
         display(DisplayStyle.Flex)
         property("flex-wrap", "wrap")

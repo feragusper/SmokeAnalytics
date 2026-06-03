@@ -14,6 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 class MapWebStateHolder(
     private val fetchSmokesUseCase: FetchSmokesUseCase,
@@ -32,27 +36,35 @@ class MapWebStateHolder(
         state = state.copy(selectedCluster = cluster)
     }
 
-    fun refresh() {
+    fun refresh(
+        period: SmokeMapPeriod = state.period,
+        selectedDate: LocalDate = state.selectedDate,
+    ) {
         val previous = state
         state = previous.copy(
             isLoading = !previous.hasLoadedOnce,
             isRefreshing = previous.hasLoadedOnce,
             error = false,
+            period = period,
+            selectedDate = selectedDate,
         )
         scope.launch {
             runCatching {
                 val preferences = fetchUserPreferencesUseCase()
                 val (start, end) = smokeMapRange(
-                    period = previous.period,
+                    period = period,
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    selectedDate = selectedDate,
                 )
-                val clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), previous.period)
+                val clusters = clusterSmokesForMap(fetchSmokesUseCase(start, end), period)
                 previous.copy(
                     isLoading = false,
                     isRefreshing = false,
                     hasLoadedOnce = true,
                     preferences = preferences,
+                    period = period,
+                    selectedDate = selectedDate,
                     clusters = clusters,
                     selectedCluster = previous.selectedCluster?.let { current ->
                         clusters.firstOrNull { it.label == current.label } ?: clusters.maxByOrNull { it.count }
@@ -63,6 +75,8 @@ class MapWebStateHolder(
                 previous.copy(
                     isLoading = false,
                     isRefreshing = false,
+                    period = period,
+                    selectedDate = selectedDate,
                     error = true,
                 )
             }.also { state = it }
@@ -76,6 +90,7 @@ data class MapWebUiState(
     val hasLoadedOnce: Boolean = false,
     val error: Boolean = false,
     val period: SmokeMapPeriod = SmokeMapPeriod.Week,
+    val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
     val preferences: UserPreferences? = null,
     val clusters: List<SmokeMapCluster> = emptyList(),
     val selectedCluster: SmokeMapCluster? = null,

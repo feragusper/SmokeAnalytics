@@ -113,54 +113,56 @@ private fun StatsWebContent(
                     )
                 }
             }
-            Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
-                Div(attrs = { classes(SmokeWebStyles.periodPills) }) {
-                    StatsPeriod.entries.forEach { p ->
-                        if (p == currentPeriod) {
-                            PrimaryButton(
-                                text = p.label(),
-                                onClick = { },
-                                enabled = !state.displayLoading,
-                            )
-                        } else {
-                            GhostButton(
-                                text = p.label(),
-                                onClick = { onPeriodChange(p) },
-                                enabled = !state.displayLoading,
-                            )
-                        }
-                    }
-                }
-
-                Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
-                    GhostButton(
-                        text = "←",
-                        onClick = { onDateChange(selectedDate.shift(currentPeriod, -1)) },
-                        enabled = !state.displayLoading
-                    )
-
-                    Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
-                        Text(selectedDate.headerLabel(currentPeriod))
-                    }
-
-                    GhostButton(
-                        text = "→",
-                        onClick = { onDateChange(selectedDate.shift(currentPeriod, +1)) },
-                        enabled = !state.displayLoading
-                    )
-
-                    Input(
-                        type = InputType.Date,
-                        attrs = {
-                            value(selectedDate.toHtmlDate())
-                            if (state.displayLoading) disabled()
-                            onInput { e ->
-                                val picked = e.value.toLocalDateOrNull() ?: return@onInput
-                                onDateChange(picked)
+            if (!embedded) {
+                Div(attrs = { classes(SmokeWebStyles.statsToolbar) }) {
+                    Div(attrs = { classes(SmokeWebStyles.periodPills) }) {
+                        StatsPeriod.entries.forEach { p ->
+                            if (p == currentPeriod) {
+                                PrimaryButton(
+                                    text = p.label(),
+                                    onClick = { },
+                                    enabled = !state.displayLoading,
+                                )
+                            } else {
+                                GhostButton(
+                                    text = p.label(),
+                                    onClick = { onPeriodChange(p) },
+                                    enabled = !state.displayLoading,
+                                )
                             }
-                            classes(SmokeWebStyles.dateInput)
                         }
-                    )
+                    }
+
+                    Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+                        GhostButton(
+                            text = "←",
+                            onClick = { onDateChange(selectedDate.shift(currentPeriod, -1)) },
+                            enabled = !state.displayLoading
+                        )
+
+                        Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
+                            Text(selectedDate.headerLabel(currentPeriod))
+                        }
+
+                        GhostButton(
+                            text = "→",
+                            onClick = { onDateChange(selectedDate.shift(currentPeriod, +1)) },
+                            enabled = !state.displayLoading
+                        )
+
+                        Input(
+                            type = InputType.Date,
+                            attrs = {
+                                value(selectedDate.toHtmlDate())
+                                if (state.displayLoading) disabled()
+                                onInput { e ->
+                                    val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                                    onDateChange(picked)
+                                }
+                                classes(SmokeWebStyles.dateInput)
+                            }
+                        )
+                    }
                 }
             }
         }
