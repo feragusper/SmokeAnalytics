@@ -3,7 +3,6 @@
 [![Integration](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml)
 [![Android Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deployment_playstore.yml)
 [![Web Release](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/deploy-web-hosting.yml)
-[![Architecture Audit](https://github.com/feragusper/SmokeAnalytics/actions/workflows/lighthouse.yml/badge.svg?branch=master)](https://github.com/feragusper/SmokeAnalytics/actions/workflows/lighthouse.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status)](https://sonarcloud.io/dashboard?id=feragusper_SmokeAnalytics)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=feragusper_SmokeAnalytics)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=bugs)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=feragusper_SmokeAnalytics)
