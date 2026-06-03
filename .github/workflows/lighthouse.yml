@@ -56,11 +56,70 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
 
       - name: Run Lighthouse Audit
-        uses: dev-vikas-soni/gradle-lighthouse@v2.2.2
+        id: lighthouse
+        run: |
+          ./gradlew lighthouseAudit lighthouseAggregate --continue 2>&1 | tee /tmp/lighthouse-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          echo "## 🏠 Lighthouse Architecture Audit" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          # Extract score lines and key findings from output
+          grep -E "(Score|🏆|⭐|🔧|⚠️|🔴|FATAL|ERROR|Cycle|Layer|Gate|Dashboard)" /tmp/lighthouse-output.txt \
+            | head -40 \
+            | sed 's/^/> /' >> $GITHUB_STEP_SUMMARY || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Full HTML reports available in the **lighthouse-reports** artifact below." >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
         with:
-          fail-on-severity: 'NONE'
-          upload-sarif: 'true'
-          comment-on-pr: 'true'
+          script: |
+            const fs = require('fs');
+            const raw = fs.readFileSync('/tmp/lighthouse-output.txt', 'utf8');
+
+            // Extract meaningful lines
+            const keep = raw.split('\n').filter(l =>
+              /Score|🏆|⭐|🔧|⚠️|🔴|FATAL|ERROR|Cycle|Layer|Gate|Global|Rank|Health/.test(l)
+            ).slice(0, 30).join('\n');
+
+            const status = '${{ steps.lighthouse.outputs.exit_code }}' === '0' ? '✅ Passed' : '❌ Failed';
+
+            const body = [
+              `## 🏠 Lighthouse Architecture Audit — ${status}`,
+              '',
+              '```',
+              keep || 'No findings.',
+              '```',
+              '',
+              `📦 Full HTML reports in the [Actions run artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).`,
+            ].join('\n');
+
+            // Update existing comment if present, else create
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('Lighthouse Architecture Audit'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
       - name: Upload Lighthouse Reports
         if: always()
@@ -71,3 +130,11 @@ jobs:
             build/reports/lighthouse/
             **/build/reports/lighthouse/
           retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: build/reports/lighthouse/
+          category: lighthouse
+        continue-on-error: true
