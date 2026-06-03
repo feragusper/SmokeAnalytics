@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.lighthouse)
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
 }

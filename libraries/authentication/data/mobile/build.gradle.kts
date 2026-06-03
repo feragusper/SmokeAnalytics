@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.lighthouse)
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
     // Enable Kotlin annotation processing.

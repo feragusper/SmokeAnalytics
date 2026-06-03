@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.lighthouse)
     `android-lib`
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")

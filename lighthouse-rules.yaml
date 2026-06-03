@@ -1,0 +1,32 @@
+rules:
+  # Apps layer can depend on features and libraries, never the reverse
+  - name: "No feature depending on apps"
+    condition: ":features:* !-> :apps:*"
+    level: "fatal"
+
+  - name: "No library depending on apps"
+    condition: ":libraries:* !-> :apps:*"
+    level: "fatal"
+
+  - name: "No library depending on features"
+    condition: ":libraries:* !-> :features:*"
+    level: "fatal"
+
+  # Features must not couple to each other directly (only via libraries)
+  - name: "Feature Isolation"
+    condition: ":features:* !-> :features:*"
+    level: "error"
+
+  # Standard layering: apps -> features -> libraries
+  - name: "Standard Layering"
+    condition: "App -> Feature -> Library"
+    level: "error"
+
+  # Domain modules must not depend on presentation or data modules
+  - name: "Domain Purity - no presentation"
+    condition: ":features:*:domain !-> :features:*:presentation:*"
+    level: "fatal"
+
+  - name: "Domain Purity - no data"
+    condition: ":libraries:*:domain !-> :libraries:*:data:*"
+    level: "error"

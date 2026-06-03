@@ -28,7 +28,14 @@ plugins {
     id("com.google.gms.google-services") version "4.4.4" apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.lighthouse)
 
     // Apply the SonarQube plugin globally for static code analysis.
     sonarqube
+}
+
+lighthouse {
+    failOnDependencyCycle.set(true)
+    failOnLayerViolation.set(true)
+    enableTrendTracking.set(true)
 }

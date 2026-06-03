@@ -6,6 +6,7 @@ import java.io.InputStreamReader
 import java.util.Properties
 
 plugins {
+    alias(libs.plugins.lighthouse)
     // Apply Android Application plugin.
     id("com.android.application")
     // Enable Kotlin annotation processing.

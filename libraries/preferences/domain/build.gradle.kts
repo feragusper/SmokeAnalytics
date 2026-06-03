@@ -1,6 +1,7 @@
 @file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
 
 plugins {
+    alias(libs.plugins.lighthouse)
     id("kmp-lib")
 }
 

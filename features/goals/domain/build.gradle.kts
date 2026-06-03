@@ -1,4 +1,7 @@
-plugins { id("kmp-lib") }
+plugins {
+    id("kmp-lib")
+    alias(libs.plugins.lighthouse)
+}
 
 kotlin {
     sourceSets {

@@ -39,3 +39,6 @@ compose-build/
 .firebase/
 /firebase-debug.log
 coverage_report.py
+
+# Gradle Lighthouse history (build-local trend data)
+.lighthouse/
