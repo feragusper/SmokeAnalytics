@@ -18,6 +18,10 @@ jobs:
   audit:
     name: Architecture Audit
     runs-on: macos-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
 
     steps:
       - name: Checkout
@@ -52,7 +56,11 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
 
       - name: Run Lighthouse Audit
-        run: ./gradlew lighthouseAudit lighthouseAggregate --continue
+        uses: dev-vikas-soni/gradle-lighthouse@v2.2.2
+        with:
+          fail-on-severity: 'NONE'
+          upload-sarif: 'true'
+          comment-on-pr: 'true'
 
       - name: Upload Lighthouse Reports
         if: always()
@@ -63,11 +71,3 @@ jobs:
             build/reports/lighthouse/
             **/build/reports/lighthouse/
           retention-days: 30
-
-      - name: Upload SARIF to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: build/reports/lighthouse/
-          category: lighthouse
-        continue-on-error: true
