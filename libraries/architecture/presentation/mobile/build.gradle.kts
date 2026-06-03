@@ -14,6 +14,7 @@ android {
     namespace = "com.feragusper.smokeanalytics.libraries.architecture.presentation"
 
     buildFeatures {
+        buildConfig = true
         // Enable Jetpack Compose support.
         compose = true
     }
