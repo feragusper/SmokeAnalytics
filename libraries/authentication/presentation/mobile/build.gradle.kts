@@ -35,6 +35,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         // Enable Jetpack Compose support.
         compose = true
     }
