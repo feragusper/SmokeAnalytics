@@ -40,6 +40,10 @@ material3 = "1.4.0"
 mockk = "1.14.9"
 navVersion = "2.9.8"
 playServicesWearable = "20.0.1"
+wearRemoteInteractions = "1.1.0"
+kotlinxCoroutinesPlayServices = "1.10.2"
+concurrentFutures = "1.2.0"
+guava = "33.4.8-android"
 playReview = "2.0.2"
 playAppUpdate = "2.1.0"
 playServicesMaps = "20.0.0"
@@ -121,6 +125,10 @@ material3 = { module = "androidx.compose.material3:material3", version.ref = "ma
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockkAndroid = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+wear-remote-interactions = { module = "androidx.wear:wear-remote-interactions", version.ref = "wearRemoteInteractions" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+androidx-concurrent-futures = { module = "androidx.concurrent:concurrent-futures", version.ref = "concurrentFutures" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 play-review = { module = "com.google.android.play:review", version.ref = "playReview" }
 play-review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "playReview" }
 play-app-update = { module = "com.google.android.play:app-update", version.ref = "playAppUpdate" }

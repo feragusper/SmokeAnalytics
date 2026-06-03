@@ -201,6 +201,11 @@ dependencies {
     implementation(libs.play.review.ktx)
     implementation(libs.play.services.maps)
     implementation(libs.play.services.wearable)
+    implementation(libs.wear.remote.interactions)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.androidx.concurrent.futures)
+    implementation(libs.guava)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     debugImplementation(project(":features:devtools:presentation"))
 

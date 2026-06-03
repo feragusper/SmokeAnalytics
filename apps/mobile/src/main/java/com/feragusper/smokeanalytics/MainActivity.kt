@@ -69,7 +69,15 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.feragusper.smokeanalytics.wear.WearInstallPromptBottomSheet
+import com.feragusper.smokeanalytics.wear.WearInstallPromptManager
+import com.google.android.gms.wearable.Node
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * The main activity that serves as the entry point of the application.
@@ -83,6 +91,8 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var installStateListener: InstallStateUpdatedListener
+    private lateinit var wearInstallPromptManager: WearInstallPromptManager
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var availableUpdateInfo: AppUpdateInfo? = null
     private var inAppUpdatePrompt by mutableStateOf<InAppUpdatePrompt?>(null)
@@ -90,6 +100,8 @@ class MainActivity : ComponentActivity() {
     private var hasPromptedForUpdateInSession = false
     private var hasPromptedForRestartInSession = false
     private var widgetQuickAddRequestId by mutableStateOf(0)
+    private var wearInstallPromptNode by mutableStateOf<Node?>(null)
+    private var hasPromptedForWearInstallInSession = false
 
     private val inAppUpdateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
@@ -104,6 +116,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleLaunchIntent(intent)
         appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
+        wearInstallPromptManager = WearInstallPromptManager(applicationContext)
         installStateListener = InstallStateUpdatedListener { state ->
             when (state.installStatus()) {
                 InstallStatus.DOWNLOADED -> {
@@ -137,10 +150,16 @@ class MainActivity : ComponentActivity() {
                         widgetQuickAddRequestId = widgetQuickAddRequestId,
                         inAppUpdatePrompt = inAppUpdatePrompt,
                         restartUpdateReady = restartUpdateReady,
+                        wearInstallPromptNode = wearInstallPromptNode,
                         onDismissUpdatePrompt = { inAppUpdatePrompt = null },
                         onStartUpdate = ::startFlexibleUpdate,
                         onDismissRestartPrompt = { restartUpdateReady = false },
                         onCompleteDownloadedUpdate = ::completeDownloadedUpdate,
+                        onDismissWearInstallPrompt = { wearInstallPromptNode = null },
+                        onInstallWearApp = { nodeId ->
+                            wearInstallPromptNode = null
+                            wearInstallPromptManager.openPlayStoreOnWatch(nodeId)
+                        },
                         navigateToAuthentication = {
                             startActivity(Intent(this, AuthenticationActivity::class.java))
                         }
@@ -153,6 +172,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshInAppUpdateState()
+        checkWearInstallPrompt()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -163,6 +183,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         appUpdateManager.unregisterListener(installStateListener)
+        activityScope.cancel()
         super.onDestroy()
     }
 
@@ -226,6 +247,17 @@ class MainActivity : ComponentActivity() {
         restartUpdateReady = false
     }
 
+    private fun checkWearInstallPrompt() {
+        if (hasPromptedForWearInstallInSession) return
+        activityScope.launch {
+            val nodes = wearInstallPromptManager.findConnectedNodesWithoutApp()
+            if (nodes.isNotEmpty()) {
+                hasPromptedForWearInstallInSession = true
+                wearInstallPromptNode = nodes.first()
+            }
+        }
+    }
+
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent?.action != ACTION_WIDGET_QUICK_ADD) return
         widgetQuickAddRequestId += 1
@@ -243,10 +275,13 @@ private fun MainContainerScreen(
     widgetQuickAddRequestId: Int,
     inAppUpdatePrompt: InAppUpdatePrompt?,
     restartUpdateReady: Boolean,
+    wearInstallPromptNode: com.google.android.gms.wearable.Node?,
     onDismissUpdatePrompt: () -> Unit,
     onStartUpdate: () -> Unit,
     onDismissRestartPrompt: () -> Unit,
     onCompleteDownloadedUpdate: () -> Unit,
+    onDismissWearInstallPrompt: () -> Unit,
+    onInstallWearApp: (nodeId: String) -> Unit,
     navigateToAuthentication: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -304,6 +339,14 @@ private fun MainContainerScreen(
         DownloadedUpdateDialog(
             onDismiss = onDismissRestartPrompt,
             onConfirm = onCompleteDownloadedUpdate,
+        )
+    }
+
+    if (wearInstallPromptNode != null) {
+        WearInstallPromptBottomSheet(
+            deviceName = wearInstallPromptNode.displayName,
+            onInstall = { onInstallWearApp(wearInstallPromptNode.id) },
+            onDismiss = onDismissWearInstallPrompt,
         )
     }
 
@@ -640,10 +683,13 @@ private fun MainContainerScreenPreview() {
             widgetQuickAddRequestId = 0,
             inAppUpdatePrompt = null,
             restartUpdateReady = false,
+            wearInstallPromptNode = null,
             onDismissUpdatePrompt = {},
             onStartUpdate = {},
             onDismissRestartPrompt = {},
             onCompleteDownloadedUpdate = {},
+            onDismissWearInstallPrompt = {},
+            onInstallWearApp = {},
             navigateToAuthentication = {},
         )
     }
