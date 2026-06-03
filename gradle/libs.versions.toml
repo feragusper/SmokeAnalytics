@@ -144,7 +144,6 @@ vico-views = { group = "com.patrykandpatrick.vico", name = "views", version.ref 
 
 # Plugins
 [plugins]
-lighthouse = { id = "io.github.dev-vikas-soni.lighthouse", version = "2.2.2" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version = "0.17.1" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "gradle" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

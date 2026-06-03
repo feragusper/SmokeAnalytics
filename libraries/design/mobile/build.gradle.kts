@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.lighthouse)
     `android-lib`
     id("com.android.library")
     alias(libs.plugins.compose.compiler)

@@ -1,7 +1,6 @@
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 
 plugins {
-    alias(libs.plugins.lighthouse)
     kotlin("multiplatform")
     id("org.jetbrains.kotlinx.kover")
     id("org.sonarqube")

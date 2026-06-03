@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.lighthouse)
     // Use the custom java-lib plugin for a modular Java/Kotlin library.
     `java-lib`
 }

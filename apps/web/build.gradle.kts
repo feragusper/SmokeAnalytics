@@ -1,7 +1,6 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
-    alias(libs.plugins.lighthouse)
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)

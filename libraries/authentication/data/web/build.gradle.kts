@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.lighthouse)
     kotlin("multiplatform")
     // Si tu setup ya usa compose multiplatform en web:
     // id("org.jetbrains.compose")

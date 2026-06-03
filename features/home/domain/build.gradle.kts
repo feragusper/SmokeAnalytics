@@ -1,6 +1,5 @@
 plugins {
     id("kmp-lib")
-    alias(libs.plugins.lighthouse)
 }
 
 kotlin {

@@ -5,7 +5,6 @@ import java.io.InputStreamReader
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.lighthouse)
     id("com.android.application")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")

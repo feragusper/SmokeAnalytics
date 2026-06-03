@@ -41,4 +41,3 @@ compose-build/
 coverage_report.py
 
 # Gradle Lighthouse history (build-local trend data)
-.lighthouse/

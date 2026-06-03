@@ -1,5 +1,4 @@
 plugins {
-    alias(libs.plugins.lighthouse)
     kotlin("multiplatform")
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
