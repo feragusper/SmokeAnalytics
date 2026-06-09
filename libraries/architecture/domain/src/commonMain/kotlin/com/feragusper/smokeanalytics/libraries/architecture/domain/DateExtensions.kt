@@ -54,10 +54,12 @@ fun Instant.dayStartInstant(
 }
 
 fun currentDayStartInstant(
+    now: Instant = nowInstant(),
     timeZone: TimeZone = defaultTimeZone,
     dayStartHour: Int = 0,
     manualDayStartEpochMillis: Long? = null,
 ): Instant = activeCurrentDayStartInstant(
+    now = now,
     timeZone = timeZone,
     dayStartHour = dayStartHour,
     manualDayStartEpochMillis = manualDayStartEpochMillis,
