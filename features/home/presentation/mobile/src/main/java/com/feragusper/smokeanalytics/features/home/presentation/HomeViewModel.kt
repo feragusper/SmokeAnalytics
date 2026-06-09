@@ -155,6 +155,9 @@ class HomeViewModel @Inject constructor(
                         result.smokeCountListResult.timeSinceLastCigarette.first,
                         result.smokeCountListResult.timeSinceLastCigarette.second,
                     ),
+                    monthTrend = if (result.previousMonthCount > 0) {
+                        (((result.previousMonthCount - result.smokeCountListResult.countByMonth).toDouble() / result.previousMonthCount) * 100).toInt()
+                    } else null,
                 )
             }
 

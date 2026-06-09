@@ -87,14 +87,6 @@ data class HistoryViewState(
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
         val dateLabel = selectedLocalDate.toUiMonthDay()
         val entriesCount = smokes?.size ?: 0
-        val trendValue = remember(selectedLocalDate, monthCounts, previousMonthCounts) {
-            monthTrendPercent(
-                selectedDate = selectedLocalDate,
-                monthCounts = monthCounts,
-                previousMonthCounts = previousMonthCounts,
-            )
-        }
-
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { contentPadding ->
@@ -246,9 +238,6 @@ data class HistoryViewState(
                     }
                 }
 
-                item {
-                    TrendCard(trendValue = trendValue)
-                }
             }
         }
     }

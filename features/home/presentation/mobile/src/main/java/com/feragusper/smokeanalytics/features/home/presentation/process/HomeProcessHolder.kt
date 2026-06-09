@@ -29,6 +29,11 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
 import javax.inject.Inject
@@ -99,6 +104,13 @@ class HomeProcessHolder @Inject constructor(
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 )
+                val timeZone = TimeZone.currentSystemDefault()
+                val today = Clock.System.now().toLocalDateTime(timeZone).date
+                val currentMonthStart = LocalDate(today.year, today.monthNumber, 1).atStartOfDayIn(timeZone)
+                val previousMonthStart = LocalDate(today.year, today.monthNumber, 1)
+                    .minus(DatePeriod(months = 1))
+                    .atStartOfDayIn(timeZone)
+                val previousMonthCount = fetchSmokesUseCase(start = previousMonthStart, end = currentMonthStart).size
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
                 val greetingState = greetingStateFor(
@@ -134,6 +146,7 @@ class HomeProcessHolder @Inject constructor(
                             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                         ),
                         locationTrackingAvailability = locationTrackingAvailability,
+                        previousMonthCount = previousMonthCount,
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
