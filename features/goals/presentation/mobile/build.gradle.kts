@@ -31,6 +31,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
