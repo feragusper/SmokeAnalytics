@@ -121,10 +121,7 @@ data class SettingsViewState(
                 return@Column
             }
 
-            SettingsSectionHeader(
-                title = "Account",
-                subtitle = "Session state and the core product context that keep this personal space synced.",
-            )
+            SettingsSectionHeader(title = "Account")
 
             SessionCard(
                 currentEmail = currentEmail,
@@ -136,10 +133,7 @@ data class SettingsViewState(
                 onSignInError = { signInErrorMessage = it },
             )
 
-            SettingsSectionHeader(
-                title = "Preferences",
-                subtitle = "Routine and cost settings that shape how Home, History, and Analytics interpret your day.",
-            )
+            SettingsSectionHeader(title = "Preferences")
 
             PreferencesCard(
                 preferences = draftPreferences,
@@ -149,10 +143,7 @@ data class SettingsViewState(
                 onReset = { draftPreferences = preferences },
             )
 
-            SettingsSectionHeader(
-                title = "App",
-                subtitle = "Support links, plan context, and version details stay inside You instead of a detached About route.",
-            )
+            SettingsSectionHeader(title = "App")
 
             SettingsCard(
                 title = "About & Support",
@@ -210,19 +201,20 @@ private fun SettingsErrorCard(
 @Composable
 private fun SettingsSectionHeader(
     title: String,
-    subtitle: String,
+    subtitle: String = "",
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        HorizontalDivider(modifier = Modifier.weight(1f))
     }
 }
 

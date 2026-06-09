@@ -43,6 +43,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.compose)
     implementation(libs.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.bundles.androidx.navigation)
     implementation(libs.play.review.ktx)
 
