@@ -34,8 +34,11 @@ import com.feragusper.smokeanalytics.features.settings.presentation.SettingsView
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsView
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsViewModel
+import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.HeaderNavigation
+import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.map.MapMobileRoute
+import java.time.LocalDate as JavaLocalDate
 
 @Composable
 fun HomeMobileDestination(
@@ -91,6 +94,8 @@ fun AnalyticsMobileDestination(
 ) {
     var selectedTab by remember { mutableStateOf(AnalyticsTab.Trends) }
     var refreshNonce by remember { mutableStateOf(0) }
+    var currentPeriod by remember { mutableStateOf(StatsViewState.StatsPeriod.WEEK) }
+    var selectedDate by remember { mutableStateOf(JavaLocalDate.now()) }
 
     LaunchedEffect(active, selectedTab) {
         if (active) refreshNonce += 1
@@ -98,7 +103,7 @@ fun AnalyticsMobileDestination(
 
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         Column(
             modifier = Modifier
@@ -117,6 +122,35 @@ fun AnalyticsMobileDestination(
             )
         }
 
+        if (selectedTab == AnalyticsTab.Trends) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                PrimaryTabRow(selectedTabIndex = currentPeriod.ordinal) {
+                    StatsViewState.StatsPeriod.entries.forEach { period ->
+                        Tab(
+                            selected = currentPeriod == period,
+                            onClick = { currentPeriod = period },
+                            text = {
+                                Text(
+                                    period.name.lowercase().replaceFirstChar { it.uppercase() },
+                                )
+                            },
+                        )
+                    }
+                }
+
+                HeaderNavigation(
+                    currentPeriod = currentPeriod,
+                    selectedDate = selectedDate,
+                    onDateChange = { selectedDate = it },
+                )
+            }
+        }
+
         PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
             AnalyticsTab.entries.forEach { tab ->
                 Tab(
@@ -131,6 +165,10 @@ fun AnalyticsMobileDestination(
             AnalyticsTab.Trends -> StatsMobileDestination(
                 modifier = Modifier.fillMaxSize(),
                 refreshNonce = refreshNonce,
+                currentPeriod = currentPeriod,
+                selectedDate = selectedDate,
+                onPeriodChange = { currentPeriod = it },
+                onDateChange = { selectedDate = it },
             )
             AnalyticsTab.Map -> MapMobileRoute(
                 modifier = Modifier.fillMaxSize(),
@@ -165,6 +203,10 @@ fun GoalsMobileDestination(
 private fun StatsMobileDestination(
     modifier: Modifier = Modifier,
     refreshNonce: Int = 0,
+    currentPeriod: StatsViewState.StatsPeriod = StatsViewState.StatsPeriod.WEEK,
+    selectedDate: JavaLocalDate = JavaLocalDate.now(),
+    onPeriodChange: (StatsViewState.StatsPeriod) -> Unit = {},
+    onDateChange: (JavaLocalDate) -> Unit = {},
 ) {
     val viewModel = hiltViewModel<StatsViewModel>()
     viewModel.navigator = remember { StatsNavigator() }
@@ -173,6 +215,10 @@ private fun StatsMobileDestination(
             viewModel = viewModel,
             refreshNonce = refreshNonce,
             embedded = true,
+            currentPeriod = currentPeriod,
+            selectedDate = selectedDate,
+            onPeriodChange = onPeriodChange,
+            onDateChange = onDateChange,
         )
     }
 }
