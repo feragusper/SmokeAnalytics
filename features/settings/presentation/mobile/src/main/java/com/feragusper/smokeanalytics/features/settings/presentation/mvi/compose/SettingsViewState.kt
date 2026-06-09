@@ -136,8 +136,6 @@ data class SettingsViewState(
                 onSignInError = { signInErrorMessage = it },
             )
 
-            HighlightsRow(tier = preferences.accountTier)
-
             SettingsSectionHeader(
                 title = "Preferences",
                 subtitle = "Routine and cost settings that shape how Home, History, and Analytics interpret your day.",

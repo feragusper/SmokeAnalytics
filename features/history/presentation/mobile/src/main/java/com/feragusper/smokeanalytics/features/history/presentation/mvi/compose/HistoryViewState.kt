@@ -121,9 +121,6 @@ data class HistoryViewState(
                     ArchiveHeader(
                         showNavigationIcon = showNavigationIcon,
                         onNavigateUp = { intent(HistoryIntent.NavigateUp) },
-                        entriesCount = entriesCount,
-                        displayLoading = displayLoading,
-                        hasCachedEntries = smokes != null,
                     )
                 }
 
@@ -155,13 +152,6 @@ data class HistoryViewState(
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
-                    )
-                }
-
-                item {
-                    ArchiveDaySummaryCard(
-                        selectedLocalDate = selectedLocalDate,
-                        entriesCount = entriesCount,
                     )
                 }
 
@@ -268,9 +258,6 @@ data class HistoryViewState(
 private fun ArchiveHeader(
     showNavigationIcon: Boolean,
     onNavigateUp: () -> Unit,
-    entriesCount: Int,
-    displayLoading: Boolean,
-    hasCachedEntries: Boolean,
 ) {
     Card(
         shape = RoundedCornerShape(28.dp),
@@ -287,38 +274,22 @@ private fun ArchiveHeader(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (showNavigationIcon) {
-                        IconButton(onClick = onNavigateUp) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                        }
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = "History",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "The Archive",
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
+                if (showNavigationIcon) {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(999.dp),
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = if (displayLoading && hasCachedEntries) "Refreshing" else "$entriesCount entries",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        text = "History",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "The Archive",
+                        style = MaterialTheme.typography.headlineSmall,
                     )
                 }
             }
@@ -438,48 +409,6 @@ private fun ArchiveControlsCard(
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ArchiveDaySummaryCard(
-    selectedLocalDate: LocalDate,
-    entriesCount: Int,
-) {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = selectedLocalDate.toUiMonthDay(),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "${selectedLocalDate.toUiMonthYear()} · Daily archive",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(999.dp),
-            ) {
-                Text(
-                    text = "$entriesCount entries",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
             }
         }
     }
