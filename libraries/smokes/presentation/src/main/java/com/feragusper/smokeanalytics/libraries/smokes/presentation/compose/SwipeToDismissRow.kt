@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -73,7 +74,7 @@ fun SwipeToDismissRow(
     pendingLabel: String? = null,
 ) {
     val timeZone = TimeZone.currentSystemDefault()
-    val shape = MaterialTheme.shapes.medium
+    val shape = RoundedCornerShape(22.dp)
 
     val revealState = rememberRevealState(
         directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
@@ -121,8 +122,7 @@ fun SwipeToDismissRow(
             Card(
                 modifier = Modifier.matchParentSize(),
                 colors = CardDefaults.cardColors(
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 ),
                 shape = cardShape,
                 content = content
