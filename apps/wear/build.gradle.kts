@@ -138,9 +138,11 @@ dependencies {
 }
 
 tasks.register("printWearVersionCode") {
-    doLast { println(wearVersionCode) }
+    val value = wearVersionCode
+    doLast { println(value) }
 }
 
 tasks.register("printWearVersionName") {
-    doLast { println(wearVersionName) }
+    val value = wearVersionName
+    doLast { println(value) }
 }
