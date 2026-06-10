@@ -113,13 +113,16 @@ val prepareFirebaseHosting by tasks.registering(Sync::class) {
 }
 
 tasks.register("printProductVersion") {
-    doLast { println(productVersionName) }
+    val value = productVersionName
+    doLast { println(value) }
 }
 
 tasks.register("printWebVersionName") {
-    doLast { println(webVersionName) }
+    val value = webVersionName
+    doLast { println(value) }
 }
 
 tasks.register("printWebReleaseTag") {
-    doLast { println(webReleaseTag) }
+    val value = webReleaseTag
+    doLast { println(value) }
 }

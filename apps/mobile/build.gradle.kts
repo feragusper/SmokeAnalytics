@@ -212,17 +212,21 @@ dependencies {
 }
 
 tasks.register("printProductVersion") {
-    doLast { println(productVersionName) }
+    val value = productVersionName
+    doLast { println(value) }
 }
 
 tasks.register("printVersionName") {
-    doLast { println(androidVersionName) }
+    val value = androidVersionName
+    doLast { println(value) }
 }
 
 tasks.register("printAndroidVersionName") {
-    doLast { println(androidVersionName) }
+    val value = androidVersionName
+    doLast { println(value) }
 }
 
 tasks.register("printAndroidReleaseTag") {
-    doLast { println(androidReleaseTag) }
+    val value = androidReleaseTag
+    doLast { println(value) }
 }
