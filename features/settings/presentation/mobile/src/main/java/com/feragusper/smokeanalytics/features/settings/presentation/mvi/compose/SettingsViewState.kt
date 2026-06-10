@@ -234,7 +234,7 @@ private fun SettingsScreenHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(

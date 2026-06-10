@@ -241,7 +241,7 @@ private fun ArchiveHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
