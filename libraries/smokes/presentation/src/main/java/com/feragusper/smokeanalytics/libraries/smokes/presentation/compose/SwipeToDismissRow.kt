@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics.libraries.smokes.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -41,27 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
-import de.charlex.compose.RevealDirection
-import de.charlex.compose.RevealSwipe
-import de.charlex.compose.rememberRevealState
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
-/**
- * A row item for displaying smoke event details with swipe-to-dismiss functionality.
- * It allows users to delete the event by swiping and edit the event's time by tapping.
- *
- * All time values are represented as [Instant] to stay consistent with domain/data and Web.
- *
- * @param date The date/time of the smoke event.
- * @param timeElapsedSincePreviousSmoke The time elapsed since the previous smoke event.
- * @param onDelete Callback invoked when the item is deleted.
- * @param fullDateTimeEdit Flag indicating if both date and time can be edited. If false, only time is editable.
- * @param onEdit Callback invoked with a new [Instant] when the user edits the event.
- */
 @Composable
 fun SwipeToDismissRow(
     itemKey: String,
@@ -75,70 +60,41 @@ fun SwipeToDismissRow(
 ) {
     val timeZone = TimeZone.currentSystemDefault()
     val shape = RoundedCornerShape(22.dp)
-
-    val revealState = rememberRevealState(
-        directions = setOf(RevealDirection.StartToEnd, RevealDirection.EndToStart),
-    )
-
     var showDatePicker by remember { mutableStateOf(false) }
 
-    RevealSwipe(
-        modifier = Modifier.padding(vertical = 5.dp),
-        state = revealState,
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
         shape = shape,
-        backgroundCardStartColor = MaterialTheme.colorScheme.primaryContainer,
-        backgroundCardEndColor = MaterialTheme.colorScheme.errorContainer,
-        backgroundStartActionLabel = "Edit smoke",
-        backgroundEndActionLabel = "Delete smoke",
-        onBackgroundStartClick = {
-            if (isPending) return@RevealSwipe false
-            showDatePicker = true
-            true
-        },
-        onBackgroundEndClick = {
-            if (isPending) return@RevealSwipe false
-            onDelete()
-            true
-        },
-        hiddenContentStart = {
-            IconButton(onClick = { showDatePicker = true }, enabled = !isPending) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_pencil),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        },
-        hiddenContentEnd = {
-            IconButton(onClick = onDelete, enabled = !isPending) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        },
-        card = { cardShape, content ->
-            Card(
-                modifier = Modifier.matchParentSize(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-                shape = cardShape,
-                content = content
-            )
-        }
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+        onClick = { if (!isPending) showDatePicker = true },
     ) {
         Column {
-            SmokeItem(
-                date = date,
-                timeZone = timeZone,
-                timeAfterPrevious = timeElapsedSincePreviousSmoke,
-                tone = elapsedToneFrom(
-                    timeElapsedSincePreviousSmoke.first,
-                    timeElapsedSincePreviousSmoke.second,
-                ),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SmokeItem(
+                    modifier = Modifier.weight(1f),
+                    date = date,
+                    timeZone = timeZone,
+                    timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                    tone = elapsedToneFrom(
+                        timeElapsedSincePreviousSmoke.first,
+                        timeElapsedSincePreviousSmoke.second,
+                    ),
+                )
+                IconButton(onClick = onDelete, enabled = !isPending) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
             if (isPending) {
                 Row(
                     modifier = Modifier
@@ -208,6 +164,7 @@ fun SwipeToDismissRow(
 
 @Composable
 private fun SmokeItem(
+    modifier: Modifier = Modifier,
     date: Instant,
     timeZone: TimeZone,
     timeAfterPrevious: Pair<Long, Long>,
@@ -216,8 +173,7 @@ private fun SmokeItem(
     val local = date.toLocalDateTime(timeZone)
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .background(color = tone.rowContainerColor(), shape = MaterialTheme.shapes.medium)
             .padding(horizontal = 12.dp)
             .height(72.dp),

@@ -240,6 +240,7 @@ private fun SettingsScreenHeader(
         Text(
             text = if (currentDisplayName.isNullOrBlank()) "You" else currentDisplayName,
             style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
         )
         Text(
             text = if (currentEmail == null) {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
@@ -103,7 +105,6 @@ fun AnalyticsMobileDestination(
 
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         Column(
             modifier = Modifier
@@ -114,6 +115,7 @@ fun AnalyticsMobileDestination(
             Text(
                 text = "Analytics & Map",
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "Review smoking frequency and the places where smoking clusters show up.",
@@ -123,32 +125,29 @@ fun AnalyticsMobileDestination(
         }
 
         if (selectedTab == AnalyticsTab.Trends) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                PrimaryTabRow(selectedTabIndex = currentPeriod.ordinal) {
-                    StatsViewState.StatsPeriod.entries.forEach { period ->
-                        Tab(
-                            selected = currentPeriod == period,
-                            onClick = { currentPeriod = period },
-                            text = {
-                                Text(
-                                    period.name.lowercase().replaceFirstChar { it.uppercase() },
-                                )
-                            },
-                        )
-                    }
+            PrimaryTabRow(selectedTabIndex = currentPeriod.ordinal) {
+                StatsViewState.StatsPeriod.entries.forEach { period ->
+                    Tab(
+                        selected = currentPeriod == period,
+                        onClick = { currentPeriod = period },
+                        text = {
+                            Text(
+                                period.name.lowercase().replaceFirstChar { it.uppercase() },
+                            )
+                        },
+                    )
                 }
-
-                HeaderNavigation(
-                    currentPeriod = currentPeriod,
-                    selectedDate = selectedDate,
-                    onDateChange = { selectedDate = it },
-                )
             }
+
+            HorizontalDivider()
+
+            HeaderNavigation(
+                currentPeriod = currentPeriod,
+                selectedDate = selectedDate,
+                onDateChange = { selectedDate = it },
+            )
+
+            HorizontalDivider()
         }
 
         PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {

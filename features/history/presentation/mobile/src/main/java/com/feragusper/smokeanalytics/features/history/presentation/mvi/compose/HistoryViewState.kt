@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
@@ -253,6 +254,7 @@ private fun ArchiveHeader(
             Text(
                 text = "The Archive",
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
             )
         }
         Text(

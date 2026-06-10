@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
@@ -83,6 +84,7 @@ fun GoalsEditorScreen(
             Text(
                 text = "Goals",
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "Choose one active target and keep its progress visible from Home.",
