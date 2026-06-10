@@ -105,6 +105,11 @@ class HomeWebStore(
                 bedtimeHour = result.preferences.bedtimeHour,
                 currencySymbol = result.preferences.currencySymbol,
                 canStartNewDay = result.canStartNewDay,
+                monthTrend = if (result.previousMonthCount > 0) {
+                    (((result.previousMonthCount - result.smokeCountListResult.countByMonth).toDouble() / result.previousMonthCount) * 100).toInt()
+                } else {
+                    null
+                },
                 locationTrackingAvailability = result.locationTrackingAvailability,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,

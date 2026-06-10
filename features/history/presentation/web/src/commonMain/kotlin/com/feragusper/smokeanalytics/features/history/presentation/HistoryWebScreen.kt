@@ -4,10 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
@@ -33,7 +31,6 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Div
@@ -53,17 +50,9 @@ fun HistoryWebScreen(
 
     val editing = remember { mutableStateMapOf<String, Boolean>() }
     val draftDateTime = remember { mutableStateMapOf<String, String>() }
-    var calendarMode by remember { mutableStateOf(true) }
 
     val selectedDayStart = state.selectedDate
     val selectedLocalDate = selectedDayStart.toLocalDateTime(tz).date
-    val trendValue = remember(selectedLocalDate, state.monthCounts, state.previousMonthCounts) {
-        monthTrendPercent(
-            selectedDate = selectedLocalDate,
-            monthCounts = state.monthCounts,
-            previousMonthCounts = state.previousMonthCounts,
-        )
-    }
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
@@ -98,39 +87,27 @@ fun HistoryWebScreen(
             )
         }
 
-        ArchiveControlsCard(
-            displayLoading = state.displayLoading,
+        ArchiveCalendarCard(
             selectedLocalDate = selectedLocalDate,
+            monthCounts = state.monthCounts,
             entriesCount = state.smokes?.size ?: 0,
+            displayLoading = state.displayLoading,
+            onShiftMonth = { amount ->
+                val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
+                store.send(
+                    HistoryIntent.FetchSmokes(
+                        LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz)
+                    )
+                )
+            },
+            onPickDay = { picked ->
+                store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
+            },
             onPrevious = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.minusDays(1, tz))) },
             onNext = { store.send(HistoryIntent.FetchSmokes(selectedDayStart.plusDays(1, tz))) },
             onPickDate = { picked -> store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz))) },
             onAdd = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
         )
-
-        if (calendarMode) {
-            ArchiveCalendarCard(
-                selectedLocalDate = selectedLocalDate,
-                monthCounts = state.monthCounts,
-                onShiftMonth = { amount ->
-                    val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
-                    store.send(
-                        HistoryIntent.FetchSmokes(
-                            LocalDate(shifted.year, shifted.monthNumber, 1).atStartOfDayIn(tz)
-                        )
-                    )
-                },
-                onPickDay = { picked ->
-                    store.send(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(tz)))
-                    calendarMode = false
-                },
-            )
-        } else {
-            ArchiveSummaryCard(
-                selectedLocalDate = selectedLocalDate,
-                entryCount = state.smokes?.size ?: 0,
-            )
-        }
 
         if (state.error != null && state.smokes != null) {
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
@@ -140,12 +117,10 @@ fun HistoryWebScreen(
 
         when {
             state.displayLoading && state.smokes == null -> {
-                repeat(if (calendarMode) 2 else 4) {
-                    LoadingSkeletonCard(heightPx = if (calendarMode) 120 else 74, lineWidths = listOf("32%", "48%"))
+                repeat(3) {
+                    LoadingSkeletonCard(heightPx = 74, lineWidths = listOf("32%", "48%"))
                 }
             }
-
-            calendarMode -> Unit
 
             state.smokes.isNullOrEmpty() -> EmptyStateCard(
                 title = "Quiet day in the archive",
@@ -155,20 +130,6 @@ fun HistoryWebScreen(
             )
 
             else -> {
-                Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;") }) {
-                    Div {
-                        Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                            Text(selectedLocalDate.toUiMonthDay())
-                        }
-                        Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
-                            Text("Daily archive")
-                        }
-                    }
-                    Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
-                        Text("${state.smokes?.size ?: 0} entries")
-                    }
-                }
-
                 HistorySmokeList(
                     state = state,
                     tz = tz,
@@ -179,105 +140,6 @@ fun HistoryWebScreen(
                 )
             }
         }
-
-        if (!state.displayLoading) {
-            TrendCard(trendValue = trendValue)
-        }
-    }
-}
-
-@Composable
-private fun ArchiveControlsCard(
-    displayLoading: Boolean,
-    selectedLocalDate: LocalDate,
-    entriesCount: Int,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onPickDate: (LocalDate) -> Unit,
-    onAdd: () -> Unit,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:6px;max-width:720px;") }) {
-                Div(attrs = { attr("style", "font-size:20px;font-weight:800;color:var(--sa-color-primary);") }) {
-                    Text("Browse the month and inspect one day")
-                }
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Use the calendar to pivot the archive, then edit the selected day in the list below.")
-                }
-            }
-
-            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;") }) {
-                Div {
-                    Div(attrs = { attr("style", "font-size:30px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text(selectedLocalDate.toUiMonthYear())
-                    }
-                    Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);") }) {
-                        Text(selectedLocalDate.toUiMonthDay())
-                    }
-                }
-
-                Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
-                    GhostButton(
-                        text = "←",
-                        onClick = onPrevious,
-                        enabled = !displayLoading,
-                    )
-
-                    Input(
-                        type = InputType.Date,
-                        attrs = {
-                            classes(SmokeWebStyles.dateInput)
-                            value(selectedLocalDate.toHtmlDate())
-                            if (displayLoading) disabled()
-                            onInput { e ->
-                                val picked = e.value.toLocalDateOrNull() ?: return@onInput
-                                onPickDate(picked)
-                            }
-                        },
-                    )
-
-                    GhostButton(
-                        text = "→",
-                        onClick = onNext,
-                        enabled = !displayLoading,
-                    )
-                }
-            }
-
-            Div(attrs = { attr("style", "display:flex;justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap;") }) {
-                Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
-                    Text("$entriesCount entries")
-                }
-                PrimaryButton(
-                    text = "Add for Date",
-                    onClick = onAdd,
-                    enabled = !displayLoading,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ArchiveSummaryCard(
-    selectedLocalDate: LocalDate,
-    entryCount: Int,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;") }) {
-            Div {
-                Div(attrs = { attr("style", "font-size:24px;font-weight:800;color:var(--sa-color-primary);") }) {
-                    Text(selectedLocalDate.toUiMonthDay())
-                }
-                Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
-                    Text("Daily archive")
-                }
-            }
-            Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
-                Text("$entryCount entries")
-            }
-        }
     }
 }
 
@@ -285,8 +147,14 @@ private fun ArchiveSummaryCard(
 private fun ArchiveCalendarCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
+    entriesCount: Int,
+    displayLoading: Boolean,
     onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onPickDate: (LocalDate) -> Unit,
+    onAdd: () -> Unit,
 ) {
     val monthStart = LocalDate(
         year = selectedLocalDate.year,
@@ -309,7 +177,7 @@ private fun ArchiveCalendarCard(
                         Text("Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units")
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);margin-top:4px;") }) {
-                        Text("Shift the month or tap a day to open the selected date in list mode.")
+                        Text("Shift the month or tap a day to inspect it in the list below.")
                     }
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
@@ -354,6 +222,57 @@ private fun ArchiveCalendarCard(
                         }
                     }
                 }
+            }
+
+            Div(attrs = { attr("style", "height:1px;background:var(--sa-color-outline);") })
+
+            Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;") }) {
+                Div {
+                    Div(attrs = { attr("style", "font-size:24px;font-weight:800;color:var(--sa-color-primary);") }) {
+                        Text(selectedLocalDate.toUiMonthDay())
+                    }
+                    Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
+                        Text("Daily archive")
+                    }
+                }
+
+                Div(attrs = { classes(SmokeWebStyles.dateControls) }) {
+                    GhostButton(
+                        text = "←",
+                        onClick = onPrevious,
+                        enabled = !displayLoading,
+                    )
+
+                    Input(
+                        type = InputType.Date,
+                        attrs = {
+                            classes(SmokeWebStyles.dateInput)
+                            value(selectedLocalDate.toHtmlDate())
+                            if (displayLoading) disabled()
+                            onInput { e ->
+                                val picked = e.value.toLocalDateOrNull() ?: return@onInput
+                                onPickDate(picked)
+                            }
+                        },
+                    )
+
+                    GhostButton(
+                        text = "→",
+                        onClick = onNext,
+                        enabled = !displayLoading,
+                    )
+                }
+            }
+
+            Div(attrs = { attr("style", "display:flex;justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap;") }) {
+                Div(attrs = { classes(SmokeWebStyles.statusPill) }) {
+                    Text("$entriesCount entries")
+                }
+                PrimaryButton(
+                    text = "Add for Date",
+                    onClick = onAdd,
+                    enabled = !displayLoading,
+                )
             }
         }
     }
@@ -442,40 +361,6 @@ private fun HistorySmokeList(
     }
 }
 
-@Composable
-private fun TrendCard(
-    trendValue: Int,
-) {
-    SurfaceCard {
-        Div(attrs = {
-            attr(
-                "style",
-                "display:flex;justify-content:space-between;align-items:center;gap:18px;background:linear-gradient(135deg,var(--sa-color-primary) 0%, #2D5D63 100%);border-radius:24px;padding:24px;color:var(--sa-color-onPrimary);"
-            )
-        }) {
-            Div {
-                Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.76;") }) {
-                    Text("Trend")
-                }
-                Div(attrs = { attr("style", "font-size:56px;font-weight:800;line-height:1;margin-top:10px;") }) {
-                    Text("${if (trendValue > 0) "+" else ""}$trendValue%")
-                }
-                Div(attrs = { attr("style", "font-size:14px;opacity:0.78;max-width:240px;") }) {
-                    Text("Reduction vs last month")
-                }
-            }
-            Div(attrs = {
-                attr(
-                    "style",
-                    "width:84px;height:84px;border-radius:999px;border:8px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;"
-                )
-            }) {
-                Text("↘")
-            }
-        }
-    }
-}
-
 private enum class ElapsedTone {
     Urgent,
     Warning,
@@ -505,28 +390,6 @@ private fun calendarDayLevelClass(count: Int, maxCount: Int): String {
 }
 
 private fun Map<Int, Int>.averageOrZero(): Double = values.takeIf { it.isNotEmpty() }?.average() ?: 0.0
-
-private fun monthTrendPercent(
-    selectedDate: LocalDate,
-    monthCounts: Map<Int, Int>,
-    previousMonthCounts: Map<Int, Int>,
-): Int {
-    if (previousMonthCounts.isEmpty()) return 0
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val currentMonth = selectedDate.year == today.year && selectedDate.monthNumber == today.monthNumber
-    val compareThroughDay = if (currentMonth) {
-        today.dayOfMonth
-    } else {
-        LocalDate(selectedDate.year, selectedDate.monthNumber, 1)
-            .plus(DatePeriod(months = 1))
-            .plus(DatePeriod(days = -1))
-            .dayOfMonth
-    }
-    val currentTotal = (1..compareThroughDay).sumOf { day -> monthCounts[day] ?: 0 }
-    val previousTotal = (1..compareThroughDay).sumOf { day -> previousMonthCounts[day] ?: 0 }
-    if (previousTotal == 0) return 0
-    return (((previousTotal - currentTotal).toDouble() / previousTotal.toDouble()) * 100).toInt()
-}
 
 private fun Double.formatOneDecimal(): String {
     val rounded = (this * 10).toInt() / 10.0

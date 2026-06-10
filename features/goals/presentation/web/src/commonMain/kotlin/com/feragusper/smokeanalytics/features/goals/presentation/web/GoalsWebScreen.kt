@@ -9,7 +9,9 @@ import com.feragusper.smokeanalytics.features.goals.presentation.web.mvi.GoalsIn
 import com.feragusper.smokeanalytics.features.goals.presentation.web.mvi.GoalsWebStore
 import com.feragusper.smokeanalytics.libraries.design.EmptyStateCard
 import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
+import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -25,6 +27,23 @@ fun GoalsWebScreen(
     val state by store.state.collectAsState()
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
+        PageSectionHeader(
+            title = "Goals",
+            eyebrow = "Goals",
+            subtitle = "Choose one active target and keep its progress visible from Home.",
+            badgeText = when {
+                state.displayLoading -> "Loading"
+                state.errorMessage != null -> "Needs attention"
+                state.preferences.activeGoal != null -> "Active goal"
+                else -> "No goal yet"
+            },
+            badgeTone = when {
+                state.displayLoading -> StatusTone.Busy
+                state.errorMessage != null -> StatusTone.Error
+                else -> StatusTone.Default
+            },
+        )
+
         if (state.displayLoading && state.currentEmail == null && state.errorMessage == null) {
             LoadingSkeletonCard(heightPx = 176, lineWidths = listOf("30%", "68%", "44%"))
             LoadingSkeletonCard(heightPx = 180, lineWidths = listOf("22%", "58%", "46%"))
@@ -36,7 +55,6 @@ fun GoalsWebScreen(
             preferences = state.preferences,
             goalProgress = state.goalProgress,
             displayLoading = state.displayLoading,
-            onBack = onNavigateBack,
             onSaveGoal = { goal -> store.send(GoalsIntent.SaveGoal(goal)) },
             onClearGoal = { store.send(GoalsIntent.ClearGoal) },
             onSignInSuccess = { store.send(GoalsIntent.FetchGoals) },
