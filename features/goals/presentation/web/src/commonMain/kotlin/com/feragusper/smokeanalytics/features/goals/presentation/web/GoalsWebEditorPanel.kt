@@ -63,13 +63,20 @@ fun GoalsWebEditorPanel(
     SurfaceCard {
         Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;") }) {
             GoalType.entries.forEach { type ->
-                GhostButton(
-                    text = type.label(),
-                    onClick = {
-                        selectedType = type
-                        draftValue = type.defaultDraftValue()
-                    },
-                )
+                if (selectedType == type) {
+                    PrimaryButton(
+                        text = "✓ ${type.label()}",
+                        onClick = {},
+                    )
+                } else {
+                    GhostButton(
+                        text = type.label(),
+                        onClick = {
+                            selectedType = type
+                            draftValue = type.defaultDraftValue()
+                        },
+                    )
+                }
             }
         }
     }
