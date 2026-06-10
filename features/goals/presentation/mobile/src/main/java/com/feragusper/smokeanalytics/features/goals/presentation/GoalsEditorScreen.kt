@@ -1,18 +1,25 @@
 package com.feragusper.smokeanalytics.features.goals.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -24,7 +31,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
@@ -67,22 +77,20 @@ fun GoalsEditorScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        GoalsPanelCard {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onBack) {
-                    Text("Back")
-                }
-                Text(
-                    text = "Goals",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "Choose one active target and keep its progress visible from Home.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        Column(
+            modifier = Modifier.padding(horizontal = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "Goals",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "Choose one active target and keep its progress visible from Home.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         errorMessage?.let { message ->
@@ -163,15 +171,14 @@ fun GoalsEditorScreen(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 GoalType.entries.forEach { type ->
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
+                    GoalTypeCard(
+                        type = type,
+                        selected = selectedType == type,
                         onClick = {
                             selectedType = type
                             draftValue = type.defaultDraftValue()
                         },
-                    ) {
-                        Text(type.label())
-                    }
+                    )
                 }
             }
         }
@@ -274,6 +281,50 @@ fun GoalsEditorScreen(
 }
 
 @Composable
+private fun GoalTypeCard(
+    type: GoalType,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val borderWidth = if (selected) 2.dp else 1.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(borderWidth, borderColor, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = type.label(),
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = type.description(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (selected) {
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun GoalsPanelCard(
     content: @Composable () -> Unit,
 ) {
@@ -298,6 +349,13 @@ private fun GoalType.label(): String = when (this) {
     GoalType.ReductionVsPreviousWeek -> "Reduce vs previous week"
     GoalType.ReductionVsPreviousMonth -> "Reduce vs previous month"
     GoalType.MindfulGap -> "Mindful gap"
+}
+
+private fun GoalType.description(): String = when (this) {
+    GoalType.DailyCap -> "Set a ceiling on how many cigarettes you allow per day."
+    GoalType.ReductionVsPreviousWeek -> "Smoke a set percentage less than last week's total."
+    GoalType.ReductionVsPreviousMonth -> "Smoke a set percentage less than last month's total."
+    GoalType.MindfulGap -> "Enforce a minimum gap in minutes between cigarettes."
 }
 
 private fun GoalType.inputLabel(): String = when (this) {

@@ -28,6 +28,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
@@ -87,16 +89,9 @@ data class HistoryViewState(
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
         val dateLabel = selectedLocalDate.toUiMonthDay()
         val entriesCount = smokes?.size ?: 0
-        val trendValue = remember(selectedLocalDate, monthCounts, previousMonthCounts) {
-            monthTrendPercent(
-                selectedDate = selectedLocalDate,
-                monthCounts = monthCounts,
-                previousMonthCounts = previousMonthCounts,
-            )
-        }
-
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            contentWindowInsets = WindowInsets(0),
         ) { contentPadding ->
             if (showDatePicker) {
                 DatePickerDialog(
@@ -121,21 +116,6 @@ data class HistoryViewState(
                     ArchiveHeader(
                         showNavigationIcon = showNavigationIcon,
                         onNavigateUp = { intent(HistoryIntent.NavigateUp) },
-                        entriesCount = entriesCount,
-                        displayLoading = displayLoading,
-                        hasCachedEntries = smokes != null,
-                    )
-                }
-
-                item {
-                    ArchiveControlsCard(
-                        displayLoading = displayLoading,
-                        selectedLocalDate = selectedLocalDate,
-                        entriesCount = entriesCount,
-                        onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                        onPrevious = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
-                        onNext = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
-                        onPickDate = { showDatePicker = true },
                     )
                 }
 
@@ -143,6 +123,8 @@ data class HistoryViewState(
                     ArchiveCalendarCard(
                         selectedLocalDate = selectedLocalDate,
                         monthCounts = monthCounts,
+                        entriesCount = entriesCount,
+                        displayLoading = displayLoading,
                         onShiftMonth = { amount ->
                             val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
                             intent(
@@ -155,13 +137,10 @@ data class HistoryViewState(
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
-                    )
-                }
-
-                item {
-                    ArchiveDaySummaryCard(
-                        selectedLocalDate = selectedLocalDate,
-                        entriesCount = entriesCount,
+                        onPreviousDay = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
+                        onNextDay = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
+                        onPickDate = { showDatePicker = true },
+                        onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                     )
                 }
 
@@ -227,27 +206,20 @@ data class HistoryViewState(
                             items = smokes,
                             key = { smoke -> "${smoke.id}-${rowInteractionEpoch}" }
                         ) { smoke ->
-                            Card(
-                                shape = RoundedCornerShape(22.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                ),
-                            ) {
-                                SwipeToDismissRow(
-                                    itemKey = smoke.id,
-                                    date = smoke.date,
-                                    timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
-                                    onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
-                                    fullDateTimeEdit = true,
-                                    onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },
-                                    isPending = pendingSmokeId == smoke.id,
-                                    pendingLabel = when (pendingAction) {
-                                        com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Editing -> "Saving edit…"
-                                        com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Deleting -> "Deleting…"
-                                        null -> null
-                                    },
-                                )
-                            }
+                            SwipeToDismissRow(
+                                itemKey = smoke.id,
+                                date = smoke.date,
+                                timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
+                                fullDateTimeEdit = true,
+                                onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },
+                                isPending = pendingSmokeId == smoke.id,
+                                pendingLabel = when (pendingAction) {
+                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Editing -> "Saving edit…"
+                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Deleting -> "Deleting…"
+                                    null -> null
+                                },
+                            )
                         }
                     }
 
@@ -256,9 +228,6 @@ data class HistoryViewState(
                     }
                 }
 
-                item {
-                    TrendCard(trendValue = trendValue)
-                }
             }
         }
     }
@@ -268,66 +237,33 @@ data class HistoryViewState(
 private fun ArchiveHeader(
     showNavigationIcon: Boolean,
     onNavigateUp: () -> Unit,
-    entriesCount: Int,
-    displayLoading: Boolean,
-    hasCachedEntries: Boolean,
 ) {
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 4.dp, top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (showNavigationIcon) {
-                        IconButton(onClick = onNavigateUp) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                        }
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = "History",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = "The Archive",
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
-                    }
-                }
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(999.dp),
-                ) {
-                    Text(
-                        text = if (displayLoading && hasCachedEntries) "Refreshing" else "$entriesCount entries",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
+            if (showNavigationIcon) {
+                IconButton(onClick = onNavigateUp) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                 }
             }
             Text(
-                text = "Browse the calendar, inspect one day, and edit the smoking log without leaving the main shell.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "The Archive",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
             )
         }
+        Text(
+            text = "Browse the calendar, inspect one day, and edit the smoking log.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -365,132 +301,17 @@ private fun HistoryDateBar(
 }
 
 @Composable
-private fun ArchiveControlsCard(
-    displayLoading: Boolean,
-    selectedLocalDate: LocalDate,
-    entriesCount: Int,
-    onAdd: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onPickDate: () -> Unit,
-) {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Browse the month and inspect one day",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "Use the calendar to pivot the archive, then edit the selected day in the list below.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            HistoryDateBar(
-                selectedLocalDate = selectedLocalDate,
-                onPrevious = onPrevious,
-                onNext = onNext,
-                onPickDate = onPickDate,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(999.dp),
-                ) {
-                    Text(
-                        text = "$entriesCount entries",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                }
-
-                Button(
-                    onClick = onAdd,
-                    enabled = !displayLoading,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                ) {
-                    Text(
-                        text = "Add for Date",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ArchiveDaySummaryCard(
-    selectedLocalDate: LocalDate,
-    entriesCount: Int,
-) {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = selectedLocalDate.toUiMonthDay(),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "${selectedLocalDate.toUiMonthYear()} · Daily archive",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                shape = RoundedCornerShape(999.dp),
-            ) {
-                Text(
-                    text = "$entriesCount entries",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ArchiveCalendarCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
+    entriesCount: Int,
+    displayLoading: Boolean,
     onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
+    onPreviousDay: () -> Unit,
+    onNextDay: () -> Unit,
+    onPickDate: () -> Unit,
+    onAdd: () -> Unit,
 ) {
     val calendarCellWidth = 42.dp
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
@@ -507,6 +328,7 @@ private fun ArchiveCalendarCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Month header row: month/year + average + month nav
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -519,11 +341,6 @@ private fun ArchiveCalendarCard(
                     )
                     Text(
                         text = "Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "Tap a day to pivot the archive and open that date in list mode.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -592,6 +409,40 @@ private fun ArchiveCalendarCard(
                             }
                         }
                     }
+                }
+            }
+
+            // Day navigation + add button
+            HorizontalDivider()
+            HistoryDateBar(
+                selectedLocalDate = selectedLocalDate,
+                onPrevious = onPreviousDay,
+                onNext = onNextDay,
+                onPickDate = onPickDate,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(999.dp),
+                ) {
+                    Text(
+                        text = "$entriesCount entries",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                Button(
+                    onClick = onAdd,
+                    enabled = !displayLoading,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Text(text = "Add for date", style = MaterialTheme.typography.labelLarge)
                 }
             }
         }

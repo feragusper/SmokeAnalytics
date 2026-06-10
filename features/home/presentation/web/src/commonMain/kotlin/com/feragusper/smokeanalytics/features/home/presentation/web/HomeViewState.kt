@@ -41,6 +41,7 @@ data class HomeViewState(
     val bedtimeHour: Int = 0,
     val currencySymbol: String = "€",
     val canStartNewDay: Boolean = false,
+    val monthTrend: Int? = null,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     val locationTrackingAvailability: LocationTrackingAvailability = LocationTrackingAvailability(
         preferenceEnabled = false,

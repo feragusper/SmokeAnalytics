@@ -1,7 +1,6 @@
 package com.feragusper.smokeanalytics.apps.web
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebDependencies
 import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebScreen
 import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsPeriod
@@ -10,7 +9,6 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
-import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -103,18 +101,11 @@ fun SettingsAboutWebScreen(
     settingsDeps: SettingsWebDependencies,
     onShare: suspend () -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
             title = "You",
             eyebrow = "Personal space",
             subtitle = "Keep account, routine preferences, goals, and product details in one calmer destination.",
-            actions = {
-                PrimaryButton(
-                    text = "Share",
-                    onClick = { scope.launch { onShare() } },
-                )
-            },
         )
 
         SettingsWebScreen(

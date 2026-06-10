@@ -18,6 +18,7 @@ extensions.configure<LibraryExtension>("android") {
     defaultConfig {
         // Set the minimum SDK version from centralized configuration.
         minSdk = Android.MIN_SDK
+        consumerProguardFiles("src/main/pro-rules/consumer-rules.pro")
     }
 
     compileOptions {
@@ -26,8 +27,8 @@ extensions.configure<LibraryExtension>("android") {
     }
 
     buildFeatures {
-        // Enable generation of BuildConfig class.
-        buildConfig = true
+        // Disabled by default — enable per-module only when BuildConfig fields are needed.
+        buildConfig = false
     }
 
     testOptions {

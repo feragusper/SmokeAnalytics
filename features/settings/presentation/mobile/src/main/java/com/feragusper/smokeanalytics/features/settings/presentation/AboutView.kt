@@ -8,19 +8,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -63,99 +68,89 @@ fun AboutSection() {
         )
 
         AboutBlock(
-            title = "Plan",
-            body = "Current tier: Free. Premium remains framed as a future upgrade with richer insights and no ads."
-        )
-
-        AboutBlock(
             title = "Actions",
-            body = "Use the links below to share the product, rate it, or reach support.",
+            body = "Share the app, rate it, or reach support.",
         ) {
-            Button(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "Smoke Analytics")
-                        putExtra(
-                            Intent.EXTRA_TEXT,
-                            "Smoke Analytics helps track smokes, streaks and costs. https://github.com/feragusper/SmokeAnalytics"
-                        )
-                    }
-                    context.startActivity(Intent.createChooser(sendIntent, "Share Smoke Analytics"))
-                }
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text("Share app")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    val fallbackToStore = {
-                        val marketIntent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("market://details?id=$packageName")
-                        )
-                        val webIntent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-                        )
-                        try {
-                            context.startActivity(marketIntent)
-                        } catch (_: ActivityNotFoundException) {
-                            context.startActivity(webIntent)
+                ActionIconButton(
+                    modifier = Modifier.weight(1f),
+                    label = "Share",
+                    icon = { Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    onClick = {
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Smoke Analytics")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Smoke Analytics helps track smokes, streaks and costs. https://github.com/feragusper/SmokeAnalytics"
+                            )
                         }
-                    }
-
-                    val activity = context as? Activity
-                    if (activity == null) {
-                        fallbackToStore()
-                    } else {
-                        val manager = ReviewManagerFactory.create(context)
-                        manager.requestReviewFlow()
-                            .addOnSuccessListener { reviewInfo ->
-                                manager.launchReviewFlow(activity, reviewInfo)
-                                    .addOnFailureListener { fallbackToStore() }
+                        context.startActivity(Intent.createChooser(sendIntent, "Share Smoke Analytics"))
+                    },
+                )
+                ActionIconButton(
+                    modifier = Modifier.weight(1f),
+                    label = "Rate",
+                    icon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    onClick = {
+                        val fallbackToStore = {
+                            val marketIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("market://details?id=$packageName")
+                            )
+                            val webIntent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
+                            )
+                            try {
+                                context.startActivity(marketIntent)
+                            } catch (_: ActivityNotFoundException) {
+                                context.startActivity(webIntent)
                             }
-                            .addOnFailureListener { fallbackToStore() }
-                    }
-                }
-            ) {
-                Text("Rate app")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/feragusper/SmokeAnalytics/issues/new/choose")
+                        }
+                        val activity = context as? Activity
+                        if (activity == null) {
+                            fallbackToStore()
+                        } else {
+                            val manager = ReviewManagerFactory.create(context)
+                            manager.requestReviewFlow()
+                                .addOnSuccessListener { reviewInfo ->
+                                    manager.launchReviewFlow(activity, reviewInfo)
+                                        .addOnFailureListener { fallbackToStore() }
+                                }
+                                .addOnFailureListener { fallbackToStore() }
+                        }
+                    },
+                )
+                ActionIconButton(
+                    modifier = Modifier.weight(1f),
+                    label = "Report",
+                    icon = { Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    onClick = {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://github.com/feragusper/SmokeAnalytics/issues/new/choose")
+                            )
                         )
-                    )
-                }
-            ) {
-                Text("Report bug")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("mailto:feragusper@gmail.com")
+                    },
+                )
+                ActionIconButton(
+                    modifier = Modifier.weight(1f),
+                    label = "Contact",
+                    icon = { Icon(Icons.Filled.Mail, contentDescription = null, modifier = Modifier.size(22.dp)) },
+                    onClick = {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("mailto:feragusper@gmail.com")
+                            )
                         )
-                    )
-                }
-            ) {
-                Text("Contact us")
+                    },
+                )
             }
         }
 
@@ -184,6 +179,32 @@ fun AboutSection() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.End,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionIconButton(
+    modifier: Modifier = Modifier,
+    label: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        modifier = modifier,
+        onClick = onClick,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp, horizontal = 4.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            icon()
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
             )
         }
     }

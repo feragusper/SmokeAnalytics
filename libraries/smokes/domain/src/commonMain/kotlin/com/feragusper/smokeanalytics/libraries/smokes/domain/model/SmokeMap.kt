@@ -47,6 +47,7 @@ fun smokeMapRange(
 
     return when (period) {
         SmokeMapPeriod.Day -> currentDayStartInstant(
+            now = now,
             timeZone = timeZone,
             dayStartHour = dayStartHour,
             manualDayStartEpochMillis = manualDayStartEpochMillis,

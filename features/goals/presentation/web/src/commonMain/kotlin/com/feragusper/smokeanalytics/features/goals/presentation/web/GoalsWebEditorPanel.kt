@@ -27,7 +27,6 @@ fun GoalsWebEditorPanel(
     preferences: UserPreferences,
     goalProgress: GoalProgress?,
     displayLoading: Boolean,
-    onBack: () -> Unit,
     onSaveGoal: (SmokingGoal) -> Unit,
     onClearGoal: () -> Unit,
     onSignInSuccess: () -> Unit,
@@ -44,16 +43,6 @@ fun GoalsWebEditorPanel(
     }
 
     val draftGoal = selectedType.toGoalOrNull(draftValue)
-
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
-            GhostButton(text = "Back", onClick = onBack)
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Goals") }
-            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("Choose one active target and keep its progress visible from Home.")
-            }
-        }
-    }
 
     if (currentEmail == null) {
         SurfaceCard {
@@ -74,13 +63,20 @@ fun GoalsWebEditorPanel(
     SurfaceCard {
         Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;") }) {
             GoalType.entries.forEach { type ->
-                GhostButton(
-                    text = type.label(),
-                    onClick = {
-                        selectedType = type
-                        draftValue = type.defaultDraftValue()
-                    },
-                )
+                if (selectedType == type) {
+                    PrimaryButton(
+                        text = "✓ ${type.label()}",
+                        onClick = {},
+                    )
+                } else {
+                    GhostButton(
+                        text = type.label(),
+                        onClick = {
+                            selectedType = type
+                            draftValue = type.defaultDraftValue()
+                        },
+                    )
+                }
             }
         }
     }

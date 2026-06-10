@@ -80,11 +80,12 @@ data class StatsViewState(
     fun Compose(
         refreshNonce: Int = 0,
         embedded: Boolean = false,
+        currentPeriod: StatsPeriod = StatsPeriod.WEEK,
+        selectedDate: JavaLocalDate = JavaLocalDate.now(),
+        onPeriodChange: (StatsPeriod) -> Unit = {},
+        onDateChange: (JavaLocalDate) -> Unit = {},
         intent: (StatsIntent) -> Unit,
     ) {
-        var currentPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
-        var selectedDate by remember { mutableStateOf(JavaLocalDate.now()) }
-
         LaunchedEffect(refreshNonce, currentPeriod, selectedDate) {
             intent(
                 StatsIntent.LoadStats(
@@ -173,43 +174,41 @@ data class StatsViewState(
                             )
                         }
 
-                        HeaderNavigation(
-                            currentPeriod = currentPeriod,
-                            selectedDate = selectedDate,
-                            onDateChange = { newDate ->
-                                selectedDate = newDate
-                            }
-                        )
+                        if (!embedded) {
+                            HeaderNavigation(
+                                currentPeriod = currentPeriod,
+                                selectedDate = selectedDate,
+                                onDateChange = onDateChange,
+                            )
 
-                        TabRow(
-                            modifier = Modifier.padding(top = 4.dp),
-                            selectedTabIndex = currentPeriod.ordinal,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            indicator = { tabPositions ->
-                                SecondaryIndicator(
-                                    Modifier
-                                        .tabIndicatorOffset(tabPositions[currentPeriod.ordinal]),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        ) {
-                            StatsPeriod.entries.forEach { period ->
-                                val isSelected = currentPeriod == period
-                                Tab(
-                                    modifier = Modifier.padding(vertical = 12.dp),
-                                    selected = isSelected,
-                                    onClick = {
-                                        currentPeriod = period
-                                    },
-                                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ) {
-                                    Text(
-                                        text = period.name.lowercase()
-                                            .replaceFirstChar { it.uppercase() },
-                                        style = MaterialTheme.typography.labelLarge
+                            TabRow(
+                                modifier = Modifier.padding(top = 4.dp),
+                                selectedTabIndex = currentPeriod.ordinal,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                indicator = { tabPositions ->
+                                    SecondaryIndicator(
+                                        Modifier
+                                            .tabIndicatorOffset(tabPositions[currentPeriod.ordinal]),
+                                        color = MaterialTheme.colorScheme.primary
                                     )
+                                }
+                            ) {
+                                StatsPeriod.entries.forEach { period ->
+                                    val isSelected = currentPeriod == period
+                                    Tab(
+                                        modifier = Modifier.padding(vertical = 12.dp),
+                                        selected = isSelected,
+                                        onClick = { onPeriodChange(period) },
+                                        selectedContentColor = MaterialTheme.colorScheme.primary,
+                                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    ) {
+                                        Text(
+                                            text = period.name.lowercase()
+                                                .replaceFirstChar { it.uppercase() },
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
                                 }
                             }
                         }

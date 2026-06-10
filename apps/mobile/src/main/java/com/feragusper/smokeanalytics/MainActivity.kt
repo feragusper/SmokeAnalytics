@@ -16,21 +16,34 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DownloadDone
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,7 +82,15 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.feragusper.smokeanalytics.wear.WearInstallPromptBottomSheet
+import com.feragusper.smokeanalytics.wear.WearInstallPromptManager
+import com.google.android.gms.wearable.Node
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * The main activity that serves as the entry point of the application.
@@ -83,6 +104,8 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var installStateListener: InstallStateUpdatedListener
+    private lateinit var wearInstallPromptManager: WearInstallPromptManager
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var availableUpdateInfo: AppUpdateInfo? = null
     private var inAppUpdatePrompt by mutableStateOf<InAppUpdatePrompt?>(null)
@@ -90,6 +113,8 @@ class MainActivity : ComponentActivity() {
     private var hasPromptedForUpdateInSession = false
     private var hasPromptedForRestartInSession = false
     private var widgetQuickAddRequestId by mutableStateOf(0)
+    private var wearInstallPromptNode by mutableStateOf<Node?>(null)
+    private var hasPromptedForWearInstallInSession = false
 
     private val inAppUpdateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
@@ -104,6 +129,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         handleLaunchIntent(intent)
         appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
+        wearInstallPromptManager = WearInstallPromptManager(applicationContext)
         installStateListener = InstallStateUpdatedListener { state ->
             when (state.installStatus()) {
                 InstallStatus.DOWNLOADED -> {
@@ -137,10 +163,16 @@ class MainActivity : ComponentActivity() {
                         widgetQuickAddRequestId = widgetQuickAddRequestId,
                         inAppUpdatePrompt = inAppUpdatePrompt,
                         restartUpdateReady = restartUpdateReady,
+                        wearInstallPromptNode = wearInstallPromptNode,
                         onDismissUpdatePrompt = { inAppUpdatePrompt = null },
                         onStartUpdate = ::startFlexibleUpdate,
                         onDismissRestartPrompt = { restartUpdateReady = false },
                         onCompleteDownloadedUpdate = ::completeDownloadedUpdate,
+                        onDismissWearInstallPrompt = { wearInstallPromptNode = null },
+                        onInstallWearApp = { nodeId ->
+                            wearInstallPromptNode = null
+                            wearInstallPromptManager.openPlayStoreOnWatch(nodeId)
+                        },
                         navigateToAuthentication = {
                             startActivity(Intent(this, AuthenticationActivity::class.java))
                         }
@@ -153,6 +185,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshInAppUpdateState()
+        checkWearInstallPrompt()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -163,6 +196,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         appUpdateManager.unregisterListener(installStateListener)
+        activityScope.cancel()
         super.onDestroy()
     }
 
@@ -226,6 +260,17 @@ class MainActivity : ComponentActivity() {
         restartUpdateReady = false
     }
 
+    private fun checkWearInstallPrompt() {
+        if (hasPromptedForWearInstallInSession) return
+        activityScope.launch {
+            val nodes = wearInstallPromptManager.findConnectedNodesWithoutApp()
+            if (nodes.isNotEmpty()) {
+                hasPromptedForWearInstallInSession = true
+                wearInstallPromptNode = nodes.first()
+            }
+        }
+    }
+
     private fun handleLaunchIntent(intent: Intent?) {
         if (intent?.action != ACTION_WIDGET_QUICK_ADD) return
         widgetQuickAddRequestId += 1
@@ -243,10 +288,13 @@ private fun MainContainerScreen(
     widgetQuickAddRequestId: Int,
     inAppUpdatePrompt: InAppUpdatePrompt?,
     restartUpdateReady: Boolean,
+    wearInstallPromptNode: com.google.android.gms.wearable.Node?,
     onDismissUpdatePrompt: () -> Unit,
     onStartUpdate: () -> Unit,
     onDismissRestartPrompt: () -> Unit,
     onCompleteDownloadedUpdate: () -> Unit,
+    onDismissWearInstallPrompt: () -> Unit,
+    onInstallWearApp: (nodeId: String) -> Unit,
     navigateToAuthentication: () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -307,6 +355,14 @@ private fun MainContainerScreen(
         )
     }
 
+    if (wearInstallPromptNode != null) {
+        WearInstallPromptBottomSheet(
+            deviceName = wearInstallPromptNode.displayName,
+            onInstall = { onInstallWearApp(wearInstallPromptNode.id) },
+            onDismiss = onDismissWearInstallPrompt,
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
@@ -359,64 +415,113 @@ private fun MainContainerScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InAppUpdateDialog(
     prompt: InAppUpdatePrompt,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Update available") },
-        text = {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                imageVector = Icons.Default.SystemUpdate,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                buildString {
-                    append("A newer Android build is ready in Google Play.")
+                text = "Update available",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = buildString {
+                    append("A newer version is ready in Google Play.")
                     prompt.stalenessDays?.takeIf { it > 0 }?.let { days ->
-                        append(" This version has been available for $days day")
+                        append(" Available for $days day")
                         append(if (days == 1) "." else "s.")
                     }
-                    if (prompt.priority > 0) {
-                        append(" Update priority: ${prompt.priority}.")
-                    }
-                }
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Update now")
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    Text("Later")
+                }
+                Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                    Text("Update now")
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Later")
-            }
-        },
-    )
+        }
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DownloadedUpdateDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Restart to finish update") },
-        text = {
-            Text("The update has finished downloading. Restart the app to install the latest version.")
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Restart now")
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                imageVector = Icons.Default.DownloadDone,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Restart to finish update",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "The update has finished downloading. Restart the app to install the latest version.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                    Text("Later")
+                }
+                Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                    Text("Restart now")
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Later")
-            }
-        },
-    )
+        }
+    }
 }
 
 private data class InAppUpdatePrompt(
@@ -640,10 +745,13 @@ private fun MainContainerScreenPreview() {
             widgetQuickAddRequestId = 0,
             inAppUpdatePrompt = null,
             restartUpdateReady = false,
+            wearInstallPromptNode = null,
             onDismissUpdatePrompt = {},
             onStartUpdate = {},
             onDismissRestartPrompt = {},
             onCompleteDownloadedUpdate = {},
+            onDismissWearInstallPrompt = {},
+            onInstallWearApp = {},
             navigateToAuthentication = {},
         )
     }

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,17 +23,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,7 +111,7 @@ data class SettingsViewState(
                 return@Column
             }
 
-            SettingsHeroCard(
+            SettingsScreenHeader(
                 displayLoading = displayLoading,
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
@@ -121,10 +128,7 @@ data class SettingsViewState(
                 return@Column
             }
 
-            SettingsSectionHeader(
-                title = "Account",
-                subtitle = "Session state and the core product context that keep this personal space synced.",
-            )
+            SettingsSectionHeader(title = "Account")
 
             SessionCard(
                 currentEmail = currentEmail,
@@ -136,25 +140,17 @@ data class SettingsViewState(
                 onSignInError = { signInErrorMessage = it },
             )
 
-            HighlightsRow(tier = preferences.accountTier)
-
-            SettingsSectionHeader(
-                title = "Preferences",
-                subtitle = "Routine and cost settings that shape how Home, History, and Analytics interpret your day.",
-            )
+            SettingsSectionHeader(title = "Preferences")
 
             PreferencesCard(
                 preferences = draftPreferences,
                 enabled = !displayLoading && currentEmail != null,
                 onPreferencesChange = { draftPreferences = it },
-                onSave = { intent(SettingsIntent.UpdatePreferences(draftPreferences)) },
+                onSave = { updated -> intent(SettingsIntent.UpdatePreferences(updated)) },
                 onReset = { draftPreferences = preferences },
             )
 
-            SettingsSectionHeader(
-                title = "App",
-                subtitle = "Support links, plan context, and version details stay inside You instead of a detached About route.",
-            )
+            SettingsSectionHeader(title = "App")
 
             SettingsCard(
                 title = "About & Support",
@@ -212,70 +208,56 @@ private fun SettingsErrorCard(
 @Composable
 private fun SettingsSectionHeader(
     title: String,
-    subtitle: String,
+    subtitle: String = "",
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        HorizontalDivider(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-private fun SettingsHeroCard(
+private fun SettingsScreenHeader(
     displayLoading: Boolean,
     currentEmail: String?,
     currentDisplayName: String?,
 ) {
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = "You",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = if (currentDisplayName.isNullOrBlank()) {
-                    "Keep your routine, goals, and account in sync."
-                } else {
-                    "Keep $currentDisplayName's routine, goals, and account in sync."
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = if (currentEmail == null) {
-                    "Sign in to sync preferences, preserve progress, and keep goals ready across devices."
-                } else {
-                    "Review session state, tune how the app interprets your day, and keep the next goals flow anchored here."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            StatusBadge(
-                text = when {
-                    displayLoading -> "Refreshing"
-                    currentEmail != null -> "Signed in"
-                    else -> "Guest mode"
-                },
-            )
-        }
+        Text(
+            text = if (currentDisplayName.isNullOrBlank()) "You" else currentDisplayName,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = if (currentEmail == null) {
+                "Sign in to sync preferences and keep goals across devices."
+            } else {
+                "Manage session, preferences, and app settings."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        StatusBadge(
+            text = when {
+                displayLoading -> "Refreshing"
+                currentEmail != null -> "Signed in"
+                else -> "Guest mode"
+            },
+        )
     }
 }
 
@@ -539,7 +521,7 @@ private fun PreferencesCard(
     preferences: UserPreferences,
     enabled: Boolean,
     onPreferencesChange: (UserPreferences) -> Unit,
-    onSave: () -> Unit,
+    onSave: (UserPreferences) -> Unit,
     onReset: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -548,116 +530,326 @@ private fun PreferencesCard(
     ) { granted ->
         val hasPermission = granted[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             granted[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        onPreferencesChange(preferences.copy(locationTrackingEnabled = hasPermission))
+        val updated = preferences.copy(locationTrackingEnabled = hasPermission)
+        onPreferencesChange(updated)
+        onSave(updated)
     }
 
-    SettingsCard(
-        title = "Edit preferences",
-        subtitle = "Routine, price, and location settings stay in one place instead of a duplicated hierarchy.",
-    ) {
-        RoutineSnapshotCard(preferences = preferences)
+    var showDayStartPicker by remember { mutableStateOf(false) }
+    var showBedtimePicker by remember { mutableStateOf(false) }
+    var showCurrencyPicker by remember { mutableStateOf(false) }
+    var showPackPricePicker by remember { mutableStateOf(false) }
+    var showCigsPerPackPicker by remember { mutableStateOf(false) }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CurrencyField(
-            selected = preferences.currencySymbol,
-            enabled = enabled,
-            onCurrencySelected = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        PriceField(
-            label = "Pack price",
-            currencySymbol = preferences.currencySymbol,
-            value = preferences.packPrice,
-            enabled = enabled,
-            onValueChange = { onPreferencesChange(preferences.copy(packPrice = it.coerceAtLeast(0.0))) },
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        IntegerField(
-            label = "Cigarettes per pack",
-            value = preferences.cigarettesPerPack,
-            enabled = enabled,
-            minValue = 1,
-            step = 1,
-            onValueChange = { onPreferencesChange(preferences.copy(cigarettesPerPack = it)) },
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TimePreferenceRow(
-            label = "First hour of the day",
-            hour = preferences.dayStartHour,
-            enabled = enabled,
-            onTimeSelected = { hour ->
-                onPreferencesChange(preferences.copy(dayStartHour = hour))
-            },
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TimePreferenceRow(
-            label = "Bedtime",
-            hour = preferences.bedtimeHour,
-            enabled = enabled,
-            onTimeSelected = { hour ->
-                onPreferencesChange(preferences.copy(bedtimeHour = hour))
-            },
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Column(
+    SettingsCard(title = "Preferences") {
+        // Row 1: Day starts + Sleep starts
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Track location with smokes", style = MaterialTheme.typography.bodySmall)
-            Switch(
-                checked = preferences.locationTrackingEnabled,
-                onCheckedChange = { checked ->
-                    if (!checked) {
-                        onPreferencesChange(preferences.copy(locationTrackingEnabled = false))
-                    } else if (context.hasLocationPermission()) {
-                        onPreferencesChange(preferences.copy(locationTrackingEnabled = true))
-                    } else {
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION,
-                            )
-                        )
-                    }
-                },
+            TappableHighlightCard(
+                modifier = Modifier.weight(1f),
+                title = "Day starts",
+                value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
+                body = "Tap to change",
                 enabled = enabled,
+                onClick = { showDayStartPicker = true },
+            )
+            TappableHighlightCard(
+                modifier = Modifier.weight(1f),
+                title = "Sleep starts",
+                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+                body = "Tap to change",
+                enabled = enabled,
+                onClick = { showBedtimePicker = true },
+            )
+        }
+
+        // Row 2: Currency + Pack price + Cigs per pack
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            TappableHighlightCard(
+                modifier = Modifier.weight(1f),
+                title = "Currency",
+                value = preferences.currencySymbol,
+                body = "Tap to change",
+                enabled = enabled,
+                onClick = { showCurrencyPicker = true },
+            )
+            TappableHighlightCard(
+                modifier = Modifier.weight(1f),
+                title = "Pack price",
+                value = "%.2f".format(preferences.packPrice),
+                body = "Tap to change",
+                enabled = enabled,
+                onClick = { showPackPricePicker = true },
+            )
+            TappableHighlightCard(
+                modifier = Modifier.weight(1f),
+                title = "Cigs/pack",
+                value = preferences.cigarettesPerPack.toString(),
+                body = "Tap to change",
+                enabled = enabled,
+                onClick = { showCigsPerPackPicker = true },
+            )
+        }
+
+        // Location toggle card
+        LocationPreferenceCard(
+            enabled = enabled,
+            isTracking = preferences.locationTrackingEnabled,
+            onToggle = { checked ->
+                if (!checked) {
+                    val updated = preferences.copy(locationTrackingEnabled = false)
+                    onPreferencesChange(updated); onSave(updated)
+                } else if (context.hasLocationPermission()) {
+                    val updated = preferences.copy(locationTrackingEnabled = true)
+                    onPreferencesChange(updated); onSave(updated)
+                } else {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                        )
+                    )
+                }
+            },
+        )
+    }
+
+    // Day start time picker
+    if (showDayStartPicker) {
+        TimePickerDialogCompat(
+            label = "Day starts at",
+            initialHour = preferences.dayStartHour,
+            onDismiss = { showDayStartPicker = false },
+            onConfirm = { hour ->
+                showDayStartPicker = false
+                val updated = preferences.copy(dayStartHour = hour)
+                onPreferencesChange(updated); onSave(updated)
+            },
+        )
+    }
+
+    // Bedtime picker
+    if (showBedtimePicker) {
+        TimePickerDialogCompat(
+            label = "Sleep starts at",
+            initialHour = preferences.bedtimeHour,
+            onDismiss = { showBedtimePicker = false },
+            onConfirm = { hour ->
+                showBedtimePicker = false
+                val updated = preferences.copy(bedtimeHour = hour)
+                onPreferencesChange(updated); onSave(updated)
+            },
+        )
+    }
+
+    // Currency picker
+    if (showCurrencyPicker) {
+        AlertDialog(
+            onDismissRequest = { showCurrencyPicker = false },
+            title = { Text("Currency") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf("€", "$", "£").forEach { symbol ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showCurrencyPicker = false
+                                    val updated = preferences.copy(currencySymbol = symbol)
+                                    onPreferencesChange(updated); onSave(updated)
+                                }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(
+                                text = symbol,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = if (symbol == preferences.currencySymbol)
+                                    MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = when (symbol) { "€" -> "Euro"; "$" -> "Dollar"; else -> "Pound" },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showCurrencyPicker = false }) { Text("Cancel") } },
+        )
+    }
+
+    // Pack price picker
+    if (showPackPricePicker) {
+        var draftPrice by remember { mutableStateOf("%.2f".format(preferences.packPrice)) }
+        AlertDialog(
+            onDismissRequest = { showPackPricePicker = false },
+            title = { Text("Pack price (${preferences.currencySymbol})") },
+            text = {
+                OutlinedTextField(
+                    value = draftPrice,
+                    onValueChange = { draftPrice = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    draftPrice.toDoubleOrNull()?.coerceAtLeast(0.0)?.let { price ->
+                        showPackPricePicker = false
+                        val updated = preferences.copy(packPrice = price)
+                        onPreferencesChange(updated); onSave(updated)
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { showPackPricePicker = false }) { Text("Cancel") } },
+        )
+    }
+
+    // Cigarettes per pack picker
+    if (showCigsPerPackPicker) {
+        var draftCigs by remember { mutableStateOf(preferences.cigarettesPerPack.toString()) }
+        AlertDialog(
+            onDismissRequest = { showCigsPerPackPicker = false },
+            title = { Text("Cigarettes per pack") },
+            text = {
+                OutlinedTextField(
+                    value = draftCigs,
+                    onValueChange = { draftCigs = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    draftCigs.toIntOrNull()?.coerceAtLeast(1)?.let { count ->
+                        showCigsPerPackPicker = false
+                        val updated = preferences.copy(cigarettesPerPack = count)
+                        onPreferencesChange(updated); onSave(updated)
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { showCigsPerPackPicker = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+@Composable
+private fun TappableHighlightCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    value: String,
+    body: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Optional. Used for map insights.",
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = body,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(
-                modifier = Modifier.weight(1f),
-                onClick = onReset,
-                enabled = enabled,
-            ) {
-                Text("Reset")
+@Composable
+private fun LocationPreferenceCard(
+    enabled: Boolean,
+    isTracking: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (isTracking) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
+                contentDescription = null,
+                tint = if (isTracking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "Location tracking",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = if (isTracking) "On — used for map insights" else "Off",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = onSave,
+            Switch(
+                checked = isTracking,
+                onCheckedChange = onToggle,
                 enabled = enabled,
-            ) {
-                Text("Save")
-            }
+            )
         }
+    }
+}
+
+@Composable
+private fun TimePickerDialogCompat(
+    label: String,
+    initialHour: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        TimePickerDialog(
+            context,
+            { _, hour, _ -> onConfirm(hour) },
+            initialHour,
+            0,
+            true,
+        ).apply {
+            setOnDismissListener { onDismiss() }
+        }.show()
     }
 }
 

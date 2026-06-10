@@ -47,6 +47,7 @@ sealed interface HomeResult {
         val goalProgress: GoalProgress?,
         val canStartNewDay: Boolean,
         val locationTrackingAvailability: LocationTrackingAvailability,
+        val previousMonthCount: Int = 0,
     ) : HomeResult
 
     data object FetchSmokesError : HomeResult

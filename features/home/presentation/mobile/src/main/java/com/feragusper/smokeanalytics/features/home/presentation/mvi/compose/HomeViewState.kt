@@ -98,6 +98,7 @@ data class HomeViewState(
         providerEnabled = false,
     ),
     internal val error: HomeResult.Error? = null,
+    internal val monthTrend: Int? = null,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
@@ -179,6 +180,7 @@ data class HomeViewState(
                 locationTrackingAvailability = locationTrackingAvailability,
                 isLoading = displayLoading,
                 error = error,
+                monthTrend = monthTrend,
                 intent = intent,
             )
         }
@@ -204,6 +206,7 @@ private fun HomeContent(
     locationTrackingAvailability: LocationTrackingAvailability,
     isLoading: Boolean,
     error: HomeResult.Error?,
+    monthTrend: Int?,
     intent: (HomeIntent) -> Unit,
 ) {
     val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
@@ -303,7 +306,59 @@ private fun HomeContent(
                 )
             }
         }
+        monthTrend?.let { trend ->
+            item {
+                HomeTrendCard(trendValue = trend)
+            }
+        }
         item { Spacer(modifier = Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun HomeTrendCard(trendValue: Int) {
+    androidx.compose.material3.Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Trend",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                )
+                Text(
+                    text = "${if (trendValue > 0) "+" else ""}$trendValue%",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Text(
+                    text = "Reduction vs last month",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(999.dp),
+            ) {
+                Text(
+                    text = if (trendValue > 0) "↘" else if (trendValue < 0) "↗" else "→",
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
     }
 }
 

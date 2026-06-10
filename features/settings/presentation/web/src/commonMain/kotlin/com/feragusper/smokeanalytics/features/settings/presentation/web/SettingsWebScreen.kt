@@ -28,6 +28,7 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Option
 import org.jetbrains.compose.web.dom.Select
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
@@ -63,12 +64,6 @@ private fun SettingsViewState.Render(
             YouLoadingSkeleton()
             return@Div
         }
-
-        HeroCard(
-            displayLoading = displayLoading,
-            currentEmail = currentEmail,
-            currentDisplayName = currentDisplayName,
-        )
 
         if (errorMessage != null && currentEmail == null) {
             EmptyStateCard(
@@ -131,15 +126,10 @@ private fun SettingsViewState.Render(
             PreferencesCard(
                 preferences = draftPreferences,
                 displayLoading = displayLoading,
-                onPreferencesChange = { draftPreferences = it },
-                onSave = {
-                    onIntent(
-                        SettingsIntent.UpdatePreferences(
-                            preferences = draftPreferences,
-                        )
-                    )
+                onCommit = { updated ->
+                    draftPreferences = updated
+                    onIntent(SettingsIntent.UpdatePreferences(preferences = updated))
                 },
-                onReset = { draftPreferences = preferences },
             )
         } else {
             SurfaceCard {
@@ -196,53 +186,6 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun HeroCard(
-    displayLoading: Boolean,
-    currentEmail: String?,
-    currentDisplayName: String?,
-) {
-    SurfaceCard {
-        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-            Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                Text("You")
-            }
-            Div(attrs = { attr("style", "font-size:36px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);max-width:680px;") }) {
-                Text(
-                    if (currentDisplayName.isNullOrBlank()) {
-                        "Keep your routine, goals, and account in sync."
-                    } else {
-                        "Keep ${currentDisplayName}'s routine, goals, and account in sync."
-                    }
-                )
-            }
-            Div(attrs = { attr("style", "font-size:16px;line-height:1.6;color:var(--sa-color-secondary);max-width:760px;") }) {
-                Text(
-                    if (currentEmail == null) {
-                        "Sign in to sync preferences, preserve progress, and keep goals ready across devices."
-                    } else {
-                        "Review session state, tune how the app interprets your day, and keep the next goals flow anchored here."
-                    }
-                )
-            }
-            Div(attrs = {
-                attr(
-                    "style",
-                    "display:inline-flex;align-items:center;width:max-content;padding:8px 12px;border-radius:999px;background:var(--sa-color-secondaryContainer);color:var(--sa-color-onSecondaryContainer);font-size:13px;font-weight:600;"
-                )
-            }) {
-                Text(
-                    when {
-                        displayLoading -> "Refreshing"
-                        currentEmail != null -> "Signed in"
-                        else -> "Guest mode"
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun AppInfoCard(
     accountTier: String,
     onShare: suspend () -> Unit,
@@ -272,21 +215,43 @@ private fun AppInfoCard(
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     PrimaryButton(
-                        text = "Share app",
+                        text = "↗ Share app",
                         onClick = { scope.launch { onShare() } },
                     )
-                    A("https://github.com/feragusper/SmokeAnalytics/issues/new/choose", attrs = { attr("target", "_blank") }) {
-                        Text("Report bug")
-                    }
-                    A("mailto:feragusper@gmail.com", attrs = { attr("target", "_blank") }) {
-                        Text("Contact us")
-                    }
-                    A("https://github.com/feragusper/SmokeAnalytics", attrs = { attr("target", "_blank") }) {
-                        Text("GitHub")
-                    }
+                    LinkButton(
+                        glyph = "⚑",
+                        label = "Report bug",
+                        href = "https://github.com/feragusper/SmokeAnalytics/issues/new/choose",
+                    )
+                    LinkButton(
+                        glyph = "✉",
+                        label = "Contact us",
+                        href = "mailto:feragusper@gmail.com",
+                    )
+                    LinkButton(
+                        glyph = "⌗",
+                        label = "GitHub",
+                        href = "https://github.com/feragusper/SmokeAnalytics",
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LinkButton(
+    glyph: String,
+    label: String,
+    href: String,
+) {
+    A(href, attrs = {
+        classes(SmokeWebStyles.button)
+        attr("target", "_blank")
+        attr("style", "text-decoration:none;display:inline-flex;align-items:center;gap:8px;")
+    }) {
+        Span { Text(glyph) }
+        Span { Text(label) }
     }
 }
 
@@ -408,9 +373,7 @@ private fun HighlightCard(
 private fun PreferencesCard(
     preferences: UserPreferences,
     displayLoading: Boolean,
-    onPreferencesChange: (UserPreferences) -> Unit,
-    onSave: () -> Unit,
-    onReset: () -> Unit,
+    onCommit: (UserPreferences) -> Unit,
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:16px;") }) {
@@ -428,7 +391,7 @@ private fun PreferencesCard(
                         displayLoading = displayLoading,
                         onChange = {
                             val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
-                            onPreferencesChange(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
+                            onCommit(preferences.copy(dayStartHour = raw.coerceIn(0, 23)))
                         },
                     )
                 }
@@ -443,7 +406,7 @@ private fun PreferencesCard(
                         displayLoading = displayLoading,
                         onChange = {
                             val raw = it.substringBefore(":").toIntOrNull() ?: return@TimeField
-                            onPreferencesChange(preferences.copy(bedtimeHour = raw.coerceIn(0, 23)))
+                            onCommit(preferences.copy(bedtimeHour = raw.coerceIn(0, 23)))
                         },
                     )
                 }
@@ -462,7 +425,7 @@ private fun PreferencesCard(
                                 if (preferences.locationTrackingEnabled) attr("checked", "true")
                                 if (displayLoading) disabled()
                                 onInput {
-                                    onPreferencesChange(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
+                                    onCommit(preferences.copy(locationTrackingEnabled = !preferences.locationTrackingEnabled))
                                 }
                             })
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
@@ -481,7 +444,7 @@ private fun PreferencesCard(
                         displayLoading = displayLoading,
                         selected = preferences.currencySymbol,
                         options = listOf("€", "$", "£"),
-                        onSelection = { onPreferencesChange(preferences.copy(currencySymbol = it)) },
+                        onSelection = { onCommit(preferences.copy(currencySymbol = it)) },
                     )
                 }
                 PreferenceSummaryCard(
@@ -496,14 +459,14 @@ private fun PreferencesCard(
                         step = 0.5,
                         displayLoading = displayLoading,
                         onDecrease = {
-                            onPreferencesChange(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
+                            onCommit(preferences.copy(packPrice = (preferences.packPrice - 0.5).coerceAtLeast(0.0)))
                         },
                         onIncrease = {
-                            onPreferencesChange(preferences.copy(packPrice = preferences.packPrice + 0.5))
+                            onCommit(preferences.copy(packPrice = preferences.packPrice + 0.5))
                         },
                         onManualChange = { raw ->
                             raw.toDoubleOrNull()?.let { value ->
-                                onPreferencesChange(preferences.copy(packPrice = value.coerceAtLeast(0.0)))
+                                onCommit(preferences.copy(packPrice = value.coerceAtLeast(0.0)))
                             }
                         },
                     )
@@ -519,25 +482,24 @@ private fun PreferencesCard(
                         step = 1.0,
                         displayLoading = displayLoading,
                         onDecrease = {
-                            onPreferencesChange(
+                            onCommit(
                                 preferences.copy(cigarettesPerPack = (preferences.cigarettesPerPack - 1).coerceAtLeast(1))
                             )
                         },
                         onIncrease = {
-                            onPreferencesChange(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
+                            onCommit(preferences.copy(cigarettesPerPack = preferences.cigarettesPerPack + 1))
                         },
                         onManualChange = { raw ->
                             raw.toIntOrNull()?.let { value ->
-                                onPreferencesChange(preferences.copy(cigarettesPerPack = value.coerceAtLeast(1)))
+                                onCommit(preferences.copy(cigarettesPerPack = value.coerceAtLeast(1)))
                             }
                         },
                     )
                 }
             }
 
-            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                GhostButton(text = "Reset", onClick = onReset, enabled = !displayLoading)
-                PrimaryButton(text = "Save", onClick = onSave, enabled = !displayLoading)
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("Changes are saved automatically.")
             }
         }
     }
@@ -590,7 +552,7 @@ private fun NumberField(
                     attr("inputmode", "decimal")
                     if (prefix.isNotEmpty()) attr("aria-label", "$label in $prefix")
                     if (displayLoading) disabled()
-                    onInput { onManualChange(it.value.toString()) }
+                    onChange { onManualChange(it.value.toString()) }
                 })
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
@@ -613,7 +575,7 @@ private fun TimeField(
             classes(SmokeWebStyles.dateInput)
             value(value)
             if (displayLoading) disabled()
-            onInput { onChange(it.value) }
+            onChange { event -> onChange(event.value) }
         })
     }
 }

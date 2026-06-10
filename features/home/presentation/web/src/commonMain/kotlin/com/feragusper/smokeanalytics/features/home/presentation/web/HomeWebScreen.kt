@@ -161,6 +161,10 @@ fun HomeViewState.Render(
                 elapsedTone = elapsedTone,
             )
 
+            monthTrend?.let { trendValue ->
+                HomeTrendCard(trendValue = trendValue)
+            }
+
             if (canStartNewDay) {
                 EveningResetCard(
                     onStartNewDay = { onIntent(HomeIntent.StartNewDay) },
@@ -428,6 +432,40 @@ private data class ConsistencyMilestone(
     val days: Int,
     val glyph: String,
 )
+
+@Composable
+private fun HomeTrendCard(
+    trendValue: Int,
+) {
+    SurfaceCard {
+        Div(attrs = {
+            attr(
+                "style",
+                "display:flex;justify-content:space-between;align-items:center;gap:18px;background:linear-gradient(135deg,var(--sa-color-primary) 0%, #2D5D63 100%);border-radius:24px;padding:24px;color:var(--sa-color-onPrimary);"
+            )
+        }) {
+            Div {
+                Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.76;") }) {
+                    Text("Trend")
+                }
+                Div(attrs = { attr("style", "font-size:56px;font-weight:800;line-height:1;margin-top:10px;") }) {
+                    Text("${if (trendValue > 0) "+" else ""}$trendValue%")
+                }
+                Div(attrs = { attr("style", "font-size:14px;opacity:0.78;max-width:240px;") }) {
+                    Text("Reduction vs last month")
+                }
+            }
+            Div(attrs = {
+                attr(
+                    "style",
+                    "width:84px;height:84px;border-radius:999px;border:8px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;"
+                )
+            }) {
+                Text(if (trendValue >= 0) "↘" else "↗")
+            }
+        }
+    }
+}
 
 @Composable
 private fun EveningResetCard(
