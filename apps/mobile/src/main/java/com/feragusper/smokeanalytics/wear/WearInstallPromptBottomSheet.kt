@@ -57,7 +57,7 @@ fun WearInstallPromptBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Smoke Analytics on your wrist",
+                text = "The Smoke Analytics tile, on your wrist",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
@@ -65,7 +65,7 @@ fun WearInstallPromptBottomSheet(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Track smokes and check your stats directly from $deviceName without picking up your phone.",
+                text = "Install the tile on $deviceName to track smokes and glance at today's count without picking up your phone.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -88,7 +88,7 @@ fun WearInstallPromptBottomSheet(
                     onClick = onInstall,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Install on watch")
+                    Text("Get the tile")
                 }
             }
         }
