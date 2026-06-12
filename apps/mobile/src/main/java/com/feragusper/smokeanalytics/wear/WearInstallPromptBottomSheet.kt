@@ -71,6 +71,15 @@ fun WearInstallPromptBottomSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "After installing, swipe to the tiles carousel on the watch and add Smoke Analytics.",
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
