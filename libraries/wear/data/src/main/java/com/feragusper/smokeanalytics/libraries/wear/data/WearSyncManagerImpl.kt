@@ -2,10 +2,12 @@ package com.feragusper.smokeanalytics.libraries.wear.data
 
 import android.content.Context
 import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
+import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.utcMillis
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
@@ -44,6 +46,7 @@ class WearSyncManagerImpl(
     inner class Mobile(
         private val smokeRepository: SmokeRepository,
         private val userPreferencesRepository: UserPreferencesRepository,
+        private val locationCaptureService: LocationCaptureService,
     ) : WearSyncManager.Mobile {
 
         /**
@@ -67,10 +70,25 @@ class WearSyncManagerImpl(
             when (path) {
                 WearPaths.REQUEST_SMOKES -> syncWithWear()
                 WearPaths.ADD_SMOKE -> {
-                    smokeRepository.addSmoke(Clock.System.now())
+                    smokeRepository.addSmoke(Clock.System.now(), captureLocation())
                     syncWithWear()
                 }
                 else -> Timber.w("Ignoring unknown Wear request: $path")
+            }
+        }
+
+        /**
+         * Captures the phone's current location when location tracking is enabled and ready.
+         * Mirrors the mobile Home flow so smokes added from the watch are geolocated too.
+         */
+        private suspend fun captureLocation(): GeoPoint? {
+            val preferences = userPreferencesRepository.fetch()
+            val availability = locationCaptureService.locationTrackingAvailability(
+                preferences.locationTrackingEnabled
+            )
+            if (!availability.isReady) return null
+            return locationCaptureService.captureCurrentLocation()?.let {
+                GeoPoint(latitude = it.latitude, longitude = it.longitude)
             }
         }
 
