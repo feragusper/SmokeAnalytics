@@ -6,5 +6,5 @@ object Android {
     const val TARGET_SDK = 36
 
     // Compile SDK version for building the app.
-    const val COMPILE_SDK = 36
+    const val COMPILE_SDK = 37
 }
