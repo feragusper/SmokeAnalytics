@@ -105,12 +105,22 @@ class HomeProcessHolder @Inject constructor(
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                 )
                 val timeZone = TimeZone.currentSystemDefault()
-                val today = Clock.System.now().toLocalDateTime(timeZone).date
+                val now = Clock.System.now()
+                val today = now.toLocalDateTime(timeZone).date
                 val currentMonthStart = LocalDate(today.year, today.monthNumber, 1).atStartOfDayIn(timeZone)
                 val previousMonthStart = LocalDate(today.year, today.monthNumber, 1)
                     .minus(DatePeriod(months = 1))
                     .atStartOfDayIn(timeZone)
-                val previousMonthCount = fetchSmokesUseCase(start = previousMonthStart, end = currentMonthStart).size
+                // Compare equal windows: current month elapsed so far vs the same elapsed span
+                // of the previous month. Otherwise a partial current month is always measured
+                // against a full previous month and the trend is permanently skewed downward.
+                // Clamp the previous window to the previous month so a longer current month
+                // (e.g. comparing a 31-day month against February) can't spill into the current one.
+                val monthElapsed = now - currentMonthStart
+                val previousMonthWindowEnd =
+                    minOf(previousMonthStart + monthElapsed, currentMonthStart)
+                val previousMonthCount =
+                    fetchSmokesUseCase(start = previousMonthStart, end = previousMonthWindowEnd).size
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
                 val greetingState = greetingStateFor(
