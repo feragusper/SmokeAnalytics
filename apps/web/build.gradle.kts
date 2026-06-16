@@ -68,6 +68,7 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
+                implementation(libs.koin.core)
                 implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))

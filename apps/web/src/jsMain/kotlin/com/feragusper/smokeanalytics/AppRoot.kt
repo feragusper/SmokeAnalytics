@@ -12,22 +12,20 @@ import com.feragusper.smokeanalytics.apps.web.AnalyticsWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebStateHolder
 import com.feragusper.smokeanalytics.apps.web.SettingsAboutWebScreen
+import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebDependencies
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationWebScreen
-import com.feragusper.smokeanalytics.features.authentication.presentation.createAuthenticationWebDependencies
+import com.feragusper.smokeanalytics.features.goals.presentation.web.GoalsWebDependencies
 import com.feragusper.smokeanalytics.features.goals.presentation.web.GoalsWebScreen
-import com.feragusper.smokeanalytics.features.goals.presentation.web.createGoalsWebDependencies
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryWebScreen
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryWebStore
-import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.features.home.presentation.web.HomeWebScreen
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeWebStore
-import com.feragusper.smokeanalytics.features.settings.presentation.web.createSettingsWebDependencies
+import com.feragusper.smokeanalytics.features.settings.presentation.web.SettingsWebDependencies
 import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsPeriod
 import com.feragusper.smokeanalytics.features.stats.presentation.web.StatsWebScreen
 import com.feragusper.smokeanalytics.features.stats.presentation.web.toDomainPeriodType
-import com.feragusper.smokeanalytics.features.stats.presentation.web.createStatsWebDependencies
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsIntent
 import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWebStore
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
@@ -35,11 +33,12 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.koin.mp.KoinPlatform.getKoin
 import org.w3c.dom.events.Event
 import kotlin.time.Clock
 
 @Composable
-fun AppRoot(graph: WebAppGraph) {
+fun AppRoot() {
     var route by remember { mutableStateOf(parseRouteFromHash(window.location.hash)) }
     var analyticsTab by remember { mutableStateOf(parseAnalyticsTabFromHash(window.location.hash)) }
     var statsPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
@@ -69,56 +68,13 @@ fun AppRoot(graph: WebAppGraph) {
         }
     }
 
-    val homeStore = remember(graph) { HomeWebStore(processHolder = graph.homeProcessHolder) }
-    val historyStore = remember(graph) {
-        HistoryWebStore(
-            HistoryProcessHolder(
-                addSmokeUseCase = graph.addSmokeUseCase,
-                editSmokeUseCase = graph.editSmokeUseCase,
-                deleteSmokeUseCase = graph.deleteSmokeUseCase,
-                fetchSmokesUseCase = graph.fetchSmokesUseCase,
-                fetchSessionUseCase = graph.fetchSessionUseCase,
-                fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-                locationCaptureService = graph.locationCaptureService,
-            )
-        )
-    }
-    val authDeps = remember(graph) {
-        createAuthenticationWebDependencies(
-            fetchSessionUseCase = graph.fetchSessionUseCase,
-            signOutUseCase = graph.signOutUseCase,
-            signInWithGoogle = { }
-        )
-    }
-    val statsDeps = remember(graph) {
-        createStatsWebDependencies(
-            fetchSmokeStatsUseCase = graph.fetchSmokeStatsUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-        )
-    }
-    val statsStore = remember(statsDeps) { StatsWebStore(processHolder = statsDeps.processHolder) }
-    val mapStateHolder = remember(graph) {
-        MapWebStateHolder(
-            fetchSmokesUseCase = graph.fetchSmokesUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-        )
-    }
-    val settingsDeps = remember(graph) {
-        createSettingsWebDependencies(
-            fetchSessionUseCase = graph.fetchSessionUseCase,
-            signOutUseCase = graph.signOutUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
-        )
-    }
-    val goalsDeps = remember(graph) {
-        createGoalsWebDependencies(
-            fetchSessionUseCase = graph.fetchSessionUseCase,
-            fetchUserPreferencesUseCase = graph.fetchUserPreferencesUseCase,
-            updateUserPreferencesUseCase = graph.updateUserPreferencesUseCase,
-            fetchSmokesUseCase = graph.fetchSmokesUseCase,
-        )
-    }
+    val homeStore = remember { getKoin().get<HomeWebStore>() }
+    val historyStore = remember { getKoin().get<HistoryWebStore>() }
+    val authDeps = remember { getKoin().get<AuthenticationWebDependencies>() }
+    val statsStore = remember { getKoin().get<StatsWebStore>() }
+    val mapStateHolder = remember { getKoin().get<MapWebStateHolder>() }
+    val settingsDeps = remember { getKoin().get<SettingsWebDependencies>() }
+    val goalsDeps = remember { getKoin().get<GoalsWebDependencies>() }
 
     LaunchedEffect(route) {
         document.title = when (route) {
