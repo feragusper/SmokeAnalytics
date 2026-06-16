@@ -58,14 +58,14 @@ class CravingRepositoryImpl(
     }
 
     override suspend fun fetchActiveCraving(): Craving? =
+        // Only filter by outcome (no orderBy) so Firestore doesn't require a composite
+        // index. There is at most one pending craving; pick the most recent client-side.
         cravingsCollection()
             .where { CravingEntity.Fields.OUTCOME equalTo CravingOutcome.PENDING.name }
-            .orderBy(CravingEntity.Fields.CREATED_AT_MILLIS, Direction.DESCENDING)
-            .limit(1)
             .get()
             .documents
-            .firstOrNull()
-            ?.toCraving()
+            .mapNotNull { it.toCraving() }
+            .maxByOrNull { it.createdAt }
 
     override suspend fun resolveCraving(
         id: String,
