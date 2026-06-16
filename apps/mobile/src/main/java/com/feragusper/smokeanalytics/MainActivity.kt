@@ -85,7 +85,6 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.feragusper.smokeanalytics.wear.WearInstallPromptBottomSheet
 import com.feragusper.smokeanalytics.wear.WearInstallPromptManager
 import com.google.android.gms.wearable.Node
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -96,7 +95,6 @@ import kotlinx.coroutines.launch
  * The main activity that serves as the entry point of the application.
  * It sets up the application's theme and initializes the main container screen.
  */
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     companion object {
         const val ACTION_WIDGET_QUICK_ADD = "com.feragusper.smokeanalytics.action.WIDGET_QUICK_ADD"

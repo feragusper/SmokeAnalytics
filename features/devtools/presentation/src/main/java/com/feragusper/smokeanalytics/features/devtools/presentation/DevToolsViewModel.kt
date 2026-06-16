@@ -6,8 +6,6 @@ import com.feragusper.smokeanalytics.features.devtools.presentation.mvi.compose.
 import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.DevToolsNavigator
 import com.feragusper.smokeanalytics.features.devtools.presentation.process.DevToolsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 /**
  * ViewModel for managing the state and processing user intents for the DevTools feature.
@@ -17,8 +15,7 @@ import javax.inject.Inject
  *
  * @property processHolder The process holder responsible for executing business logic.
  */
-@HiltViewModel
-class DevToolsViewModel @Inject constructor(
+class DevToolsViewModel constructor(
     private val processHolder: DevToolsProcessHolder,
 ) : MVIViewModel<DevToolsIntent, DevToolsViewState, DevToolsResult, DevToolsNavigator>(
     initialState = DevToolsViewState()

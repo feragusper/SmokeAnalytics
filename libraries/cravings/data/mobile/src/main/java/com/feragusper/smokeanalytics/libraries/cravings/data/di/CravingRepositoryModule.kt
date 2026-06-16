@@ -2,24 +2,12 @@ package com.feragusper.smokeanalytics.libraries.cravings.data.di
 
 import com.feragusper.smokeanalytics.libraries.cravings.data.CravingRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.dsl.module
 
 /**
- * Binds [CravingRepository] to its Firestore-backed implementation.
- *
- * The [com.google.firebase.firestore.FirebaseFirestore] and
- * [com.google.firebase.auth.FirebaseAuth] dependencies are provided by the
- * smokes and authentication data modules respectively, and are reused here.
+ * Koin module providing the cravings data layer. Reuses the FirebaseFirestore and
+ * FirebaseAuth singletons provided by the smokes and authentication data modules.
  */
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class CravingRepositoryModule {
-
-    @Binds
-    @Singleton
-    abstract fun provideCravingRepository(impl: CravingRepositoryImpl): CravingRepository
+val cravingsDataModule = module {
+    single<CravingRepository> { CravingRepositoryImpl(get(), get()) }
 }

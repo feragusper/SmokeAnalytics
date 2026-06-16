@@ -1,10 +1,6 @@
 plugins {
     // Use the predefined android-lib plugin from the project build script
     `android-lib`
-    // Enable Kotlin annotation processing
-    id("com.google.devtools.ksp")
-    // Apply Dagger Hilt plugin for dependency injection
-    id("com.google.dagger.hilt.android")
     // Apply the Compose Compiler plugin using the version catalog alias
     alias(libs.plugins.compose.compiler)
 }
@@ -26,9 +22,10 @@ dependencies {
     // Include a bundle of Jetpack Compose libraries
     implementation(libs.bundles.compose)
     // Include Dagger Hilt for dependency injection
-    implementation(libs.hilt)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
     // Include Timber for logging
     implementation(libs.timber)
     // Use Hilt's compiler for annotation processing
-    ksp(libs.hilt.compiler)
 }

@@ -15,6 +15,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(libs.koin.core)
                 implementation(project(":libraries:preferences:domain"))
                 implementation(libs.kotlinx.datetime)
             }

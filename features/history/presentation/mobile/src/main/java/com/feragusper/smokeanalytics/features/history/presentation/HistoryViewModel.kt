@@ -18,12 +18,9 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.compose.H
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.process.HistoryProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlin.time.Clock
-import javax.inject.Inject
 
-@HiltViewModel
-class HistoryViewModel @Inject constructor(
+class HistoryViewModel constructor(
     private val processHolder: HistoryProcessHolder,
 ) : MVIViewModel<HistoryIntent, HistoryViewState, HistoryResult, HistoryNavigator>(
     initialState = HistoryViewState()

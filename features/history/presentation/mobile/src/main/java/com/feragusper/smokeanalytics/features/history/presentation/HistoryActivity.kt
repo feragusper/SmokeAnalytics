@@ -14,13 +14,11 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.Authen
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.HistoryNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.navigation.historyNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Activity for the History feature.
  * This activity hosts the navigation graph for viewing smoke history.
  */
-@AndroidEntryPoint
 class HistoryActivity : ComponentActivity() {
 
     /**

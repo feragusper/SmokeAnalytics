@@ -7,7 +7,6 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessio
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
 /**
  * Handles the business logic of processing intents for the DevTools feature.
@@ -17,7 +16,7 @@ import javax.inject.Inject
  *
  * @property fetchSessionUseCase Use case for fetching the current session information.
  */
-class DevToolsProcessHolder @Inject constructor(
+class DevToolsProcessHolder constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
 ) : MVIProcessHolder<DevToolsIntent, DevToolsResult> {
 

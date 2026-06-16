@@ -14,13 +14,11 @@ import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.authentication.presentation.navigation.AuthenticationNavigator
 import com.feragusper.smokeanalytics.features.authentication.presentation.navigation.authenticationNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Entry point for the Authentication feature.
  * This activity hosts the navigation graph for authentication-related screens.
  */
-@AndroidEntryPoint
 class AuthenticationActivity : ComponentActivity() {
 
     /**

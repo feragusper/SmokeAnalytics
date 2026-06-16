@@ -13,7 +13,6 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreference
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
 /**
  * Processes intents from the Settings feature, invoking the appropriate actions
@@ -25,7 +24,7 @@ import javax.inject.Inject
  * @property fetchSessionUseCase Use case for fetching the current user session.
  * @property signOutUseCase Use case for signing out the current user.
  */
-class SettingsProcessHolder @Inject constructor(
+class SettingsProcessHolder constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val signOutUseCase: SignOutUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,

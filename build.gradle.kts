@@ -26,8 +26,6 @@ plugins {
     // Apply it in the respective modules as needed.
     id("com.android.kotlin.multiplatform.library") apply false
     id("com.google.gms.google-services") version "4.4.4" apply false
-    alias(libs.plugins.hilt.android) apply false
-    alias(libs.plugins.ksp) apply false
 
     // Apply the SonarQube plugin globally for static code analysis.
     sonarqube

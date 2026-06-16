@@ -1,7 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
-import javax.inject.Inject
 
 /**
  * Use case for adding a new smoke event to the system. This operation encapsulates the business logic
@@ -9,7 +8,7 @@ import javax.inject.Inject
  *
  * @property wearSyncManager The [WearSyncManager] used for synchronizing data with the wear device.
  */
-class SyncWithWearUseCase @Inject constructor(
+class SyncWithWearUseCase constructor(
     private val wearSyncManager: WearSyncManager.Mobile,
 ) {
 

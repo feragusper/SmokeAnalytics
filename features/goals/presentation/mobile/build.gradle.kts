@@ -1,7 +1,5 @@
 plugins {
     `android-lib`
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
     alias(libs.plugins.compose.compiler)
 }
 
@@ -33,8 +31,9 @@ dependencies {
     implementation(libs.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)

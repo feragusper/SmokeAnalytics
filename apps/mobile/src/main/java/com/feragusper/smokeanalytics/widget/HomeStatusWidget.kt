@@ -43,9 +43,6 @@ import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUse
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 
 class HomeStatusWidget : GlanceAppWidget() {
 
@@ -69,15 +66,6 @@ class HomeStatusWidget : GlanceAppWidget() {
 
 class HomeStatusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HomeStatusWidget()
-}
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-internal interface HomeStatusWidgetEntryPoint {
-    fun evaluateGoalProgressUseCase(): EvaluateGoalProgressUseCase
-    fun fetchSmokeCountListUseCase(): FetchSmokeCountListUseCase
-    fun fetchSmokesUseCase(): FetchSmokesUseCase
-    fun fetchUserPreferencesUseCase(): FetchUserPreferencesUseCase
 }
 
 @Composable

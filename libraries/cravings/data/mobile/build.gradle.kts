@@ -1,7 +1,5 @@
 plugins {
     `android-lib`
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -11,8 +9,8 @@ android {
 dependencies {
     implementation(project(":libraries:cravings:domain"))
     implementation(project(":libraries:architecture:domain"))
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)

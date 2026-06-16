@@ -4,22 +4,18 @@ import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.Di
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import timber.log.Timber
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class WearMessageListenerService : WearableListenerService() {
 
-    @Inject
-    lateinit var wearSyncManager: WearSyncManager.Mobile
+    private val wearSyncManager: WearSyncManager.Mobile by inject()
 
-    @Inject
-    lateinit var dispatcherProvider: DispatcherProvider
+    private val dispatcherProvider: DispatcherProvider by inject()
 
     private val serviceJob = SupervisorJob()
 

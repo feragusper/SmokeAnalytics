@@ -20,10 +20,8 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.Home
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Timer
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 import kotlin.concurrent.fixedRateTimer
 
 /**
@@ -35,8 +33,7 @@ import kotlin.concurrent.fixedRateTimer
  *
  * @property processHolder Responsible for processing intents and invoking use cases.
  */
-@HiltViewModel
-class HomeViewModel @Inject constructor(
+class HomeViewModel constructor(
     private val processHolder: HomeProcessHolder,
 ) : MVIViewModel<HomeIntent, HomeViewState, HomeResult, HomeNavigator>(
     initialState = HomeViewState()

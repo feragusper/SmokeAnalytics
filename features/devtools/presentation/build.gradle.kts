@@ -1,10 +1,6 @@
 plugins {
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
-    // Enable Kotlin annotation processing.
-    id("com.google.devtools.ksp")
-    // Apply Dagger Hilt plugin for dependency injection.
-    id("com.google.dagger.hilt.android")
     // Apply the Compose Compiler plugin using the version catalog alias.
     alias(libs.plugins.compose.compiler)
 }
@@ -46,8 +42,9 @@ dependencies {
     implementation(libs.firebase.auth)
 
     // Dependency injection with Hilt
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 
     // Unit testing dependencies
     testImplementation(platform(libs.junit.bom))

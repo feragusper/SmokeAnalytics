@@ -4,16 +4,13 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Authenticat
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * An implementation of [AuthenticationRepository] that uses Firebase Authentication for managing user sessions.
  *
  * @property firebaseAuth The FirebaseAuth instance used for authentication operations.
  */
-@Singleton
-class AuthenticationRepositoryImpl @Inject constructor(
+class AuthenticationRepositoryImpl constructor(
     private val firebaseAuth: FirebaseAuth,
 ) : AuthenticationRepository {
 

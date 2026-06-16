@@ -9,11 +9,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query.Direction
 import kotlinx.coroutines.tasks.await
 import kotlinx.datetime.Instant
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class CravingRepositoryImpl @Inject constructor(
+class CravingRepositoryImpl constructor(
     private val firebaseFirestore: FirebaseFirestore,
     private val firebaseAuth: FirebaseAuth,
 ) : CravingRepository {

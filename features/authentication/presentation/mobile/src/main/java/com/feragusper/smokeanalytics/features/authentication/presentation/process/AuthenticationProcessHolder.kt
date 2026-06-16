@@ -7,7 +7,6 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessio
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
 /**
  * Process holder for managing authentication-related intents and transforming them into results.
@@ -16,7 +15,7 @@ import javax.inject.Inject
  *
  * @property fetchSessionUseCase Use case for fetching the current user session state.
  */
-class AuthenticationProcessHolder @Inject constructor(
+class AuthenticationProcessHolder constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
 ) : MVIProcessHolder<AuthenticationIntent, AuthenticationResult> {
 

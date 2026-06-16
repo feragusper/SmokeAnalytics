@@ -8,8 +8,6 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.co
 import com.feragusper.smokeanalytics.features.authentication.presentation.navigation.AuthenticationNavigator
 import com.feragusper.smokeanalytics.features.authentication.presentation.process.AuthenticationProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 /**
  * ViewModel for the authentication feature, managing UI state based on user intents and processing results.
@@ -19,8 +17,7 @@ import javax.inject.Inject
  *
  * @property processHolder Encapsulates business logic to process [AuthenticationIntent] into [AuthenticationResult].
  */
-@HiltViewModel
-class AuthenticationViewModel @Inject constructor(
+class AuthenticationViewModel constructor(
     private val processHolder: AuthenticationProcessHolder,
 ) : MVIViewModel<AuthenticationIntent, AuthenticationViewState, AuthenticationResult, AuthenticationNavigator>(
     initialState = AuthenticationViewState()

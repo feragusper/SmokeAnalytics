@@ -34,7 +34,6 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
-import javax.inject.Inject
 import kotlin.time.Clock
 
 /**
@@ -49,7 +48,7 @@ import kotlin.time.Clock
  * @property fetchSmokesUseCase Use case for fetching smoke events.
  * @property fetchSessionUseCase Use case for fetching the current session information.
  */
-class HistoryProcessHolder @Inject constructor(
+class HistoryProcessHolder constructor(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val editSmokeUseCase: EditSmokeUseCase,
     private val deleteSmokeUseCase: DeleteSmokeUseCase,

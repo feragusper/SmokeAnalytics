@@ -2,18 +2,17 @@ package com.feragusper.smokeanalytics.libraries.preferences.data.di
 
 import com.feragusper.smokeanalytics.libraries.preferences.data.UserPreferencesRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class UserPreferencesModule {
-    @Binds
-    @Singleton
-    abstract fun bindUserPreferencesRepository(
-        impl: UserPreferencesRepositoryImpl,
-    ): UserPreferencesRepository
+/**
+ * Koin module providing the preferences data layer.
+ *
+ * FirebaseFirestore and FirebaseAuth are provided by the smokes and authentication
+ * data modules respectively and resolved here at runtime.
+ */
+val preferencesDataModule = module {
+    single<UserPreferencesRepository> {
+        UserPreferencesRepositoryImpl(get(), get(), androidContext())
+    }
 }
