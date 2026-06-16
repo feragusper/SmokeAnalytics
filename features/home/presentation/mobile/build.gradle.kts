@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":libraries:smokes:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":libraries:smokes:presentation"))
+    implementation(project(":libraries:cravings:domain"))
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)

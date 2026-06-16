@@ -20,6 +20,10 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import io.mockk.Runs
 import io.mockk.coVerify
 import io.mockk.coEvery
@@ -60,6 +64,10 @@ class HomeProcessHolderTest {
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
     private val locationCaptureService: LocationCaptureService = mockk()
     private val widgetRefreshService: WidgetRefreshService = mockk()
+    private val addCravingUseCase: AddCravingUseCase = mockk()
+    private val fetchActiveCravingUseCase: FetchActiveCravingUseCase = mockk()
+    private val fetchCravingsUseCase: FetchCravingsUseCase = mockk()
+    private val resolveCravingUseCase: ResolveCravingUseCase = mockk()
 
     @BeforeEach
     fun setUp() {
@@ -77,7 +85,14 @@ class HomeProcessHolderTest {
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
             locationCaptureService = locationCaptureService,
             widgetRefreshService = widgetRefreshService,
+            addCravingUseCase = addCravingUseCase,
+            fetchActiveCravingUseCase = fetchActiveCravingUseCase,
+            fetchCravingsUseCase = fetchCravingsUseCase,
+            resolveCravingUseCase = resolveCravingUseCase,
         )
+
+        coEvery { fetchActiveCravingUseCase() } returns null
+        coEvery { fetchCravingsUseCase.invoke(any(), any()) } returns emptyList()
 
         coEvery { syncWithWearUseCase.invoke() } just Runs
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()

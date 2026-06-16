@@ -8,6 +8,13 @@ import com.feragusper.smokeanalytics.features.home.domain.rateSummary
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
+import com.feragusper.smokeanalytics.libraries.cravings.domain.CravingWaitCalculator
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.toCravingStats
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
@@ -63,7 +70,12 @@ class HomeProcessHolder @Inject constructor(
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
     private val widgetRefreshService: WidgetRefreshService,
+    private val addCravingUseCase: AddCravingUseCase,
+    private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
+    private val fetchCravingsUseCase: FetchCravingsUseCase,
+    private val resolveCravingUseCase: ResolveCravingUseCase,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
+    private val cravingWaitCalculator: CravingWaitCalculator = CravingWaitCalculator(),
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
 
     /**
@@ -81,6 +93,10 @@ class HomeProcessHolder @Inject constructor(
         is HomeIntent.TickTimeSinceLastCigarette -> processTickTimeSinceLastCigarette(intent)
         is HomeIntent.EditSmoke -> processEditSmoke(intent)
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
+        HomeIntent.TrackCraving -> processTrackCraving()
+        is HomeIntent.ResolveCraving -> processResolveCraving(intent)
+        HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
+        HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
     }
 
     /**
@@ -123,6 +139,8 @@ class HomeProcessHolder @Inject constructor(
                     fetchSmokesUseCase(start = previousMonthStart, end = previousMonthWindowEnd).size
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
+                val activeCraving = fetchActiveCravingUseCase()
+                val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
                 val greetingState = greetingStateFor(
                     hourOfDay = Clock.System.now()
                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
@@ -157,6 +175,8 @@ class HomeProcessHolder @Inject constructor(
                         ),
                         locationTrackingAvailability = locationTrackingAvailability,
                         previousMonthCount = previousMonthCount,
+                        activeCraving = activeCraving,
+                        cravingStats = cravingStats,
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
@@ -248,6 +268,71 @@ class HomeProcessHolder @Inject constructor(
         }
     }.catchAndLog { e ->
         Timber.e(e, "Track smoke failed")
+        emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Handles [HomeIntent.TrackCraving]. Works out whether the active goal says it
+     * is time to smoke. If not, records a pending craving with the time the user is
+     * allowed to smoke again so the UI can show a countdown.
+     */
+    private fun processTrackCraving(): Flow<HomeResult> = flow {
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> {
+                emit(HomeResult.Error.NotLoggedIn)
+                emit(HomeResult.GoToAuthentication)
+            }
+
+            is Session.LoggedIn -> {
+                val preferences = fetchUserPreferencesUseCase()
+                val smokeCounts = fetchSmokeCountListUseCase(
+                    dayStartHour = preferences.dayStartHour,
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                )
+                val advice = cravingWaitCalculator(
+                    activeGoal = preferences.activeGoal,
+                    lastSmokeAt = smokeCounts.lastSmoke?.date,
+                    preferences = preferences,
+                )
+                if (advice.canSmokeNow) {
+                    emit(HomeResult.CravingNoWaitNeeded)
+                } else {
+                    val craving = addCravingUseCase(targetAt = advice.nextAllowedAt)
+                    emit(HomeResult.CravingTracked(craving))
+                }
+            }
+        }
+    }.catchAndLog { e ->
+        Timber.e(e, "Track craving failed")
+        emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Handles [HomeIntent.ResolveCraving]. If the user let the urge pass it is a
+     * resist; if they smoked it is a postponed cigarette (when the wait completed)
+     * or giving in (when it did not), and the cigarette is logged.
+     */
+    private fun processResolveCraving(intent: HomeIntent.ResolveCraving): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        val outcome = if (!intent.smoked) {
+            CravingOutcome.RESISTED
+        } else {
+            val target = intent.craving.targetAt
+            if (target != null && Clock.System.now() >= target) {
+                CravingOutcome.POSTPONED
+            } else {
+                CravingOutcome.GAVE_IN
+            }
+        }
+        val points = resolveCravingUseCase(intent.craving, outcome)
+        if (intent.smoked) {
+            addSmokeUseCase()
+        }
+        emit(HomeResult.CravingResolved(outcome = outcome, points = points))
+        refreshWidgetSnapshotBestEffort()
+        syncWithWearBestEffort()
+    }.catchAndLog { e ->
+        Timber.e(e, "Resolve craving failed")
         emit(HomeResult.Error.Generic(e.debugSummary()))
     }
 

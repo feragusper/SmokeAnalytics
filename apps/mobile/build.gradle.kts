@@ -176,6 +176,8 @@ dependencies {
     implementation(project(":libraries:preferences:domain"))
     implementation(project(":libraries:preferences:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:cravings:domain"))
+    implementation(project(":libraries:cravings:data:mobile"))
     implementation(project(":libraries:wear:domain"))
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:goals:domain"))

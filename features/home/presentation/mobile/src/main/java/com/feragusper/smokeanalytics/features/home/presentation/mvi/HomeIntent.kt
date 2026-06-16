@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlinx.datetime.Instant
 
@@ -60,4 +61,28 @@ sealed class HomeIntent : MVIIntent {
     data object OnClickHistory : HomeIntent()
 
     data object OnClickGoals : HomeIntent()
+
+    /**
+     * Represents an intent to track a craving (the urge to smoke). The app decides
+     * whether to suggest waiting based on the active goal.
+     */
+    data object TrackCraving : HomeIntent()
+
+    /**
+     * Resolves the active craving.
+     *
+     * @property craving The pending craving being resolved.
+     * @property smoked True if the user smoked, false if they let the urge pass.
+     */
+    data class ResolveCraving(val craving: Craving, val smoked: Boolean) : HomeIntent()
+
+    /**
+     * Dismisses the transient "it's already a good time" hint.
+     */
+    data object DismissCravingHint : HomeIntent()
+
+    /**
+     * Dismisses the craving celebration shown after a resolved wait.
+     */
+    data object DismissCravingCelebration : HomeIntent()
 }

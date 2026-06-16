@@ -8,6 +8,9 @@ import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIResult
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
@@ -100,7 +103,42 @@ sealed interface HomeResult : MVIResult {
         val canStartNewDay: Boolean,
         val locationTrackingAvailability: LocationTrackingAvailability,
         val previousMonthCount: Int = 0,
+        val activeCraving: Craving? = null,
+        val cravingStats: CravingStats = CravingStats(),
     ) : HomeResult
+
+    /**
+     * A craving was tracked and the user should wait before smoking again.
+     *
+     * @property craving The pending craving (carries the target time for the countdown).
+     */
+    data class CravingTracked(val craving: Craving) : HomeResult
+
+    /**
+     * A craving was tracked but no wait is needed — it is already a good time.
+     */
+    data object CravingNoWaitNeeded : HomeResult
+
+    /**
+     * A craving was resolved.
+     *
+     * @property outcome How it ended.
+     * @property points Points awarded.
+     */
+    data class CravingResolved(
+        val outcome: CravingOutcome,
+        val points: Int,
+    ) : HomeResult
+
+    /**
+     * Dismisses the transient craving hint.
+     */
+    data object CravingHintDismissed : HomeResult
+
+    /**
+     * Dismisses the craving celebration.
+     */
+    data object CravingCelebrationDismissed : HomeResult
 
     /**
      * Updates the time elapsed since the last cigarette.

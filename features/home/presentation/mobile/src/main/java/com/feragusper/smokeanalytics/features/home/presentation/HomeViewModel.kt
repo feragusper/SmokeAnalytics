@@ -15,6 +15,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.N
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.StartNewDaySuccess
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult.UpdateTimeSinceLastCigarette
 import com.feragusper.smokeanalytics.features.home.domain.elapsedToneFrom
+import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.CravingCelebration
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
@@ -158,8 +159,38 @@ class HomeViewModel @Inject constructor(
                     monthTrend = if (result.previousMonthCount > 0) {
                         (((result.previousMonthCount - result.smokeCountListResult.countByMonth).toDouble() / result.previousMonthCount) * 100).toInt()
                     } else null,
+                    activeCraving = result.activeCraving,
+                    cravingStats = result.cravingStats,
                 )
             }
+
+            is HomeResult.CravingTracked -> previous.copy(
+                displayLoading = false,
+                displayRefreshLoading = false,
+                error = null,
+                activeCraving = result.craving,
+                showCravingHint = false,
+            )
+
+            HomeResult.CravingNoWaitNeeded -> previous.copy(
+                displayLoading = false,
+                showCravingHint = true,
+            )
+
+            is HomeResult.CravingResolved -> {
+                intents().trySend(HomeIntent.FetchSmokes)
+                previous.copy(
+                    displayLoading = false,
+                    activeCraving = null,
+                    cravingCelebration = result.points.takeIf { it > 0 }?.let {
+                        CravingCelebration(outcome = result.outcome, points = it)
+                    },
+                )
+            }
+
+            HomeResult.CravingHintDismissed -> previous.copy(showCravingHint = false)
+
+            HomeResult.CravingCelebrationDismissed -> previous.copy(cravingCelebration = null)
 
             is UpdateTimeSinceLastCigarette -> {
                 previous.copy(

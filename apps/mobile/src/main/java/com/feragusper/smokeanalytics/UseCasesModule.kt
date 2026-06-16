@@ -8,6 +8,12 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseC
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
+import com.feragusper.smokeanalytics.libraries.cravings.domain.CravingWaitCalculator
+import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
@@ -75,5 +81,28 @@ object UseCasesModule {
     fun provideUpdateUserPreferencesUseCase(
         repo: UserPreferencesRepository
     ) = UpdateUserPreferencesUseCase(repo)
+
+    @Provides
+    fun provideAddCravingUseCase(
+        repo: CravingRepository
+    ) = AddCravingUseCase(repo)
+
+    @Provides
+    fun provideFetchActiveCravingUseCase(
+        repo: CravingRepository
+    ) = FetchActiveCravingUseCase(repo)
+
+    @Provides
+    fun provideFetchCravingsUseCase(
+        repo: CravingRepository
+    ) = FetchCravingsUseCase(repo)
+
+    @Provides
+    fun provideResolveCravingUseCase(
+        repo: CravingRepository
+    ) = ResolveCravingUseCase(repo)
+
+    @Provides
+    fun provideCravingWaitCalculator() = CravingWaitCalculator()
 
 }
