@@ -513,20 +513,15 @@ private fun CravingCountdownCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = if (done) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
-        },
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(28.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
+        tonalElevation = 1.dp,
         border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 text = if (done) "You made it! 🎉" else "Hold on 💪",
@@ -534,63 +529,68 @@ private fun CravingCountdownCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            if (done) {
-                Text(
-                    text = "The wait is over. Log the cigarette if you still want it, or let the urge pass for the full reward.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+
+            // Highlighted inner panel: countdown while waiting, message when done.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = if (done) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                },
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = { onResolve(true) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text("Log it")
+                    if (!done) {
+                        Text(
+                            text = remainingSeconds.toCountdownLabel(),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
                     }
-                    Button(
-                        onClick = { onResolve(false) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text("I'm good", fontWeight = FontWeight.Bold)
-                    }
+                    Text(
+                        text = if (done) {
+                            "The wait is over. Smoke it now if you still want it, or let it go for the full reward."
+                        } else {
+                            "Until your next cigarette fits the goal. You've got this."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (done) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                        },
+                        textAlign = TextAlign.Center,
+                    )
                 }
-            } else {
-                Text(
-                    text = remainingSeconds.toCountdownLabel(),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = "Until your next cigarette fits the goal. You've got this.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+            }
+
+            // onResolve(true)  -> the user smoked (gave in / postponed)
+            // onResolve(false) -> the urge passed without smoking (resisted)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { onResolve(true) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = { onResolve(true) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text("Smoke now")
-                    }
-                    Button(
-                        onClick = { onResolve(false) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Text("It passed", fontWeight = FontWeight.Bold)
-                    }
+                    Text(if (done) "Smoke it" else "I smoked")
+                }
+                Button(
+                    onClick = { onResolve(false) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text("Urge passed", fontWeight = FontWeight.Bold)
                 }
             }
         }

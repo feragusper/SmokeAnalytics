@@ -538,11 +538,11 @@ private fun CravingCountdownCard(
             }
             Div(attrs = { attr("style", "display:flex;gap:12px;width:100%;justify-content:center;") }) {
                 CravingTextButton(
-                    text = if (done) "Log it" else "Smoke now",
+                    text = if (done) "Smoke it" else "I smoked",
                     onClick = { onResolve(true) },
                 )
                 PrimaryButton(
-                    text = if (done) "I'm good" else "It passed",
+                    text = "Urge passed",
                     onClick = { onResolve(false) },
                 )
             }
