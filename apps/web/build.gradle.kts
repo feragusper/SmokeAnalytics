@@ -76,6 +76,8 @@ kotlin {
                 implementation(project(":libraries:preferences:data:web"))
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:smokes:data:web"))
+                implementation(project(":libraries:cravings:domain"))
+                implementation(project(":libraries:cravings:data:web"))
                 implementation(project(":features:authentication:presentation:web"))
                 implementation(project(":features:goals:domain"))
                 implementation(project(":features:goals:presentation:web"))

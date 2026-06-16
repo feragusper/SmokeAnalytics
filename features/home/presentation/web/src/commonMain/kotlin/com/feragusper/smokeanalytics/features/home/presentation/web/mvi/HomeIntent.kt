@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlinx.datetime.Instant
 
@@ -56,4 +57,27 @@ sealed interface HomeIntent {
      * @property lastCigarette The last cigarette smoked.
      */
     data class TickTimeSinceLastCigarette(val lastCigarette: Smoke?) : HomeIntent
+
+    /**
+     * Represents the intent to track a craving (the urge to smoke).
+     */
+    data object TrackCraving : HomeIntent
+
+    /**
+     * Resolves the active craving.
+     *
+     * @property craving The pending craving being resolved.
+     * @property smoked True if the user smoked, false if they let the urge pass.
+     */
+    data class ResolveCraving(val craving: Craving, val smoked: Boolean) : HomeIntent
+
+    /**
+     * Dismisses the transient "it's already a good time" hint.
+     */
+    data object DismissCravingHint : HomeIntent
+
+    /**
+     * Dismisses the craving celebration.
+     */
+    data object DismissCravingCelebration : HomeIntent
 }

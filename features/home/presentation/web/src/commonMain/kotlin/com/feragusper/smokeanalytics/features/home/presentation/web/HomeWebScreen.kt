@@ -4,7 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
+import kotlinx.coroutines.delay
+import kotlin.time.Clock
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroMetricIcon
@@ -152,6 +160,30 @@ fun HomeViewState.Render(
                 onAddSmoke = { onIntent(HomeIntent.AddSmoke) },
             )
 
+            cravingCelebration?.let { celebration ->
+                CravingCelebrationCard(
+                    celebration = celebration,
+                    onDismiss = { onIntent(HomeIntent.DismissCravingCelebration) },
+                )
+            }
+
+            if (showCravingHint) {
+                CravingHintCard(onDismiss = { onIntent(HomeIntent.DismissCravingHint) })
+            }
+
+            activeCraving.let { craving ->
+                if (craving != null) {
+                    CravingCountdownCard(
+                        craving = craving,
+                        onResolve = { smoked ->
+                            onIntent(HomeIntent.ResolveCraving(craving = craving, smoked = smoked))
+                        },
+                    )
+                } else {
+                    CravingPromptCard(onTrack = { onIntent(HomeIntent.TrackCraving) })
+                }
+            }
+
             HomeInsightGrid(
                 lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
                 timeSinceLastCigarette = timeSinceLastCigarette,
@@ -160,6 +192,10 @@ fun HomeViewState.Render(
                 statusLabel = narrative.statusLabel,
                 elapsedTone = elapsedTone,
             )
+
+            cravingStats?.takeIf { it.total > 0 }?.let { stats ->
+                CravingStatsCard(stats = stats)
+            }
 
             monthTrend?.let { trendValue ->
                 HomeTrendCard(trendValue = trendValue)
@@ -432,6 +468,179 @@ private data class ConsistencyMilestone(
     val days: Int,
     val glyph: String,
 )
+
+@Composable
+private fun CravingPromptCard(onTrack: () -> Unit) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            HomeSectionChip("♥", "Craving", "var(--sa-color-primary)")
+            Div(attrs = { attr("style", "font-size:18px;font-weight:800;") }) {
+                Text("Feeling the urge?")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("Track the craving before lighting up. If it isn't time yet, we'll help you wait it out and reward the win.")
+            }
+            Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
+                PrimaryButton(text = "I feel like smoking", onClick = onTrack)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingHintCard(onDismiss: () -> Unit) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:14px;") }) {
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text("It's already a good time — go ahead when you want.")
+            }
+            CravingTextButton(text = "Dismiss", onClick = onDismiss)
+        }
+    }
+}
+
+@Composable
+private fun CravingCountdownCard(
+    craving: Craving,
+    onResolve: (smoked: Boolean) -> Unit,
+) {
+    val target = craving.targetAt
+    var remaining by remember(craving.id) {
+        mutableStateOf(target?.let { (it - Clock.System.now()).inWholeSeconds } ?: 0L)
+    }
+    LaunchedEffect(craving.id) {
+        if (target != null) {
+            while (true) {
+                remaining = (target - Clock.System.now()).inWholeSeconds
+                if (remaining <= 0L) break
+                delay(1_000)
+            }
+        }
+    }
+    val done = remaining <= 0L
+
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;") }) {
+            Div(attrs = { attr("style", "font-size:20px;font-weight:800;") }) {
+                Text(if (done) "You made it! 🎉" else "Hold on 💪")
+            }
+            if (done) {
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text("The wait is over. Log the cigarette if you still want it, or let the urge pass for the full reward.")
+                }
+            } else {
+                Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
+                    Text(remaining.toCountdownLabel())
+                }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text("Until your next cigarette fits the goal. You've got this.")
+                }
+            }
+            Div(attrs = { attr("style", "display:flex;gap:12px;width:100%;justify-content:center;") }) {
+                CravingTextButton(
+                    text = if (done) "Log it" else "Smoke now",
+                    onClick = { onResolve(true) },
+                )
+                PrimaryButton(
+                    text = if (done) "I'm good" else "It passed",
+                    onClick = { onResolve(false) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingCelebrationCard(
+    celebration: HomeViewState.CravingCelebration,
+    onDismiss: () -> Unit,
+) {
+    val resisted = celebration.outcome == CravingOutcome.RESISTED
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:14px;background:linear-gradient(135deg,var(--sa-color-primary) 0%, #2D5D63 100%);border-radius:24px;padding:20px;color:var(--sa-color-onPrimary);") }) {
+            Div {
+                Div(attrs = { attr("style", "font-size:18px;font-weight:800;") }) {
+                    Text(if (resisted) "🏆 Urge beaten!" else "🏆 Nice and slow")
+                }
+                Div(attrs = { attr("style", "font-size:14px;opacity:0.85;margin-top:6px;") }) {
+                    Text(
+                        if (resisted) {
+                            "You let the craving pass without smoking. +${celebration.points} points earned."
+                        } else {
+                            "You waited it out before smoking. +${celebration.points} points earned."
+                        }
+                    )
+                }
+            }
+            CravingTextButton(text = "Nice", onClick = onDismiss)
+        }
+    }
+}
+
+@Composable
+private fun CravingStatsCard(stats: CravingStats) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            HomeSectionChip("♥", "Cravings", "var(--sa-color-primary)")
+            Div(attrs = { attr("style", "display:flex;gap:12px;flex-wrap:wrap;") }) {
+                CravingStatCell(value = "${stats.resisted}", label = "Resisted")
+                CravingStatCell(value = "${stats.postponed}", label = "Postponed")
+                CravingStatCell(value = stats.minutesWaited.toWaitedLabel(), label = "Waited")
+                CravingStatCell(value = "${stats.points}", label = "Points")
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingStatCell(value: String, label: String) {
+    Div(attrs = {
+        attr(
+            "style",
+            "flex:1;min-width:90px;background:var(--sa-color-surfaceVariant,#F1F4F4);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:4px;"
+        )
+    }) {
+        Div(attrs = { attr("style", "font-size:24px;font-weight:800;") }) { Text(value) }
+        Div(attrs = { attr("style", "font-size:12px;opacity:0.7;") }) { Text(label) }
+    }
+}
+
+@Composable
+private fun CravingTextButton(text: String, onClick: () -> Unit) {
+    Button(attrs = {
+        onClick { onClick() }
+        attr(
+            "style",
+            "background:transparent;border:1px solid rgba(17,69,75,0.28);color:inherit;border-radius:14px;padding:10px 18px;font-weight:700;cursor:pointer;"
+        )
+    }) {
+        Text(text)
+    }
+}
+
+private fun Long.toCountdownLabel(): String {
+    val total = if (this < 0) 0 else this
+    val minutes = total / 60
+    val seconds = total % 60
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return if (hours > 0) {
+        "$hours:${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    } else {
+        "${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    }
+}
+
+private fun Long.toWaitedLabel(): String {
+    val minutes = if (this < 0) 0 else this
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return when {
+        hours <= 0 -> "${mins}m"
+        mins == 0L -> "${hours}h"
+        else -> "${hours}h ${mins}m"
+    }
+}
 
 @Composable
 private fun HomeTrendCard(

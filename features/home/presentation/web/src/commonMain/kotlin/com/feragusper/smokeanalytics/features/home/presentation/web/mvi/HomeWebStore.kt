@@ -115,7 +115,37 @@ class HomeWebStore(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
                     result.smokeCountListResult.timeSinceLastCigarette.second,
                 ),
+                activeCraving = result.activeCraving,
+                cravingStats = result.cravingStats,
             )
+
+            is HomeResult.CravingTracked -> previous.copy(
+                displayLoading = false,
+                displayRefreshLoading = false,
+                error = null,
+                activeCraving = result.craving,
+                showCravingHint = false,
+            )
+
+            HomeResult.CravingNoWaitNeeded -> previous.copy(
+                displayLoading = false,
+                showCravingHint = true,
+            )
+
+            is HomeResult.CravingResolved -> {
+                send(HomeIntent.FetchSmokes)
+                previous.copy(
+                    displayLoading = false,
+                    activeCraving = null,
+                    cravingCelebration = result.points.takeIf { it > 0 }?.let {
+                        HomeViewState.CravingCelebration(outcome = result.outcome, points = it)
+                    },
+                )
+            }
+
+            HomeResult.CravingHintDismissed -> previous.copy(showCravingHint = false)
+
+            HomeResult.CravingCelebrationDismissed -> previous.copy(cravingCelebration = null)
 
             is HomeResult.UpdateTimeSinceLastCigarette -> previous.copy(
                 timeSinceLastCigarette = result.timeSinceLastCigarette,

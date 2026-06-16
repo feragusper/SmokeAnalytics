@@ -13,6 +13,12 @@ import com.feragusper.smokeanalytics.libraries.preferences.data.UserPreferencesR
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
+import com.feragusper.smokeanalytics.libraries.cravings.data.CravingRepositoryImpl
+import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
@@ -152,6 +158,11 @@ data class WebAppGraph(
             val fetchSmokes = FetchSmokesUseCase(smokeRepo)
             val fetchStats = FetchSmokeStatsUseCase(smokeRepo)
             val fetchSmokeCounts = FetchSmokeCountListUseCase(smokeRepo)
+            val cravingRepo: CravingRepository = CravingRepositoryImpl()
+            val addCraving = AddCravingUseCase(cravingRepo)
+            val fetchActiveCraving = FetchActiveCravingUseCase(cravingRepo)
+            val fetchCravings = FetchCravingsUseCase(cravingRepo)
+            val resolveCraving = ResolveCravingUseCase(cravingRepo)
             val homeProcessHolder = HomeProcessHolder(
                 addSmokeUseCase = addSmoke,
                 editSmokeUseCase = editSmoke,
@@ -162,6 +173,10 @@ data class WebAppGraph(
                 fetchUserPreferencesUseCase = fetchPreferences,
                 updateUserPreferencesUseCase = updatePreferences,
                 locationCaptureService = locationCaptureService,
+                addCravingUseCase = addCraving,
+                fetchActiveCravingUseCase = fetchActiveCraving,
+                fetchCravingsUseCase = fetchCravings,
+                resolveCravingUseCase = resolveCraving,
             )
 
             val signInWithGoogleWeb: suspend () -> Unit = {

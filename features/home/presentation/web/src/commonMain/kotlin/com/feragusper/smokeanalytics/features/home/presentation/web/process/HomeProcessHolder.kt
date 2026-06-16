@@ -7,6 +7,13 @@ import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
 import com.feragusper.smokeanalytics.features.home.domain.rateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
+import com.feragusper.smokeanalytics.libraries.cravings.domain.CravingWaitCalculator
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.toCravingStats
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
@@ -53,7 +60,12 @@ class HomeProcessHolder(
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
+    private val addCravingUseCase: AddCravingUseCase,
+    private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
+    private val fetchCravingsUseCase: FetchCravingsUseCase,
+    private val resolveCravingUseCase: ResolveCravingUseCase,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
+    private val cravingWaitCalculator: CravingWaitCalculator = CravingWaitCalculator(),
 ) {
 
     /**
@@ -79,6 +91,10 @@ class HomeProcessHolder(
                 )
             )
         }
+        HomeIntent.TrackCraving -> processTrackCraving()
+        is HomeIntent.ResolveCraving -> processResolveCraving(intent)
+        HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
+        HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
     }
 
     private fun processFetchSmokes(isRefresh: Boolean): Flow<HomeResult> = flow {
@@ -106,6 +122,8 @@ class HomeProcessHolder(
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                     )
                     val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+                    val activeCraving = fetchActiveCravingUseCase()
+                    val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
                     val timeZone = TimeZone.currentSystemDefault()
                     val now = Clock.System.now()
                     val today = now.toLocalDateTime(timeZone).date
@@ -160,6 +178,8 @@ class HomeProcessHolder(
                             ),
                             locationTrackingAvailability = locationTrackingAvailability,
                             previousMonthCount = previousMonthCount,
+                            activeCraving = activeCraving,
+                            cravingStats = cravingStats,
                         )
                     )
                     return@flow
@@ -201,6 +221,57 @@ class HomeProcessHolder(
         }
     }.catch { e ->
         AppLogger.e { "Error adding smoke: ${e.message}" }
+        emit(HomeResult.Error.Generic)
+    }
+
+    private fun processTrackCraving(): Flow<HomeResult> = flow {
+        when (fetchSessionUseCase()) {
+            is Session.Anonymous -> {
+                emit(HomeResult.Error.NotLoggedIn)
+                emit(HomeResult.GoToAuthentication)
+            }
+
+            is Session.LoggedIn -> {
+                val preferences = fetchUserPreferencesUseCase()
+                val smokeCounts = fetchSmokeCountListUseCase(
+                    dayStartHour = preferences.dayStartHour,
+                    manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                )
+                val advice = cravingWaitCalculator(
+                    activeGoal = preferences.activeGoal,
+                    lastSmokeAt = smokeCounts.lastSmoke?.date,
+                    preferences = preferences,
+                )
+                if (advice.canSmokeNow) {
+                    emit(HomeResult.CravingNoWaitNeeded)
+                } else {
+                    val craving = addCravingUseCase(targetAt = advice.nextAllowedAt)
+                    emit(HomeResult.CravingTracked(craving))
+                }
+            }
+        }
+    }.catch {
+        emit(HomeResult.Error.Generic)
+    }
+
+    private fun processResolveCraving(intent: HomeIntent.ResolveCraving): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        val outcome = if (!intent.smoked) {
+            CravingOutcome.RESISTED
+        } else {
+            val target = intent.craving.targetAt
+            if (target != null && Clock.System.now() >= target) {
+                CravingOutcome.POSTPONED
+            } else {
+                CravingOutcome.GAVE_IN
+            }
+        }
+        val points = resolveCravingUseCase(intent.craving, outcome)
+        if (intent.smoked) {
+            addSmokeUseCase()
+        }
+        emit(HomeResult.CravingResolved(outcome = outcome, points = points))
+    }.catch {
         emit(HomeResult.Error.Generic)
     }
 
