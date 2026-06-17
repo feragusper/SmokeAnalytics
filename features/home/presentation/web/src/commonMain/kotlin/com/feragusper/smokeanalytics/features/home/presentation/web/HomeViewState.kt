@@ -45,6 +45,7 @@ data class HomeViewState(
     val currencySymbol: String = "€",
     val canStartNewDay: Boolean = false,
     val monthTrend: Int? = null,
+    val monthTrendDelta: Int? = null,
     val elapsedTone: ElapsedTone = ElapsedTone.Urgent,
     val locationTrackingAvailability: LocationTrackingAvailability = LocationTrackingAvailability(
         preferenceEnabled = false,

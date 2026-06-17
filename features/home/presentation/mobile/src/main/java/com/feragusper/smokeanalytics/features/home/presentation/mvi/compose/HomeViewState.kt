@@ -121,6 +121,7 @@ data class HomeViewState(
     ),
     internal val error: HomeResult.Error? = null,
     internal val monthTrend: Int? = null,
+    internal val monthTrendDelta: Int? = null,
     internal val activeCraving: Craving? = null,
     internal val cravingStats: CravingStats? = null,
     internal val showCravingHint: Boolean = false,
@@ -207,6 +208,7 @@ data class HomeViewState(
                 isLoading = displayLoading,
                 error = error,
                 monthTrend = monthTrend,
+                monthTrendDelta = monthTrendDelta,
                 activeCraving = activeCraving,
                 cravingStats = cravingStats,
                 showCravingHint = showCravingHint,
@@ -243,6 +245,7 @@ private fun HomeContent(
     isLoading: Boolean,
     error: HomeResult.Error?,
     monthTrend: Int?,
+    monthTrendDelta: Int?,
     activeCraving: Craving?,
     cravingStats: CravingStats?,
     showCravingHint: Boolean,
@@ -367,7 +370,7 @@ private fun HomeContent(
         }
         monthTrend?.let { trend ->
             item {
-                HomeTrendCard(trendValue = trend)
+                HomeTrendCard(trendValue = trend, delta = monthTrendDelta)
             }
         }
         item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -375,12 +378,38 @@ private fun HomeContent(
 }
 
 @Composable
-private fun HomeTrendCard(trendValue: Int) {
+private fun HomeTrendCard(trendValue: Int, delta: Int?) {
+    // trendValue is the reduction vs last month: positive = smoking less (good),
+    // negative = smoking more (bad). Colour and copy follow that, not a fixed green.
+    val improving = trendValue > 0
+    val worsening = trendValue < 0
+    val containerColor = when {
+        improving -> MaterialTheme.colorScheme.primary
+        worsening -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val contentColor = when {
+        improving -> MaterialTheme.colorScheme.onPrimary
+        worsening -> MaterialTheme.colorScheme.onError
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val headline = when {
+        improving -> "Smoking less than last month"
+        worsening -> "Smoking more than last month"
+        else -> "Same pace as last month"
+    }
+    // delta = current - previous (same elapsed window). Negative = fewer so far.
+    val deltaLabel = delta?.let {
+        when {
+            it < 0 -> "${-it} fewer ${pluralCigarettes(-it)} so far"
+            it > 0 -> "$it more ${pluralCigarettes(it)} so far"
+            else -> "Same count so far"
+        }
+    }
+
     androidx.compose.material3.Card(
         shape = RoundedCornerShape(24.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-        ),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = containerColor),
     ) {
         Row(
             modifier = Modifier
@@ -389,37 +418,52 @@ private fun HomeTrendCard(trendValue: Int) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Trend",
+                    text = "Vs last month",
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                    color = contentColor.copy(alpha = 0.72f),
                 )
                 Text(
-                    text = "${if (trendValue > 0) "+" else ""}$trendValue%",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    text = headline,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = contentColor,
                 )
-                Text(
-                    text = "Reduction vs last month",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
-                )
+                deltaLabel?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor.copy(alpha = 0.82f),
+                    )
+                }
             }
             Surface(
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
+                color = contentColor.copy(alpha = 0.12f),
                 shape = RoundedCornerShape(999.dp),
             ) {
-                Text(
-                    text = if (trendValue > 0) "↘" else if (trendValue < 0) "↗" else "→",
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
+                Column(
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = if (improving) "↘" else if (worsening) "↗" else "→",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = contentColor,
+                    )
+                    Text(
+                        text = "${if (trendValue > 0) "+" else ""}$trendValue%",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = contentColor,
+                    )
+                }
             }
         }
     }
 }
+
+private fun pluralCigarettes(count: Int): String = if (count == 1) "cigarette" else "cigarettes"
 
 @Composable
 private fun CravingPromptCard(onTrack: () -> Unit) {

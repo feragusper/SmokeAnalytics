@@ -156,6 +156,9 @@ class HomeViewModel constructor(
                     monthTrend = if (result.previousMonthCount > 0) {
                         (((result.previousMonthCount - result.smokeCountListResult.countByMonth).toDouble() / result.previousMonthCount) * 100).toInt()
                     } else null,
+                    monthTrendDelta = if (result.previousMonthCount > 0) {
+                        result.smokeCountListResult.countByMonth - result.previousMonthCount
+                    } else null,
                     activeCraving = result.activeCraving,
                     cravingStats = result.cravingStats,
                 )

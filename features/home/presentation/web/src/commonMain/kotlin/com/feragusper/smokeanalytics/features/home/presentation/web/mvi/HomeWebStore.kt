@@ -110,6 +110,11 @@ class HomeWebStore(
                 } else {
                     null
                 },
+                monthTrendDelta = if (result.previousMonthCount > 0) {
+                    result.smokeCountListResult.countByMonth - result.previousMonthCount
+                } else {
+                    null
+                },
                 locationTrackingAvailability = result.locationTrackingAvailability,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
