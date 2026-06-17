@@ -14,5 +14,7 @@ val smokesDomainModule = module {
     factoryOf(::EditSmokeUseCase)
     factoryOf(::DeleteSmokeUseCase)
     factoryOf(::FetchSmokesUseCase)
-    factoryOf(::FetchSmokeStatsUseCase)
+    // Explicit factory (not factoryOf): the constructor DSL would try to resolve
+    // the defaulted TimeZone parameter from the graph, which isn't provided.
+    factory { FetchSmokeStatsUseCase(smokeRepository = get()) }
 }
