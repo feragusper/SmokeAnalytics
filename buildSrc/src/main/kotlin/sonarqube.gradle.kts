@@ -16,9 +16,11 @@ val sonarCoverageExclusionGlobs: List<String> = listOf(
     "**/*WebScreen.kt",
     "**/*View.kt",
     "**/*WebDependencies.kt",
-    // The web presentation layer has no unit-test harness (UI + thin MVI glue);
-    // exclude it from coverage like the rest of the non-testable UI.
+    // The whole web/JS layer (presentation, data, app) has no unit-test
+    // harness; exclude it from coverage like the rest of the non-testable UI.
     "**/presentation/web/**",
+    "**/data/web/**",
+    "**/apps/web/**",
     "**/navigation/**",
     "**/di/**",
     "**/*Module.kt",
