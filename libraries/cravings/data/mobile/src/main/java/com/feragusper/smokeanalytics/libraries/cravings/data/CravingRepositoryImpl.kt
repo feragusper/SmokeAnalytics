@@ -25,7 +25,7 @@ class CravingRepositoryImpl constructor(
                 outcome = CravingOutcome.PENDING,
                 pointsAwarded = 0,
             )
-        ).await()
+        )
         return Craving(
             id = document.id,
             createdAt = createdAt,
@@ -78,11 +78,10 @@ class CravingRepositoryImpl constructor(
                     CravingEntity.Fields.POINTS_AWARDED to pointsAwarded.toDouble(),
                 )
             )
-            .await()
     }
 
     override suspend fun deleteCraving(id: String) {
-        cravingsCollection().document(id).delete().await()
+        cravingsCollection().document(id).delete()
     }
 
     private fun cravingsCollection() = firebaseAuth.currentUser?.uid?.let { uid ->

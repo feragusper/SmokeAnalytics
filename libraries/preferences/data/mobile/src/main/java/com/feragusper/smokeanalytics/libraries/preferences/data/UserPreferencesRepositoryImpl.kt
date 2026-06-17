@@ -10,7 +10,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.Source
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -23,17 +22,18 @@ class UserPreferencesRepositoryImpl constructor(
 ) : UserPreferencesRepository {
 
     override suspend fun fetch(): UserPreferences {
+        // Default source: server when online, local cache when offline.
         val snapshot = runFirestoreProfileCall("fetch preferences") {
-            document().get(Source.SERVER).await()
+            document().get().await()
         }
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
     }
 
     override suspend fun update(preferences: UserPreferences) {
+        // Offline-first: apply to the local cache now and let Firestore sync the write
+        // in the background. We don't await the server acknowledgement.
         runFirestoreProfileCall("update preferences") {
-            document().set(preferences.toFirestorePayload()).await()
-            val serverSnapshot = document().get(Source.SERVER).await()
-            serverSnapshot.requirePreferenceFields(preferences, document().path)
+            document().set(preferences.toFirestorePayload())
         }
     }
 

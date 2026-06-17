@@ -11,7 +11,6 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Source
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -67,7 +66,7 @@ class UserPreferencesRepositoryImplTest {
         val payloadSlot = slot<Map<String, Any?>>()
 
         every { preferencesDocument.set(capture(payloadSlot)) } returns voidTask()
-        every { preferencesDocument.get(Source.SERVER) } returns taskOf(preferencesSnapshot(preferences))
+        every { preferencesDocument.get() } returns taskOf(preferencesSnapshot(preferences))
 
         repository.update(preferences)
 
@@ -85,22 +84,6 @@ class UserPreferencesRepositoryImplTest {
     }
 
     @Test
-    fun `GIVEN server verification misses active goal WHEN update completes THEN it throws`() = runTest {
-        val preferences = UserPreferences(activeGoal = SmokingGoal.DailyCap(maxCigarettesPerDay = 8))
-
-        every { preferencesDocument.set(any<Map<String, Any?>>()) } returns voidTask()
-        every { preferencesDocument.get(Source.SERVER) } returns taskOf(
-            preferencesSnapshot(preferences, activeGoalType = null)
-        )
-
-        val error = assertThrows<IllegalStateException> {
-            repository.update(preferences)
-        }
-
-        assertTrue(error.message.orEmpty().contains(UserPreferencesEntity.ACTIVE_GOAL_TYPE))
-    }
-
-    @Test
     fun `GIVEN Play Store release wrote obfuscated preferences fields WHEN fetch is called THEN it restores them`() =
         runTest {
             val preferences = UserPreferences(
@@ -115,7 +98,7 @@ class UserPreferencesRepositoryImplTest {
                 activeGoal = SmokingGoal.ReductionVsPreviousWeek(reductionPercent = 20.0),
             )
 
-            every { preferencesDocument.get(Source.SERVER) } returns taskOf(
+            every { preferencesDocument.get() } returns taskOf(
                 preferencesSnapshot(
                     preferences = preferences,
                     canonicalFields = false,

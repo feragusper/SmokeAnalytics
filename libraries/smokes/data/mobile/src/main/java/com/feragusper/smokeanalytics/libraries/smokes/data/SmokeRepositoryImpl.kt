@@ -24,7 +24,6 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
-import com.google.firebase.firestore.Source
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -44,37 +43,29 @@ class SmokeRepositoryImpl constructor(
         }
     }
 
+    // Writes are offline-first: Firestore applies them to the local persistent cache
+    // immediately and syncs to the server in the background when connectivity returns.
+    // We deliberately do not await the server acknowledgement, so adding/editing/deleting
+    // a smoke works with no connection instead of timing out.
+
     override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
         runFirestoreCall("add smoke", smokesPath()) {
-            val document = smokesQuery().document()
-            document.set(smokePayload(date, location)).await()
-            val serverSnapshot = document.get(Source.SERVER).await()
-            serverSnapshot.requireSmokeFields(date, "add smoke", document.path)
+            smokesQuery().document().set(smokePayload(date, location))
         }
     }
 
     override suspend fun editSmoke(id: String, date: Instant, location: GeoPoint?) {
         runFirestoreCall("edit smoke", "${smokesPath()}/$id") {
             val document = smokesQuery().document(id)
-            val preservedLocation = location ?: document
-                .get(Source.SERVER)
-                .await()
-                .getGeoPoint()
-
-            document.set(smokePayload(date, preservedLocation)).await()
-            val serverSnapshot = document.get(Source.SERVER).await()
-            serverSnapshot.requireSmokeFields(date, "edit smoke", document.path)
+            // Default source: server when online, local cache when offline.
+            val preservedLocation = location ?: document.get().await().getGeoPoint()
+            document.set(smokePayload(date, preservedLocation))
         }
     }
 
     override suspend fun deleteSmoke(id: String) {
         runFirestoreCall("delete smoke", "${smokesPath()}/$id") {
-            val document = smokesQuery().document(id)
-            document.delete().await()
-            val serverSnapshot = document.get(Source.SERVER).await()
-            check(!serverSnapshot.exists()) {
-                "Firestore delete smoke verification failed: ${document.path} still exists on server."
-            }
+            smokesQuery().document(id).delete()
         }
     }
 
@@ -158,12 +149,12 @@ class SmokeRepositoryImpl constructor(
         val result = queryByTimestamp(timestampField)
             .whereGreaterThanOrEqualTo(timestampField, startMillis)
             .whereLessThan(timestampField, endMillis)
-            .get(Source.SERVER)
+            .get()
             .await()
         val previousDocument = queryByTimestamp(timestampField)
             .whereLessThan(timestampField, startMillis)
             .limit(1)
-            .get(Source.SERVER)
+            .get()
             .await()
             .documents
             .firstOrNull()
@@ -233,18 +224,6 @@ class SmokeRepositoryImpl constructor(
             SmokeEntity.Fields.LATITUDE to location?.latitude,
             SmokeEntity.Fields.LONGITUDE to location?.longitude,
         )
-
-    private fun DocumentSnapshot.requireSmokeFields(expectedDate: Instant, operation: String, path: String) {
-        check(exists()) {
-            "Firestore $operation verification failed: $path is missing on server."
-        }
-
-        val expectedMillis = expectedDate.toEpochMilliseconds().toDouble()
-        val actualMillis = getDouble(SmokeEntity.Fields.TIMESTAMP_MILLIS)
-        check(actualMillis == expectedMillis) {
-            "Firestore $operation verification failed: $path has timestampMillis=$actualMillis, expected=$expectedMillis."
-        }
-    }
 
     private companion object {
         const val FIRESTORE_TIMEOUT_MILLIS = 15_000L
