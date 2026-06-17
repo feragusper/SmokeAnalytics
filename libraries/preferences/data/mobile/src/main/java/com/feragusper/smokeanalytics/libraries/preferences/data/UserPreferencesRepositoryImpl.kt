@@ -93,43 +93,6 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE to activeGoal?.metricValue,
     )
 
-private fun DocumentSnapshot.requirePreferenceFields(expected: UserPreferences, path: String) {
-    check(exists()) {
-        "Firestore update preferences verification failed: $path is missing on server."
-    }
-
-    check(numberOrNull(UserPreferencesEntity.PACK_PRICE)?.toDouble() == expected.packPrice) {
-        "Firestore update preferences verification failed: $path has invalid packPrice."
-    }
-    check(numberOrNull(UserPreferencesEntity.CIGARETTES_PER_PACK)?.toInt() == expected.cigarettesPerPack) {
-        "Firestore update preferences verification failed: $path has invalid cigarettesPerPack."
-    }
-    check(numberOrNull(UserPreferencesEntity.DAY_START_HOUR)?.toInt() == expected.dayStartHour) {
-        "Firestore update preferences verification failed: $path has invalid dayStartHour."
-    }
-    check(numberOrNull(UserPreferencesEntity.BEDTIME_HOUR)?.toInt() == expected.bedtimeHour) {
-        "Firestore update preferences verification failed: $path has invalid bedtimeHour."
-    }
-    check(numberOrNull(UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS)?.toLong() == expected.manualDayStartEpochMillis) {
-        "Firestore update preferences verification failed: $path has invalid manualDayStartEpochMillis."
-    }
-    check(booleanOrNull(UserPreferencesEntity.LOCATION_TRACKING_ENABLED) == expected.locationTrackingEnabled) {
-        "Firestore update preferences verification failed: $path has invalid locationTrackingEnabled."
-    }
-    check(stringOrNull(UserPreferencesEntity.CURRENCY_SYMBOL) == expected.currencySymbol) {
-        "Firestore update preferences verification failed: $path has invalid currencySymbol."
-    }
-    check(stringOrNull(UserPreferencesEntity.ACCOUNT_TIER) == expected.accountTier.name) {
-        "Firestore update preferences verification failed: $path has invalid accountTier."
-    }
-    check(stringOrNull(UserPreferencesEntity.ACTIVE_GOAL_TYPE) == expected.activeGoal?.type?.name) {
-        "Firestore update preferences verification failed: $path has invalid activeGoalType."
-    }
-    check(numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble() == expected.activeGoal?.metricValue) {
-        "Firestore update preferences verification failed: $path has invalid activeGoalMetricValue."
-    }
-}
-
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
     if (!exists()) return null
 

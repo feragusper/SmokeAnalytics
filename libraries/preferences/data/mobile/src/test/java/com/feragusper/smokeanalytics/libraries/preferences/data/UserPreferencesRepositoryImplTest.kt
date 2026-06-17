@@ -111,6 +111,26 @@ class UserPreferencesRepositoryImplTest {
             assertEquals(preferences, result)
         }
 
+    @Test
+    fun `GIVEN Firestore fails WHEN fetch is called THEN it wraps the error with diagnostics`() = runTest {
+        every { preferencesDocument.get() } throws RuntimeException("network down")
+
+        val error = assertThrows<IllegalStateException> {
+            repository.fetch()
+        }
+
+        assertTrue(error.message.orEmpty().contains("fetch preferences"))
+    }
+
+    @Test
+    fun `GIVEN no user WHEN fetch is called THEN it throws`() = runTest {
+        every { auth.currentUser } returns null
+
+        assertThrows<IllegalStateException> {
+            repository.fetch()
+        }
+    }
+
     private fun preferencesSnapshot(
         preferences: UserPreferences,
         activeGoalType: String? = preferences.activeGoal?.type?.name,
