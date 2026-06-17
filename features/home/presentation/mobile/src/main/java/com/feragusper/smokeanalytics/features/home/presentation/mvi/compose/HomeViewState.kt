@@ -572,25 +572,38 @@ private fun CravingCountdownCard(
                 }
             }
 
-            // onResolve(true)  -> the user smoked (gave in / postponed)
+            // onResolve(true)  -> the user smoked (gave in while waiting / postponed once done)
             // onResolve(false) -> the urge passed without smoking (resisted)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
+            if (done) {
+                // The wait paid off. Now smoking fits the goal: log it (postponed) or let it go (resisted).
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { onResolve(false) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text("I'm good")
+                    }
+                    Button(
+                        onClick = { onResolve(true) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text("Log the cigarette", fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                // While waiting the only manual action is the give-in escape hatch.
+                // Resisting is automatic: the card flips to "You made it!" when the countdown ends.
                 OutlinedButton(
                     onClick = { onResolve(true) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text(if (done) "Smoke it" else "I smoked")
-                }
-                Button(
-                    onClick = { onResolve(false) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Text("Urge passed", fontWeight = FontWeight.Bold)
+                    Text("I smoked anyway")
                 }
             }
         }

@@ -536,15 +536,18 @@ private fun CravingCountdownCard(
                     Text("Until your next cigarette fits the goal. You've got this.")
                 }
             }
+            // onResolve(true)  -> smoked (gave in while waiting / postponed once done)
+            // onResolve(false) -> the urge passed without smoking (resisted)
             Div(attrs = { attr("style", "display:flex;gap:12px;width:100%;justify-content:center;") }) {
-                CravingTextButton(
-                    text = if (done) "Smoke it" else "I smoked",
-                    onClick = { onResolve(true) },
-                )
-                PrimaryButton(
-                    text = "Urge passed",
-                    onClick = { onResolve(false) },
-                )
+                if (done) {
+                    // The wait paid off: log the now-allowed cigarette, or let it go.
+                    CravingTextButton(text = "I'm good", onClick = { onResolve(false) })
+                    PrimaryButton(text = "Log the cigarette", onClick = { onResolve(true) })
+                } else {
+                    // While waiting the only manual action is the give-in escape hatch.
+                    // Resisting is automatic when the countdown ends.
+                    CravingTextButton(text = "I smoked anyway", onClick = { onResolve(true) })
+                }
             }
         }
     }
