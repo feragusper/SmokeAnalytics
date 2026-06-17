@@ -11,14 +11,13 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * This class handles the processing of intents related to the Wear OS Tile.
  * It listens for updates, such as fetching smoke counts or adding smoke, and communicates
  * with the mobile app via the WearSyncManager.
  */
-class TileProcessHolder @Inject constructor(
+class TileProcessHolder constructor(
     private val wearSyncManager: WearSyncManager.Wear
 ) : MVIProcessHolder<TileIntent, TileResult> {
 

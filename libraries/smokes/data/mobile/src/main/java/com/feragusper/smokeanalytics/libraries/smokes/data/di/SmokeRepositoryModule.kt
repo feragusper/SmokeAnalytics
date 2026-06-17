@@ -2,22 +2,25 @@ package com.feragusper.smokeanalytics.libraries.smokes.data.di
 
 import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestoreSettings
+import com.google.firebase.firestore.persistentCacheSettings
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
 /**
- * Defines a module for binding the [SmokeRepository] interface to its implementation, [SmokeRepositoryImpl],
- * facilitating dependency injection of the repository across the application, especially within ViewModel components.
+ * Koin module providing the smokes data layer, including the app-wide
+ * [FirebaseFirestore] instance (configured with a persistent cache) reused by the
+ * other data modules.
  */
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class SmokeRepositoryModule {
-
-
-    @Binds
-    @Singleton
-    abstract fun provideSmokeRepository(smokeRepository: SmokeRepositoryImpl): SmokeRepository
+val smokesDataModule = module {
+    single<FirebaseFirestore> {
+        FirebaseFirestore.getInstance().apply {
+            firestoreSettings = firestoreSettings {
+                setLocalCacheSettings(persistentCacheSettings {})
+            }
+            persistentCacheIndexManager?.enableIndexAutoCreation()
+        }
+    }
+    single<SmokeRepository> { SmokeRepositoryImpl(get(), get(), androidContext()) }
 }

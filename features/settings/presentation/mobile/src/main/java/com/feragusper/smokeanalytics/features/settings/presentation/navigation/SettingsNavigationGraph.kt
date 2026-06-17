@@ -1,6 +1,6 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.navigation
 
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
@@ -24,7 +24,7 @@ fun NavGraphBuilder.settingsNavigationGraph(
     navigation(startDestination = START, route = ROUTE) {
         composable(route = START) {
             // Use Hilt to obtain the ViewModel instance.
-            val viewModel = hiltViewModel<SettingsViewModel>()
+            val viewModel = koinViewModel<SettingsViewModel>()
 
             // Set the navigator for the ViewModel.
             viewModel.navigator = navigator

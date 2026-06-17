@@ -7,11 +7,8 @@ import com.feragusper.smokeanalytics.features.goals.presentation.navigation.Goal
 import com.feragusper.smokeanalytics.features.goals.presentation.process.GoalsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
-@HiltViewModel
-class GoalsViewModel @Inject constructor(
+class GoalsViewModel constructor(
     private val processHolder: GoalsProcessHolder,
 ) : MVIViewModel<GoalsIntent, GoalsViewState, GoalsResult, GoalsNavigator>(
     initialState = GoalsViewState(displayLoading = true),

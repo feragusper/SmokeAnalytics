@@ -8,7 +8,6 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPrefe
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
 /**
  * Processes intents from the Stats feature, fetching and transforming
@@ -19,7 +18,7 @@ import javax.inject.Inject
  *
  * @property fetchSmokeStatsUseCase Use case for fetching smoke statistics.
  */
-class StatsProcessHolder @Inject constructor(
+class StatsProcessHolder constructor(
     private val fetchSmokeStatsUseCase: FetchSmokeStatsUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
 ) : MVIProcessHolder<StatsIntent, StatsResult> {

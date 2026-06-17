@@ -8,10 +8,6 @@ import java.util.Properties
 plugins {
     // Apply Android Application plugin.
     id("com.android.application")
-    // Enable Kotlin annotation processing.
-    id("com.google.devtools.ksp")
-    // Enable Dagger Hilt for dependency injection.
-    id("com.google.dagger.hilt.android")
     // Apply Google Services plugin.
     id("com.google.gms.google-services")
     // Apply Compose Compiler plugin via version catalog alias.
@@ -176,7 +172,13 @@ dependencies {
     implementation(project(":libraries:preferences:domain"))
     implementation(project(":libraries:preferences:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
+    implementation(project(":libraries:cravings:domain"))
+    implementation(project(":libraries:cravings:data:mobile"))
+    implementation(project(":libraries:smokes:data:mobile"))
+    implementation(project(":libraries:authentication:data:mobile"))
+    implementation(project(":libraries:wear:data"))
     implementation(project(":libraries:wear:domain"))
+    implementation(project(":features:devtools:presentation"))
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:goals:domain"))
     implementation(project(":features:goals:presentation:mobile"))
@@ -190,7 +192,9 @@ dependencies {
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
-    implementation(libs.hilt)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
     implementation(libs.timber)
     implementation(libs.animated.navigation.bar)
     implementation(libs.androidx.glance)
@@ -208,7 +212,6 @@ dependencies {
 
     debugImplementation(project(":features:devtools:presentation"))
 
-    ksp(libs.hilt.compiler)
 }
 
 tasks.register("printProductVersion") {

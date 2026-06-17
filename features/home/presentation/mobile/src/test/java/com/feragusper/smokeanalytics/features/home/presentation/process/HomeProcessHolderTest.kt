@@ -20,6 +20,15 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import kotlin.time.Duration.Companion.minutes
 import io.mockk.Runs
 import io.mockk.coVerify
 import io.mockk.coEvery
@@ -60,6 +69,10 @@ class HomeProcessHolderTest {
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase = mockk()
     private val locationCaptureService: LocationCaptureService = mockk()
     private val widgetRefreshService: WidgetRefreshService = mockk()
+    private val addCravingUseCase: AddCravingUseCase = mockk()
+    private val fetchActiveCravingUseCase: FetchActiveCravingUseCase = mockk()
+    private val fetchCravingsUseCase: FetchCravingsUseCase = mockk()
+    private val resolveCravingUseCase: ResolveCravingUseCase = mockk()
 
     @BeforeEach
     fun setUp() {
@@ -77,7 +90,14 @@ class HomeProcessHolderTest {
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
             locationCaptureService = locationCaptureService,
             widgetRefreshService = widgetRefreshService,
+            addCravingUseCase = addCravingUseCase,
+            fetchActiveCravingUseCase = fetchActiveCravingUseCase,
+            fetchCravingsUseCase = fetchCravingsUseCase,
+            resolveCravingUseCase = resolveCravingUseCase,
         )
+
+        coEvery { fetchActiveCravingUseCase() } returns null
+        coEvery { fetchCravingsUseCase.invoke(any(), any()) } returns emptyList()
 
         coEvery { syncWithWearUseCase.invoke() } just Runs
         coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
@@ -118,6 +138,70 @@ class HomeProcessHolderTest {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN tracking a craving and it is already a good time THEN no wait is needed`() = runTest {
+            // No active goal -> the calculator says it's fine to smoke now.
+            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+
+            processHolder.processIntent(HomeIntent.TrackCraving).test {
+                awaitItem() shouldBeEqualTo HomeResult.CravingNoWaitNeeded
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN tracking a craving before the goal gap THEN a pending craving is created`() = runTest {
+            val lastSmoke = Smoke(id = "s1", date = Clock.System.now() - 10.minutes)
+            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(
+                activeGoal = SmokingGoal.MindfulGap(targetMinutes = 60),
+            )
+            coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } returns
+                SmokeCountListResult(emptyList(), 0, 0, lastSmoke)
+            val created = Craving(id = "c1", createdAt = Clock.System.now())
+            coEvery { addCravingUseCase.invoke(any(), any()) } returns created
+
+            processHolder.processIntent(HomeIntent.TrackCraving).test {
+                awaitItem() shouldBeEqualTo HomeResult.CravingTracked(created)
+                coVerify(exactly = 1) { addCravingUseCase.invoke(any(), any()) }
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN resolving a craving as resisted THEN it awards points without logging a smoke`() = runTest {
+            val craving = Craving(id = "c1", createdAt = Clock.System.now() - 30.minutes)
+            coEvery { resolveCravingUseCase.invoke(craving, CravingOutcome.RESISTED, any()) } returns 16
+
+            processHolder.processIntent(
+                HomeIntent.ResolveCraving(craving = craving, smoked = false),
+            ).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.CravingResolved(CravingOutcome.RESISTED, 16)
+                coVerify(exactly = 0) { addSmokeUseCase.invoke() }
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN resolving a craving as smoked after the wait THEN it postpones and logs the smoke`() = runTest {
+            val craving = Craving(
+                id = "c1",
+                createdAt = Clock.System.now() - 60.minutes,
+                targetAt = Clock.System.now() - 1.minutes,
+            )
+            coEvery { addSmokeUseCase.invoke(any(), any()) } just Runs
+            coEvery { resolveCravingUseCase.invoke(craving, CravingOutcome.POSTPONED, any()) } returns 12
+
+            processHolder.processIntent(
+                HomeIntent.ResolveCraving(craving = craving, smoked = true),
+            ).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.CravingResolved(CravingOutcome.POSTPONED, 12)
+                coVerify(exactly = 1) { addSmokeUseCase.invoke(any(), any()) }
                 awaitComplete()
             }
         }

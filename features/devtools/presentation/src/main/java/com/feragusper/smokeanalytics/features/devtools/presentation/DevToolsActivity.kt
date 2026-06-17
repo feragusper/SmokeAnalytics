@@ -14,13 +14,11 @@ import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.DevToolsNavigator
 import com.feragusper.smokeanalytics.features.devtools.presentation.navigation.devToolsNavigationGraph
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * Activity for the Developer Tools feature.
  * This activity hosts the navigation graph for debugging and development utilities.
  */
-@AndroidEntryPoint
 class DevToolsActivity : ComponentActivity() {
 
     /**

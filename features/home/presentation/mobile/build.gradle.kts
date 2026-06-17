@@ -1,10 +1,6 @@
 plugins {
     // Use the predefined android-lib plugin for Android library modules.
     `android-lib`
-    // Enable Kotlin annotation processing.
-    id("com.google.devtools.ksp")
-    // Apply Dagger Hilt plugin for dependency injection.
-    id("com.google.dagger.hilt.android")
     // Apply the Compose Compiler plugin using the version catalog alias.
     alias(libs.plugins.compose.compiler)
 }
@@ -44,6 +40,7 @@ dependencies {
     implementation(project(":libraries:smokes:data:mobile"))
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":libraries:smokes:presentation"))
+    implementation(project(":libraries:cravings:domain"))
 
     // Core AndroidX libraries and Compose dependencies
     implementation(libs.bundles.androidx.base)
@@ -57,8 +54,9 @@ dependencies {
     implementation(libs.accompanist.swiperefresh)
 
     // Dependency injection with Hilt
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 
     implementation(libs.compose.shimmer)
 

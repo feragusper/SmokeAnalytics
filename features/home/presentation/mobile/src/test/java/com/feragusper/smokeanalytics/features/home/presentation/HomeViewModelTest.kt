@@ -4,12 +4,15 @@ import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -90,5 +93,72 @@ class HomeViewModelTest {
                 awaitItem().displayLoading shouldBeEqualTo false
             }
         }
+
+    @Test
+    fun `WHEN a craving is tracked THEN it becomes the active craving`() = runTest {
+        val craving = Craving(id = "c1", createdAt = Clock.System.now())
+        every { processHolder.processIntent(HomeIntent.TrackCraving) } returns intentResults
+
+        viewModel.states().test {
+            viewModel.intents().trySend(HomeIntent.TrackCraving)
+            intentResults.emit(HomeResult.CravingTracked(craving))
+
+            var state = awaitItem()
+            while (state.activeCraving == null) state = awaitItem()
+            state.activeCraving shouldBeEqualTo craving
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `WHEN no wait is needed THEN the craving hint is shown`() = runTest {
+        every { processHolder.processIntent(HomeIntent.TrackCraving) } returns intentResults
+
+        viewModel.states().test {
+            viewModel.intents().trySend(HomeIntent.TrackCraving)
+            intentResults.emit(HomeResult.CravingNoWaitNeeded)
+
+            var state = awaitItem()
+            while (!state.showCravingHint) state = awaitItem()
+            state.showCravingHint shouldBeEqualTo true
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `WHEN a craving is resolved with points THEN it celebrates and clears the active craving`() = runTest {
+        every { processHolder.processIntent(HomeIntent.TrackCraving) } returns intentResults
+        // The resolved reducer re-fetches; isolate that so it can't re-emit the result.
+        every { processHolder.processIntent(HomeIntent.FetchSmokes) } returns
+            MutableStateFlow(HomeResult.Loading)
+
+        viewModel.states().test {
+            viewModel.intents().trySend(HomeIntent.TrackCraving)
+            intentResults.emit(HomeResult.CravingResolved(CravingOutcome.RESISTED, 18))
+
+            var state = awaitItem()
+            while (state.cravingCelebration == null) state = awaitItem()
+            state.activeCraving shouldBeEqualTo null
+            state.cravingCelebration?.points shouldBeEqualTo 18
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `WHEN the craving hint is dismissed THEN it is hidden`() = runTest {
+        every { processHolder.processIntent(HomeIntent.DismissCravingHint) } returns intentResults
+
+        viewModel.states().test {
+            viewModel.intents().trySend(HomeIntent.DismissCravingHint)
+            intentResults.emit(HomeResult.CravingNoWaitNeeded)
+            var state = awaitItem()
+            while (!state.showCravingHint) state = awaitItem()
+
+            intentResults.emit(HomeResult.CravingHintDismissed)
+            while (state.showCravingHint) state = awaitItem()
+            state.showCravingHint shouldBeEqualTo false
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 
 }

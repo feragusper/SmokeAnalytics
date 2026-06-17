@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -63,7 +63,7 @@ fun MapMobileRoute(
     modifier: Modifier = Modifier,
     refreshNonce: Int = 0,
     embedded: Boolean = false,
-    viewModel: MapMobileViewModel = hiltViewModel(),
+    viewModel: MapMobileViewModel = koinViewModel(),
 ) {
     LaunchedEffect(refreshNonce) {
         if (refreshNonce > 0) viewModel.onScreenVisible()

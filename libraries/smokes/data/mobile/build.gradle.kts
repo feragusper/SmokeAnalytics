@@ -1,7 +1,5 @@
 plugins {
     `android-lib`
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
     alias(libs.plugins.compose.compiler)
 }
 
@@ -13,8 +11,8 @@ dependencies {
     implementation(project(":libraries:smokes:domain"))
     implementation(project(":libraries:architecture:domain"))
     implementation(project(":libraries:wear:data"))
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)

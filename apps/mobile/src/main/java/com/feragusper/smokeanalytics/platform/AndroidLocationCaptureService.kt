@@ -9,13 +9,9 @@ import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class AndroidLocationCaptureService @Inject constructor(
-    @ApplicationContext private val context: Context,
+class AndroidLocationCaptureService constructor(
+    private val context: Context,
 ) : LocationCaptureService {
 
     override suspend fun locationTrackingAvailability(preferenceEnabled: Boolean): LocationTrackingAvailability {

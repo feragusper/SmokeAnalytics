@@ -10,7 +10,11 @@ kotlin {
     wasmJs { browser() }
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation(libs.koin.core)
+            }
+        }
 
         val commonTest by getting {
             dependencies {

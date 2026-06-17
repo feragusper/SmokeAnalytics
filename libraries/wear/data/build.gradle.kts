@@ -1,7 +1,5 @@
 plugins {
     `android-lib`
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -23,8 +21,8 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.play.services.wearable)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.test)

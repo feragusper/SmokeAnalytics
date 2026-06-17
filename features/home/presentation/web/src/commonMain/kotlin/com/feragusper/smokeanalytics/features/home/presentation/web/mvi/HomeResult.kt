@@ -7,6 +7,9 @@ import com.feragusper.smokeanalytics.features.home.domain.GreetingState
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
@@ -48,9 +51,24 @@ sealed interface HomeResult {
         val canStartNewDay: Boolean,
         val locationTrackingAvailability: LocationTrackingAvailability,
         val previousMonthCount: Int = 0,
+        val activeCraving: Craving? = null,
+        val cravingStats: CravingStats = CravingStats(),
     ) : HomeResult
 
     data object FetchSmokesError : HomeResult
+
+    data class CravingTracked(val craving: Craving) : HomeResult
+
+    data object CravingNoWaitNeeded : HomeResult
+
+    data class CravingResolved(
+        val outcome: CravingOutcome,
+        val points: Int,
+    ) : HomeResult
+
+    data object CravingHintDismissed : HomeResult
+
+    data object CravingCelebrationDismissed : HomeResult
 
     data class UpdateTimeSinceLastCigarette(
         val timeSinceLastCigarette: Pair<Long, Long>,

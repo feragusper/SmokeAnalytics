@@ -1,10 +1,14 @@
 package com.feragusper.smokeanalytics.widget
 
 import android.content.Context
+import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
+import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
-import dagger.hilt.android.EntryPointAccessors
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import org.koin.mp.KoinPlatform.getKoin
 
 internal object WidgetSnapshotStore {
 
@@ -43,17 +47,14 @@ internal object WidgetSnapshotStore {
     }
 
     private suspend fun readFresh(context: Context): WidgetSnapshot {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            HomeStatusWidgetEntryPoint::class.java,
-        )
-        val preferences = entryPoint.fetchUserPreferencesUseCase().invoke()
-        val smokeCounts = entryPoint.fetchSmokeCountListUseCase().invoke(
+        val koin = getKoin()
+        val preferences = koin.get<FetchUserPreferencesUseCase>().invoke()
+        val smokeCounts = koin.get<FetchSmokeCountListUseCase>().invoke(
             dayStartHour = preferences.dayStartHour,
             manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
         )
-        val goalSmokes = entryPoint.fetchSmokesUseCase().invoke(start = goalDataFetchStart(preferences))
-        val goalProgress = entryPoint.evaluateGoalProgressUseCase().invoke(
+        val goalSmokes = koin.get<FetchSmokesUseCase>().invoke(start = goalDataFetchStart(preferences))
+        val goalProgress = koin.get<EvaluateGoalProgressUseCase>().invoke(
             activeGoal = preferences.activeGoal,
             smokes = goalSmokes,
             preferences = preferences,

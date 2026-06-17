@@ -6,6 +6,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(libs.koin.core)
                 implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:preferences:domain"))
                 implementation(project(":libraries:smokes:domain"))

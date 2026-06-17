@@ -10,34 +10,30 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
-import com.google.firebase.firestore.Source
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import java.security.MessageDigest
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class UserPreferencesRepositoryImpl @Inject constructor(
+class UserPreferencesRepositoryImpl constructor(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth,
-    @ApplicationContext private val appContext: Context,
+    private val appContext: Context,
 ) : UserPreferencesRepository {
 
     override suspend fun fetch(): UserPreferences {
+        // Default source: server when online, local cache when offline.
         val snapshot = runFirestoreProfileCall("fetch preferences") {
-            document().get(Source.SERVER).await()
+            document().get().await()
         }
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
     }
 
     override suspend fun update(preferences: UserPreferences) {
+        // Offline-first: apply to the local cache now and let Firestore sync the write
+        // in the background. We don't await the server acknowledgement.
         runFirestoreProfileCall("update preferences") {
-            document().set(preferences.toFirestorePayload()).await()
-            val serverSnapshot = document().get(Source.SERVER).await()
-            serverSnapshot.requirePreferenceFields(preferences, document().path)
+            document().set(preferences.toFirestorePayload())
         }
     }
 
@@ -96,43 +92,6 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.ACTIVE_GOAL_TYPE to activeGoal?.type?.name,
         UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE to activeGoal?.metricValue,
     )
-
-private fun DocumentSnapshot.requirePreferenceFields(expected: UserPreferences, path: String) {
-    check(exists()) {
-        "Firestore update preferences verification failed: $path is missing on server."
-    }
-
-    check(numberOrNull(UserPreferencesEntity.PACK_PRICE)?.toDouble() == expected.packPrice) {
-        "Firestore update preferences verification failed: $path has invalid packPrice."
-    }
-    check(numberOrNull(UserPreferencesEntity.CIGARETTES_PER_PACK)?.toInt() == expected.cigarettesPerPack) {
-        "Firestore update preferences verification failed: $path has invalid cigarettesPerPack."
-    }
-    check(numberOrNull(UserPreferencesEntity.DAY_START_HOUR)?.toInt() == expected.dayStartHour) {
-        "Firestore update preferences verification failed: $path has invalid dayStartHour."
-    }
-    check(numberOrNull(UserPreferencesEntity.BEDTIME_HOUR)?.toInt() == expected.bedtimeHour) {
-        "Firestore update preferences verification failed: $path has invalid bedtimeHour."
-    }
-    check(numberOrNull(UserPreferencesEntity.MANUAL_DAY_START_EPOCH_MILLIS)?.toLong() == expected.manualDayStartEpochMillis) {
-        "Firestore update preferences verification failed: $path has invalid manualDayStartEpochMillis."
-    }
-    check(booleanOrNull(UserPreferencesEntity.LOCATION_TRACKING_ENABLED) == expected.locationTrackingEnabled) {
-        "Firestore update preferences verification failed: $path has invalid locationTrackingEnabled."
-    }
-    check(stringOrNull(UserPreferencesEntity.CURRENCY_SYMBOL) == expected.currencySymbol) {
-        "Firestore update preferences verification failed: $path has invalid currencySymbol."
-    }
-    check(stringOrNull(UserPreferencesEntity.ACCOUNT_TIER) == expected.accountTier.name) {
-        "Firestore update preferences verification failed: $path has invalid accountTier."
-    }
-    check(stringOrNull(UserPreferencesEntity.ACTIVE_GOAL_TYPE) == expected.activeGoal?.type?.name) {
-        "Firestore update preferences verification failed: $path has invalid activeGoalType."
-    }
-    check(numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble() == expected.activeGoal?.metricValue) {
-        "Firestore update preferences verification failed: $path has invalid activeGoalMetricValue."
-    }
-}
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
     if (!exists()) return null

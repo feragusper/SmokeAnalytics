@@ -1,10 +1,6 @@
 plugins {
     // Use the predefined android-lib plugin from the project build script
     `android-lib`
-    // Enable Kotlin annotation processing
-    id("com.google.devtools.ksp")
-    // Apply Dagger Hilt plugin for dependency injection
-    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -18,10 +14,10 @@ android {
 }
 
 dependencies {
-    // Include Dagger Hilt for dependency injection
-    implementation(libs.hilt)
-    // Use Hilt's compiler for annotation processing
-    ksp(libs.hilt.compiler)
+    // Koin for dependency injection (pure Kotlin, no annotation processing).
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.kotlinx.coroutines.core)
 
     // Unit testing dependencies.
     testImplementation(platform(libs.junit.bom))

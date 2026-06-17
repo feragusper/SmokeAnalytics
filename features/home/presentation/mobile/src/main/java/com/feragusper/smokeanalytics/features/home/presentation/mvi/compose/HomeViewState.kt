@@ -21,23 +21,32 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,10 +76,23 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.delay
+import kotlin.time.Clock
+
+/**
+ * The celebration shown after a craving wait is resolved.
+ */
+data class CravingCelebration(
+    val outcome: CravingOutcome,
+    val points: Int,
+)
 
 data class HomeViewState(
     internal val displayLoading: Boolean = false,
@@ -99,6 +121,10 @@ data class HomeViewState(
     ),
     internal val error: HomeResult.Error? = null,
     internal val monthTrend: Int? = null,
+    internal val activeCraving: Craving? = null,
+    internal val cravingStats: CravingStats? = null,
+    internal val showCravingHint: Boolean = false,
+    internal val cravingCelebration: CravingCelebration? = null,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
@@ -181,7 +207,17 @@ data class HomeViewState(
                 isLoading = displayLoading,
                 error = error,
                 monthTrend = monthTrend,
+                activeCraving = activeCraving,
+                cravingStats = cravingStats,
+                showCravingHint = showCravingHint,
                 intent = intent,
+            )
+        }
+
+        cravingCelebration?.let { celebration ->
+            CravingCelebrationDialog(
+                celebration = celebration,
+                onDismiss = { intent(HomeIntent.DismissCravingCelebration) },
             )
         }
     }
@@ -207,6 +243,9 @@ private fun HomeContent(
     isLoading: Boolean,
     error: HomeResult.Error?,
     monthTrend: Int?,
+    activeCraving: Craving?,
+    cravingStats: CravingStats?,
+    showCravingHint: Boolean,
     intent: (HomeIntent) -> Unit,
 ) {
     val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
@@ -282,6 +321,23 @@ private fun HomeContent(
                 isLoading = isLoading,
             )
         }
+        if (!isLoading && hasLoadedContent) {
+            if (showCravingHint) {
+                item { CravingHintBanner(onDismiss = { intent(HomeIntent.DismissCravingHint) }) }
+            }
+            item {
+                if (activeCraving != null) {
+                    CravingCountdownCard(
+                        craving = activeCraving,
+                        onResolve = { smoked ->
+                            intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
+                        },
+                    )
+                } else {
+                    CravingPromptCard(onTrack = { intent(HomeIntent.TrackCraving) })
+                }
+            }
+        }
         item {
             LastCigaretteSection(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
@@ -305,6 +361,9 @@ private fun HomeContent(
                     onStartNewDay = { intent(HomeIntent.StartNewDay) },
                 )
             }
+        }
+        cravingStats?.takeIf { it.total > 0 }?.let { stats ->
+            item { CravingStatsCard(stats = stats) }
         }
         monthTrend?.let { trend ->
             item {
@@ -359,6 +418,362 @@ private fun HomeTrendCard(trendValue: Int) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CravingPromptCard(onTrack: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 1.dp,
+        border = sectionCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Feeling the urge?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "Track the craving before lighting up. If it isn't time yet, we'll help you wait it out and reward the win.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onTrack,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("I feel like smoking", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingHintBanner(onDismiss: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(20.dp),
+        border = innerCardBorder(),
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 18.dp, top = 6.dp, bottom = 6.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "It's already a good time — go ahead when you want.",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingCountdownCard(
+    craving: Craving,
+    onResolve: (smoked: Boolean) -> Unit,
+) {
+    val target = craving.targetAt
+    var remainingSeconds by remember(craving.id) {
+        mutableStateOf(target?.secondsFromNow() ?: 0L)
+    }
+    LaunchedEffect(craving.id) {
+        if (target != null) {
+            while (true) {
+                remainingSeconds = target.secondsFromNow()
+                if (remainingSeconds <= 0L) break
+                delay(1_000)
+            }
+        }
+    }
+    val done = remainingSeconds <= 0L
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(28.dp),
+        tonalElevation = 1.dp,
+        border = sectionCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = if (done) "You made it! 🎉" else "Hold on 💪",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            // Highlighted inner panel: countdown while waiting, message when done.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = if (done) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                },
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (!done) {
+                        Text(
+                            text = remainingSeconds.toCountdownLabel(),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
+                    Text(
+                        text = if (done) {
+                            "The wait is over. Smoke it now if you still want it, or let it go for the full reward."
+                        } else {
+                            "Until your next cigarette fits the goal. You've got this."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (done) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                        },
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            // onResolve(true)  -> the user smoked (gave in while waiting / postponed once done)
+            // onResolve(false) -> the urge passed without smoking (resisted)
+            if (done) {
+                // The wait paid off. Now smoking fits the goal: log it (postponed) or let it go (resisted).
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { onResolve(false) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text("I'm good")
+                    }
+                    Button(
+                        onClick = { onResolve(true) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text("Log the cigarette", fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                // While waiting the only manual action is the give-in escape hatch.
+                // Resisting is automatic: the card flips to "You made it!" when the countdown ends.
+                OutlinedButton(
+                    onClick = { onResolve(true) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text("I smoked anyway")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingStatsCard(stats: CravingStats) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(28.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 2.dp,
+        border = sectionCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Cravings",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                CravingStatCell(
+                    modifier = Modifier.weight(1f),
+                    value = "${stats.resisted}",
+                    label = "Resisted",
+                )
+                CravingStatCell(
+                    modifier = Modifier.weight(1f),
+                    value = "${stats.postponed}",
+                    label = "Postponed",
+                )
+                CravingStatCell(
+                    modifier = Modifier.weight(1f),
+                    value = stats.minutesWaited.toWaitedLabel(),
+                    label = "Waited",
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Reward points",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "${stats.points}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CravingStatCell(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = RoundedCornerShape(18.dp),
+        border = innerCardBorder(),
+    ) {
+        Column(
+            modifier = Modifier
+                .heightIn(min = 70.dp)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CravingCelebrationDialog(
+    celebration: CravingCelebration,
+    onDismiss: () -> Unit,
+) {
+    val resisted = celebration.outcome == CravingOutcome.RESISTED
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.EmojiEvents,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        },
+        title = {
+            Text(
+                text = if (resisted) "Urge beaten!" else "Nice and slow",
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Text(
+                text = if (resisted) {
+                    "You let the craving pass without smoking. +${celebration.points} points earned."
+                } else {
+                    "You waited it out before smoking. +${celebration.points} points earned."
+                },
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Nice")
+            }
+        },
+    )
+}
+
+private fun kotlin.time.Instant.secondsFromNow(): Long =
+    (this - Clock.System.now()).inWholeSeconds
+
+private fun Long.toCountdownLabel(): String {
+    val total = coerceAtLeast(0)
+    val minutes = total / 60
+    val seconds = total % 60
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return if (hours > 0) {
+        "${hours}:${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    } else {
+        "${mins.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    }
+}
+
+private fun Long.toWaitedLabel(): String {
+    val minutes = coerceAtLeast(0)
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return when {
+        hours <= 0 -> "${mins}m"
+        mins == 0L -> "${hours}h"
+        else -> "${hours}h ${mins}m"
     }
 }
 

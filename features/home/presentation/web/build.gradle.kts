@@ -12,6 +12,7 @@ kotlin {
             dependencies {
                 implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:smokes:domain"))
+                implementation(project(":libraries:cravings:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:logging"))
                 implementation(project(":libraries:preferences:domain"))

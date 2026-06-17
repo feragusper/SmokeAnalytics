@@ -6,8 +6,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
     alias(libs.plugins.compose.compiler)
 }
 
@@ -123,7 +121,6 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.androidx.base)
     implementation(libs.bundles.compose)
-    implementation(libs.hilt)
     implementation(libs.timber)
     implementation(libs.androidx.tiles)
     implementation(libs.horologist.composables)
@@ -134,7 +131,6 @@ dependencies {
     implementation(libs.play.services.wearable)
     implementation(libs.androidx.tiles.material)
 
-    ksp(libs.hilt.compiler)
 }
 
 tasks.register("printWearVersionCode") {

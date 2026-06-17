@@ -14,7 +14,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.Source
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -176,7 +175,7 @@ class SmokeRepositoryImplTest {
                     every { isCanceled } returns false
                 }
             }
-            every { documentRef.get(Source.SERVER) } answers {
+            every { documentRef.get() } answers {
                 taskOf(mockDocumentSnapshot("generated", date))
             }
 
@@ -199,7 +198,7 @@ class SmokeRepositoryImplTest {
             val documentRef = mockk<DocumentReference>()
             every { collectionReference.document(id) } returns documentRef
             every { documentRef.path } returns "$USERS/$uid/$SMOKES/$id"
-            every { documentRef.get(Source.SERVER) } answers { taskOf(mockDocumentSnapshot(id, date)) }
+            every { documentRef.get() } answers { taskOf(mockDocumentSnapshot(id, date)) }
 
             every { documentRef.set(any<Map<String, Any?>>()) } answers {
                 mockk<Task<Void>>().apply {
@@ -213,34 +212,6 @@ class SmokeRepositoryImplTest {
 
             smokeRepository.editSmoke(id, date)
         }
-
-        @Test
-        fun `GIVEN server write omits timestamp WHEN add smoke verifies server state THEN it should throw`() =
-            runTest {
-                val date = Instant.fromEpochMilliseconds(1_672_574_400_000)
-                val documentRef = mockk<DocumentReference>()
-
-                every { collectionReference.document() } returns documentRef
-                every { documentRef.path } returns "$USERS/$uid/$SMOKES/generated"
-                every { documentRef.set(any<Map<String, Any?>>()) } answers {
-                    mockk<Task<Void>>().apply {
-                        every { isComplete } returns true
-                        every { isSuccessful } returns true
-                        every { result } returns null
-                        every { exception } returns null
-                        every { isCanceled } returns false
-                    }
-                }
-                every { documentRef.get(Source.SERVER) } answers {
-                    taskOf(mockDocumentSnapshot("generated", date, timestampMillis = null))
-                }
-
-                val error = assertThrows<IllegalStateException> {
-                    smokeRepository.addSmoke(date)
-                }
-
-                assertTrue(error.message.orEmpty().contains("timestampMillis"))
-            }
 
         @Test
         fun `GIVEN user is logged in WHEN delete smoke is called THEN it should finish`() =
@@ -260,7 +231,7 @@ class SmokeRepositoryImplTest {
                         every { result } returns mockk()
                     }
                 }
-                every { documentRef.get(Source.SERVER) } answers {
+                every { documentRef.get() } answers {
                     taskOf(mockDocumentSnapshot(id, instant1, exists = false))
                 }
 
@@ -319,7 +290,7 @@ class SmokeRepositoryImplTest {
                 previousQuery.limit(1)
             } returns previousLimitedQuery
 
-            every { finalQuery.get(Source.SERVER) } answers {
+            every { finalQuery.get() } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -332,7 +303,7 @@ class SmokeRepositoryImplTest {
                     every { exception } returns null
                 }
             }
-            every { previousLimitedQuery.get(Source.SERVER) } answers {
+            every { previousLimitedQuery.get() } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true

@@ -16,9 +16,8 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import javax.inject.Inject
 
-class GoalsProcessHolder @Inject constructor(
+class GoalsProcessHolder constructor(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,

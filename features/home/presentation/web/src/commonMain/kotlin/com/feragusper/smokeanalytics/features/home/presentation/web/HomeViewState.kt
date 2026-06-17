@@ -6,6 +6,9 @@ import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 
 /**
@@ -49,7 +52,19 @@ data class HomeViewState(
         providerEnabled = false,
     ),
     val error: HomeError? = null,
+    val activeCraving: Craving? = null,
+    val cravingStats: CravingStats? = null,
+    val showCravingHint: Boolean = false,
+    val cravingCelebration: CravingCelebration? = null,
 ) {
+
+    /**
+     * The celebration shown after a craving wait is resolved.
+     */
+    data class CravingCelebration(
+        val outcome: CravingOutcome,
+        val points: Int,
+    )
 
     /**
      * Represents the errors that can occur in the Home screen.

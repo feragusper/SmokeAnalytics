@@ -19,7 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsViewModel
@@ -50,7 +50,7 @@ fun HomeMobileDestination(
     navigateToHistory: () -> Unit,
     onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
 ) {
-    val viewModel = hiltViewModel<HomeViewModel>()
+    val viewModel = koinViewModel<HomeViewModel>()
     viewModel.navigator = remember(navigateToAuthentication, navigateToSettings, navigateToHistory) {
         HomeNavigator(
             navigateToAuthentication = navigateToAuthentication,
@@ -73,7 +73,7 @@ fun HistoryMobileDestination(
     active: Boolean,
     navigateToAuthentication: () -> Unit,
 ) {
-    val viewModel = hiltViewModel<HistoryViewModel>()
+    val viewModel = koinViewModel<HistoryViewModel>()
     viewModel.navigator = remember(navigateToAuthentication) {
         HistoryNavigator(
             navigateToAuthentication = navigateToAuthentication,
@@ -180,7 +180,7 @@ fun AnalyticsMobileDestination(
 
 @Composable
 fun SettingsMobileDestination() {
-    val viewModel = hiltViewModel<SettingsViewModel>()
+    val viewModel = koinViewModel<SettingsViewModel>()
     val navController = rememberNavController()
     viewModel.navigator = remember(navController) { SettingsNavigator(navController) }
     SettingsView(viewModel = viewModel)
@@ -190,7 +190,7 @@ fun SettingsMobileDestination() {
 fun GoalsMobileDestination(
     navigateBack: () -> Unit,
 ) {
-    val viewModel = hiltViewModel<GoalsViewModel>()
+    val viewModel = koinViewModel<GoalsViewModel>()
     viewModel.navigator = remember(navigateBack) { GoalsNavigator(navigateBack) }
     GoalsView(
         viewModel = viewModel,
@@ -207,7 +207,7 @@ private fun StatsMobileDestination(
     onPeriodChange: (StatsViewState.StatsPeriod) -> Unit = {},
     onDateChange: (JavaLocalDate) -> Unit = {},
 ) {
-    val viewModel = hiltViewModel<StatsViewModel>()
+    val viewModel = koinViewModel<StatsViewModel>()
     viewModel.navigator = remember { StatsNavigator() }
     Column(modifier = modifier) {
         StatsView(

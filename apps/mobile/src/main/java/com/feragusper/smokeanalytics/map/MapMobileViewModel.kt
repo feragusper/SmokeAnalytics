@@ -9,15 +9,12 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPerio
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.clusterSmokesForMap
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeMapRange
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class MapMobileViewModel @Inject constructor(
+class MapMobileViewModel constructor(
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
 ) : ViewModel() {

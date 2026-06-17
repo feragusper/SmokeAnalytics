@@ -1,50 +1,15 @@
 package com.feragusper.smokeanalytics.libraries.wear.data.di
 
-import android.content.Context
-import com.feragusper.smokeanalytics.libraries.architecture.common.coroutines.DispatcherProvider
-import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
-import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
-import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManagerImpl
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
 /**
- * Hilt module to provide the WearSyncManager as a singleton instance.
- *
- * This module is used to inject the WearSyncManager instance into other parts of the app
- * wherever it's needed.
+ * Koin module providing the mobile-side Wear sync manager.
  */
-@Module
-@InstallIn(SingletonComponent::class)  // Ensures that this module is installed in the SingletonComponent
-object WearSyncModule {
-
-    /**
-     * Provides a singleton instance of WearSyncManager.
-     *
-     * @param context The application context, injected by Hilt using the @ApplicationContext qualifier.
-     * @param smokeRepository The repository for managing smoke data.
-     *
-     * @return A singleton instance of WearSyncManager.
-     */
-    @Provides
-    @Singleton
-    fun provideWearSyncManager(
-        @ApplicationContext context: Context,
-        smokeRepository: SmokeRepository,
-        userPreferencesRepository: UserPreferencesRepository,
-        locationCaptureService: LocationCaptureService,
-        dispatcherProvider: DispatcherProvider
-    ): WearSyncManager.Mobile {
-        return WearSyncManagerImpl(context, dispatcherProvider).Mobile(
-            smokeRepository = smokeRepository,
-            userPreferencesRepository = userPreferencesRepository,
-            locationCaptureService = locationCaptureService,
-        )
+val wearDataModule = module {
+    single<WearSyncManager.Mobile> {
+        WearSyncManagerImpl(androidContext(), get()).Mobile(get(), get(), get())
     }
 }

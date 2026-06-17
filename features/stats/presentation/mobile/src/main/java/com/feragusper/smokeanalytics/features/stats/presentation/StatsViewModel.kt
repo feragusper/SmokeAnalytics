@@ -6,8 +6,6 @@ import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.Sta
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 /**
  * ViewModel for the Statistics feature, responsible for processing user intents,
@@ -18,8 +16,7 @@ import javax.inject.Inject
  *
  * @property processHolder Responsible for processing intents and invoking the corresponding actions.
  */
-@HiltViewModel
-class StatsViewModel @Inject constructor(
+class StatsViewModel constructor(
     private val processHolder: StatsProcessHolder,
 ) : MVIViewModel<StatsIntent, StatsViewState, StatsResult, StatsNavigator>(
     initialState = StatsViewState()
