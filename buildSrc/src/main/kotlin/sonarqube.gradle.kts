@@ -4,6 +4,35 @@ import org.sonarqube.gradle.SonarProperties
 // Apply the SonarQube plugin globally.
 apply(plugin = "org.sonarqube")
 
+// File-path globs for code that is not unit-testable (Compose UI, DI wiring,
+// navigation, app bootstrap, design tokens). Mirrors the intent of
+// KoverConfig.koverReportExclusionsClasses, but expressed as file globs so
+// Sonar (which matches coverage exclusions against file paths, not class names)
+// actually applies them and they don't drag down new-code coverage.
+val sonarCoverageExclusionGlobs: List<String> = listOf(
+    "**/compose/**",
+    "**/*Screen.kt",
+    "**/*Screen*.kt",
+    "**/*WebScreen.kt",
+    "**/*View.kt",
+    "**/*WebDependencies.kt",
+    // The web presentation layer has no unit-test harness (UI + thin MVI glue);
+    // exclude it from coverage like the rest of the non-testable UI.
+    "**/presentation/web/**",
+    "**/navigation/**",
+    "**/di/**",
+    "**/*Module.kt",
+    "**/AppRoot.kt",
+    "**/WebModule.kt",
+    "**/WebScaffold.kt",
+    "**/WebRoute.kt",
+    "**/main.kt",
+    "**/FirebaseWebInit.kt",
+    "**/*Application.kt",
+    "**/*Activity.kt",
+    "**/theme/**",
+)
+
 // Global SonarQube configuration.
 sonar {
     properties {
@@ -66,7 +95,8 @@ subprojects {
                 )
                 property(
                     "sonar.coverage.exclusions",
-                    KoverConfig.koverReportExclusionsClasses.joinToString(separator = ",")
+                    (KoverConfig.koverReportExclusionsClasses + sonarCoverageExclusionGlobs)
+                        .joinToString(separator = ",")
                 )
 
                 property("sonar.java.coveragePlugin", "jacoco")
