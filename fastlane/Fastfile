@@ -1,7 +1,7 @@
 default_platform(:android)
 
 platform :android do
-  desc "Deploy the production release to Google Play Store open testing tracks"
+  desc "Deploy the production release to Google Play Store production tracks"
   lane :deploy_playstore do |options|
     common_upload_options = {
       release_status: "completed",                       # Marks the release as final.
@@ -13,14 +13,14 @@ platform :android do
 
     upload_to_play_store(
       common_upload_options.merge(
-        track: "wear:beta",
+        track: "wear:production",
         aab: "apps/wear/build/outputs/bundle/productionRelease/wear-production-release.aab"
       )
     )
 
     upload_to_play_store(
       common_upload_options.merge(
-        track: "beta",
+        track: "production",
         aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab"
       )
     )
