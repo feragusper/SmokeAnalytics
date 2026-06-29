@@ -178,7 +178,8 @@ dependencies {
     implementation(project(":libraries:authentication:data:mobile"))
     implementation(project(":libraries:wear:data"))
     implementation(project(":libraries:wear:domain"))
-    implementation(project(":features:devtools:presentation"))
+    // DevTools is a debug-only feature (see debugImplementation below); it must not
+    // ship in release builds. The Koin module is wired via variant-specific source sets.
     implementation(project(":features:authentication:presentation:mobile"))
     implementation(project(":features:goals:domain"))
     implementation(project(":features:goals:presentation:mobile"))

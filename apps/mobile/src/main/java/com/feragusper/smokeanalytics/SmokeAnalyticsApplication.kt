@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics
 
 import android.app.Application
 import com.feragusper.smokeanalytics.features.authentication.presentation.di.authenticationPresentationModule
-import com.feragusper.smokeanalytics.features.devtools.presentation.di.devToolsPresentationModule
 import com.feragusper.smokeanalytics.features.goals.domain.di.goalsDomainModule
 import com.feragusper.smokeanalytics.features.goals.presentation.di.goalsPresentationModule
 import com.feragusper.smokeanalytics.features.history.presentation.di.historyPresentationModule
@@ -55,13 +54,14 @@ class SmokeAnalyticsApplication : Application() {
                 homePresentationModule,
                 settingsPresentationModule,
                 goalsPresentationModule,
-                devToolsPresentationModule,
                 historyPresentationModule,
                 authenticationPresentationModule,
                 statsPresentationModule,
                 // app
                 appModule,
             )
+            // DevTools modules are provided only in debug builds (empty in release).
+            modules(devToolsKoinModules())
         }
     }
 }
