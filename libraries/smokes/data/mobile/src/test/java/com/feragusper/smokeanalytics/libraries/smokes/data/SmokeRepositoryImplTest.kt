@@ -165,6 +165,7 @@ class SmokeRepositoryImplTest {
             val documentRef = mockk<DocumentReference>()
 
             every { collectionReference.document() } returns documentRef
+            every { documentRef.id } returns "generated"
             every { documentRef.path } returns "$USERS/$uid/$SMOKES/generated"
             every { documentRef.set(capture(smokePayloadSlot)) } answers {
                 mockk<Task<Void>>().apply {
@@ -334,6 +335,9 @@ class SmokeRepositoryImplTest {
                 every { getDouble("a") } returns legacyTimestampMillis
                 every { getDouble("b") } returns null
                 every { getDouble("c") } returns null
+                every { this@apply.get(SmokeEntity.Fields.TRIGGERS) } returns null
+                every { getString(SmokeEntity.Fields.TRIGGER_NOTE) } returns null
+                every { getBoolean(SmokeEntity.Fields.RELATIONSHIP_SKIPPED) } returns null
             }
         }
 

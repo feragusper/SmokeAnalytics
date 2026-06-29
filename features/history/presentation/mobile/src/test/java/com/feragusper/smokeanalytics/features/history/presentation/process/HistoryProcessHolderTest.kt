@@ -111,7 +111,7 @@ class HistoryProcessHolderTest {
         @Test
         fun `WHEN adding smoke THEN returns Loading, Success and syncs with Wear`() = runTest {
             val date: Instant = Clock.System.now()
-            coEvery { addSmokeUseCase(any()) } just Runs
+            coEvery { addSmokeUseCase(any()) } returns "smoke-id"
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
@@ -130,6 +130,7 @@ class HistoryProcessHolderTest {
             var addedAt: Instant? = null
             coEvery { addSmokeUseCase(any()) } answers {
                 addedAt = firstArg()
+                "smoke-id"
             }
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(selectedDate))
@@ -161,7 +162,7 @@ class HistoryProcessHolderTest {
         @Test
         fun `WHEN widget refresh fails after add for date THEN tracking still succeeds`() = runTest {
             val date: Instant = Clock.System.now()
-            coEvery { addSmokeUseCase(any()) } just Runs
+            coEvery { addSmokeUseCase(any()) } returns "smoke-id"
             coEvery { fetchSmokeCountListUseCase.invoke(any()) } throws IllegalStateException("Quota exceeded")
 
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
