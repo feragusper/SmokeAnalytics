@@ -10,10 +10,12 @@ class AddSmokeUseCase(
     private val smokeRepository: SmokeRepository,
 ) {
 
+    /**
+     * Logs a smoke and returns its id, so the caller can prompt for and attach a
+     * relationship to the freshly created smoke.
+     */
     suspend operator fun invoke(
         timestamp: Instant = Clock.System.now(),
         location: GeoPoint? = null,
-    ) {
-        smokeRepository.addSmoke(timestamp, location)
-    }
+    ): String = smokeRepository.addSmoke(timestamp, location)
 }

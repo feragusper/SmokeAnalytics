@@ -87,7 +87,7 @@ class HomeViewModelTest {
             every { processHolder.processIntent(HomeIntent.AddSmoke) } returns intentResults
 
             viewModel.intents().trySend(HomeIntent.AddSmoke)
-            intentResults.emit(HomeResult.AddSmokeSuccess)
+            intentResults.emit(HomeResult.AddSmokeSuccess("smoke-id"))
 
             viewModel.states().test {
                 awaitItem().displayLoading shouldBeEqualTo false

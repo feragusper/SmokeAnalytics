@@ -184,6 +184,17 @@ fun HomeViewState.Render(
                 }
             }
 
+            if (pendingRelationshipSmokes.isNotEmpty()) {
+                RelationshipReminderCardWeb(
+                    pendingCount = pendingRelationshipSmokes.size,
+                    onAdd = {
+                        pendingRelationshipSmokes.firstOrNull()?.let {
+                            onIntent(HomeIntent.OpenRelationshipPrompt(it.id))
+                        }
+                    },
+                )
+            }
+
             HomeInsightGrid(
                 lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
                 timeSinceLastCigarette = timeSinceLastCigarette,
@@ -207,6 +218,17 @@ fun HomeViewState.Render(
                 )
             }
         }
+    }
+
+    val promptSmokeId = relationshipPromptSmokeId
+    if (promptSmokeId != null) {
+        RelationshipPromptDialogWeb(
+            onSave = { triggers, note ->
+                onIntent(HomeIntent.SaveSmokeRelationship(promptSmokeId, triggers, note))
+            },
+            onSkip = { onIntent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
+            onDismiss = { onIntent(HomeIntent.DismissRelationshipPrompt) },
+        )
     }
 }
 

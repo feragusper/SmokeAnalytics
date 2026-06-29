@@ -57,6 +57,8 @@ data class HomeViewState(
     val cravingStats: CravingStats? = null,
     val showCravingHint: Boolean = false,
     val cravingCelebration: CravingCelebration? = null,
+    val pendingRelationshipSmokes: List<Smoke> = emptyList(),
+    val relationshipPromptSmokeId: String? = null,
 ) {
 
     /**

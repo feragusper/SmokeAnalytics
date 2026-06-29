@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -45,7 +46,8 @@ private class FakeSmokeRepository : SmokeRepository {
         lastDeletedSmokeId = id
     }
 
-    override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?) = Unit
+    override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?): String = "fake-id"
+    override suspend fun setSmokeRelationship(id: String, relationship: SmokeRelationship) = Unit
     override suspend fun editSmoke(id: String, timestamp: Instant, location: GeoPoint?) = Unit
     override suspend fun fetchSmokes(start: Instant?, end: Instant?): List<Smoke> =
         emptyList()

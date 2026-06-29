@@ -52,8 +52,20 @@ sealed interface HomeResult : MVIResult {
 
     /**
      * Indicates that a smoke event was successfully added.
+     *
+     * @property smokeId The id of the new smoke, used to open the relationship prompt.
      */
-    data object AddSmokeSuccess : HomeResult
+    data class AddSmokeSuccess(val smokeId: String) : HomeResult
+
+    /**
+     * A smoke's relationship was saved or skipped; the home should refetch and close the prompt.
+     */
+    data object RelationshipUpdated : HomeResult
+
+    /**
+     * The relationship prompt was dismissed without answering.
+     */
+    data object RelationshipPromptDismissed : HomeResult
 
     /**
      * Indicates that the current day was manually restarted.
@@ -105,6 +117,7 @@ sealed interface HomeResult : MVIResult {
         val previousMonthCount: Int = 0,
         val activeCraving: Craving? = null,
         val cravingStats: CravingStats = CravingStats(),
+        val pendingRelationshipSmokes: List<Smoke> = emptyList(),
     ) : HomeResult
 
     /**

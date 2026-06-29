@@ -161,6 +161,7 @@ class HomeViewModel constructor(
                     } else null,
                     activeCraving = result.activeCraving,
                     cravingStats = result.cravingStats,
+                    pendingRelationshipSmokes = result.pendingRelationshipSmokes,
                 )
             }
 
@@ -203,8 +204,8 @@ class HomeViewModel constructor(
                 )
             }
 
-            DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess, StartNewDaySuccess -> {
-                // Re-fetch smokes when adding, editing, or deleting a smoke.
+            DeleteSmokeSuccess, EditSmokeSuccess, StartNewDaySuccess -> {
+                // Re-fetch smokes when editing, deleting, or starting a new day.
                 intents().trySend(HomeIntent.FetchSmokes)
                 previous.copy(
                     displayLoading = false,
@@ -212,6 +213,25 @@ class HomeViewModel constructor(
                     error = null,
                 )
             }
+
+            is AddSmokeSuccess -> {
+                // Re-fetch so the new smoke shows up, and open the relationship prompt for it.
+                intents().trySend(HomeIntent.FetchSmokes)
+                previous.copy(
+                    displayLoading = false,
+                    displayRefreshLoading = false,
+                    error = null,
+                    relationshipPromptSmokeId = result.smokeId,
+                )
+            }
+
+            HomeResult.RelationshipUpdated -> {
+                // Relationship saved/skipped: refresh the pending list and close the prompt.
+                intents().trySend(HomeIntent.FetchSmokes)
+                previous.copy(relationshipPromptSmokeId = null)
+            }
+
+            HomeResult.RelationshipPromptDismissed -> previous.copy(relationshipPromptSmokeId = null)
 
             is Error -> previous.copy(
                 displayLoading = false,

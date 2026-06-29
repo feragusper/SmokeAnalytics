@@ -25,10 +25,12 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPrefe
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.logging.AppLogger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SetSmokeRelationshipUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -40,6 +42,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 /**
  * Represents the process holder for the Home screen.
@@ -54,6 +57,7 @@ class HomeProcessHolder(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val editSmokeUseCase: EditSmokeUseCase,
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
+    private val setSmokeRelationshipUseCase: SetSmokeRelationshipUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
@@ -95,7 +99,24 @@ class HomeProcessHolder(
         is HomeIntent.ResolveCraving -> processResolveCraving(intent)
         HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
         HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
+        is HomeIntent.OpenRelationshipPrompt -> flow { emit(HomeResult.AddSmokeSuccess(intent.smokeId)) }
+        is HomeIntent.SaveSmokeRelationship -> processSaveRelationship(intent)
+        is HomeIntent.SkipSmokeRelationship -> processSkipRelationship(intent)
+        HomeIntent.DismissRelationshipPrompt -> flow { emit(HomeResult.RelationshipPromptDismissed) }
     }
+
+    private fun processSaveRelationship(intent: HomeIntent.SaveSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        setSmokeRelationshipUseCase(
+            id = intent.smokeId,
+            relationship = SmokeRelationship.Tagged(triggers = intent.triggers, note = intent.note),
+        )
+        emit(HomeResult.RelationshipUpdated)
+    }.catch { emit(HomeResult.Error.Generic) }
+
+    private fun processSkipRelationship(intent: HomeIntent.SkipSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        setSmokeRelationshipUseCase(id = intent.smokeId, relationship = SmokeRelationship.Skipped)
+        emit(HomeResult.RelationshipUpdated)
+    }.catch { emit(HomeResult.Error.Generic) }
 
     private fun processFetchSmokes(isRefresh: Boolean): Flow<HomeResult> = flow {
         repeat(5) { attempt ->
@@ -122,6 +143,10 @@ class HomeProcessHolder(
                         manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
                     )
                     val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+                    val pendingRelationshipSmokes = fetchSmokesUseCase(
+                        start = Clock.System.now().minus(RELATIONSHIP_LOOKBACK_DAYS.days),
+                        end = Clock.System.now(),
+                    ).filter { it.relationship.isPending }
                     val activeCraving = fetchActiveCravingUseCase()
                     val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
                     val timeZone = TimeZone.currentSystemDefault()
@@ -180,6 +205,7 @@ class HomeProcessHolder(
                             previousMonthCount = previousMonthCount,
                             activeCraving = activeCraving,
                             cravingStats = cravingStats,
+                            pendingRelationshipSmokes = pendingRelationshipSmokes,
                         )
                     )
                     return@flow
@@ -214,9 +240,9 @@ class HomeProcessHolder(
                 } else {
                     null
                 }
-                addSmokeUseCase(location = location)
+                val smokeId = addSmokeUseCase(location = location)
                 AppLogger.i { "Smoke added successfully" }
-                emit(HomeResult.AddSmokeSuccess)
+                emit(HomeResult.AddSmokeSuccess(smokeId))
             }
         }
     }.catch { e ->
@@ -300,6 +326,12 @@ class HomeProcessHolder(
         emit(HomeResult.DeleteSmokeSuccess)
     }.catch {
         emit(HomeResult.Error.Generic)
+    }
+
+    private companion object {
+        // Firestore can't query "field absent", so the pending list is computed in memory
+        // over this lookback window.
+        const val RELATIONSHIP_LOOKBACK_DAYS = 30
     }
 }
 

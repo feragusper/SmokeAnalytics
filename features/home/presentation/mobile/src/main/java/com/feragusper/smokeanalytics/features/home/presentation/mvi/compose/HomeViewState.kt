@@ -126,6 +126,8 @@ data class HomeViewState(
     internal val cravingStats: CravingStats? = null,
     internal val showCravingHint: Boolean = false,
     internal val cravingCelebration: CravingCelebration? = null,
+    internal val pendingRelationshipSmokes: List<Smoke> = emptyList(),
+    internal val relationshipPromptSmokeId: String? = null,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
@@ -212,6 +214,12 @@ data class HomeViewState(
                 activeCraving = activeCraving,
                 cravingStats = cravingStats,
                 showCravingHint = showCravingHint,
+                pendingRelationshipCount = pendingRelationshipSmokes.size,
+                onAddRelationship = {
+                    pendingRelationshipSmokes.firstOrNull()?.let {
+                        intent(HomeIntent.OpenRelationshipPrompt(it.id))
+                    }
+                },
                 intent = intent,
             )
         }
@@ -220,6 +228,17 @@ data class HomeViewState(
             CravingCelebrationDialog(
                 celebration = celebration,
                 onDismiss = { intent(HomeIntent.DismissCravingCelebration) },
+            )
+        }
+
+        val promptSmokeId = relationshipPromptSmokeId
+        if (promptSmokeId != null) {
+            RelationshipPromptSheet(
+                onSave = { triggers, note ->
+                    intent(HomeIntent.SaveSmokeRelationship(promptSmokeId, triggers, note))
+                },
+                onSkip = { intent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
+                onDismiss = { intent(HomeIntent.DismissRelationshipPrompt) },
             )
         }
     }
@@ -249,6 +268,8 @@ private fun HomeContent(
     activeCraving: Craving?,
     cravingStats: CravingStats?,
     showCravingHint: Boolean,
+    pendingRelationshipCount: Int,
+    onAddRelationship: () -> Unit,
     intent: (HomeIntent) -> Unit,
 ) {
     val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
@@ -325,6 +346,14 @@ private fun HomeContent(
             )
         }
         if (!isLoading && hasLoadedContent) {
+            if (pendingRelationshipCount > 0) {
+                item {
+                    RelationshipReminderCard(
+                        pendingCount = pendingRelationshipCount,
+                        onAdd = onAddRelationship,
+                    )
+                }
+            }
             if (showCravingHint) {
                 item { CravingHintBanner(onDismiss = { intent(HomeIntent.DismissCravingHint) }) }
             }
