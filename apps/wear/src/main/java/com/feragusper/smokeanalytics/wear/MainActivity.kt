@@ -1,8 +1,12 @@
 package com.feragusper.smokeanalytics.wear
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -65,6 +69,9 @@ import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { /* best-effort */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         TileViewModel.initialize(this)
@@ -73,12 +80,30 @@ class MainActivity : ComponentActivity() {
             Timber.plant(Timber.DebugTree())
         }
 
+        // Ask once so the tile can geolocate smokes from the watch. Tiles can't request
+        // permissions themselves, so we do it from the app.
+        requestLocationPermissionIfNeeded()
+
         setContent {
             WearApp(
                 onRefresh = { TileViewModel.intents().trySend(TileIntent.RefreshSmokes) },
                 onAddSmoke = { TileViewModel.intents().trySend(TileIntent.AddSmoke(System.currentTimeMillis())) },
             )
         }
+    }
+
+    private fun requestLocationPermissionIfNeeded() {
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (alreadyGranted) return
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ),
+        )
     }
 }
 
