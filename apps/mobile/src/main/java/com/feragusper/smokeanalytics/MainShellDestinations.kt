@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.compose.rememberNavController
+import com.feragusper.smokeanalytics.features.goals.presentation.GoalsConfigureView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsViewModel
 import com.feragusper.smokeanalytics.features.goals.presentation.navigation.GoalsNavigator
@@ -188,11 +189,23 @@ fun SettingsMobileDestination() {
 
 @Composable
 fun GoalsMobileDestination(
+    navigateToConfigure: () -> Unit,
+) {
+    val viewModel = koinViewModel<GoalsViewModel>()
+    viewModel.navigator = remember { GoalsNavigator() }
+    GoalsView(
+        viewModel = viewModel,
+        navigateToConfigure = navigateToConfigure,
+    )
+}
+
+@Composable
+fun GoalsConfigureMobileDestination(
     navigateBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<GoalsViewModel>()
     viewModel.navigator = remember(navigateBack) { GoalsNavigator(navigateBack) }
-    GoalsView(
+    GoalsConfigureView(
         viewModel = viewModel,
         navigateBack = navigateBack,
     )
