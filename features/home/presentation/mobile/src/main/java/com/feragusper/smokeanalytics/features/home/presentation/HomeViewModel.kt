@@ -162,6 +162,7 @@ class HomeViewModel constructor(
                     activeCraving = result.activeCraving,
                     cravingStats = result.cravingStats,
                     pendingRelationshipSmokes = result.pendingRelationshipSmokes,
+                    availableTriggers = result.availableTriggers,
                 )
             }
 

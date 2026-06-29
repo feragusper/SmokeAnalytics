@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,20 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
-
-/** Human-readable label for a trigger chip. */
-internal fun SmokeTrigger.label(): String = when (this) {
-    SmokeTrigger.COFFEE -> "Coffee"
-    SmokeTrigger.ALCOHOL -> "Alcohol"
-    SmokeTrigger.BOREDOM -> "Boredom"
-    SmokeTrigger.ANXIETY -> "Anxiety"
-    SmokeTrigger.STRESS -> "Stress"
-    SmokeTrigger.AFTER_MEAL -> "After a meal"
-    SmokeTrigger.SOCIAL -> "Social"
-    SmokeTrigger.BREAK -> "Break"
-    SmokeTrigger.DRIVING -> "Driving"
-    SmokeTrigger.PHONE -> "Phone"
-}
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 
 /**
  * Home card reminding the user that some smokes (logged from the watch, or whose prompt
@@ -108,13 +97,22 @@ internal fun RelationshipReminderCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RelationshipPromptSheet(
-    onSave: (triggers: Set<SmokeTrigger>, note: String?) -> Unit,
+    availableTriggers: List<TriggerOption>,
+    onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var selected by remember { mutableStateOf(emptySet<SmokeTrigger>()) }
-    var note by remember { mutableStateOf("") }
+    // Chips come from the catalog (defaults + custom). The user can also type an ad-hoc
+    // tag, which is added to the chip row for this smoke.
+    val catalog = remember(availableTriggers) {
+        if (availableTriggers.isEmpty()) SmokeTrigger.defaultOptions() else availableTriggers
+    }
+    var adHoc by remember { mutableStateOf(listOf<TriggerOption>()) }
+    var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
+    var draft by remember { mutableStateOf("") }
+
+    val options = catalog + adHoc.filter { extra -> catalog.none { it.key == extra.key } }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -143,23 +141,37 @@ internal fun RelationshipPromptSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SmokeTrigger.entries.forEach { trigger ->
+                options.forEach { option ->
                     FilterChip(
-                        selected = trigger in selected,
+                        selected = option.key in selectedKeys,
                         onClick = {
-                            selected = if (trigger in selected) selected - trigger else selected + trigger
+                            selectedKeys = if (option.key in selectedKeys) {
+                                selectedKeys - option.key
+                            } else {
+                                selectedKeys + option.key
+                            }
                         },
-                        label = { Text(trigger.label()) },
+                        label = { Text(option.label) },
                     )
                 }
             }
             OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
+                value = draft,
+                onValueChange = { draft = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Other") },
-                placeholder = { Text("Add your own…") },
+                label = { Text("Add a tag") },
+                placeholder = { Text("Type and press Add…") },
                 singleLine = true,
+                trailingIcon = {
+                    val key = draft.normalizedTag()
+                    if (key != null) {
+                        TextButton(onClick = {
+                            adHoc = adHoc + TriggerOption(key = key, label = key, isCustom = true)
+                            selectedKeys = selectedKeys + key
+                            draft = ""
+                        }) { Text("Add") }
+                    }
+                },
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -173,10 +185,13 @@ internal fun RelationshipPromptSheet(
                     Text("No relation")
                 }
                 Button(
-                    onClick = { onSave(selected, note.trim().takeIf { it.isNotEmpty() }) },
+                    onClick = {
+                        val tags = selectedKeys + listOfNotNull(draft.normalizedTag())
+                        onSave(tags)
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = selected.isNotEmpty() || note.isNotBlank(),
+                    enabled = selectedKeys.isNotEmpty() || draft.normalizedTag() != null,
                 ) {
                     Text("Save", fontWeight = FontWeight.Bold)
                 }

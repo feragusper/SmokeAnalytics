@@ -5,11 +5,11 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.model
  * so the mobile and web data modules stay in sync.
  *
  * Persisted fields:
- *  - triggers: list of [SmokeTrigger.key] values
- *  - note: free-text "Other"
+ *  - triggers: list of tag keys (built-in [SmokeTrigger.key] values and/or custom strings)
+ *  - note: legacy free-text "Other" (older docs); folded into the tag set on read
  *  - skipped: true when the user declared no relation
  *
- * Precedence on read: skipped → tagged (any trigger or note) → untracked.
+ * Precedence on read: skipped → tagged (any tag) → untracked.
  */
 fun smokeRelationshipFromFields(
     triggers: List<String>?,
@@ -17,24 +17,22 @@ fun smokeRelationshipFromFields(
     skipped: Boolean?,
 ): SmokeRelationship {
     if (skipped == true) return SmokeRelationship.Skipped
-    val parsedTriggers = triggers.orEmpty().mapNotNull(SmokeTrigger::fromKey).toSet()
-    val cleanNote = note?.trim()?.takeIf { it.isNotEmpty() }
-    return if (parsedTriggers.isNotEmpty() || cleanNote != null) {
-        SmokeRelationship.Tagged(triggers = parsedTriggers, note = cleanNote)
-    } else {
-        SmokeRelationship.Untracked
+    val tags = buildSet {
+        triggers.orEmpty().forEach { tag -> tag.normalizedTag()?.let(::add) }
+        // Legacy docs stored the "Other" free text separately; treat it as a tag.
+        note.normalizedTag()?.let(::add)
     }
+    return if (tags.isNotEmpty()) SmokeRelationship.Tagged(tags = tags) else SmokeRelationship.Untracked
 }
 
 /** The persisted `triggers` value for this relationship (empty unless [SmokeRelationship.Tagged]). */
 fun SmokeRelationship.triggerKeys(): List<String> = when (this) {
-    is SmokeRelationship.Tagged -> triggers.map { it.key }
+    is SmokeRelationship.Tagged -> tags.toList()
     else -> emptyList()
 }
 
-/** The persisted `triggerNote` value for this relationship. */
-fun SmokeRelationship.noteOrNull(): String? = (this as? SmokeRelationship.Tagged)
-    ?.note?.trim()?.takeIf { it.isNotEmpty() }
-
 /** The persisted `relationshipSkipped` flag for this relationship. */
 fun SmokeRelationship.skippedFlag(): Boolean = this is SmokeRelationship.Skipped
+
+/** Trims a tag and discards blanks; tags are stored as-is (keys for defaults, labels for custom). */
+fun String?.normalizedTag(): String? = this?.trim()?.takeIf { it.isNotEmpty() }

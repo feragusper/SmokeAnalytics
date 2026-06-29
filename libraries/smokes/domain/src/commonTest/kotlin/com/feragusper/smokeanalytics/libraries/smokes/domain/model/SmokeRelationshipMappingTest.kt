@@ -30,39 +30,44 @@ class SmokeRelationshipMappingTest {
     }
 
     @Test
-    fun `GIVEN known triggers and note THEN it maps to Tagged ignoring unknown keys`() {
+    fun `GIVEN tags and a legacy note THEN all are folded into the tag set`() {
         val relationship = smokeRelationshipFromFields(
-            triggers = listOf("coffee", "alcohol", "not_a_real_key"),
+            triggers = listOf("coffee", "my custom tag"),
             note = " after lunch ",
             skipped = false,
         )
         assertEquals(
-            SmokeRelationship.Tagged(
-                triggers = setOf(SmokeTrigger.COFFEE, SmokeTrigger.ALCOHOL),
-                note = "after lunch",
-            ),
+            SmokeRelationship.Tagged(tags = setOf("coffee", "my custom tag", "after lunch")),
             relationship,
         )
     }
 
     @Test
     fun `GIVEN a Tagged relationship THEN the persisted fields round-trip`() {
-        val original = SmokeRelationship.Tagged(
-            triggers = setOf(SmokeTrigger.BOREDOM, SmokeTrigger.PHONE),
-            note = "scrolling",
-        )
+        val original = SmokeRelationship.Tagged(tags = setOf("boredom", "Phone scroll"))
         val restored = smokeRelationshipFromFields(
             triggers = original.triggerKeys(),
-            note = original.noteOrNull(),
+            note = null,
             skipped = original.skippedFlag(),
         )
         assertEquals(original, restored)
     }
 
     @Test
-    fun `GIVEN Skipped THEN it exposes the skipped flag and no triggers`() {
+    fun `GIVEN Skipped THEN it exposes the skipped flag and no tags`() {
         assertEquals(true, SmokeRelationship.Skipped.skippedFlag())
         assertEquals(emptyList(), SmokeRelationship.Skipped.triggerKeys())
-        assertEquals(null, SmokeRelationship.Skipped.noteOrNull())
+    }
+
+    @Test
+    fun `GIVEN the catalog with custom triggers THEN defaults and custom are combined`() {
+        val catalog = SmokeTrigger.catalog(
+            customTriggers = listOf("Gaming", "coffee"),
+            hiddenDefaultKeys = setOf("phone"),
+        )
+        // Defaults minus hidden 'phone' (9), plus 2 custom.
+        assertEquals(9 + 2, catalog.size)
+        assertEquals(false, catalog.any { it.key == "phone" })
+        assertEquals(true, catalog.any { it.key == "Gaming" && it.isCustom })
     }
 }

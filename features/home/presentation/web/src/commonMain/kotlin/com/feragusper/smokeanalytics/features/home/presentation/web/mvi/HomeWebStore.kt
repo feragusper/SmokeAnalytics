@@ -123,6 +123,7 @@ class HomeWebStore(
                 activeCraving = result.activeCraving,
                 cravingStats = result.cravingStats,
                 pendingRelationshipSmokes = result.pendingRelationshipSmokes,
+                availableTriggers = result.availableTriggers,
             )
 
             is HomeResult.CravingTracked -> previous.copy(

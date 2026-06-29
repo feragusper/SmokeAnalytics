@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -300,6 +302,60 @@ data class StatsViewState(
                                 StatsPeriod.YEAR -> BarChart(stats.yearly)
                             }
                         }
+                    }
+
+                    TriggerBreakdownCard(stats = stats)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TriggerBreakdownCard(stats: SmokeStats) {
+    val breakdown = stats.triggerBreakdown
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "By trigger",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (breakdown.isEmpty()) {
+                Text(
+                    text = "No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val max = breakdown.first().count.coerceAtLeast(1)
+                breakdown.forEach { entry ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(text = entry.label, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = entry.count.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        LinearProgressIndicator(
+                            progress = { entry.count.toFloat() / max },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(999.dp)),
+                        )
                     }
                 }
             }

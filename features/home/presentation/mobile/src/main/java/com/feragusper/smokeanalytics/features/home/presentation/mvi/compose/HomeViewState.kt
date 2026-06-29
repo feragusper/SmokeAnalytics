@@ -82,6 +82,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStat
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
@@ -128,6 +129,7 @@ data class HomeViewState(
     internal val cravingCelebration: CravingCelebration? = null,
     internal val pendingRelationshipSmokes: List<Smoke> = emptyList(),
     internal val relationshipPromptSmokeId: String? = null,
+    internal val availableTriggers: List<TriggerOption> = emptyList(),
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
@@ -234,9 +236,8 @@ data class HomeViewState(
         val promptSmokeId = relationshipPromptSmokeId
         if (promptSmokeId != null) {
             RelationshipPromptSheet(
-                onSave = { triggers, note ->
-                    intent(HomeIntent.SaveSmokeRelationship(promptSmokeId, triggers, note))
-                },
+                availableTriggers = availableTriggers,
+                onSave = { tags -> intent(HomeIntent.SaveSmokeRelationship(promptSmokeId, tags)) },
                 onSkip = { intent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
                 onDismiss = { intent(HomeIntent.DismissRelationshipPrompt) },
             )

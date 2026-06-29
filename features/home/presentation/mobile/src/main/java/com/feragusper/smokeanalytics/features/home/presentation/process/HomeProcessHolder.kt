@@ -30,6 +30,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPrefe
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
@@ -112,7 +113,7 @@ class HomeProcessHolder constructor(
     private fun processSaveRelationship(intent: HomeIntent.SaveSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
         setSmokeRelationshipUseCase(
             id = intent.smokeId,
-            relationship = SmokeRelationship.Tagged(triggers = intent.triggers, note = intent.note),
+            relationship = SmokeRelationship.Tagged(tags = intent.tags),
         )
         emit(HomeResult.RelationshipUpdated)
     }.catchAndLog { e ->
@@ -214,6 +215,10 @@ class HomeProcessHolder constructor(
                         activeCraving = activeCraving,
                         cravingStats = cravingStats,
                         pendingRelationshipSmokes = pendingRelationshipSmokes,
+                        availableTriggers = SmokeTrigger.catalog(
+                            customTriggers = preferences.customTriggers,
+                            hiddenDefaultKeys = preferences.hiddenDefaultTriggers,
+                        ),
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))

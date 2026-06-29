@@ -7,28 +7,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
-
-/** Human-readable label for a trigger chip. */
-internal fun SmokeTrigger.label(): String = when (this) {
-    SmokeTrigger.COFFEE -> "Coffee"
-    SmokeTrigger.ALCOHOL -> "Alcohol"
-    SmokeTrigger.BOREDOM -> "Boredom"
-    SmokeTrigger.ANXIETY -> "Anxiety"
-    SmokeTrigger.STRESS -> "Stress"
-    SmokeTrigger.AFTER_MEAL -> "After a meal"
-    SmokeTrigger.SOCIAL -> "Social"
-    SmokeTrigger.BREAK -> "Break"
-    SmokeTrigger.DRIVING -> "Driving"
-    SmokeTrigger.PHONE -> "Phone"
-}
 
 /**
  * Home card reminding the user that some smokes (logged from the watch, or whose prompt
@@ -60,12 +47,16 @@ internal fun RelationshipReminderCardWeb(
  */
 @Composable
 internal fun RelationshipPromptDialogWeb(
-    onSave: (triggers: Set<SmokeTrigger>, note: String?) -> Unit,
+    availableTriggers: List<TriggerOption>,
+    onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var selected by remember { mutableStateOf(emptySet<SmokeTrigger>()) }
-    var note by remember { mutableStateOf("") }
+    val options = remember(availableTriggers) {
+        if (availableTriggers.isEmpty()) SmokeTrigger.defaultOptions() else availableTriggers
+    }
+    var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
+    var draft by remember { mutableStateOf("") }
 
     Div(
         attrs = {
@@ -106,12 +97,12 @@ internal fun RelationshipPromptDialogWeb(
                     }
                 }
             ) {
-                SmokeTrigger.entries.forEach { trigger ->
-                    val isSelected = trigger in selected
+                options.forEach { option ->
+                    val isSelected = option.key in selectedKeys
                     Button(
                         attrs = {
                             onClick {
-                                selected = if (isSelected) selected - trigger else selected + trigger
+                                selectedKeys = if (isSelected) selectedKeys - option.key else selectedKeys + option.key
                             }
                             style {
                                 property("border-radius", "999px")
@@ -127,16 +118,16 @@ internal fun RelationshipPromptDialogWeb(
                                 }
                             }
                         }
-                    ) { Text(trigger.label()) }
+                    ) { Text(option.label) }
                 }
             }
 
             Input(
                 type = InputType.Text,
                 attrs = {
-                    value(note)
-                    onInput { note = it.value }
-                    attr("placeholder", "Other (add your own…)")
+                    value(draft)
+                    onInput { draft = it.value }
+                    attr("placeholder", "Add a tag…")
                     style {
                         property("width", "100%")
                         property("box-sizing", "border-box")
@@ -158,10 +149,9 @@ internal fun RelationshipPromptDialogWeb(
                 Button(attrs = { onClick { onSkip() } }) { Text("No relation") }
                 Button(
                     attrs = {
-                        val enabled = selected.isNotEmpty() || note.isNotBlank()
-                        if (!enabled) disabled()
                         onClick {
-                            onSave(selected, note.trim().takeIf { it.isNotEmpty() })
+                            val tags = selectedKeys + listOfNotNull(draft.normalizedTag())
+                            if (tags.isNotEmpty()) onSave(tags)
                         }
                     }
                 ) { Text("Save") }

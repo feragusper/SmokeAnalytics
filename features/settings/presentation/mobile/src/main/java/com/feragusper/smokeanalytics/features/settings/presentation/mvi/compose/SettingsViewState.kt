@@ -65,6 +65,8 @@ import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import com.valentinilk.shimmer.shimmer
 
 data class SettingsViewState(
@@ -149,6 +151,24 @@ data class SettingsViewState(
                 onSave = { updated -> intent(SettingsIntent.UpdatePreferences(updated)) },
                 onReset = { draftPreferences = preferences },
             )
+
+            if (currentEmail != null) {
+                SettingsSectionHeader(title = "Triggers")
+
+                SettingsCard(
+                    title = "Manage triggers",
+                    subtitle = "Choose which built-in triggers appear when you tag a cigarette, and add your own.",
+                ) {
+                    ManageTriggersSection(
+                        preferences = draftPreferences,
+                        enabled = !displayLoading,
+                        onChange = { updated ->
+                            draftPreferences = updated
+                            intent(SettingsIntent.UpdatePreferences(updated))
+                        },
+                    )
+                }
+            }
 
             SettingsSectionHeader(title = "App")
 
@@ -1113,6 +1133,85 @@ private fun SettingsPreview() {
             currentDisplayName = "Fernando Perez",
         ).Compose(
             intent = {},
+        )
+    }
+}
+
+@Composable
+private fun ManageTriggersSection(
+    preferences: UserPreferences,
+    enabled: Boolean,
+    onChange: (UserPreferences) -> Unit,
+) {
+    var draft by remember { mutableStateOf("") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Built-in",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        SmokeTrigger.defaultOptions().forEach { option ->
+            val visible = option.key !in preferences.hiddenDefaultTriggers
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = option.label, modifier = Modifier.weight(1f))
+                Switch(
+                    checked = visible,
+                    enabled = enabled,
+                    onCheckedChange = { checked ->
+                        val hidden = if (checked) {
+                            preferences.hiddenDefaultTriggers - option.key
+                        } else {
+                            preferences.hiddenDefaultTriggers + option.key
+                        }
+                        onChange(preferences.copy(hiddenDefaultTriggers = hidden))
+                    },
+                )
+            }
+        }
+
+        if (preferences.customTriggers.isNotEmpty()) {
+            Text(
+                text = "Your tags",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            preferences.customTriggers.forEach { tag ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = tag, modifier = Modifier.weight(1f))
+                    TextButton(
+                        onClick = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
+                        enabled = enabled,
+                    ) { Text("Remove") }
+                }
+            }
+        }
+
+        OutlinedTextField(
+            value = draft,
+            onValueChange = { draft = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Add a tag") },
+            singleLine = true,
+            enabled = enabled,
+            trailingIcon = {
+                draft.normalizedTag()?.let { key ->
+                    TextButton(onClick = {
+                        if (preferences.customTriggers.none { it.equals(key, ignoreCase = true) }) {
+                            onChange(preferences.copy(customTriggers = preferences.customTriggers + key))
+                        }
+                        draft = ""
+                    }) { Text("Add") }
+                }
+            },
         )
     }
 }

@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
@@ -289,6 +290,41 @@ private fun StatsWebContent(
                             title = "Year",
                             data = stats.yearly
                         )
+                    }
+                }
+
+                TriggerBreakdownCardWeb(stats = stats)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TriggerBreakdownCardWeb(
+    stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+            Div(attrs = { classes(SmokeWebStyles.chartHeader) }) { Text("By trigger") }
+            val breakdown = stats.triggerBreakdown
+            if (breakdown.isEmpty()) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.")
+                }
+            } else {
+                val max = breakdown.first().count.coerceAtLeast(1)
+                breakdown.forEach { entry ->
+                    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:4px;") }) {
+                        Div(attrs = { attr("style", "display:flex;justify-content:space-between;") }) {
+                            Span { Text(entry.label) }
+                            Span(attrs = { attr("style", "font-weight:700;") }) { Text(entry.count.toString()) }
+                        }
+                        Div(attrs = { attr("style", "height:6px;border-radius:999px;background:var(--sa-color-surfaceVariant);overflow:hidden;") }) {
+                            Div(attrs = {
+                                val pct = (entry.count * 100 / max)
+                                attr("style", "height:6px;width:$pct%;border-radius:999px;background:var(--sa-color-primary);")
+                            }) {}
+                        }
                     }
                 }
             }

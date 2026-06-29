@@ -22,8 +22,17 @@ data class SmokeStats(
     val totalMonth: Int,
     val totalWeek: Int,
     val totalDay: Int,
-    val dailyAverage: Float
+    val dailyAverage: Float,
+    /** Tag → count over the selected period, ranked by count desc. */
+    val triggerBreakdown: List<TriggerCount> = emptyList(),
 ) {
+    /** A trigger and how many cigarettes in the period were tagged with it. */
+    data class TriggerCount(
+        val key: String,
+        val label: String,
+        val count: Int,
+    )
+
     enum class SelectionPeriod {
         DAY,
         WEEK,
@@ -146,6 +155,18 @@ data class SmokeStats(
             val totalDay = daySmokes.size
             val dailyAverage = if (daysInMonth > 0) totalMonth.toFloat() / daysInMonth else 0f
 
+            // Trigger breakdown over the smokes in the requested range (the use case fetches
+            // exactly the selected period), ranked by frequency.
+            val tagCounts = mutableMapOf<String, Int>()
+            smokes.forEach { smoke ->
+                (smoke.relationship as? SmokeRelationship.Tagged)?.tags?.forEach { tag ->
+                    tagCounts[tag] = (tagCounts[tag] ?: 0) + 1
+                }
+            }
+            val triggerBreakdown = tagCounts.entries
+                .sortedByDescending { it.value }
+                .map { TriggerCount(key = it.key, label = SmokeTrigger.labelFor(it.key), count = it.value) }
+
             return SmokeStats(
                 daily = dailyStats,
                 weekly = weeklyStats,
@@ -155,7 +176,8 @@ data class SmokeStats(
                 totalMonth = totalMonth,
                 totalWeek = totalWeek,
                 totalDay = totalDay,
-                dailyAverage = dailyAverage
+                dailyAverage = dailyAverage,
+                triggerBreakdown = triggerBreakdown,
             )
         }
 

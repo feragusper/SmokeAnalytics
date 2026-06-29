@@ -3,7 +3,6 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
@@ -16,7 +15,7 @@ class SetSmokeRelationshipUseCaseTest {
     fun `GIVEN an id and relationship WHEN invoked THEN it forwards them to the repository`() = runTest {
         val repository = FakeSmokeRepository()
         val useCase = SetSmokeRelationshipUseCase(repository)
-        val relationship = SmokeRelationship.Tagged(triggers = setOf(SmokeTrigger.COFFEE), note = "morning")
+        val relationship = SmokeRelationship.Tagged(tags = setOf("coffee", "morning"))
 
         useCase("smoke-1", relationship)
 

@@ -3,7 +3,6 @@ package com.feragusper.smokeanalytics.features.home.presentation.mvi
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIIntent
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import kotlinx.datetime.Instant
 
 /**
@@ -94,12 +93,11 @@ sealed class HomeIntent : MVIIntent {
     data class OpenRelationshipPrompt(val smokeId: String) : HomeIntent()
 
     /**
-     * Saves the triggers the user attached to a smoke. [note] holds the free-text "Other".
+     * Saves the tags the user attached to a smoke (built-in keys and/or custom strings).
      */
     data class SaveSmokeRelationship(
         val smokeId: String,
-        val triggers: Set<SmokeTrigger>,
-        val note: String?,
+        val tags: Set<String>,
     ) : HomeIntent()
 
     /**

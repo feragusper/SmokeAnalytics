@@ -17,12 +17,11 @@ sealed interface SmokeRelationship {
     data object Skipped : SmokeRelationship
 
     /**
-     * The user attached one or more triggers, and optionally a free-text [note]
-     * (the "Other" option).
+     * The user attached one or more tags. [tags] holds trigger keys — built-in
+     * [SmokeTrigger] keys and/or custom tag strings.
      */
     data class Tagged(
-        val triggers: Set<SmokeTrigger> = emptySet(),
-        val note: String? = null,
+        val tags: Set<String> = emptySet(),
     ) : SmokeRelationship
 
     /** True while the smoke still needs the user's attention in the reminder card. */

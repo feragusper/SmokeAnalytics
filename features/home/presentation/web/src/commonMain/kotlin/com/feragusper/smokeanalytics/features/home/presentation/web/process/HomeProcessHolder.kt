@@ -26,6 +26,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPref
 import com.feragusper.smokeanalytics.libraries.logging.AppLogger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
@@ -108,7 +109,7 @@ class HomeProcessHolder(
     private fun processSaveRelationship(intent: HomeIntent.SaveSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
         setSmokeRelationshipUseCase(
             id = intent.smokeId,
-            relationship = SmokeRelationship.Tagged(triggers = intent.triggers, note = intent.note),
+            relationship = SmokeRelationship.Tagged(tags = intent.tags),
         )
         emit(HomeResult.RelationshipUpdated)
     }.catch { emit(HomeResult.Error.Generic) }
@@ -206,6 +207,10 @@ class HomeProcessHolder(
                             activeCraving = activeCraving,
                             cravingStats = cravingStats,
                             pendingRelationshipSmokes = pendingRelationshipSmokes,
+                            availableTriggers = SmokeTrigger.catalog(
+                                customTriggers = preferences.customTriggers,
+                                hiddenDefaultKeys = preferences.hiddenDefaultTriggers,
+                            ),
                         )
                     )
                     return@flow

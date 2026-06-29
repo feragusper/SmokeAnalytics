@@ -10,6 +10,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 
 /**
  * Represents the state of the Home screen.
@@ -59,6 +60,7 @@ data class HomeViewState(
     val cravingCelebration: CravingCelebration? = null,
     val pendingRelationshipSmokes: List<Smoke> = emptyList(),
     val relationshipPromptSmokeId: String? = null,
+    val availableTriggers: List<TriggerOption> = emptyList(),
 ) {
 
     /**

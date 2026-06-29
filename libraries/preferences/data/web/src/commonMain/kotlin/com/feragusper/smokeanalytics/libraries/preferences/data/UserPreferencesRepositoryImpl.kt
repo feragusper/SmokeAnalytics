@@ -32,6 +32,8 @@ class UserPreferencesRepositoryImpl(
                 accountTier = preferences.accountTier.name,
                 activeGoalType = preferences.activeGoal?.type?.name,
                 activeGoalMetricValue = preferences.activeGoal?.metricValue,
+                customTriggers = preferences.customTriggers,
+                hiddenDefaultTriggers = preferences.hiddenDefaultTriggers.toList(),
             )
         )
     }
@@ -56,6 +58,8 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         accountTier = getOrNull<String>(UserPreferencesEntity.ACCOUNT_TIER) ?: "Free",
         activeGoalType = getOrNull<String>(UserPreferencesEntity.ACTIVE_GOAL_TYPE),
         activeGoalMetricValue = numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble(),
+        customTriggers = getOrNull<List<String>>(UserPreferencesEntity.CUSTOM_TRIGGERS).orEmpty(),
+        hiddenDefaultTriggers = getOrNull<List<String>>(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
     )
 }
 

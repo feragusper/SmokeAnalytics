@@ -13,6 +13,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutc
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 
 /**
  * Represents the possible outcomes of processing [HomeIntent] actions.
@@ -118,6 +119,7 @@ sealed interface HomeResult : MVIResult {
         val activeCraving: Craving? = null,
         val cravingStats: CravingStats = CravingStats(),
         val pendingRelationshipSmokes: List<Smoke> = emptyList(),
+        val availableTriggers: List<TriggerOption> = emptyList(),
     ) : HomeResult
 
     /**

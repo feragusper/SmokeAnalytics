@@ -17,7 +17,6 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.noteOrNull
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.skippedFlag
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeRelationshipFromFields
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.triggerKeys
@@ -254,7 +253,8 @@ class SmokeRepositoryImpl constructor(
     private fun relationshipPayload(relationship: SmokeRelationship): Map<String, Any?> =
         mapOf(
             SmokeEntity.Fields.TRIGGERS to relationship.triggerKeys(),
-            SmokeEntity.Fields.TRIGGER_NOTE to relationship.noteOrNull(),
+            // Legacy free-text note is folded into tags now; clear it on write.
+            SmokeEntity.Fields.TRIGGER_NOTE to null,
             SmokeEntity.Fields.RELATIONSHIP_SKIPPED to relationship.skippedFlag(),
         )
 

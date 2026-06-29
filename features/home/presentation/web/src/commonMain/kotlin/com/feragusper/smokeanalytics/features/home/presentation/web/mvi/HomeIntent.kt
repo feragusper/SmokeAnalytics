@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics.features.home.presentation.web.mvi
 
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import kotlinx.datetime.Instant
 
 /**
@@ -92,8 +91,7 @@ sealed interface HomeIntent {
      */
     data class SaveSmokeRelationship(
         val smokeId: String,
-        val triggers: Set<SmokeTrigger>,
-        val note: String?,
+        val tags: Set<String>,
     ) : HomeIntent
 
     /**

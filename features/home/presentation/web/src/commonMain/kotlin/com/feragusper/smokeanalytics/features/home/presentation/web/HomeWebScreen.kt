@@ -223,9 +223,8 @@ fun HomeViewState.Render(
     val promptSmokeId = relationshipPromptSmokeId
     if (promptSmokeId != null) {
         RelationshipPromptDialogWeb(
-            onSave = { triggers, note ->
-                onIntent(HomeIntent.SaveSmokeRelationship(promptSmokeId, triggers, note))
-            },
+            availableTriggers = availableTriggers,
+            onSave = { tags -> onIntent(HomeIntent.SaveSmokeRelationship(promptSmokeId, tags)) },
             onSkip = { onIntent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
             onDismiss = { onIntent(HomeIntent.DismissRelationshipPrompt) },
         )

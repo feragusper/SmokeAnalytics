@@ -12,7 +12,6 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.noteOrNull
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.skippedFlag
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeRelationshipFromFields
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.triggerKeys
@@ -75,7 +74,8 @@ class SmokeRepositoryImpl(
                 latitude = location?.latitude,
                 longitude = location?.longitude,
                 triggers = relationship.triggerKeys().ifEmpty { null },
-                triggerNote = relationship.noteOrNull(),
+                // Legacy free-text note is folded into tags now; clear it on write.
+                triggerNote = null,
                 relationshipSkipped = relationship.skippedFlag(),
             )
         )
