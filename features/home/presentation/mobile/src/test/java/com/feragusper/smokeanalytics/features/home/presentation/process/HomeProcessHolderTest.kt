@@ -210,17 +210,21 @@ class HomeProcessHolderTest {
         }
 
         @Test
-        fun `WHEN location preference is enabled and ready THEN add smoke captures location`() = runTest {
+        fun `WHEN location preference is enabled and ready THEN smoke is logged first then location attached`() = runTest {
             val locationSlot = slot<GeoPoint>()
             coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
             coEvery { locationCaptureService.captureCurrentLocation() } returns Coordinate(12.3, 45.6)
-            coEvery { addSmokeUseCase.invoke(any(), any()) } returns "smoke-id"
+            coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
+            coEvery { editSmokeUseCase.invoke(any(), any(), any()) } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
+                // Logged immediately, before the (potentially slow) location fix.
                 awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess("smoke-id")
+                // Location attached asynchronously via edit.
+                awaitItem() shouldBeEqualTo HomeResult.EditSmokeSuccess
                 coVerify(exactly = 1) {
-                    addSmokeUseCase.invoke(any(), capture(locationSlot))
+                    editSmokeUseCase.invoke("smoke-id", any(), capture(locationSlot))
                 }
                 locationSlot.captured.latitude shouldBeEqualTo 12.3
                 locationSlot.captured.longitude shouldBeEqualTo 45.6

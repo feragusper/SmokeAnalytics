@@ -291,26 +291,46 @@ class HomeProcessHolder constructor(
 
             is Session.LoggedIn -> {
                 emit(HomeResult.Loading)
-                val preferences = fetchUserPreferencesUseCase()
-                val locationAvailability = locationCaptureService.locationTrackingAvailability(
-                    preferences.locationTrackingEnabled
-                )
-                val location = if (locationAvailability.isReady) {
-                    locationCaptureService.captureCurrentLocation()?.let {
-                        GeoPoint(latitude = it.latitude, longitude = it.longitude)
-                    }
-                } else {
-                    null
-                }
-                val smokeId = addSmokeUseCase.invoke(location = location)
+                // Log the smoke immediately so the tap stays instant, then attach the
+                // location asynchronously — an active GPS fix can take a few seconds and
+                // shouldn't block tracking.
+                val now = Clock.System.now()
+                val smokeId = addSmokeUseCase.invoke(timestamp = now)
                 emit(HomeResult.AddSmokeSuccess(smokeId))
                 refreshWidgetSnapshotBestEffort()
                 syncWithWearBestEffort()
+                attachLocationBestEffort(smokeId, now)
             }
         }
     }.catchAndLog { e ->
         Timber.e(e, "Track smoke failed")
         emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Captures the current location after the smoke is logged and attaches it via edit.
+     * Best-effort: failures (no permission, no fix) leave the smoke without a location and
+     * never surface an error, since tracking already succeeded.
+     */
+    private suspend fun kotlinx.coroutines.flow.FlowCollector<HomeResult>.attachLocationBestEffort(
+        smokeId: String,
+        date: kotlin.time.Instant,
+    ) {
+        runCatching {
+            val preferences = fetchUserPreferencesUseCase()
+            val available = locationCaptureService.locationTrackingAvailability(
+                preferences.locationTrackingEnabled
+            ).isReady
+            if (!available) return
+            val coordinate = locationCaptureService.captureCurrentLocation() ?: return
+            editSmokeUseCase.invoke(
+                smokeId,
+                date,
+                GeoPoint(latitude = coordinate.latitude, longitude = coordinate.longitude),
+            )
+            emit(HomeResult.EditSmokeSuccess)
+            refreshWidgetSnapshotBestEffort()
+        }.onFailure { Timber.w(it, "Async location attach failed") }
     }
 
     /**
