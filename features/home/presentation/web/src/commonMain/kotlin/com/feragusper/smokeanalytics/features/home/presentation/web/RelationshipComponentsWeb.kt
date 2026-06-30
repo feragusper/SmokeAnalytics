@@ -56,7 +56,7 @@ internal fun RelationshipReminderCardWeb(
                     attr(
                         "style",
                         "display:flex;align-items:center;justify-content:space-between;gap:12px;" +
-                            "padding:8px 0;border-top:1px solid var(--sa-color-surfaceVariant);",
+                            "padding:8px 0;border-top:1px solid var(--sa-color-outline);",
                     )
                 }) {
                     Span(attrs = { attr("style", "font-size:14px;") }) { Text(item.label) }
@@ -107,11 +107,13 @@ internal fun RelationshipPromptDialogWeb(
         Div(
             attrs = {
                 style {
-                    property("background", "white")
+                    property("background", "var(--sa-color-surface)")
+                    property("color", "var(--sa-color-onSurface)")
                     property("padding", "20px")
                     property("border-radius", "12px")
                     property("min-width", "320px")
                     property("max-width", "90vw")
+                    property("border", "1px solid var(--sa-color-outline)")
                 }
                 onClick { it.stopPropagation() }
             }
@@ -143,13 +145,13 @@ internal fun RelationshipPromptDialogWeb(
                                 property("border-radius", "999px")
                                 property("padding", "6px 14px")
                                 property("cursor", "pointer")
-                                property("border", "1px solid #006A6A")
+                                property("border", "1px solid var(--sa-color-primary)")
                                 if (isSelected) {
-                                    property("background", "#006A6A")
-                                    property("color", "white")
+                                    property("background", "var(--sa-color-primary)")
+                                    property("color", "var(--sa-color-onPrimary)")
                                 } else {
                                     property("background", "transparent")
-                                    property("color", "#006A6A")
+                                    property("color", "var(--sa-color-primary)")
                                 }
                             }
                         }
@@ -167,6 +169,10 @@ internal fun RelationshipPromptDialogWeb(
                         property("width", "100%")
                         property("box-sizing", "border-box")
                         property("padding", "8px")
+                        property("background", "var(--sa-color-surface-strong)")
+                        property("color", "var(--sa-color-onSurface)")
+                        property("border", "1px solid var(--sa-color-outline)")
+                        property("border-radius", "8px")
                     }
                 }
             )

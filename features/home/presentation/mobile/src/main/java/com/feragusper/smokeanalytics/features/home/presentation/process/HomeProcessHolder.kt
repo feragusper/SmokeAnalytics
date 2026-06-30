@@ -115,9 +115,27 @@ class HomeProcessHolder constructor(
             id = intent.smokeId,
             relationship = SmokeRelationship.Tagged(tags = intent.tags),
         )
+        persistNewCustomTags(intent.tags)
         emit(HomeResult.RelationshipUpdated)
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Adds any ad-hoc tags the user typed (not a built-in default and not already saved) to the
+     * custom trigger catalog so they're selectable in future prompts and in Settings.
+     */
+    private suspend fun persistNewCustomTags(tags: Set<String>) {
+        val preferences = fetchUserPreferencesUseCase()
+        val defaultKeys = SmokeTrigger.entries.map { it.key }.toSet()
+        val newTags = tags.filter { tag ->
+            tag !in defaultKeys && preferences.customTriggers.none { it.equals(tag, ignoreCase = true) }
+        }
+        if (newTags.isNotEmpty()) {
+            updateUserPreferencesUseCase(
+                preferences.copy(customTriggers = preferences.customTriggers + newTags),
+            )
+        }
     }
 
     /**

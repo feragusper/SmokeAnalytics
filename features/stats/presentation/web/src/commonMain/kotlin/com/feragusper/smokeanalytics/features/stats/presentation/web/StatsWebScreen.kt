@@ -324,7 +324,7 @@ private fun TriggerBreakdownCardWeb(
                             Span { Text(entry.label) }
                             Span(attrs = { attr("style", "font-weight:700;") }) { Text(entry.count.toString()) }
                         }
-                        Div(attrs = { attr("style", "height:6px;border-radius:999px;background:var(--sa-color-surfaceVariant);overflow:hidden;") }) {
+                        Div(attrs = { attr("style", "height:6px;border-radius:999px;background:var(--sa-color-surface-strong);overflow:hidden;") }) {
                             Div(attrs = {
                                 val pct = (entry.count * 100 / max)
                                 attr("style", "height:6px;width:$pct%;border-radius:999px;background:var(--sa-color-primary);")
