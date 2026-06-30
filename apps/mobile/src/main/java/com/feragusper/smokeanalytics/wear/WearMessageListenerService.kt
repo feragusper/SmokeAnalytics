@@ -22,7 +22,7 @@ class WearMessageListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
         CoroutineScope(serviceJob + dispatcherProvider.io()).launch {
-            runCatching { wearSyncManager.handleWearRequest(messageEvent.path) }
+            runCatching { wearSyncManager.handleWearRequest(messageEvent.path, messageEvent.data) }
                 .onFailure { Timber.w(it, "Failed to handle Wear request: ${messageEvent.path}") }
         }
     }

@@ -646,15 +646,17 @@ private fun MainScreenNavigationConfigurations(
         composable(route = BottomNavigationScreens.Goals.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
             GoalsMobileDestination(
-                navigateBack = {
-                    navController.navigate(BottomNavigationScreens.Home.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                navigateToConfigure = {
+                    navController.navigate(GOALS_CONFIGURE_ROUTE) {
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
+            )
+        }
+        composable(route = GOALS_CONFIGURE_ROUTE) {
+            onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            GoalsConfigureMobileDestination(
+                navigateBack = { navController.popBackStack() },
             )
         }
         composable(route = BottomNavigationScreens.You.route) {
@@ -734,6 +736,9 @@ private sealed class BottomNavigationScreens(
      */
     data object You : BottomNavigationScreens(route = "settings", iconId = R.drawable.ic_you)
 }
+
+/** Goal editor route, reached from the Goals tab via "Configure goal" (not a bottom item). */
+private const val GOALS_CONFIGURE_ROUTE = "goals_configure"
 
 @Preview(showBackground = true)
 @Composable

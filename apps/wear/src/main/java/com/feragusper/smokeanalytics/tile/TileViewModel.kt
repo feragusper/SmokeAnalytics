@@ -32,7 +32,10 @@ object TileViewModel : MVIViewModel<TileIntent, TileViewState, TileResult, MVINa
             context = context.applicationContext,
             dispatcherProvider = DispatcherProviderImpl()
         ).Wear()
-        processHolder = TileProcessHolder(wearSyncManager)
+        processHolder = TileProcessHolder(
+            wearSyncManager = wearSyncManager,
+            locationProvider = WearLocationProvider(context.applicationContext),
+        )
         if (!isListeningForData) {
             isListeningForData = true
             intents().trySend(TileIntent.FetchSmokes)

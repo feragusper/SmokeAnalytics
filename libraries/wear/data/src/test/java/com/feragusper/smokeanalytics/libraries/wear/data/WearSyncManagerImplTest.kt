@@ -78,7 +78,7 @@ class WearSyncManagerImplTest {
             coEvery { locationCaptureService.captureCurrentLocation() } returns
                 Coordinate(latitude = 12.34, longitude = 56.78)
 
-            mobile.handleWearRequest(WearPaths.ADD_SMOKE)
+            mobile.handleWearRequest(WearPaths.ADD_SMOKE, data = null)
 
             coVerify {
                 smokeRepository.addSmoke(any(), GeoPoint(latitude = 12.34, longitude = 56.78))
@@ -97,7 +97,7 @@ class WearSyncManagerImplTest {
                     providerEnabled = false,
                 )
 
-            mobile.handleWearRequest(WearPaths.ADD_SMOKE)
+            mobile.handleWearRequest(WearPaths.ADD_SMOKE, data = null)
 
             coVerify { smokeRepository.addSmoke(any(), null) }
             coVerify(exactly = 0) { locationCaptureService.captureCurrentLocation() }
@@ -115,7 +115,7 @@ class WearSyncManagerImplTest {
                     providerEnabled = false,
                 )
 
-            mobile.handleWearRequest(WearPaths.ADD_SMOKE)
+            mobile.handleWearRequest(WearPaths.ADD_SMOKE, data = null)
 
             coVerify { smokeRepository.addSmoke(any(), null) }
             coVerify(exactly = 0) { locationCaptureService.captureCurrentLocation() }

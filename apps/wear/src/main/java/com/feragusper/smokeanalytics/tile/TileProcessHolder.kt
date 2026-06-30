@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.tile
 
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.catchAndLog
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
+import com.feragusper.smokeanalytics.libraries.wear.data.WearLocationCodec
 import com.feragusper.smokeanalytics.libraries.wear.data.WearPaths
 import com.feragusper.smokeanalytics.libraries.wear.data.WearSyncManagerImpl
 import com.feragusper.smokeanalytics.libraries.wear.domain.WearSyncManager
@@ -18,7 +19,8 @@ import timber.log.Timber
  * with the mobile app via the WearSyncManager.
  */
 class TileProcessHolder constructor(
-    private val wearSyncManager: WearSyncManager.Wear
+    private val wearSyncManager: WearSyncManager.Wear,
+    private val locationProvider: WearLocationProvider? = null,
 ) : MVIProcessHolder<TileIntent, TileResult> {
 
     /**
@@ -40,7 +42,7 @@ class TileProcessHolder constructor(
             trySend(TileResult.RefreshStarted)
             launch {
                 try {
-                    wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                    wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES, data = null)
                     trySend(TileResult.RefreshRequestSent)
                 } catch (e: Exception) {
                     Timber.e(e, "Error requesting smoke count from mobile.")
@@ -60,7 +62,11 @@ class TileProcessHolder constructor(
             // Launched within the callbackFlow to ensure it runs as a coroutine
             launch {
                 try {
-                    wearSyncManager.sendRequestToMobile(WearPaths.ADD_SMOKE)
+                    // Capture the watch's location here (the phone can't, in the background)
+                    // and ship it with the add. Best-effort: no fix → no location.
+                    val coordinates = runCatching { locationProvider?.currentLatLng() }.getOrNull()
+                    val payload = coordinates?.let { (lat, lng) -> WearLocationCodec.encode(lat, lng) }
+                    wearSyncManager.sendRequestToMobile(WearPaths.ADD_SMOKE, payload)
                     // Emit success after sending the request
                     trySend(TileResult.AddSmokeRequestSent)
                 } catch (e: Exception) {
@@ -95,7 +101,7 @@ class TileProcessHolder constructor(
 
         launch {
             try {
-                wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES, data = null)
             } catch (e: Exception) {
                 Timber.e(e, "Error requesting smoke count from mobile.")
                 trySend(TileResult.Error)

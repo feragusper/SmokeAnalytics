@@ -18,6 +18,8 @@ import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -140,6 +142,21 @@ private fun SettingsViewState.Render(
                     }
                 }
             }
+        }
+
+        if (currentEmail != null) {
+            SectionHeader(
+                title = "Triggers",
+                subtitle = "Choose which built-in triggers appear when tagging a cigarette, and add your own.",
+            )
+            ManageTriggersPanelWeb(
+                preferences = draftPreferences,
+                displayLoading = displayLoading,
+                onChange = { updated ->
+                    draftPreferences = updated
+                    onIntent(SettingsIntent.UpdatePreferences(preferences = updated))
+                },
+            )
         }
 
         SectionHeader(
@@ -621,4 +638,78 @@ private fun Double.asDecimalString(): String {
     val integerPart = scaled / 100
     val decimalPart = abs(scaled % 100).toString().padStart(2, '0')
     return "$integerPart.$decimalPart"
+}
+
+@Composable
+private fun ManageTriggersPanelWeb(
+    preferences: UserPreferences,
+    displayLoading: Boolean,
+    onChange: (UserPreferences) -> Unit,
+) {
+    var draft by remember { mutableStateOf("") }
+
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Built-in") }
+            SmokeTrigger.defaultOptions().forEach { option ->
+                val visible = option.key !in preferences.hiddenDefaultTriggers
+                Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:8px;") }) {
+                    Span { Text(option.label) }
+                    GhostButton(
+                        text = if (visible) "Hide" else "Show",
+                        enabled = !displayLoading,
+                        onClick = {
+                            val hidden = if (visible) {
+                                preferences.hiddenDefaultTriggers + option.key
+                            } else {
+                                preferences.hiddenDefaultTriggers - option.key
+                            }
+                            onChange(preferences.copy(hiddenDefaultTriggers = hidden))
+                        },
+                    )
+                }
+            }
+
+            if (preferences.customTriggers.isNotEmpty()) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Your tags") }
+                preferences.customTriggers.forEach { tag ->
+                    Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:8px;") }) {
+                        Span { Text(tag) }
+                        GhostButton(
+                            text = "Remove",
+                            enabled = !displayLoading,
+                            onClick = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
+                        )
+                    }
+                }
+            }
+
+            Div(attrs = { attr("style", "display:flex;gap:8px;align-items:center;") }) {
+                Input(
+                    type = InputType.Text,
+                    attrs = {
+                        value(draft)
+                        onInput { draft = it.value }
+                        attr("placeholder", "Add a tag…")
+                        style {
+                            property("flex", "1")
+                            property("box-sizing", "border-box")
+                            property("padding", "8px")
+                        }
+                    },
+                )
+                PrimaryButton(
+                    text = "Add",
+                    enabled = !displayLoading && draft.normalizedTag() != null,
+                    onClick = {
+                        val key = draft.normalizedTag() ?: return@PrimaryButton
+                        if (preferences.customTriggers.none { it.equals(key, ignoreCase = true) }) {
+                            onChange(preferences.copy(customTriggers = preferences.customTriggers + key))
+                        }
+                        draft = ""
+                    },
+                )
+            }
+        }
+    }
 }

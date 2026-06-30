@@ -11,6 +11,10 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.timeAfter
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.skippedFlag
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeRelationshipFromFields
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.triggerKeys
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.FirebaseAuth
@@ -45,12 +49,34 @@ class SmokeRepositoryImpl(
     /**
      * @see SmokeRepository.addSmoke
      */
-    override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
+    override suspend fun addSmoke(date: Instant, location: GeoPoint?): String =
         smokesCollection().add(
             SmokeEntity(
                 timestampMillis = date.toEpochMilliseconds().toDouble(),
                 latitude = location?.latitude,
                 longitude = location?.longitude,
+            )
+        ).id
+
+    /**
+     * @see SmokeRepository.setSmokeRelationship
+     */
+    override suspend fun setSmokeRelationship(id: String, relationship: SmokeRelationship) {
+        // Re-set the full entity, preserving timestamp/location (mirrors editSmoke) and
+        // overwriting only the relationship fields.
+        val document = smokesCollection().document(id)
+        val snapshot = document.get()
+        val timestampMillis = snapshot.getOrNull<Double>(SmokeEntity.Fields.TIMESTAMP_MILLIS) ?: return
+        val location = snapshot.getGeoPoint()
+        document.set(
+            SmokeEntity(
+                timestampMillis = timestampMillis,
+                latitude = location?.latitude,
+                longitude = location?.longitude,
+                triggers = relationship.triggerKeys().ifEmpty { null },
+                // Legacy free-text note is folded into tags now; clear it on write.
+                triggerNote = null,
+                relationshipSkipped = relationship.skippedFlag(),
             )
         )
     }
@@ -125,6 +151,7 @@ class SmokeRepositoryImpl(
                 date = currentInstant,
                 timeElapsedSincePreviousSmoke = currentInstant.timeAfter(previousInstant),
                 location = document.getGeoPoint(),
+                relationship = document.getRelationship(),
             )
         }
     }
@@ -180,6 +207,13 @@ class SmokeRepositoryImpl(
         val longitude = getOrNull<Double>(SmokeEntity.Fields.LONGITUDE) ?: return null
         return GeoPoint(latitude = latitude, longitude = longitude)
     }
+
+    private fun DocumentSnapshot.getRelationship(): SmokeRelationship =
+        smokeRelationshipFromFields(
+            triggers = getOrNull<List<String>>(SmokeEntity.Fields.TRIGGERS),
+            note = getOrNull<String>(SmokeEntity.Fields.TRIGGER_NOTE),
+            skipped = getOrNull<Boolean>(SmokeEntity.Fields.RELATIONSHIP_SKIPPED),
+        )
 
     private inline fun <reified T> DocumentSnapshot.getOrNull(field: String): T? =
         try {

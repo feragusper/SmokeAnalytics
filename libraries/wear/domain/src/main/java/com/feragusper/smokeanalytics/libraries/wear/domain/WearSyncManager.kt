@@ -20,8 +20,11 @@ sealed interface WearSyncManager {
 
         /**
          * Handles a message sent by a Wear OS device.
+         *
+         * @param path The communication path.
+         * @param data Optional payload (e.g. watch-captured location for an add).
          */
-        suspend fun handleWearRequest(path: String)
+        suspend fun handleWearRequest(path: String, data: ByteArray?)
     }
 
     /**
@@ -32,8 +35,9 @@ sealed interface WearSyncManager {
          * Sends a request from the Wear OS device to the mobile app.
          *
          * @param path The communication path for the request.
+         * @param data Optional payload (e.g. watch-captured location for an add).
          */
-        suspend fun sendRequestToMobile(path: String)
+        suspend fun sendRequestToMobile(path: String, data: ByteArray?)
 
         /**
          * Listens for data updates from the mobile app and processes them.

@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.domain.repository
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import kotlinx.datetime.Instant
 
 /**
@@ -14,8 +15,19 @@ interface SmokeRepository {
      * Adds a smoke.
      *
      * @param timestamp The timestamp of the smoke.
+     * @return The id of the newly created smoke, so callers can attach a relationship to it.
      */
-    suspend fun addSmoke(timestamp: Instant, location: GeoPoint? = null)
+    suspend fun addSmoke(timestamp: Instant, location: GeoPoint? = null): String
+
+    /**
+     * Sets (or clears) what a smoke was related to.
+     *
+     * Only the relationship fields are written; the timestamp and location are preserved.
+     *
+     * @param id The id of the smoke.
+     * @param relationship The relationship to persist.
+     */
+    suspend fun setSmokeRelationship(id: String, relationship: SmokeRelationship)
 
     /**
      * Fetches the smokes.

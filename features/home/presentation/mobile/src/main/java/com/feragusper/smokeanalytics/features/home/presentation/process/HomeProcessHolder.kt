@@ -29,10 +29,13 @@ import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SetSmokeRelationshipUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -44,6 +47,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import timber.log.Timber
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 /**
  * Processes intents from the Home feature, invoking the appropriate use cases and updating the result.
@@ -61,6 +65,7 @@ class HomeProcessHolder constructor(
     private val addSmokeUseCase: AddSmokeUseCase,
     private val editSmokeUseCase: EditSmokeUseCase,
     private val deleteSmokeUseCase: DeleteSmokeUseCase,
+    private val setSmokeRelationshipUseCase: SetSmokeRelationshipUseCase,
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
     private val fetchSessionUseCase: FetchSessionUseCase,
@@ -96,6 +101,33 @@ class HomeProcessHolder constructor(
         is HomeIntent.ResolveCraving -> processResolveCraving(intent)
         HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
         HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
+        is HomeIntent.OpenRelationshipPrompt -> flow { emit(HomeResult.AddSmokeSuccess(intent.smokeId)) }
+        is HomeIntent.SaveSmokeRelationship -> processSaveRelationship(intent)
+        is HomeIntent.SkipSmokeRelationship -> processSkipRelationship(intent)
+        HomeIntent.DismissRelationshipPrompt -> flow { emit(HomeResult.RelationshipPromptDismissed) }
+    }
+
+    /**
+     * Persists the triggers the user attached to a smoke, then refreshes the home.
+     */
+    private fun processSaveRelationship(intent: HomeIntent.SaveSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        setSmokeRelationshipUseCase(
+            id = intent.smokeId,
+            relationship = SmokeRelationship.Tagged(tags = intent.tags),
+        )
+        emit(HomeResult.RelationshipUpdated)
+    }.catchAndLog { e ->
+        emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Marks a smoke as having no particular trigger so it stops appearing in the reminder.
+     */
+    private fun processSkipRelationship(intent: HomeIntent.SkipSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        setSmokeRelationshipUseCase(id = intent.smokeId, relationship = SmokeRelationship.Skipped)
+        emit(HomeResult.RelationshipUpdated)
+    }.catchAndLog { e ->
+        emit(HomeResult.Error.Generic(e.debugSummary()))
     }
 
     /**
@@ -138,6 +170,12 @@ class HomeProcessHolder constructor(
                     fetchSmokesUseCase(start = previousMonthStart, end = previousMonthWindowEnd).size
                 val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
+                // Smokes still missing a relationship within the lookback window (e.g. logged
+                // from the watch, or whose prompt was dismissed) drive the home reminder card.
+                val pendingRelationshipSmokes = fetchSmokesUseCase(
+                    start = now.minus(RELATIONSHIP_LOOKBACK_DAYS.days),
+                    end = now,
+                ).filter { it.relationship.isPending }
                 val activeCraving = fetchActiveCravingUseCase()
                 val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
                 val greetingState = greetingStateFor(
@@ -176,6 +214,11 @@ class HomeProcessHolder constructor(
                         previousMonthCount = previousMonthCount,
                         activeCraving = activeCraving,
                         cravingStats = cravingStats,
+                        pendingRelationshipSmokes = pendingRelationshipSmokes,
+                        availableTriggers = SmokeTrigger.catalog(
+                            customTriggers = preferences.customTriggers,
+                            hiddenDefaultKeys = preferences.hiddenDefaultTriggers,
+                        ),
                     )
                 )
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
@@ -248,26 +291,46 @@ class HomeProcessHolder constructor(
 
             is Session.LoggedIn -> {
                 emit(HomeResult.Loading)
-                val preferences = fetchUserPreferencesUseCase()
-                val locationAvailability = locationCaptureService.locationTrackingAvailability(
-                    preferences.locationTrackingEnabled
-                )
-                val location = if (locationAvailability.isReady) {
-                    locationCaptureService.captureCurrentLocation()?.let {
-                        GeoPoint(latitude = it.latitude, longitude = it.longitude)
-                    }
-                } else {
-                    null
-                }
-                addSmokeUseCase.invoke(location = location)
-                emit(HomeResult.AddSmokeSuccess)
+                // Log the smoke immediately so the tap stays instant, then attach the
+                // location asynchronously — an active GPS fix can take a few seconds and
+                // shouldn't block tracking.
+                val now = Clock.System.now()
+                val smokeId = addSmokeUseCase.invoke(timestamp = now)
+                emit(HomeResult.AddSmokeSuccess(smokeId))
                 refreshWidgetSnapshotBestEffort()
                 syncWithWearBestEffort()
+                attachLocationBestEffort(smokeId, now)
             }
         }
     }.catchAndLog { e ->
         Timber.e(e, "Track smoke failed")
         emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Captures the current location after the smoke is logged and attaches it via edit.
+     * Best-effort: failures (no permission, no fix) leave the smoke without a location and
+     * never surface an error, since tracking already succeeded.
+     */
+    private suspend fun kotlinx.coroutines.flow.FlowCollector<HomeResult>.attachLocationBestEffort(
+        smokeId: String,
+        date: kotlin.time.Instant,
+    ) {
+        runCatching {
+            val preferences = fetchUserPreferencesUseCase()
+            val available = locationCaptureService.locationTrackingAvailability(
+                preferences.locationTrackingEnabled
+            ).isReady
+            if (!available) return
+            val coordinate = locationCaptureService.captureCurrentLocation() ?: return
+            editSmokeUseCase.invoke(
+                smokeId,
+                date,
+                GeoPoint(latitude = coordinate.latitude, longitude = coordinate.longitude),
+            )
+            emit(HomeResult.EditSmokeSuccess)
+            refreshWidgetSnapshotBestEffort()
+        }.onFailure { Timber.w(it, "Async location attach failed") }
     }
 
     /**
@@ -365,6 +428,12 @@ class HomeProcessHolder constructor(
     private suspend fun syncWithWearBestEffort() {
         runCatching { syncWithWearUseCase.invoke() }
             .onFailure { Timber.w(it, "Home mutation succeeded but Wear sync failed: ${it.debugSummary()}") }
+    }
+
+    private companion object {
+        // How far back to look for smokes still missing a relationship. Firestore can't
+        // query "field absent", so the pending list is computed in memory over this window.
+        const val RELATIONSHIP_LOOKBACK_DAYS = 30
     }
 }
 

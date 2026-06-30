@@ -110,6 +110,11 @@ class HomeWebStore(
                 } else {
                     null
                 },
+                monthTrendDelta = if (result.previousMonthCount > 0) {
+                    result.smokeCountListResult.countByMonth - result.previousMonthCount
+                } else {
+                    null
+                },
                 locationTrackingAvailability = result.locationTrackingAvailability,
                 elapsedTone = elapsedToneFrom(
                     result.smokeCountListResult.timeSinceLastCigarette.first,
@@ -117,6 +122,8 @@ class HomeWebStore(
                 ),
                 activeCraving = result.activeCraving,
                 cravingStats = result.cravingStats,
+                pendingRelationshipSmokes = result.pendingRelationshipSmokes,
+                availableTriggers = result.availableTriggers,
             )
 
             is HomeResult.CravingTracked -> previous.copy(
@@ -156,13 +163,24 @@ class HomeWebStore(
                 ),
             )
 
-            HomeResult.AddSmokeSuccess,
             HomeResult.StartNewDaySuccess,
             HomeResult.EditSmokeSuccess,
             HomeResult.DeleteSmokeSuccess -> {
                 send(HomeIntent.FetchSmokes)
                 previous
             }
+
+            is HomeResult.AddSmokeSuccess -> {
+                send(HomeIntent.FetchSmokes)
+                previous.copy(relationshipPromptSmokeId = result.smokeId)
+            }
+
+            HomeResult.RelationshipUpdated -> {
+                send(HomeIntent.FetchSmokes)
+                previous.copy(relationshipPromptSmokeId = null)
+            }
+
+            HomeResult.RelationshipPromptDismissed -> previous.copy(relationshipPromptSmokeId = null)
 
             is HomeResult.Error -> previous.copy(
                 displayLoading = false,

@@ -259,4 +259,32 @@ class SmokeStatsTest {
         assertEquals("Average per awake hour so far", summary.supporting)
         assertEquals(0.6, summary.value)
     }
+
+    @Test
+    fun `GIVEN tagged smokes WHEN from is called THEN triggerBreakdown is ranked and labelled`() {
+        val smokes = listOf(
+            Smoke("1", Instant.parse("2023-03-01T10:00:00Z"), relationship = SmokeRelationship.Tagged(setOf("coffee", "stress"))),
+            Smoke("2", Instant.parse("2023-03-02T10:00:00Z"), relationship = SmokeRelationship.Tagged(setOf("coffee"))),
+            Smoke("3", Instant.parse("2023-03-03T10:00:00Z"), relationship = SmokeRelationship.Tagged(setOf("my custom tag"))),
+            Smoke("4", Instant.parse("2023-03-04T10:00:00Z"), relationship = SmokeRelationship.Skipped),
+            Smoke("5", Instant.parse("2023-03-05T10:00:00Z")), // Untracked
+        )
+
+        val breakdown = SmokeStats.from(
+            smokes = smokes,
+            year = 2023,
+            month = 3,
+            day = null,
+            timeZone = tz,
+            now = Instant.parse("2023-03-31T00:00:00Z"),
+        ).triggerBreakdown
+
+        // coffee (2) first, then stress and the custom tag (1 each). Skipped/Untracked excluded.
+        assertEquals(3, breakdown.size)
+        assertEquals("coffee", breakdown.first().key)
+        assertEquals(2, breakdown.first().count)
+        // Built-in keys resolve to their default label; custom tags keep their own string.
+        assertEquals("Coffee", breakdown.first().label)
+        assertEquals("my custom tag", breakdown.first { it.key == "my custom tag" }.label)
+    }
 }

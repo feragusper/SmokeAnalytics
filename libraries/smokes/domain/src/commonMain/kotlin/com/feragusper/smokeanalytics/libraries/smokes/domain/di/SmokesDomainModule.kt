@@ -5,6 +5,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SetSmokeRelationshipUseCase
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
@@ -14,6 +15,7 @@ val smokesDomainModule = module {
     factoryOf(::EditSmokeUseCase)
     factoryOf(::DeleteSmokeUseCase)
     factoryOf(::FetchSmokesUseCase)
+    factoryOf(::SetSmokeRelationshipUseCase)
     // Explicit factory (not factoryOf): the constructor DSL would try to resolve
     // the defaulted TimeZone parameter from the graph, which isn't provided.
     factory { FetchSmokeStatsUseCase(smokeRepository = get()) }

@@ -27,6 +27,7 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
@@ -193,17 +194,21 @@ private fun StatsWebContent(
                 Div(attrs = {
                     attr("style", "display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;")
                 }) {
+                    val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
+                    // Only a single day shows a raw total; for week/month/year a big cumulative
+                    // number (e.g. "1000 cigarettes") is discouraging, so lead with the daily average.
+                    val isDay = currentPeriod == StatsPeriod.DAY
                     SurfaceCard {
                         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                             Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                                Text("Total Frequency")
+                                Text(if (isDay) "Total Frequency" else averageSummary.title)
                             }
                             Div(attrs = { attr("style", "display:flex;align-items:flex-end;gap:10px;") }) {
                                 Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
-                                    Text(currentPeriod.totalLabel(stats))
+                                    Text(if (isDay) currentPeriod.totalLabel(stats) else averageSummary.value.formatOneDecimal())
                                 }
                                 Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);margin-bottom:6px;") }) {
-                                    Text("Cigarettes")
+                                    Text(if (isDay) "Cigarettes" else averageSummary.supporting)
                                 }
                             }
                             Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
@@ -212,22 +217,23 @@ private fun StatsWebContent(
                         }
                     }
 
-                    val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
                     Div(attrs = { attr("style", "display:grid;grid-template-rows:auto auto;gap:16px;align-content:start;") }) {
-                        SurfaceCard {
-                            Div(attrs = {
-                                attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;background:var(--sa-color-primary);border-radius:22px;padding:20px;color:var(--sa-color-onPrimary);")
-                            }) {
-                                Div {
-                                    Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
-                                        Text(averageSummary.title)
+                        if (isDay) {
+                            SurfaceCard {
+                                Div(attrs = {
+                                    attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;background:var(--sa-color-primary);border-radius:22px;padding:20px;color:var(--sa-color-onPrimary);")
+                                }) {
+                                    Div {
+                                        Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
+                                            Text(averageSummary.title)
+                                        }
+                                        Div(attrs = { attr("style", "font-size:40px;font-weight:800;line-height:1;margin-top:8px;") }) {
+                                            Text(averageSummary.value.formatOneDecimal())
+                                        }
                                     }
-                                    Div(attrs = { attr("style", "font-size:40px;font-weight:800;line-height:1;margin-top:8px;") }) {
-                                        Text(averageSummary.value.formatOneDecimal())
+                                    Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
+                                        Text(averageSummary.supporting)
                                     }
-                                }
-                                Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
-                                    Text(averageSummary.supporting)
                                 }
                             }
                         }
@@ -289,6 +295,41 @@ private fun StatsWebContent(
                             title = "Year",
                             data = stats.yearly
                         )
+                    }
+                }
+
+                TriggerBreakdownCardWeb(stats = stats)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TriggerBreakdownCardWeb(
+    stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
+) {
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+            Div(attrs = { classes(SmokeWebStyles.chartHeader) }) { Text("By trigger") }
+            val breakdown = stats.triggerBreakdown
+            if (breakdown.isEmpty()) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                    Text("No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.")
+                }
+            } else {
+                val max = breakdown.first().count.coerceAtLeast(1)
+                breakdown.forEach { entry ->
+                    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:4px;") }) {
+                        Div(attrs = { attr("style", "display:flex;justify-content:space-between;") }) {
+                            Span { Text(entry.label) }
+                            Span(attrs = { attr("style", "font-weight:700;") }) { Text(entry.count.toString()) }
+                        }
+                        Div(attrs = { attr("style", "height:6px;border-radius:999px;background:var(--sa-color-surfaceVariant);overflow:hidden;") }) {
+                            Div(attrs = {
+                                val pct = (entry.count * 100 / max)
+                                attr("style", "height:6px;width:$pct%;border-radius:999px;background:var(--sa-color-primary);")
+                            }) {}
+                        }
                     }
                 }
             }

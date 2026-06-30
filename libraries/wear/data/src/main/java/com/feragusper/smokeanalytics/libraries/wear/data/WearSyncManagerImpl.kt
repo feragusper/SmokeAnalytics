@@ -66,11 +66,14 @@ class WearSyncManagerImpl(
             )
         }
 
-        override suspend fun handleWearRequest(path: String) {
+        override suspend fun handleWearRequest(path: String, data: ByteArray?) {
             when (path) {
                 WearPaths.REQUEST_SMOKES -> syncWithWear()
                 WearPaths.ADD_SMOKE -> {
-                    smokeRepository.addSmoke(Clock.System.now(), captureLocation())
+                    // Prefer the location the watch captured (the phone is in the background here
+                    // and can't get a fix); fall back to a phone capture for older watch builds.
+                    val location = WearLocationCodec.decode(data) ?: captureLocation()
+                    smokeRepository.addSmoke(Clock.System.now(), location)
                     syncWithWear()
                 }
                 else -> Timber.w("Ignoring unknown Wear request: $path")
@@ -126,12 +129,12 @@ class WearSyncManagerImpl(
          *
          * @param path The communication path to the mobile app.
          */
-        override suspend fun sendRequestToMobile(path: String) {
+        override suspend fun sendRequestToMobile(path: String, data: ByteArray?) {
             Timber.d("sendRequestToMobile")
             val nodes = getConnectedNodes()
             nodes.forEach { nodeId ->
                 Timber.d("sendRequestToMobile: sending request to node $nodeId")
-                sendMessageToNode(nodeId, path)
+                sendMessageToNode(nodeId, path, data)
             }
         }
 
@@ -207,11 +210,11 @@ class WearSyncManagerImpl(
          * @param nodeId The ID of the node (wearable device) to send the message to.
          * @param path The communication path for the message.
          */
-        private suspend fun sendMessageToNode(nodeId: String, path: String) =
+        private suspend fun sendMessageToNode(nodeId: String, path: String, data: ByteArray?) =
             withContext(dispatcherProvider.io()) {
                 Timber.d("sendMessageToNode")
                 suspendCancellableCoroutine { continuation ->
-                    messageClient.sendMessage(nodeId, path, null)
+                    messageClient.sendMessage(nodeId, path, data)
                         .addOnSuccessListener {
                             Timber.d("sendMessageToNode: message sent successfully")
                             continuation.resume(Unit)

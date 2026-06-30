@@ -16,6 +16,10 @@ import com.feragusper.smokeanalytics.libraries.smokes.data.SmokeRepositoryImpl.F
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.skippedFlag
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeRelationshipFromFields
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.triggerKeys
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -24,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -48,9 +53,17 @@ class SmokeRepositoryImpl constructor(
     // We deliberately do not await the server acknowledgement, so adding/editing/deleting
     // a smoke works with no connection instead of timing out.
 
-    override suspend fun addSmoke(date: Instant, location: GeoPoint?) {
+    override suspend fun addSmoke(date: Instant, location: GeoPoint?): String =
         runFirestoreCall("add smoke", smokesPath()) {
-            smokesQuery().document().set(smokePayload(date, location))
+            val document = smokesQuery().document()
+            document.set(smokePayload(date, location))
+            document.id
+        }
+
+    override suspend fun setSmokeRelationship(id: String, relationship: SmokeRelationship) {
+        runFirestoreCall("set smoke relationship", "${smokesPath()}/$id") {
+            // Merge so the timestamp/location written when the smoke was logged are preserved.
+            smokesQuery().document(id).set(relationshipPayload(relationship), SetOptions.merge())
         }
     }
 
@@ -96,6 +109,7 @@ class SmokeRepositoryImpl constructor(
                     date = record.instant,
                     timeElapsedSincePreviousSmoke = record.instant.timeAfter(previousInstant),
                     location = record.location,
+                    relationship = record.relationship,
                 )
             }
         }
@@ -215,6 +229,17 @@ class SmokeRepositoryImpl constructor(
             id = id,
             instant = instant,
             location = getGeoPoint(),
+            relationship = getRelationship(),
+        )
+    }
+
+    private fun DocumentSnapshot.getRelationship(): SmokeRelationship {
+        @Suppress("UNCHECKED_CAST")
+        val triggers = get(SmokeEntity.Fields.TRIGGERS) as? List<String>
+        return smokeRelationshipFromFields(
+            triggers = triggers,
+            note = getString(SmokeEntity.Fields.TRIGGER_NOTE),
+            skipped = getBoolean(SmokeEntity.Fields.RELATIONSHIP_SKIPPED),
         )
     }
 
@@ -223,6 +248,14 @@ class SmokeRepositoryImpl constructor(
             SmokeEntity.Fields.TIMESTAMP_MILLIS to date.toEpochMilliseconds().toDouble(),
             SmokeEntity.Fields.LATITUDE to location?.latitude,
             SmokeEntity.Fields.LONGITUDE to location?.longitude,
+        )
+
+    private fun relationshipPayload(relationship: SmokeRelationship): Map<String, Any?> =
+        mapOf(
+            SmokeEntity.Fields.TRIGGERS to relationship.triggerKeys(),
+            // Legacy free-text note is folded into tags now; clear it on write.
+            SmokeEntity.Fields.TRIGGER_NOTE to null,
+            SmokeEntity.Fields.RELATIONSHIP_SKIPPED to relationship.skippedFlag(),
         )
 
     private companion object {
@@ -238,6 +271,7 @@ class SmokeRepositoryImpl constructor(
         val id: String,
         val instant: Instant,
         val location: GeoPoint?,
+        val relationship: SmokeRelationship = SmokeRelationship.Untracked,
     )
 
     private object LegacySmokeFields {

@@ -184,6 +184,17 @@ fun HomeViewState.Render(
                 }
             }
 
+            if (pendingRelationshipSmokes.isNotEmpty()) {
+                RelationshipReminderCardWeb(
+                    pendingCount = pendingRelationshipSmokes.size,
+                    onAdd = {
+                        pendingRelationshipSmokes.firstOrNull()?.let {
+                            onIntent(HomeIntent.OpenRelationshipPrompt(it.id))
+                        }
+                    },
+                )
+            }
+
             HomeInsightGrid(
                 lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
                 timeSinceLastCigarette = timeSinceLastCigarette,
@@ -198,7 +209,7 @@ fun HomeViewState.Render(
             }
 
             monthTrend?.let { trendValue ->
-                HomeTrendCard(trendValue = trendValue)
+                HomeTrendCard(trendValue = trendValue, delta = monthTrendDelta)
             }
 
             if (canStartNewDay) {
@@ -207,6 +218,16 @@ fun HomeViewState.Render(
                 )
             }
         }
+    }
+
+    val promptSmokeId = relationshipPromptSmokeId
+    if (promptSmokeId != null) {
+        RelationshipPromptDialogWeb(
+            availableTriggers = availableTriggers,
+            onSave = { tags -> onIntent(HomeIntent.SaveSmokeRelationship(promptSmokeId, tags)) },
+            onSkip = { onIntent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
+            onDismiss = { onIntent(HomeIntent.DismissRelationshipPrompt) },
+        )
     }
 }
 
@@ -648,36 +669,67 @@ private fun Long.toWaitedLabel(): String {
 @Composable
 private fun HomeTrendCard(
     trendValue: Int,
+    delta: Int?,
 ) {
+    // trendValue is the reduction vs last month: positive = smoking less (good),
+    // negative = smoking more (bad). Colour and copy follow that, not a fixed green.
+    val improving = trendValue > 0
+    val worsening = trendValue < 0
+    val gradient = when {
+        improving -> "linear-gradient(135deg,var(--sa-color-primary) 0%, #2D5D63 100%)"
+        worsening -> "linear-gradient(135deg,#C0413B 0%, #8E2B27 100%)"
+        else -> "linear-gradient(135deg,#5A6568 0%, #3E484B 100%)"
+    }
+    val headline = when {
+        improving -> "Smoking less than last month"
+        worsening -> "Smoking more than last month"
+        else -> "Same pace as last month"
+    }
+    val deltaLabel = delta?.let {
+        when {
+            it < 0 -> "${-it} fewer ${pluralCigarettes(-it)} so far"
+            it > 0 -> "$it more ${pluralCigarettes(it)} so far"
+            else -> "Same count so far"
+        }
+    }
+    val glyph = if (improving) "↘" else if (worsening) "↗" else "→"
+
     SurfaceCard {
         Div(attrs = {
             attr(
                 "style",
-                "display:flex;justify-content:space-between;align-items:center;gap:18px;background:linear-gradient(135deg,var(--sa-color-primary) 0%, #2D5D63 100%);border-radius:24px;padding:24px;color:var(--sa-color-onPrimary);"
+                "display:flex;justify-content:space-between;align-items:center;gap:18px;background:$gradient;border-radius:24px;padding:24px;color:#FFFFFF;"
             )
         }) {
             Div {
                 Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.76;") }) {
-                    Text("Trend")
+                    Text("Vs last month")
                 }
-                Div(attrs = { attr("style", "font-size:56px;font-weight:800;line-height:1;margin-top:10px;") }) {
-                    Text("${if (trendValue > 0) "+" else ""}$trendValue%")
+                Div(attrs = { attr("style", "font-size:26px;font-weight:800;line-height:1.1;margin-top:10px;max-width:320px;") }) {
+                    Text(headline)
                 }
-                Div(attrs = { attr("style", "font-size:14px;opacity:0.78;max-width:240px;") }) {
-                    Text("Reduction vs last month")
+                deltaLabel?.let {
+                    Div(attrs = { attr("style", "font-size:14px;opacity:0.82;margin-top:8px;") }) {
+                        Text(it)
+                    }
                 }
             }
             Div(attrs = {
                 attr(
                     "style",
-                    "width:84px;height:84px;border-radius:999px;border:8px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;"
+                    "width:84px;height:84px;border-radius:999px;border:8px solid rgba(255,255,255,0.22);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;"
                 )
             }) {
-                Text(if (trendValue >= 0) "↘" else "↗")
+                Div(attrs = { attr("style", "font-size:26px;font-weight:800;line-height:1;") }) { Text(glyph) }
+                Div(attrs = { attr("style", "font-size:14px;font-weight:700;") }) {
+                    Text("${if (trendValue > 0) "+" else ""}$trendValue%")
+                }
             }
         }
     }
 }
+
+private fun pluralCigarettes(count: Int): String = if (count == 1) "cigarette" else "cigarettes"
 
 @Composable
 private fun EveningResetCard(

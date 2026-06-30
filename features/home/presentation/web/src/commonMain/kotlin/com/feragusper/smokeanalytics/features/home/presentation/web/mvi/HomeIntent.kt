@@ -80,4 +80,27 @@ sealed interface HomeIntent {
      * Dismisses the craving celebration.
      */
     data object DismissCravingCelebration : HomeIntent
+
+    /**
+     * Opens the "what was it related to?" prompt for an untracked smoke.
+     */
+    data class OpenRelationshipPrompt(val smokeId: String) : HomeIntent
+
+    /**
+     * Saves the triggers attached to a smoke. [note] holds the free-text "Other".
+     */
+    data class SaveSmokeRelationship(
+        val smokeId: String,
+        val tags: Set<String>,
+    ) : HomeIntent
+
+    /**
+     * Marks a smoke as having no particular trigger so it stops appearing in the reminder.
+     */
+    data class SkipSmokeRelationship(val smokeId: String) : HomeIntent
+
+    /**
+     * Closes the relationship prompt without answering; the smoke stays untracked.
+     */
+    data object DismissRelationshipPrompt : HomeIntent
 }

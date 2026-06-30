@@ -12,6 +12,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutc
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 
 sealed interface HomeResult {
 
@@ -27,7 +28,11 @@ sealed interface HomeResult {
 
     data object GoToGoals : HomeResult
 
-    data object AddSmokeSuccess : HomeResult
+    data class AddSmokeSuccess(val smokeId: String) : HomeResult
+
+    data object RelationshipUpdated : HomeResult
+
+    data object RelationshipPromptDismissed : HomeResult
 
     data object StartNewDaySuccess : HomeResult
 
@@ -53,6 +58,8 @@ sealed interface HomeResult {
         val previousMonthCount: Int = 0,
         val activeCraving: Craving? = null,
         val cravingStats: CravingStats = CravingStats(),
+        val pendingRelationshipSmokes: List<Smoke> = emptyList(),
+        val availableTriggers: List<TriggerOption> = emptyList(),
     ) : HomeResult
 
     data object FetchSmokesError : HomeResult

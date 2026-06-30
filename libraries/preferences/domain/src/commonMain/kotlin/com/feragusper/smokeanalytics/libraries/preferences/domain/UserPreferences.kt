@@ -10,6 +10,10 @@ data class UserPreferences(
     val currencySymbol: String = "€",
     val accountTier: AccountTier = AccountTier.Free,
     val activeGoal: SmokingGoal? = null,
+    /** User-created trigger tags (labels), shown alongside the built-in defaults. */
+    val customTriggers: List<String> = emptyList(),
+    /** Built-in trigger keys the user hid from the prompt. */
+    val hiddenDefaultTriggers: Set<String> = emptySet(),
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

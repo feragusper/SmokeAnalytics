@@ -19,6 +19,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUse
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SetSmokeRelationshipUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
@@ -61,6 +62,7 @@ class HomeProcessHolderTest {
     private val addSmokeUseCase: AddSmokeUseCase = mockk()
     private val editSmokeUseCase: EditSmokeUseCase = mockk()
     private val deleteSmokeUseCase: DeleteSmokeUseCase = mockk()
+    private val setSmokeRelationshipUseCase: SetSmokeRelationshipUseCase = mockk()
     private val fetchSmokeCountListUseCase: FetchSmokeCountListUseCase = mockk()
     private val fetchSmokesUseCase: FetchSmokesUseCase = mockk()
     private val fetchSessionUseCase: FetchSessionUseCase = mockk()
@@ -82,6 +84,7 @@ class HomeProcessHolderTest {
             addSmokeUseCase = addSmokeUseCase,
             editSmokeUseCase = editSmokeUseCase,
             deleteSmokeUseCase = deleteSmokeUseCase,
+            setSmokeRelationshipUseCase = setSmokeRelationshipUseCase,
             fetchSmokeCountListUseCase = fetchSmokeCountListUseCase,
             fetchSmokesUseCase = fetchSmokesUseCase,
             fetchSessionUseCase = fetchSessionUseCase,
@@ -132,11 +135,11 @@ class HomeProcessHolderTest {
 
         @Test
         fun `WHEN adding smoke THEN it returns success and syncs with Wear`() = runTest {
-            coEvery { addSmokeUseCase.invoke(any()) } just Runs
+            coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess("smoke-id")
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }
@@ -193,7 +196,7 @@ class HomeProcessHolderTest {
                 createdAt = Clock.System.now() - 60.minutes,
                 targetAt = Clock.System.now() - 1.minutes,
             )
-            coEvery { addSmokeUseCase.invoke(any(), any()) } just Runs
+            coEvery { addSmokeUseCase.invoke(any(), any()) } returns "smoke-id"
             coEvery { resolveCravingUseCase.invoke(craving, CravingOutcome.POSTPONED, any()) } returns 12
 
             processHolder.processIntent(
@@ -207,17 +210,21 @@ class HomeProcessHolderTest {
         }
 
         @Test
-        fun `WHEN location preference is enabled and ready THEN add smoke captures location`() = runTest {
+        fun `WHEN location preference is enabled and ready THEN smoke is logged first then location attached`() = runTest {
             val locationSlot = slot<GeoPoint>()
             coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
             coEvery { locationCaptureService.captureCurrentLocation() } returns Coordinate(12.3, 45.6)
-            coEvery { addSmokeUseCase.invoke(any(), any()) } just Runs
+            coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
+            coEvery { editSmokeUseCase.invoke(any(), any(), any()) } just Runs
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                // Logged immediately, before the (potentially slow) location fix.
+                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess("smoke-id")
+                // Location attached asynchronously via edit.
+                awaitItem() shouldBeEqualTo HomeResult.EditSmokeSuccess
                 coVerify(exactly = 1) {
-                    addSmokeUseCase.invoke(any(), capture(locationSlot))
+                    editSmokeUseCase.invoke("smoke-id", any(), capture(locationSlot))
                 }
                 locationSlot.captured.latitude shouldBeEqualTo 12.3
                 locationSlot.captured.longitude shouldBeEqualTo 45.6
@@ -234,11 +241,11 @@ class HomeProcessHolderTest {
                     permissionGranted = false,
                     providerEnabled = true,
                 )
-                coEvery { addSmokeUseCase.invoke(any(), null) } just Runs
+                coEvery { addSmokeUseCase.invoke(any(), null) } returns "smoke-id"
 
                 processHolder.processIntent(HomeIntent.AddSmoke).test {
                     awaitItem() shouldBeEqualTo HomeResult.Loading
-                    awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                    awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess("smoke-id")
                     coVerify(exactly = 0) { locationCaptureService.captureCurrentLocation() }
                     coVerify(exactly = 1) { addSmokeUseCase.invoke(any(), null) }
                     awaitComplete()
@@ -286,12 +293,12 @@ class HomeProcessHolderTest {
 
         @Test
         fun `WHEN widget refresh fails after adding smoke THEN tracking still succeeds`() = runTest {
-            coEvery { addSmokeUseCase.invoke(any()) } just Runs
+            coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
             coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
-                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess
+                awaitItem() shouldBeEqualTo HomeResult.AddSmokeSuccess("smoke-id")
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 awaitComplete()
             }

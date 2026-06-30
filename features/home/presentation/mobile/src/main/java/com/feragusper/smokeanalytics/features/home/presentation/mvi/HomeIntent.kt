@@ -85,4 +85,28 @@ sealed class HomeIntent : MVIIntent {
      * Dismisses the craving celebration shown after a resolved wait.
      */
     data object DismissCravingCelebration : HomeIntent()
+
+    /**
+     * Opens the "what was it related to?" prompt for a given smoke (e.g. from the
+     * reminder card, for a smoke that is still untracked).
+     */
+    data class OpenRelationshipPrompt(val smokeId: String) : HomeIntent()
+
+    /**
+     * Saves the tags the user attached to a smoke (built-in keys and/or custom strings).
+     */
+    data class SaveSmokeRelationship(
+        val smokeId: String,
+        val tags: Set<String>,
+    ) : HomeIntent()
+
+    /**
+     * Marks a smoke as having no particular trigger so it stops appearing in the reminder.
+     */
+    data class SkipSmokeRelationship(val smokeId: String) : HomeIntent()
+
+    /**
+     * Closes the relationship prompt without answering; the smoke stays untracked.
+     */
+    data object DismissRelationshipPrompt : HomeIntent()
 }

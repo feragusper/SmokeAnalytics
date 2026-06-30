@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -301,6 +303,60 @@ data class StatsViewState(
                             }
                         }
                     }
+
+                    TriggerBreakdownCard(stats = stats)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TriggerBreakdownCard(stats: SmokeStats) {
+    val breakdown = stats.triggerBreakdown
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "By trigger",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            if (breakdown.isEmpty()) {
+                Text(
+                    text = "No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val max = breakdown.first().count.coerceAtLeast(1)
+                breakdown.forEach { entry ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(text = entry.label, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = entry.count.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        LinearProgressIndicator(
+                            progress = { entry.count.toFloat() / max },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(999.dp)),
+                        )
+                    }
                 }
             }
         }
@@ -315,6 +371,9 @@ private fun SummaryCards(
 ) {
     val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
     val locale = LocalLocale.current.platformLocale
+    // Only a single day shows a raw total; for week/month/year a big cumulative number
+    // (e.g. "1,000 cigarettes") is discouraging, so lead with the daily average instead.
+    val isDay = currentPeriod == StatsViewState.StatsPeriod.DAY
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -325,14 +384,13 @@ private fun SummaryCards(
         ) {
             SummaryCard(
                 modifier = Modifier.weight(1.6f),
-                title = "Total Frequency",
-                headline = when (currentPeriod) {
-                    StatsViewState.StatsPeriod.DAY -> stats.totalDay.toString()
-                    StatsViewState.StatsPeriod.WEEK -> stats.totalWeek.toString()
-                    StatsViewState.StatsPeriod.MONTH -> stats.totalMonth.toString()
-                    StatsViewState.StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
+                title = if (isDay) "Total Frequency" else averageSummary.title,
+                headline = if (isDay) {
+                    stats.totalDay.toString()
+                } else {
+                    String.format(locale, "%.1f", averageSummary.value)
                 },
-                supporting = "Cigarettes",
+                supporting = if (isDay) "Cigarettes" else averageSummary.supporting,
                 meta = selectedDate.summaryMeta(currentPeriod),
                 prominent = true,
             )
@@ -340,14 +398,18 @@ private fun SummaryCards(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SummaryCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    title = averageSummary.title,
-                    headline = String.format(locale, "%.1f", averageSummary.value),
-                    supporting = averageSummary.supporting,
-                    highlighted = true,
-                    compact = true,
-                )
+                // On a single day, the daily average is its own metric; on longer ranges the
+                // average is already the headline above, so this slot only shows the peak.
+                if (isDay) {
+                    SummaryCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = averageSummary.title,
+                        headline = String.format(locale, "%.1f", averageSummary.value),
+                        supporting = averageSummary.supporting,
+                        highlighted = true,
+                        compact = true,
+                    )
+                }
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     title = "Peak Window",
