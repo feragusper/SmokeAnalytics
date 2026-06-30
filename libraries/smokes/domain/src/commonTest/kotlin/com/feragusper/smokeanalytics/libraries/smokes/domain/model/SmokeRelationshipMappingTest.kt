@@ -60,6 +60,19 @@ class SmokeRelationshipMappingTest {
     }
 
     @Test
+    fun `GIVEN relationships THEN only Untracked is pending`() {
+        assertEquals(true, SmokeRelationship.Untracked.isPending)
+        assertEquals(false, SmokeRelationship.Skipped.isPending)
+        assertEquals(false, SmokeRelationship.Tagged(setOf("coffee")).isPending)
+    }
+
+    @Test
+    fun `GIVEN a key THEN labelFor resolves defaults and passes through unknown`() {
+        assertEquals("Coffee", SmokeTrigger.labelFor("coffee"))
+        assertEquals("my custom tag", SmokeTrigger.labelFor("my custom tag"))
+    }
+
+    @Test
     fun `GIVEN the catalog with custom triggers THEN defaults and custom are combined`() {
         val catalog = SmokeTrigger.catalog(
             customTriggers = listOf("Gaming", "coffee"),
