@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.authentication.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,7 @@ class AuthenticationActivity : ComponentActivity() {
      * This is where the UI is set up and the navigation graph is initialized.
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             // Apply the custom SmokeAnalyticsTheme for consistent theming.
