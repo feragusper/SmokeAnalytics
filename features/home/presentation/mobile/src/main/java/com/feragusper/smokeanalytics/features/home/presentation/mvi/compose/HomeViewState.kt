@@ -216,12 +216,10 @@ data class HomeViewState(
                 activeCraving = activeCraving,
                 cravingStats = cravingStats,
                 showCravingHint = showCravingHint,
-                pendingRelationshipCount = pendingRelationshipSmokes.size,
-                onAddRelationship = {
-                    pendingRelationshipSmokes.firstOrNull()?.let {
-                        intent(HomeIntent.OpenRelationshipPrompt(it.id))
-                    }
+                pendingRelationshipSmokes = pendingRelationshipSmokes.map {
+                    PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel())
                 },
+                onOpenRelationship = { id -> intent(HomeIntent.OpenRelationshipPrompt(id)) },
                 intent = intent,
             )
         }
@@ -235,8 +233,13 @@ data class HomeViewState(
 
         val promptSmokeId = relationshipPromptSmokeId
         if (promptSmokeId != null) {
+            val dateLabel = pendingRelationshipSmokes
+                .firstOrNull { it.id == promptSmokeId }
+                ?.date
+                ?.toPendingTriggerLabel()
             RelationshipPromptSheet(
                 availableTriggers = availableTriggers,
+                dateLabel = dateLabel,
                 onSave = { tags -> intent(HomeIntent.SaveSmokeRelationship(promptSmokeId, tags)) },
                 onSkip = { intent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
                 onDismiss = { intent(HomeIntent.DismissRelationshipPrompt) },
@@ -269,8 +272,8 @@ private fun HomeContent(
     activeCraving: Craving?,
     cravingStats: CravingStats?,
     showCravingHint: Boolean,
-    pendingRelationshipCount: Int,
-    onAddRelationship: () -> Unit,
+    pendingRelationshipSmokes: List<PendingTriggerSmoke>,
+    onOpenRelationship: (String) -> Unit,
     intent: (HomeIntent) -> Unit,
 ) {
     val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
@@ -347,11 +350,11 @@ private fun HomeContent(
             )
         }
         if (!isLoading && hasLoadedContent) {
-            if (pendingRelationshipCount > 0) {
+            if (pendingRelationshipSmokes.isNotEmpty()) {
                 item {
                     RelationshipReminderCard(
-                        pendingCount = pendingRelationshipCount,
-                        onAdd = onAddRelationship,
+                        pending = pendingRelationshipSmokes,
+                        onOpen = onOpenRelationship,
                     )
                 }
             }

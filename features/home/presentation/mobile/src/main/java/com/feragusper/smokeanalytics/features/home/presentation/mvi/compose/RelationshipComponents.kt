@@ -39,16 +39,21 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Home card reminding the user that some smokes (logged from the watch, or whose prompt
- * was dismissed) still have no trigger. Tapping the CTA opens the prompt for the next one.
+ * was dismissed) still have no trigger. Each carries its own date/time so the user can recall
+ * what it was about and tag them one at a time — not all at once.
  */
 @Composable
 internal fun RelationshipReminderCard(
-    pendingCount: Int,
-    onAdd: () -> Unit,
+    pending: List<PendingTriggerSmoke>,
+    onOpen: (smokeId: String) -> Unit,
 ) {
+    val shown = pending.take(MAX_PENDING_SHOWN)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
@@ -57,7 +62,7 @@ internal fun RelationshipReminderCard(
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = "What were these about?",
@@ -65,29 +70,63 @@ internal fun RelationshipReminderCard(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = if (pendingCount == 1) {
-                    "1 cigarette still needs a trigger"
+                text = if (pending.size == 1) {
+                    "1 cigarette still needs a trigger — tag it below."
                 } else {
-                    "$pendingCount cigarettes still need a trigger"
+                    "${pending.size} cigarettes still need a trigger — tag them one at a time."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
-                onClick = onAdd,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+            shown.forEach { item ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = item.label,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(onClick = { onOpen(item.id) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Add trigger")
+                    }
+                }
+            }
+            if (pending.size > shown.size) {
+                Text(
+                    text = "+${pending.size - shown.size} more",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add trigger", fontWeight = FontWeight.Bold)
             }
         }
     }
+}
+
+/** A pending (untracked) smoke shown in the reminder card: its id and a date/time label. */
+internal data class PendingTriggerSmoke(
+    val id: String,
+    val label: String,
+)
+
+private const val MAX_PENDING_SHOWN = 8
+
+/** Human label for a pending smoke, e.g. "Mon Jun 24 · 14:30". */
+internal fun Instant.toPendingTriggerLabel(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val dt = toLocalDateTime(timeZone)
+    val weekday = dt.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val month = dt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val hour = dt.hour.toString().padStart(2, '0')
+    val minute = dt.minute.toString().padStart(2, '0')
+    return "$weekday $month ${dt.dayOfMonth} · $hour:$minute"
 }
 
 /**
@@ -98,6 +137,7 @@ internal fun RelationshipReminderCard(
 @Composable
 internal fun RelationshipPromptSheet(
     availableTriggers: List<TriggerOption>,
+    dateLabel: String? = null,
     onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
@@ -131,6 +171,13 @@ internal fun RelationshipPromptSheet(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
+            dateLabel?.let {
+                Text(
+                    text = "Logged $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 text = "Tag what triggered this cigarette, or skip if it was nothing in particular.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -204,6 +251,12 @@ internal fun RelationshipPromptSheet(
 @Composable
 private fun RelationshipReminderCardPreview() {
     SmokeAnalyticsTheme {
-        RelationshipReminderCard(pendingCount = 3, onAdd = {})
+        RelationshipReminderCard(
+            pending = listOf(
+                PendingTriggerSmoke("1", "Mon Jun 24 · 14:30"),
+                PendingTriggerSmoke("2", "Mon Jun 24 · 09:05"),
+            ),
+            onOpen = {},
+        )
     }
 }

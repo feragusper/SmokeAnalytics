@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.GhostButton
+import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
@@ -15,39 +17,69 @@ import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H3
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.P
+import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
+/** A pending (untracked) smoke shown in the reminder card: its id and a human date/time label. */
+internal data class PendingTriggerSmoke(
+    val id: String,
+    val label: String,
+)
+
+private const val MAX_PENDING_SHOWN = 8
+
 /**
- * Home card reminding the user that some smokes (logged from the watch, or whose prompt
- * was dismissed) still have no trigger. Tapping the CTA opens the prompt for the next one.
+ * Home card reminding the user that some smokes (logged from the watch, or whose prompt was
+ * dismissed) still have no trigger. Each one carries its own date/time so the user can recall
+ * what it was about and tag them one at a time — not all at once.
  */
 @Composable
 internal fun RelationshipReminderCardWeb(
-    pendingCount: Int,
-    onAdd: () -> Unit,
+    pending: List<PendingTriggerSmoke>,
+    onOpen: (smokeId: String) -> Unit,
 ) {
+    val shown = pending.take(MAX_PENDING_SHOWN)
     Div(attrs = { classes(SmokeWebStyles.card) }) {
         H3 { Text("What were these about?") }
         P {
             Text(
-                if (pendingCount == 1) {
-                    "1 cigarette still needs a trigger"
+                if (pending.size == 1) {
+                    "1 cigarette still needs a trigger — tag it below."
                 } else {
-                    "$pendingCount cigarettes still need a trigger"
+                    "${pending.size} cigarettes still need a trigger — tag them one at a time."
                 }
             )
         }
-        Button(attrs = { onClick { onAdd() } }) { Text("Add trigger") }
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;margin-top:8px;") }) {
+            shown.forEach { item ->
+                Div(attrs = {
+                    attr(
+                        "style",
+                        "display:flex;align-items:center;justify-content:space-between;gap:12px;" +
+                            "padding:8px 0;border-top:1px solid var(--sa-color-surfaceVariant);",
+                    )
+                }) {
+                    Span(attrs = { attr("style", "font-size:14px;") }) { Text(item.label) }
+                    GhostButton(text = "Add trigger", onClick = { onOpen(item.id) })
+                }
+            }
+        }
+        if (pending.size > shown.size) {
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) {
+                Text("+${pending.size - shown.size} more")
+            }
+        }
     }
 }
 
 /**
- * Modal asking what a smoke was related to: multi-select chips plus an "Other" free-text
- * field. The user can save, declare "no relation", or dismiss (the smoke stays untracked).
+ * Modal asking what a single smoke was related to. Shows which cigarette is being tagged
+ * (its date/time), multi-select chips, and an "Add a tag" field. Save / No relation / dismiss.
  */
 @Composable
 internal fun RelationshipPromptDialogWeb(
     availableTriggers: List<TriggerOption>,
+    dateLabel: String?,
     onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
@@ -85,6 +117,9 @@ internal fun RelationshipPromptDialogWeb(
             }
         ) {
             H3 { Text("What was it related to?") }
+            dateLabel?.let {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Logged $it") }
+            }
             P { Text("Tag what triggered this cigarette, or skip if it was nothing in particular.") }
 
             Div(
@@ -146,15 +181,15 @@ internal fun RelationshipPromptDialogWeb(
                     }
                 }
             ) {
-                Button(attrs = { onClick { onSkip() } }) { Text("No relation") }
-                Button(
-                    attrs = {
-                        onClick {
-                            val tags = selectedKeys + listOfNotNull(draft.normalizedTag())
-                            if (tags.isNotEmpty()) onSave(tags)
-                        }
-                    }
-                ) { Text("Save") }
+                GhostButton(text = "No relation", onClick = onSkip)
+                PrimaryButton(
+                    text = "Save",
+                    enabled = selectedKeys.isNotEmpty() || draft.normalizedTag() != null,
+                    onClick = {
+                        val tags = selectedKeys + listOfNotNull(draft.normalizedTag())
+                        if (tags.isNotEmpty()) onSave(tags)
+                    },
+                )
             }
         }
     }
