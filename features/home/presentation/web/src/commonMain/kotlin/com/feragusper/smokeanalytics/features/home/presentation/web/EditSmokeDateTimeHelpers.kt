@@ -21,6 +21,16 @@ internal fun Instant.toTimeInputValue(timeZone: TimeZone): String {
     return "$hour:$minute"
 }
 
+/** Human label for a pending smoke in the reminder card, e.g. "Mon Jun 24 · 14:30". */
+internal fun Instant.toPendingTriggerLabel(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val dt = toLocalDateTime(timeZone)
+    val weekday = dt.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val month = dt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val hour = dt.hour.toString().padStart(2, '0')
+    val minute = dt.minute.toString().padStart(2, '0')
+    return "$weekday $month ${dt.dayOfMonth} · $hour:$minute"
+}
+
 internal fun dateTimeInputsToInstant(
     dateValue: String,
     timeValue: String,
