@@ -24,7 +24,7 @@ sealed interface WearSyncManager {
          * @param path The communication path.
          * @param data Optional payload (e.g. watch-captured location for an add).
          */
-        suspend fun handleWearRequest(path: String, data: ByteArray? = null)
+        suspend fun handleWearRequest(path: String, data: ByteArray?)
     }
 
     /**
@@ -37,7 +37,7 @@ sealed interface WearSyncManager {
          * @param path The communication path for the request.
          * @param data Optional payload (e.g. watch-captured location for an add).
          */
-        suspend fun sendRequestToMobile(path: String, data: ByteArray? = null)
+        suspend fun sendRequestToMobile(path: String, data: ByteArray?)
 
         /**
          * Listens for data updates from the mobile app and processes them.

@@ -371,6 +371,9 @@ private fun SummaryCards(
 ) {
     val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
     val locale = LocalLocale.current.platformLocale
+    // Only a single day shows a raw total; for week/month/year a big cumulative number
+    // (e.g. "1,000 cigarettes") is discouraging, so lead with the daily average instead.
+    val isDay = currentPeriod == StatsViewState.StatsPeriod.DAY
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -381,14 +384,13 @@ private fun SummaryCards(
         ) {
             SummaryCard(
                 modifier = Modifier.weight(1.6f),
-                title = "Total Frequency",
-                headline = when (currentPeriod) {
-                    StatsViewState.StatsPeriod.DAY -> stats.totalDay.toString()
-                    StatsViewState.StatsPeriod.WEEK -> stats.totalWeek.toString()
-                    StatsViewState.StatsPeriod.MONTH -> stats.totalMonth.toString()
-                    StatsViewState.StatsPeriod.YEAR -> stats.yearly.values.sum().toString()
+                title = if (isDay) "Total Frequency" else averageSummary.title,
+                headline = if (isDay) {
+                    stats.totalDay.toString()
+                } else {
+                    String.format(locale, "%.1f", averageSummary.value)
                 },
-                supporting = "Cigarettes",
+                supporting = if (isDay) "Cigarettes" else averageSummary.supporting,
                 meta = selectedDate.summaryMeta(currentPeriod),
                 prominent = true,
             )
@@ -396,14 +398,18 @@ private fun SummaryCards(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SummaryCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    title = averageSummary.title,
-                    headline = String.format(locale, "%.1f", averageSummary.value),
-                    supporting = averageSummary.supporting,
-                    highlighted = true,
-                    compact = true,
-                )
+                // On a single day, the daily average is its own metric; on longer ranges the
+                // average is already the headline above, so this slot only shows the peak.
+                if (isDay) {
+                    SummaryCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = averageSummary.title,
+                        headline = String.format(locale, "%.1f", averageSummary.value),
+                        supporting = averageSummary.supporting,
+                        highlighted = true,
+                        compact = true,
+                    )
+                }
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     title = "Peak Window",

@@ -42,7 +42,7 @@ class TileProcessHolder constructor(
             trySend(TileResult.RefreshStarted)
             launch {
                 try {
-                    wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                    wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES, data = null)
                     trySend(TileResult.RefreshRequestSent)
                 } catch (e: Exception) {
                     Timber.e(e, "Error requesting smoke count from mobile.")
@@ -101,7 +101,7 @@ class TileProcessHolder constructor(
 
         launch {
             try {
-                wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES)
+                wearSyncManager.sendRequestToMobile(WearPaths.REQUEST_SMOKES, data = null)
             } catch (e: Exception) {
                 Timber.e(e, "Error requesting smoke count from mobile.")
                 trySend(TileResult.Error)
