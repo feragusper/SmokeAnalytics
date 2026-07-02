@@ -7,6 +7,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -124,6 +125,7 @@ class MainActivity : ComponentActivity() {
      * setting up Jetpack Compose content and configuring the theme with [SmokeAnalyticsTheme].
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         handleLaunchIntent(intent)
         appUpdateManager = AppUpdateManagerFactory.create(applicationContext)

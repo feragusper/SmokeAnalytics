@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
 import android.os.Build
-import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -46,23 +45,16 @@ fun SmokeAnalyticsTheme(
         val activity = view.context as Activity
         SideEffect {
             val window = activity.window
-            // Allow content to extend into the system bars.
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-
+            // Edge-to-edge itself is enabled via Activity.enableEdgeToEdge(); here we only
+            // adapt the system-bar icon appearance to the theme. The deprecated
+            // setDecorFitsSystemWindows / statusBarColor / navigationBarColor APIs are no-ops
+            // (and flagged by Play) under the API 35+ edge-to-edge enforcement, so they're gone.
             val insetsController = WindowCompat.getInsetsController(window, view)
-
-            // Set the appearance of system bars (status and navigation bars) based on the theme.
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
-
-            window.statusBarColor = AndroidColor.TRANSPARENT
-            window.navigationBarColor = AndroidColor.TRANSPARENT
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 window.isNavigationBarContrastEnforced = false
             }
-
-            // Use transparent system bars for a more immersive UI experience.
-            window.setBackgroundDrawable(null)
         }
     }
 
