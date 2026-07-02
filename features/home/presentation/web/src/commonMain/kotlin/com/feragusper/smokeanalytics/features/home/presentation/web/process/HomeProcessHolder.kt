@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.web.process
 
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.RelationshipTrackingSince
 import com.feragusper.smokeanalytics.features.home.domain.financialSummary
 import com.feragusper.smokeanalytics.features.home.domain.gamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.greetingStateFor
@@ -165,7 +166,7 @@ class HomeProcessHolder(
                     val pendingRelationshipSmokes = fetchSmokesUseCase(
                         start = Clock.System.now().minus(RELATIONSHIP_LOOKBACK_DAYS.days),
                         end = Clock.System.now(),
-                    ).filter { it.relationship.isPending }
+                    ).filter { it.relationship.isPending && it.date >= RelationshipTrackingSince }
                     val activeCraving = fetchActiveCravingUseCase()
                     val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
                     val timeZone = TimeZone.currentSystemDefault()
