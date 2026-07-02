@@ -45,9 +45,12 @@
             100% { background-position: -200% 0; }
         }
 
+        /* Opacity-only: a `transform` here (even translateY(0) held by animation-fill
+           `both`) makes the page wrapper a containing block for position:fixed, which
+           trapped modals/dialogs inside the content column instead of the viewport. */
         @keyframes sa-page-enter {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
