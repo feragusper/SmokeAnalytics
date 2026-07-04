@@ -6,11 +6,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
@@ -167,10 +163,12 @@ internal fun RelationshipPromptSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // Lift content above the keyboard (and nav bar) so the text field stays fully
-                // visible and interactive when the IME is open; scroll if space gets tight.
-                .padding(WindowInsets.ime.union(WindowInsets.navigationBars).asPaddingValues())
+                // The sheet's dialog window already resizes when the IME opens — do NOT add
+                // ime padding here too (double-applying pushed the content out of the sheet
+                // entirely). Scrolling is enough: the sheet shrinks, content scrolls, and the
+                // focused text field is auto-scrolled into view.
                 .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
