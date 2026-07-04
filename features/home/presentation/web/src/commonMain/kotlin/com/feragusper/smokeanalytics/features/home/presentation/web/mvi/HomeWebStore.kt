@@ -171,12 +171,14 @@ class HomeWebStore(
             }
 
             is HomeResult.AddSmokeSuccess -> {
-                send(HomeIntent.FetchSmokes)
+                // Silent refresh: a full FetchSmokes swapped the page to its loading skeleton
+                // behind the relationship prompt.
+                send(HomeIntent.RefreshFetchSmokes)
                 previous.copy(relationshipPromptSmokeId = result.smokeId)
             }
 
             HomeResult.RelationshipUpdated -> {
-                send(HomeIntent.FetchSmokes)
+                send(HomeIntent.RefreshFetchSmokes)
                 previous.copy(relationshipPromptSmokeId = null)
             }
 

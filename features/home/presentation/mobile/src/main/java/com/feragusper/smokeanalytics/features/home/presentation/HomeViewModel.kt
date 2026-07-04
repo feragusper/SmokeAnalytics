@@ -216,8 +216,10 @@ class HomeViewModel constructor(
             }
 
             is AddSmokeSuccess -> {
-                // Re-fetch so the new smoke shows up, and open the relationship prompt for it.
-                intents().trySend(HomeIntent.FetchSmokes)
+                // Silently re-fetch so the new smoke shows up. A full FetchSmokes here put the
+                // home into its loading skeleton behind the relationship prompt, which read as
+                // "something is happening" while the user was just picking a tag.
+                intents().trySend(HomeIntent.RefreshFetchSmokes)
                 previous.copy(
                     displayLoading = false,
                     displayRefreshLoading = false,
@@ -227,8 +229,8 @@ class HomeViewModel constructor(
             }
 
             HomeResult.RelationshipUpdated -> {
-                // Relationship saved/skipped: refresh the pending list and close the prompt.
-                intents().trySend(HomeIntent.FetchSmokes)
+                // Relationship saved/skipped: silently refresh the pending list and close the prompt.
+                intents().trySend(HomeIntent.RefreshFetchSmokes)
                 previous.copy(relationshipPromptSmokeId = null)
             }
 

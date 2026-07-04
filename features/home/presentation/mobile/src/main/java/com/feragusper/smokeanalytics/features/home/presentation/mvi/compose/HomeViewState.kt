@@ -129,7 +129,8 @@ data class HomeViewState(
     internal val cravingCelebration: CravingCelebration? = null,
     internal val pendingRelationshipSmokes: List<Smoke> = emptyList(),
     internal val relationshipPromptSmokeId: String? = null,
-    internal val availableTriggers: List<TriggerOption> = emptyList(),
+    /** Null until the first fetch resolves — the prompt shows a loading state meanwhile. */
+    internal val availableTriggers: List<TriggerOption>? = null,
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?

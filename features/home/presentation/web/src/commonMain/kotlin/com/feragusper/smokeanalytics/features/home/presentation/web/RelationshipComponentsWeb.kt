@@ -8,7 +8,6 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import org.jetbrains.compose.web.attributes.InputType
@@ -78,15 +77,16 @@ internal fun RelationshipReminderCardWeb(
  */
 @Composable
 internal fun RelationshipPromptDialogWeb(
-    availableTriggers: List<TriggerOption>,
+    availableTriggers: List<TriggerOption>?,
     dateLabel: String?,
     onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val options = remember(availableTriggers) {
-        if (availableTriggers.isEmpty()) SmokeTrigger.defaultOptions() else availableTriggers
-    }
+    // Freeze the catalog the moment it's loaded (keyed on loaded-ness, not the list) so
+    // chips don't pop in mid-dialog when a background refresh lands; while null the dialog
+    // shows a loading row instead of a partial default list.
+    val options = remember(availableTriggers != null) { availableTriggers }
     var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
     var draft by remember { mutableStateOf("") }
 
@@ -124,7 +124,9 @@ internal fun RelationshipPromptDialogWeb(
             }
             P { Text("Tag what triggered this cigarette, or skip if it was nothing in particular.") }
 
-            Div(
+            if (options == null) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Loading your tags…") }
+            } else Div(
                 attrs = {
                     style {
                         property("display", "flex")

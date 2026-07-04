@@ -72,7 +72,10 @@ class SmokeRepositoryImpl constructor(
             val document = smokesQuery().document(id)
             // Default source: server when online, local cache when offline.
             val preservedLocation = location ?: document.get().await().getGeoPoint()
-            document.set(smokePayload(date, preservedLocation))
+            // Merge so the relationship fields survive: the async location attach after an
+            // add runs seconds later and a full set() here was wiping a tag/skip the user
+            // had already saved, putting the smoke back in the reminder card.
+            document.set(smokePayload(date, preservedLocation), SetOptions.merge())
         }
     }
 
