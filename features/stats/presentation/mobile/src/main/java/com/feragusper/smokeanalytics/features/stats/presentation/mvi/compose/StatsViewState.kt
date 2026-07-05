@@ -10,9 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -335,33 +339,75 @@ private fun TriggerBreakdownCard(stats: SmokeStats) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                val max = breakdown.first().count.coerceAtLeast(1)
-                breakdown.forEach { entry ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(text = entry.label, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                text = entry.count.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
+                val total = breakdown.sumOf { it.count }.coerceAtLeast(1)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Canvas(modifier = Modifier.size(140.dp)) {
+                        var startAngle = -90f
+                        breakdown.forEachIndexed { index, entry ->
+                            val sweep = entry.count.toFloat() / total * 360f
+                            drawArc(
+                                color = pieColors[index % pieColors.size],
+                                startAngle = startAngle,
+                                sweepAngle = sweep,
+                                useCenter = true,
                             )
+                            startAngle += sweep
                         }
-                        LinearProgressIndicator(
-                            progress = { entry.count.toFloat() / max },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(999.dp)),
-                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        breakdown.forEachIndexed { index, entry ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(pieColors[index % pieColors.size]),
+                                )
+                                Text(
+                                    text = entry.label,
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = "${entry.count} (${entry.count * 100 / total}%)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+// Teal ramp shared with the web pie so both platforms read the same.
+private val pieColors = listOf(
+    Color(0xFF006A6A),
+    Color(0xFF1D7B7B),
+    Color(0xFF3A8C8C),
+    Color(0xFF57A0A0),
+    Color(0xFF74B3B3),
+    Color(0xFF91C6C6),
+    Color(0xFFAED9D9),
+    Color(0xFF4A6363),
+    Color(0xFF6D8686),
+    Color(0xFF9AB0B0),
+)
 
 @Composable
 private fun SummaryCards(
