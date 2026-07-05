@@ -83,4 +83,31 @@ class SmokeRelationshipMappingTest {
         assertEquals(false, catalog.any { it.key == "phone" })
         assertEquals(true, catalog.any { it.key == "Gaming" && it.isCustom })
     }
+
+    @Test
+    fun `GIVEN icon overrides THEN they replace defaults and decorate custom tags`() {
+        val catalog = SmokeTrigger.catalog(
+            customTriggers = listOf("Gaming"),
+            iconOverrides = mapOf("coffee" to "🔥", "Gaming" to "🎮", "boredom" to "  "),
+        )
+        // Override replaces the built-in default icon.
+        assertEquals("🔥", catalog.first { it.key == "coffee" }.icon)
+        // Blank override falls back to the default icon.
+        assertEquals(SmokeTrigger.BOREDOM.defaultIcon, catalog.first { it.key == "boredom" }.icon)
+        // Untouched built-ins keep their default; custom tags get theirs from the override.
+        assertEquals(SmokeTrigger.ALCOHOL.defaultIcon, catalog.first { it.key == "alcohol" }.icon)
+        assertEquals("🎮", catalog.first { it.key == "Gaming" }.icon)
+    }
+
+    @Test
+    fun `GIVEN an option THEN display prefixes the icon when present`() {
+        assertEquals(
+            "🎮 Gaming",
+            TriggerOption(key = "Gaming", label = "Gaming", isCustom = true, icon = "🎮").display,
+        )
+        assertEquals(
+            "Gaming",
+            TriggerOption(key = "Gaming", label = "Gaming", isCustom = true, icon = null).display,
+        )
+    }
 }

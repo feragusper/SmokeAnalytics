@@ -34,6 +34,7 @@ class UserPreferencesRepositoryImpl(
                 activeGoalMetricValue = preferences.activeGoal?.metricValue,
                 customTriggers = preferences.customTriggers,
                 hiddenDefaultTriggers = preferences.hiddenDefaultTriggers.toList(),
+                triggerIcons = preferences.triggerIcons,
             )
         )
     }
@@ -60,6 +61,7 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         activeGoalMetricValue = numberOrNull(UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE)?.toDouble(),
         customTriggers = getOrNull<List<String>>(UserPreferencesEntity.CUSTOM_TRIGGERS).orEmpty(),
         hiddenDefaultTriggers = getOrNull<List<String>>(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
+        triggerIcons = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_ICONS).orEmpty(),
     )
 }
 

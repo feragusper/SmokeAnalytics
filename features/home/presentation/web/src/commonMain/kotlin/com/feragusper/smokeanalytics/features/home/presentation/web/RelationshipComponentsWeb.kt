@@ -157,7 +157,7 @@ internal fun RelationshipPromptDialogWeb(
                                 }
                             }
                         }
-                    ) { Text(option.label) }
+                    ) { Text(option.display) }
                 }
             }
 

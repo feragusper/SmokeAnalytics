@@ -93,6 +93,7 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.ACTIVE_GOAL_METRIC_VALUE to activeGoal?.metricValue,
         UserPreferencesEntity.CUSTOM_TRIGGERS to customTriggers,
         UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS to hiddenDefaultTriggers.toList(),
+        UserPreferencesEntity.TRIGGER_ICONS to triggerIcons,
     )
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
@@ -126,12 +127,17 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         )?.toDouble(),
         customTriggers = stringListOrNull(UserPreferencesEntity.CUSTOM_TRIGGERS).orEmpty(),
         hiddenDefaultTriggers = stringListOrNull(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
+        triggerIcons = stringMapOrNull(UserPreferencesEntity.TRIGGER_ICONS).orEmpty(),
     )
 }
 
 @Suppress("UNCHECKED_CAST")
 private fun DocumentSnapshot.stringListOrNull(field: String): List<String>? =
     runCatching { get(field) as? List<String> }.getOrNull()
+
+@Suppress("UNCHECKED_CAST")
+private fun DocumentSnapshot.stringMapOrNull(field: String): Map<String, String>? =
+    runCatching { get(field) as? Map<String, String> }.getOrNull()
 
 private object LegacyUserPreferencesFields {
     const val PACK_PRICE = "a"

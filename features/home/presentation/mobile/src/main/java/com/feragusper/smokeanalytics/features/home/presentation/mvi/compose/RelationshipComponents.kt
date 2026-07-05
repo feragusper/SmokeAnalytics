@@ -214,7 +214,7 @@ internal fun RelationshipPromptSheet(
                                     selectedKeys + option.key
                                 }
                             },
-                            label = { Text(option.label) },
+                            label = { Text(option.display) },
                         )
                     }
                 }
