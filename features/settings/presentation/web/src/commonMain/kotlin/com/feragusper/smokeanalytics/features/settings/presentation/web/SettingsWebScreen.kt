@@ -653,8 +653,13 @@ private fun ManageTriggersPanelWeb(
             Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Built-in") }
             SmokeTrigger.defaultOptions().forEach { option ->
                 val visible = option.key !in preferences.hiddenDefaultTriggers
-                Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:8px;") }) {
-                    Span { Text(option.label) }
+                Div(attrs = { attr("style", "display:flex;align-items:center;gap:10px;") }) {
+                    TriggerIconInputWeb(
+                        icon = preferences.triggerIcons[option.key] ?: option.icon.orEmpty(),
+                        enabled = !displayLoading,
+                        onCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
+                    )
+                    Span(attrs = { attr("style", "flex:1;") }) { Text(option.label) }
                     GhostButton(
                         text = if (visible) "Hide" else "Show",
                         enabled = !displayLoading,
@@ -673,8 +678,13 @@ private fun ManageTriggersPanelWeb(
             if (preferences.customTriggers.isNotEmpty()) {
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Your tags") }
                 preferences.customTriggers.forEach { tag ->
-                    Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:8px;") }) {
-                        Span { Text(tag) }
+                    Div(attrs = { attr("style", "display:flex;align-items:center;gap:10px;") }) {
+                        TriggerIconInputWeb(
+                            icon = preferences.triggerIcons[tag].orEmpty(),
+                            enabled = !displayLoading,
+                            onCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
+                        )
+                        Span(attrs = { attr("style", "flex:1;") }) { Text(tag) }
                         GhostButton(
                             text = "Remove",
                             enabled = !displayLoading,
@@ -713,3 +723,45 @@ private fun ManageTriggersPanelWeb(
         }
     }
 }
+
+/** Small per-row editor for a trigger's emoji; commits on change (blur/enter). */
+@Composable
+private fun TriggerIconInputWeb(
+    icon: String,
+    enabled: Boolean,
+    onCommit: (String) -> Unit,
+) {
+    var draft by remember(icon) { mutableStateOf(icon) }
+    Input(
+        type = InputType.Text,
+        attrs = {
+            value(draft)
+            if (!enabled) disabled()
+            onInput { draft = it.value.take(MAX_TRIGGER_ICON_LENGTH) }
+            onChange {
+                val trimmed = draft.trim()
+                if (trimmed != icon) onCommit(trimmed)
+            }
+            attr("aria-label", "Trigger icon")
+            style {
+                property("width", "44px")
+                property("text-align", "center")
+                property("box-sizing", "border-box")
+                property("padding", "6px 4px")
+                property("background", "var(--sa-color-surface-strong)")
+                property("color", "var(--sa-color-onSurface)")
+                property("border", "1px solid var(--sa-color-outline)")
+                property("border-radius", "8px")
+            }
+        },
+    )
+}
+
+/** Sets/clears the emoji for a trigger key (blank clears the override). */
+private fun UserPreferences.withTriggerIcon(key: String, icon: String): UserPreferences =
+    copy(
+        triggerIcons = if (icon.isBlank()) triggerIcons - key else triggerIcons + (key to icon),
+    )
+
+// Emoji can span several UTF-16 units (e.g. family emoji); cap generously.
+private const val MAX_TRIGGER_ICON_LENGTH = 16

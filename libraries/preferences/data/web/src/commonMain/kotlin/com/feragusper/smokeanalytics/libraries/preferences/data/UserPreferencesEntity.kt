@@ -19,6 +19,7 @@ data class UserPreferencesEntity(
     val activeGoalMetricValue: Double? = null,
     val customTriggers: List<String> = emptyList(),
     val hiddenDefaultTriggers: List<String> = emptyList(),
+    val triggerIcons: Map<String, String> = emptyMap(),
 ) {
     fun toDomain(): UserPreferences = UserPreferences(
         packPrice = packPrice,
@@ -35,6 +36,7 @@ data class UserPreferencesEntity(
         ),
         customTriggers = customTriggers,
         hiddenDefaultTriggers = hiddenDefaultTriggers.toSet(),
+        triggerIcons = triggerIcons,
     )
 
     companion object {
@@ -51,5 +53,6 @@ data class UserPreferencesEntity(
         const val ACTIVE_GOAL_METRIC_VALUE = "activeGoalMetricValue"
         const val CUSTOM_TRIGGERS = "customTriggers"
         const val HIDDEN_DEFAULT_TRIGGERS = "hiddenDefaultTriggers"
+        const val TRIGGER_ICONS = "triggerIcons"
     }
 }

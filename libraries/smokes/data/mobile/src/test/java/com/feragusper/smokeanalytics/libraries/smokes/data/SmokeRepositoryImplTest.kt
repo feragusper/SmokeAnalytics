@@ -201,7 +201,8 @@ class SmokeRepositoryImplTest {
             every { documentRef.path } returns "$USERS/$uid/$SMOKES/$id"
             every { documentRef.get() } answers { taskOf(mockDocumentSnapshot(id, date)) }
 
-            every { documentRef.set(any<Map<String, Any?>>()) } answers {
+            // editSmoke merges (relationship fields must survive), so it's the 2-arg set.
+            every { documentRef.set(any<Map<String, Any?>>(), any()) } answers {
                 mockk<Task<Void>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true

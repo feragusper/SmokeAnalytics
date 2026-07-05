@@ -237,6 +237,7 @@ class HomeProcessHolder constructor(
                         availableTriggers = SmokeTrigger.catalog(
                             customTriggers = preferences.customTriggers,
                             hiddenDefaultKeys = preferences.hiddenDefaultTriggers,
+                            iconOverrides = preferences.triggerIcons,
                         ),
                     )
                 )

@@ -60,7 +60,8 @@ data class HomeViewState(
     val cravingCelebration: CravingCelebration? = null,
     val pendingRelationshipSmokes: List<Smoke> = emptyList(),
     val relationshipPromptSmokeId: String? = null,
-    val availableTriggers: List<TriggerOption> = emptyList(),
+    /** Null until the first fetch resolves — the prompt shows a loading state meanwhile. */
+    val availableTriggers: List<TriggerOption>? = null,
 ) {
 
     /**

@@ -85,10 +85,11 @@ class SmokeRepositoryImpl(
      * @see SmokeRepository.editSmoke
      */
     override suspend fun editSmoke(id: String, date: Instant, location: GeoPoint?) {
-        val preservedLocation = location ?: smokesCollection()
-            .document(id)
-            .get()
-            .getGeoPoint()
+        // Always read the existing doc: besides preserving the location when none is given,
+        // the relationship fields must survive an edit (a full set() without them was wiping
+        // a tag/skip the user had already saved).
+        val snapshot = smokesCollection().document(id).get()
+        val preservedLocation = location ?: snapshot.getGeoPoint()
 
         smokesCollection()
             .document(id)
@@ -97,6 +98,9 @@ class SmokeRepositoryImpl(
                     timestampMillis = date.toEpochMilliseconds().toDouble(),
                     latitude = preservedLocation?.latitude,
                     longitude = preservedLocation?.longitude,
+                    triggers = snapshot.getOrNull<List<String>>(SmokeEntity.Fields.TRIGGERS),
+                    triggerNote = snapshot.getOrNull<String>(SmokeEntity.Fields.TRIGGER_NOTE),
+                    relationshipSkipped = snapshot.getOrNull<Boolean>(SmokeEntity.Fields.RELATIONSHIP_SKIPPED),
                 )
             )
     }

@@ -14,6 +14,8 @@ data class UserPreferences(
     val customTriggers: List<String> = emptyList(),
     /** Built-in trigger keys the user hid from the prompt. */
     val hiddenDefaultTriggers: Set<String> = emptySet(),
+    /** Emoji per trigger key: overrides a built-in's default icon or gives a custom tag one. */
+    val triggerIcons: Map<String, String> = emptyMap(),
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

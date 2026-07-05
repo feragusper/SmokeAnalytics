@@ -6,11 +6,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
@@ -20,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -42,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import kotlinx.datetime.Instant
@@ -142,23 +138,22 @@ internal fun Instant.toPendingTriggerLabel(timeZone: TimeZone = TimeZone.current
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RelationshipPromptSheet(
-    availableTriggers: List<TriggerOption>,
+    availableTriggers: List<TriggerOption>?,
     dateLabel: String? = null,
     onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    // Chips come from the catalog (defaults + custom). The user can also type an ad-hoc
-    // tag, which is added to the chip row for this smoke.
-    val catalog = remember(availableTriggers) {
-        if (availableTriggers.isEmpty()) SmokeTrigger.defaultOptions() else availableTriggers
-    }
+    // Freeze the catalog the moment it's loaded (keyed on loaded-ness, not the list) so
+    // chips don't pop in mid-dialog when a background refresh lands; while it's still
+    // null the sheet shows a loading indicator instead of a partial default list.
+    val catalog = remember(availableTriggers != null) { availableTriggers }
     var adHoc by remember { mutableStateOf(listOf<TriggerOption>()) }
     var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
     var draft by remember { mutableStateOf("") }
 
-    val options = catalog + adHoc.filter { extra -> catalog.none { it.key == extra.key } }
+    val options = catalog?.plus(adHoc.filter { extra -> catalog.none { it.key == extra.key } })
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -167,10 +162,12 @@ internal fun RelationshipPromptSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // Lift content above the keyboard (and nav bar) so the text field stays fully
-                // visible and interactive when the IME is open; scroll if space gets tight.
-                .padding(WindowInsets.ime.union(WindowInsets.navigationBars).asPaddingValues())
+                // The sheet's dialog window already resizes when the IME opens — do NOT add
+                // ime padding here too (double-applying pushed the content out of the sheet
+                // entirely). Scrolling is enough: the sheet shrinks, content scrolls, and the
+                // focused text field is auto-scrolled into view.
                 .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -192,23 +189,34 @@ internal fun RelationshipPromptSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                options.forEach { option ->
-                    FilterChip(
-                        selected = option.key in selectedKeys,
-                        onClick = {
-                            selectedKeys = if (option.key in selectedKeys) {
-                                selectedKeys - option.key
-                            } else {
-                                selectedKeys + option.key
-                            }
-                        },
-                        label = { Text(option.label) },
-                    )
+            if (options == null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                }
+            } else {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    options.forEach { option ->
+                        FilterChip(
+                            selected = option.key in selectedKeys,
+                            onClick = {
+                                selectedKeys = if (option.key in selectedKeys) {
+                                    selectedKeys - option.key
+                                } else {
+                                    selectedKeys + option.key
+                                }
+                            },
+                            label = { Text(option.display) },
+                        )
+                    }
                 }
             }
             OutlinedTextField(

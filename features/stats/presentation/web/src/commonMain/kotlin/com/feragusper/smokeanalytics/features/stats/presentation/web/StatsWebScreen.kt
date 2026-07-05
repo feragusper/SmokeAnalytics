@@ -27,7 +27,6 @@ import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Text
 
@@ -317,25 +316,82 @@ private fun TriggerBreakdownCardWeb(
                     Text("No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.")
                 }
             } else {
-                val max = breakdown.first().count.coerceAtLeast(1)
-                breakdown.forEach { entry ->
-                    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:4px;") }) {
-                        Div(attrs = { attr("style", "display:flex;justify-content:space-between;") }) {
-                            Span { Text(entry.label) }
-                            Span(attrs = { attr("style", "font-weight:700;") }) { Text(entry.count.toString()) }
-                        }
-                        Div(attrs = { attr("style", "height:6px;border-radius:999px;background:var(--sa-color-surface-strong);overflow:hidden;") }) {
-                            Div(attrs = {
-                                val pct = (entry.count * 100 / max)
-                                attr("style", "height:6px;width:$pct%;border-radius:999px;background:var(--sa-color-primary);")
-                            }) {}
-                        }
-                    }
+                Div(attrs = { attr("style", "max-width:420px;margin:0 auto;") }) {
+                    Canvas(attrs = {
+                        id(TRIGGER_PIE_CANVAS_ID)
+                        attr("width", "420")
+                        attr("height", "320")
+                    })
                 }
+                PieChartJs(
+                    canvasId = TRIGGER_PIE_CANVAS_ID,
+                    labels = breakdown.map { it.label },
+                    values = breakdown.map { it.count },
+                )
             }
         }
     }
 }
+
+private const val TRIGGER_PIE_CANVAS_ID = "trigger-breakdown-pie"
+
+@Composable
+private fun PieChartJs(
+    canvasId: String,
+    labels: List<String>,
+    values: List<Int>,
+) {
+    val chartHolder = remember { mutableStateOf<Chart?>(null) }
+
+    DisposableEffect(canvasId, labels, values) {
+        chartHolder.value?.destroy()
+
+        val ctx = canvas2dContext(canvasId)
+
+        val config = jsObject()
+        config["type"] = "pie"
+
+        val dataset = jsObject()
+        dataset["data"] = values.map { it as Number }.toTypedArray()
+        dataset["backgroundColor"] = PIE_COLORS
+        dataset["borderWidth"] = 1
+
+        val dataObj = jsObject()
+        dataObj["labels"] = labels.toTypedArray()
+        dataObj["datasets"] = arrayOf(dataset)
+        config["data"] = dataObj
+
+        val legend = jsObject()
+        legend["position"] = "right"
+        val plugins = jsObject()
+        plugins["legend"] = legend
+        val options = jsObject()
+        options["responsive"] = true
+        options["maintainAspectRatio"] = false
+        options["plugins"] = plugins
+        config["options"] = options
+
+        chartHolder.value = Chart(ctx, config)
+
+        onDispose {
+            chartHolder.value?.destroy()
+            chartHolder.value = null
+        }
+    }
+}
+
+private val PIE_COLORS = arrayOf(
+    "#006A6A",
+    "#1D7B7B",
+    "#3A8C8C",
+    "#57A0A0",
+    "#74B3B3",
+    "#91C6C6",
+    "#AED9D9",
+    "#4A6363",
+    "#6D8686",
+    "#9AB0B0",
+)
 
 private fun StatsPeriod.label(): String = when (this) {
     StatsPeriod.DAY -> "Day"

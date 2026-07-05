@@ -36,6 +36,7 @@ class HomeViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { processHolder.processIntent(HomeIntent.FetchSmokes) } returns intentResults
+        every { processHolder.processIntent(HomeIntent.RefreshFetchSmokes) } returns intentResults
         viewModel = HomeViewModel(processHolder)
     }
 
