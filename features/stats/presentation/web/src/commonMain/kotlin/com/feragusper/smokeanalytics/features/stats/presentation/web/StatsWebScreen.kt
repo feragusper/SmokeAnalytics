@@ -323,9 +323,11 @@ private fun TriggerBreakdownCardWeb(
                         attr("height", "320")
                     })
                 }
+                val total = breakdown.sumOf { it.count }.coerceAtLeast(1)
                 PieChartJs(
                     canvasId = TRIGGER_PIE_CANVAS_ID,
-                    labels = breakdown.map { it.label },
+                    // Bake the share into the legend label so every slice's % is visible.
+                    labels = breakdown.map { "${it.label} — ${it.count * 100 / total}%" },
                     values = breakdown.map { it.count },
                 )
             }
