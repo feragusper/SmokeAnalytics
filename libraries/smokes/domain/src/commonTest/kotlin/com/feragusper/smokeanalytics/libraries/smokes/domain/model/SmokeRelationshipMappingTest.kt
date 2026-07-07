@@ -100,6 +100,14 @@ class SmokeRelationshipMappingTest {
     }
 
     @Test
+    fun `GIVEN the emoji palette THEN it is distinct and covers every default icon`() {
+        assertEquals(TriggerEmojiPalette.size, TriggerEmojiPalette.distinct().size)
+        SmokeTrigger.entries.forEach { trigger ->
+            assertEquals(true, trigger.defaultIcon in TriggerEmojiPalette)
+        }
+    }
+
+    @Test
     fun `GIVEN an option THEN display prefixes the icon when present`() {
         assertEquals(
             "🎮 Gaming",

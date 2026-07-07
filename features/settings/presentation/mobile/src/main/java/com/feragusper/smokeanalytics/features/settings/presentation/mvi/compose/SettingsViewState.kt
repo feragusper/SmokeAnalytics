@@ -11,6 +11,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
@@ -68,6 +68,7 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import com.valentinilk.shimmer.shimmer
 
@@ -1160,7 +1161,7 @@ private fun ManageTriggersSection(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TriggerIconField(
+                TriggerIconPicker(
                     icon = preferences.triggerIcons[option.key] ?: option.icon.orEmpty(),
                     enabled = enabled,
                     onCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
@@ -1193,7 +1194,7 @@ private fun ManageTriggersSection(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TriggerIconField(
+                    TriggerIconPicker(
                         icon = preferences.triggerIcons[tag].orEmpty(),
                         enabled = enabled,
                         onCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
@@ -1228,25 +1229,59 @@ private fun ManageTriggersSection(
     }
 }
 
-/** Small per-row editor for a trigger's emoji; commits when the field loses focus. */
+/** Per-row emoji picker for a trigger: tap the icon, choose from a curated grid. */
 @Composable
-private fun TriggerIconField(
+private fun TriggerIconPicker(
     icon: String,
     enabled: Boolean,
     onCommit: (String) -> Unit,
 ) {
-    var draft by remember(icon) { mutableStateOf(icon) }
-    OutlinedTextField(
-        value = draft,
-        onValueChange = { draft = it.take(MAX_TRIGGER_ICON_LENGTH) },
-        modifier = Modifier
-            .width(64.dp)
-            .onFocusChanged { state ->
-                if (!state.isFocused && draft.trim() != icon) onCommit(draft.trim())
+    var open by remember { mutableStateOf(false) }
+    TextButton(onClick = { open = true }, enabled = enabled) {
+        Text(
+            text = icon.ifBlank { "＋" },
+            style = MaterialTheme.typography.titleLarge,
+        )
+    }
+    if (open) {
+        AlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text("Pick an icon") },
+            text = {
+                FlowRow(
+                    modifier = Modifier
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    TriggerEmojiPalette.forEach { emoji ->
+                        Text(
+                            text = emoji,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable {
+                                    onCommit(emoji)
+                                    open = false
+                                }
+                                .padding(10.dp),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+                }
             },
-        singleLine = true,
-        enabled = enabled,
-    )
+            confirmButton = {
+                // Clears the override: built-ins fall back to their default icon.
+                TextButton(onClick = {
+                    onCommit("")
+                    open = false
+                }) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { open = false }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 /** Sets/clears the emoji for a trigger key (blank clears the override). */
@@ -1254,6 +1289,3 @@ private fun UserPreferences.withTriggerIcon(key: String, icon: String): UserPref
     copy(
         triggerIcons = if (icon.isBlank()) triggerIcons - key else triggerIcons + (key to icon),
     )
-
-// Emoji can span several UTF-16 units (e.g. family emoji); cap generously.
-private const val MAX_TRIGGER_ICON_LENGTH = 16
