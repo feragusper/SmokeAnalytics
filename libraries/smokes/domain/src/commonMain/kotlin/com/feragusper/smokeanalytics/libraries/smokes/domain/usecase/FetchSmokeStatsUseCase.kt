@@ -21,6 +21,7 @@ class FetchSmokeStatsUseCase(
         periodType: PeriodType,
         dayStartHour: Int = 0,
         bedtimeHour: Int = 22,
+        triggerLabelOverrides: Map<String, String> = emptyMap(),
     ): SmokeStats {
         val (start, endExclusive) = when (periodType) {
             PeriodType.DAY -> {
@@ -72,6 +73,7 @@ class FetchSmokeStatsUseCase(
             dayStartHour = dayStartHour,
             bedtimeHour = bedtimeHour,
             periodType = periodType.toSmokeStatsPeriod(),
+            triggerLabelOverrides = triggerLabelOverrides,
         )
     }
 

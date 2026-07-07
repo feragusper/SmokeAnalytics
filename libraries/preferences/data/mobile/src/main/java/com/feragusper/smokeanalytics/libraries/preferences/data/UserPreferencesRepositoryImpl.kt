@@ -94,6 +94,7 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.CUSTOM_TRIGGERS to customTriggers,
         UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS to hiddenDefaultTriggers.toList(),
         UserPreferencesEntity.TRIGGER_ICONS to triggerIcons,
+        UserPreferencesEntity.TRIGGER_LABELS to triggerLabels,
     )
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
@@ -128,6 +129,7 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         customTriggers = stringListOrNull(UserPreferencesEntity.CUSTOM_TRIGGERS).orEmpty(),
         hiddenDefaultTriggers = stringListOrNull(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
         triggerIcons = stringMapOrNull(UserPreferencesEntity.TRIGGER_ICONS).orEmpty(),
+        triggerLabels = stringMapOrNull(UserPreferencesEntity.TRIGGER_LABELS).orEmpty(),
     )
 }
 

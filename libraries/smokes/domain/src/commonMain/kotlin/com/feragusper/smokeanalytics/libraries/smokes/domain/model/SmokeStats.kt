@@ -52,6 +52,7 @@ data class SmokeStats(
             dayStartHour: Int = 0,
             bedtimeHour: Int = 22,
             periodType: SelectionPeriod = SelectionPeriod.MONTH,
+            triggerLabelOverrides: Map<String, String> = emptyMap(),
         ): SmokeStats {
             val monthStart = LocalDate(year, month, 1)
             val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
@@ -165,7 +166,14 @@ data class SmokeStats(
             }
             val triggerBreakdown = tagCounts.entries
                 .sortedByDescending { it.value }
-                .map { TriggerCount(key = it.key, label = SmokeTrigger.labelFor(it.key), count = it.value) }
+                .map {
+                    TriggerCount(
+                        key = it.key,
+                        label = triggerLabelOverrides[it.key]?.trim()?.takeIf(String::isNotEmpty)
+                            ?: SmokeTrigger.labelFor(it.key),
+                        count = it.value,
+                    )
+                }
 
             return SmokeStats(
                 daily = dailyStats,

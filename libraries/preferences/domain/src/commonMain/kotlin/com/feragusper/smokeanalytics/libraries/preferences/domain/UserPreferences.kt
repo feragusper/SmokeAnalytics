@@ -16,6 +16,8 @@ data class UserPreferences(
     val hiddenDefaultTriggers: Set<String> = emptySet(),
     /** Emoji per trigger key: overrides a built-in's default icon or gives a custom tag one. */
     val triggerIcons: Map<String, String> = emptyMap(),
+    /** Display name per trigger key: renames a tag without changing the key stored on smokes. */
+    val triggerLabels: Map<String, String> = emptyMap(),
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0
