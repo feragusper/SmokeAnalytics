@@ -15,8 +15,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -345,16 +356,39 @@ private fun TriggerBreakdownCard(stats: SmokeStats) {
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val textMeasurer = rememberTextMeasurer()
                     Canvas(modifier = Modifier.size(140.dp)) {
                         var startAngle = -90f
                         breakdown.forEachIndexed { index, entry ->
                             val sweep = entry.count.toFloat() / total * 360f
+                            val sliceColor = pieColors[index % pieColors.size]
                             drawArc(
-                                color = pieColors[index % pieColors.size],
+                                color = sliceColor,
                                 startAngle = startAngle,
                                 sweepAngle = sweep,
                                 useCenter = true,
                             )
+                            // Print the share on slices wide enough to fit the label.
+                            if (sweep >= 30f) {
+                                val midRad = (startAngle + sweep / 2f) * (PI.toFloat() / 180f)
+                                val radius = size.minDimension / 2f * 0.62f
+                                val pct = (entry.count * 100f / total).roundToInt()
+                                val layout = textMeasurer.measure(
+                                    text = AnnotatedString("$pct%"),
+                                    style = TextStyle(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (sliceColor.luminance() > 0.5f) Color(0xFF10343A) else Color.White,
+                                    ),
+                                )
+                                drawText(
+                                    textLayoutResult = layout,
+                                    topLeft = Offset(
+                                        center.x + radius * cos(midRad) - layout.size.width / 2f,
+                                        center.y + radius * sin(midRad) - layout.size.height / 2f,
+                                    ),
+                                )
+                            }
                             startAngle += sweep
                         }
                     }

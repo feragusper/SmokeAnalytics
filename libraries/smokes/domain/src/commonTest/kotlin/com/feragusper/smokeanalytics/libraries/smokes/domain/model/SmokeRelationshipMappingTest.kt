@@ -100,6 +100,27 @@ class SmokeRelationshipMappingTest {
     }
 
     @Test
+    fun `GIVEN label overrides THEN they rename built-ins and custom tags without changing keys`() {
+        val catalog = SmokeTrigger.catalog(
+            customTriggers = listOf("Gaming"),
+            labelOverrides = mapOf("coffee" to "Mate", "Gaming" to "Play", "boredom" to "  "),
+        )
+        assertEquals("Mate", catalog.first { it.key == "coffee" }.label)
+        assertEquals("Play", catalog.first { it.key == "Gaming" }.label)
+        // Blank override falls back to the original name; keys never change.
+        assertEquals(SmokeTrigger.BOREDOM.defaultLabel, catalog.first { it.key == "boredom" }.label)
+        assertEquals(true, catalog.any { it.key == "Gaming" })
+    }
+
+    @Test
+    fun `GIVEN the emoji palette THEN it is distinct and covers every default icon`() {
+        assertEquals(TriggerEmojiPalette.size, TriggerEmojiPalette.distinct().size)
+        SmokeTrigger.entries.forEach { trigger ->
+            assertEquals(true, trigger.defaultIcon in TriggerEmojiPalette)
+        }
+    }
+
+    @Test
     fun `GIVEN an option THEN display prefixes the icon when present`() {
         assertEquals(
             "🎮 Gaming",

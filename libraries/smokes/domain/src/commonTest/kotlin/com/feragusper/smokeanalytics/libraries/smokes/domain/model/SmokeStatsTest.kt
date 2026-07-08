@@ -287,4 +287,24 @@ class SmokeStatsTest {
         assertEquals("Coffee", breakdown.first().label)
         assertEquals("my custom tag", breakdown.first { it.key == "my custom tag" }.label)
     }
+
+    @Test
+    fun `GIVEN label overrides WHEN from is called THEN the breakdown uses the renamed labels`() {
+        val smokes = listOf(
+            Smoke("1", Instant.parse("2023-03-01T10:00:00Z"), relationship = SmokeRelationship.Tagged(setOf("coffee"))),
+        )
+
+        val breakdown = SmokeStats.from(
+            smokes = smokes,
+            year = 2023,
+            month = 3,
+            day = null,
+            timeZone = tz,
+            now = Instant.parse("2023-03-31T00:00:00Z"),
+            triggerLabelOverrides = mapOf("coffee" to "Mate"),
+        ).triggerBreakdown
+
+        assertEquals("Mate", breakdown.first().label)
+        assertEquals("coffee", breakdown.first().key)
+    }
 }

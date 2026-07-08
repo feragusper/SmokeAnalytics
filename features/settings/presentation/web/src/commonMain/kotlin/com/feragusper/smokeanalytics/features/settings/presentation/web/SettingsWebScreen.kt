@@ -19,7 +19,9 @@ import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
+import org.jetbrains.compose.web.dom.Button
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -651,46 +653,41 @@ private fun ManageTriggersPanelWeb(
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
             Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Built-in") }
-            SmokeTrigger.defaultOptions().forEach { option ->
-                val visible = option.key !in preferences.hiddenDefaultTriggers
-                Div(attrs = { attr("style", "display:flex;align-items:center;gap:10px;") }) {
-                    TriggerIconInputWeb(
+            SmokeTrigger.defaultOptions()
+                .filter { it.key !in preferences.hiddenDefaultTriggers }
+                .forEach { option ->
+                    TriggerRowWeb(
                         icon = preferences.triggerIcons[option.key] ?: option.icon.orEmpty(),
+                        label = preferences.triggerLabels[option.key] ?: option.label,
                         enabled = !displayLoading,
-                        onCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
-                    )
-                    Span(attrs = { attr("style", "flex:1;") }) { Text(option.label) }
-                    GhostButton(
-                        text = if (visible) "Hide" else "Show",
-                        enabled = !displayLoading,
-                        onClick = {
-                            val hidden = if (visible) {
-                                preferences.hiddenDefaultTriggers + option.key
-                            } else {
-                                preferences.hiddenDefaultTriggers - option.key
-                            }
-                            onChange(preferences.copy(hiddenDefaultTriggers = hidden))
+                        onIconCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
+                        onRename = { name -> onChange(preferences.withTriggerLabel(option.key, name)) },
+                        onRemove = {
+                            onChange(
+                                preferences.copy(hiddenDefaultTriggers = preferences.hiddenDefaultTriggers + option.key),
+                            )
                         },
                     )
                 }
+            if (preferences.hiddenDefaultTriggers.isNotEmpty()) {
+                GhostButton(
+                    text = "Restore removed defaults (${preferences.hiddenDefaultTriggers.size})",
+                    enabled = !displayLoading,
+                    onClick = { onChange(preferences.copy(hiddenDefaultTriggers = emptySet())) },
+                )
             }
 
             if (preferences.customTriggers.isNotEmpty()) {
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Your tags") }
                 preferences.customTriggers.forEach { tag ->
-                    Div(attrs = { attr("style", "display:flex;align-items:center;gap:10px;") }) {
-                        TriggerIconInputWeb(
-                            icon = preferences.triggerIcons[tag].orEmpty(),
-                            enabled = !displayLoading,
-                            onCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
-                        )
-                        Span(attrs = { attr("style", "flex:1;") }) { Text(tag) }
-                        GhostButton(
-                            text = "Remove",
-                            enabled = !displayLoading,
-                            onClick = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
-                        )
-                    }
+                    TriggerRowWeb(
+                        icon = preferences.triggerIcons[tag].orEmpty(),
+                        label = preferences.triggerLabels[tag] ?: tag,
+                        enabled = !displayLoading,
+                        onIconCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
+                        onRename = { name -> onChange(preferences.withTriggerLabel(tag, name)) },
+                        onRemove = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
+                    )
                 }
             }
 
@@ -731,30 +728,84 @@ private fun TriggerIconInputWeb(
     enabled: Boolean,
     onCommit: (String) -> Unit,
 ) {
-    var draft by remember(icon) { mutableStateOf(icon) }
-    Input(
-        type = InputType.Text,
-        attrs = {
-            value(draft)
-            if (!enabled) disabled()
-            onInput { draft = it.value.take(MAX_TRIGGER_ICON_LENGTH) }
-            onChange {
-                val trimmed = draft.trim()
-                if (trimmed != icon) onCommit(trimmed)
+    var open by remember { mutableStateOf(false) }
+
+    Div(attrs = { attr("style", "position:relative;") }) {
+        Button(
+            attrs = {
+                if (!enabled) disabled()
+                onClick { open = !open }
+                attr("aria-label", "Pick trigger icon")
+                style {
+                    property("width", "44px")
+                    property("height", "36px")
+                    property("text-align", "center")
+                    property("cursor", "pointer")
+                    property("font-size", "18px")
+                    property("background", "var(--sa-color-surface-strong)")
+                    property("color", "var(--sa-color-onSurface)")
+                    property("border", "1px solid var(--sa-color-outline)")
+                    property("border-radius", "8px")
+                }
             }
-            attr("aria-label", "Trigger icon")
-            style {
-                property("width", "44px")
-                property("text-align", "center")
-                property("box-sizing", "border-box")
-                property("padding", "6px 4px")
-                property("background", "var(--sa-color-surface-strong)")
-                property("color", "var(--sa-color-onSurface)")
-                property("border", "1px solid var(--sa-color-outline)")
-                property("border-radius", "8px")
+        ) { Text(icon.ifBlank { "＋" }) }
+
+        if (open) {
+            // Transparent backdrop: click anywhere outside closes the picker.
+            Div(attrs = {
+                attr("style", "position:fixed;inset:0;z-index:9998;")
+                onClick { open = false }
+            })
+            Div(attrs = {
+                attr(
+                    "style",
+                    "position:absolute;top:40px;left:0;z-index:9999;" +
+                        "background:var(--sa-color-surface);color:var(--sa-color-onSurface);" +
+                        "border:1px solid var(--sa-color-outline);border-radius:12px;" +
+                        "padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);" +
+                        "display:flex;flex-wrap:wrap;gap:4px;width:280px;max-height:240px;overflow-y:auto;",
+                )
+            }) {
+                TriggerEmojiPalette.forEach { emoji ->
+                    Button(
+                        attrs = {
+                            onClick {
+                                onCommit(emoji)
+                                open = false
+                            }
+                            style {
+                                property("font-size", "18px")
+                                property("padding", "6px")
+                                property("cursor", "pointer")
+                                property("background", "transparent")
+                                property("border", "none")
+                                property("border-radius", "8px")
+                            }
+                        }
+                    ) { Text(emoji) }
+                }
+                Button(
+                    attrs = {
+                        onClick {
+                            // Clears the override: built-ins fall back to their default icon.
+                            onCommit("")
+                            open = false
+                        }
+                        style {
+                            property("width", "100%")
+                            property("margin-top", "6px")
+                            property("padding", "6px")
+                            property("cursor", "pointer")
+                            property("background", "transparent")
+                            property("color", "var(--sa-color-primary)")
+                            property("border", "1px solid var(--sa-color-outline)")
+                            property("border-radius", "8px")
+                        }
+                    }
+                ) { Text("Reset") }
             }
-        },
-    )
+        }
+    }
 }
 
 /** Sets/clears the emoji for a trigger key (blank clears the override). */
@@ -763,5 +814,58 @@ private fun UserPreferences.withTriggerIcon(key: String, icon: String): UserPref
         triggerIcons = if (icon.isBlank()) triggerIcons - key else triggerIcons + (key to icon),
     )
 
-// Emoji can span several UTF-16 units (e.g. family emoji); cap generously.
-private const val MAX_TRIGGER_ICON_LENGTH = 16
+/** One trigger row: icon picker, (renamable) label with inline edit, remove action. */
+@Composable
+private fun TriggerRowWeb(
+    icon: String,
+    label: String,
+    enabled: Boolean,
+    onIconCommit: (String) -> Unit,
+    onRename: (String) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var renaming by remember { mutableStateOf(false) }
+    var draft by remember(label) { mutableStateOf(label) }
+
+    Div(attrs = { attr("style", "display:flex;align-items:center;gap:10px;") }) {
+        TriggerIconInputWeb(icon = icon, enabled = enabled, onCommit = onIconCommit)
+        if (renaming) {
+            Input(
+                type = InputType.Text,
+                attrs = {
+                    value(draft)
+                    onInput { draft = it.value }
+                    attr("placeholder", "Leave empty to restore the original name")
+                    style {
+                        property("flex", "1")
+                        property("box-sizing", "border-box")
+                        property("padding", "6px 8px")
+                        property("background", "var(--sa-color-surface-strong)")
+                        property("color", "var(--sa-color-onSurface)")
+                        property("border", "1px solid var(--sa-color-outline)")
+                        property("border-radius", "8px")
+                    }
+                },
+            )
+            PrimaryButton(
+                text = "Save",
+                enabled = enabled,
+                onClick = {
+                    onRename(draft.trim())
+                    renaming = false
+                },
+            )
+            GhostButton(text = "Cancel", onClick = { renaming = false })
+        } else {
+            Span(attrs = { attr("style", "flex:1;") }) { Text(label) }
+            GhostButton(text = "Rename", enabled = enabled, onClick = { renaming = true })
+            GhostButton(text = "Remove", enabled = enabled, onClick = onRemove)
+        }
+    }
+}
+
+/** Renames a trigger without touching the key stored on smokes (blank clears the override). */
+private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPreferences =
+    copy(
+        triggerLabels = if (label.isBlank()) triggerLabels - key else triggerLabels + (key to label),
+    )

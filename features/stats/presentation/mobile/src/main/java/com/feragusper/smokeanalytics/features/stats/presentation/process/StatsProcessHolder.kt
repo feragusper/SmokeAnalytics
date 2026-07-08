@@ -73,6 +73,7 @@ class StatsProcessHolder constructor(
             periodType = period,
             dayStartHour = preferences.dayStartHour,
             bedtimeHour = preferences.bedtimeHour,
+            triggerLabelOverrides = preferences.triggerLabels,
         )
 
         // Emit the success result with the fetched statistics

@@ -36,23 +36,29 @@ enum class SmokeTrigger(val key: String, val defaultLabel: String, val defaultIc
         /**
          * The selectable trigger catalog: visible defaults (minus [hiddenDefaultKeys]) plus the
          * user's [customTriggers]. [iconOverrides] (tag key → emoji) replaces the default icon
-         * of built-ins and gives custom tags one. Pure function so it can be built from
-         * preferences without coupling the preferences module to this one.
+         * of built-ins and gives custom tags one; [labelOverrides] (tag key → name) renames a
+         * tag without touching the key persisted on smokes, so history and analytics keep
+         * counting under the same key. Pure function so it can be built from preferences
+         * without coupling the preferences module to this one.
          */
         fun catalog(
             customTriggers: List<String>,
             hiddenDefaultKeys: Set<String> = emptySet(),
             iconOverrides: Map<String, String> = emptyMap(),
+            labelOverrides: Map<String, String> = emptyMap(),
         ): List<TriggerOption> {
             fun iconFor(key: String, default: String?): String? =
                 iconOverrides[key]?.trim()?.takeIf { it.isNotEmpty() } ?: default
+
+            fun labelFor(key: String, default: String): String =
+                labelOverrides[key]?.trim()?.takeIf { it.isNotEmpty() } ?: default
 
             val defaults = entries
                 .filter { it.key !in hiddenDefaultKeys }
                 .map {
                     TriggerOption(
                         key = it.key,
-                        label = it.defaultLabel,
+                        label = labelFor(it.key, it.defaultLabel),
                         isCustom = false,
                         icon = iconFor(it.key, it.defaultIcon),
                     )
@@ -60,7 +66,14 @@ enum class SmokeTrigger(val key: String, val defaultLabel: String, val defaultIc
             val custom = customTriggers
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
-                .map { TriggerOption(key = it, label = it, isCustom = true, icon = iconFor(it, null)) }
+                .map {
+                    TriggerOption(
+                        key = it,
+                        label = labelFor(it, it),
+                        isCustom = true,
+                        icon = iconFor(it, null),
+                    )
+                }
             return defaults + custom
         }
     }

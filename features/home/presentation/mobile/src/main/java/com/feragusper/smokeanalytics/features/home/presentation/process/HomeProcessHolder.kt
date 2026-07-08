@@ -238,6 +238,7 @@ class HomeProcessHolder constructor(
                             customTriggers = preferences.customTriggers,
                             hiddenDefaultKeys = preferences.hiddenDefaultTriggers,
                             iconOverrides = preferences.triggerIcons,
+                            labelOverrides = preferences.triggerLabels,
                         ),
                     )
                 )

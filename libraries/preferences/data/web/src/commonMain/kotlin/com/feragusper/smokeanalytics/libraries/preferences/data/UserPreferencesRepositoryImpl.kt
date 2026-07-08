@@ -35,6 +35,7 @@ class UserPreferencesRepositoryImpl(
                 customTriggers = preferences.customTriggers,
                 hiddenDefaultTriggers = preferences.hiddenDefaultTriggers.toList(),
                 triggerIcons = preferences.triggerIcons,
+                triggerLabels = preferences.triggerLabels,
             )
         )
     }
@@ -62,6 +63,7 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         customTriggers = getOrNull<List<String>>(UserPreferencesEntity.CUSTOM_TRIGGERS).orEmpty(),
         hiddenDefaultTriggers = getOrNull<List<String>>(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
         triggerIcons = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_ICONS).orEmpty(),
+        triggerLabels = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_LABELS).orEmpty(),
     )
 }
 

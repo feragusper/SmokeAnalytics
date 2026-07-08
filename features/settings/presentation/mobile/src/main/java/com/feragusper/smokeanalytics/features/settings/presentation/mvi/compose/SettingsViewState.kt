@@ -11,6 +11,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
@@ -68,6 +68,7 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import com.valentinilk.shimmer.shimmer
 
@@ -1153,32 +1154,27 @@ private fun ManageTriggersSection(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        SmokeTrigger.defaultOptions().forEach { option ->
-            val visible = option.key !in preferences.hiddenDefaultTriggers
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TriggerIconField(
+        SmokeTrigger.defaultOptions()
+            .filter { it.key !in preferences.hiddenDefaultTriggers }
+            .forEach { option ->
+                TriggerRow(
                     icon = preferences.triggerIcons[option.key] ?: option.icon.orEmpty(),
+                    label = preferences.triggerLabels[option.key] ?: option.label,
                     enabled = enabled,
-                    onCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
-                )
-                Text(text = option.label, modifier = Modifier.weight(1f))
-                Switch(
-                    checked = visible,
-                    enabled = enabled,
-                    onCheckedChange = { checked ->
-                        val hidden = if (checked) {
-                            preferences.hiddenDefaultTriggers - option.key
-                        } else {
-                            preferences.hiddenDefaultTriggers + option.key
-                        }
-                        onChange(preferences.copy(hiddenDefaultTriggers = hidden))
+                    onIconCommit = { icon -> onChange(preferences.withTriggerIcon(option.key, icon)) },
+                    onRename = { name -> onChange(preferences.withTriggerLabel(option.key, name)) },
+                    onRemove = {
+                        onChange(
+                            preferences.copy(hiddenDefaultTriggers = preferences.hiddenDefaultTriggers + option.key),
+                        )
                     },
                 )
             }
+        if (preferences.hiddenDefaultTriggers.isNotEmpty()) {
+            TextButton(
+                onClick = { onChange(preferences.copy(hiddenDefaultTriggers = emptySet())) },
+                enabled = enabled,
+            ) { Text("Restore removed defaults (${preferences.hiddenDefaultTriggers.size})") }
         }
 
         if (preferences.customTriggers.isNotEmpty()) {
@@ -1188,22 +1184,14 @@ private fun ManageTriggersSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             preferences.customTriggers.forEach { tag ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TriggerIconField(
-                        icon = preferences.triggerIcons[tag].orEmpty(),
-                        enabled = enabled,
-                        onCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
-                    )
-                    Text(text = tag, modifier = Modifier.weight(1f))
-                    TextButton(
-                        onClick = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
-                        enabled = enabled,
-                    ) { Text("Remove") }
-                }
+                TriggerRow(
+                    icon = preferences.triggerIcons[tag].orEmpty(),
+                    label = preferences.triggerLabels[tag] ?: tag,
+                    enabled = enabled,
+                    onIconCommit = { icon -> onChange(preferences.withTriggerIcon(tag, icon)) },
+                    onRename = { name -> onChange(preferences.withTriggerLabel(tag, name)) },
+                    onRemove = { onChange(preferences.copy(customTriggers = preferences.customTriggers - tag)) },
+                )
             }
         }
 
@@ -1228,25 +1216,107 @@ private fun ManageTriggersSection(
     }
 }
 
-/** Small per-row editor for a trigger's emoji; commits when the field loses focus. */
+/** One trigger row: icon picker, (renamable) label, rename and remove actions. */
 @Composable
-private fun TriggerIconField(
+private fun TriggerRow(
+    icon: String,
+    label: String,
+    enabled: Boolean,
+    onIconCommit: (String) -> Unit,
+    onRename: (String) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var renaming by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TriggerIconPicker(icon = icon, enabled = enabled, onCommit = onIconCommit)
+        Text(text = label, modifier = Modifier.weight(1f))
+        TextButton(onClick = { renaming = true }, enabled = enabled) { Text("Rename") }
+        TextButton(onClick = onRemove, enabled = enabled) { Text("Remove") }
+    }
+    if (renaming) {
+        var draft by remember { mutableStateOf(label) }
+        AlertDialog(
+            onDismissRequest = { renaming = false },
+            title = { Text("Rename trigger") },
+            text = {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    singleLine = true,
+                    label = { Text("Name") },
+                    supportingText = { Text("Leave empty to restore the original name.") },
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRename(draft.trim())
+                    renaming = false
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renaming = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+/** Per-row emoji picker for a trigger: tap the icon, choose from a curated grid. */
+@Composable
+private fun TriggerIconPicker(
     icon: String,
     enabled: Boolean,
     onCommit: (String) -> Unit,
 ) {
-    var draft by remember(icon) { mutableStateOf(icon) }
-    OutlinedTextField(
-        value = draft,
-        onValueChange = { draft = it.take(MAX_TRIGGER_ICON_LENGTH) },
-        modifier = Modifier
-            .width(64.dp)
-            .onFocusChanged { state ->
-                if (!state.isFocused && draft.trim() != icon) onCommit(draft.trim())
+    var open by remember { mutableStateOf(false) }
+    TextButton(onClick = { open = true }, enabled = enabled) {
+        Text(
+            text = icon.ifBlank { "＋" },
+            style = MaterialTheme.typography.titleLarge,
+        )
+    }
+    if (open) {
+        AlertDialog(
+            onDismissRequest = { open = false },
+            title = { Text("Pick an icon") },
+            text = {
+                FlowRow(
+                    modifier = Modifier
+                        .heightIn(max = 320.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    TriggerEmojiPalette.forEach { emoji ->
+                        Text(
+                            text = emoji,
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable {
+                                    onCommit(emoji)
+                                    open = false
+                                }
+                                .padding(10.dp),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+                }
             },
-        singleLine = true,
-        enabled = enabled,
-    )
+            confirmButton = {
+                // Clears the override: built-ins fall back to their default icon.
+                TextButton(onClick = {
+                    onCommit("")
+                    open = false
+                }) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { open = false }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 /** Sets/clears the emoji for a trigger key (blank clears the override). */
@@ -1255,5 +1325,8 @@ private fun UserPreferences.withTriggerIcon(key: String, icon: String): UserPref
         triggerIcons = if (icon.isBlank()) triggerIcons - key else triggerIcons + (key to icon),
     )
 
-// Emoji can span several UTF-16 units (e.g. family emoji); cap generously.
-private const val MAX_TRIGGER_ICON_LENGTH = 16
+/** Renames a trigger without touching the key stored on smokes (blank clears the override). */
+private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPreferences =
+    copy(
+        triggerLabels = if (label.isBlank()) triggerLabels - key else triggerLabels + (key to label),
+    )
