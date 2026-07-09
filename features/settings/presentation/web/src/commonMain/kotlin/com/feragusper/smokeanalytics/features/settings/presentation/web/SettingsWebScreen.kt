@@ -149,6 +149,23 @@ private fun SettingsViewState.Render(
 
         if (currentEmail != null) {
             CollapsibleSection(
+                title = LocalStrings.current.personalization,
+                subtitle = LocalStrings.current.personalizationSubtitle,
+                initiallyExpanded = false,
+            ) {
+                PersonalizationPanelWeb(
+                    preferences = draftPreferences,
+                    displayLoading = displayLoading,
+                    onChange = { updated ->
+                        draftPreferences = updated
+                        onIntent(SettingsIntent.UpdatePreferences(preferences = updated))
+                    },
+                )
+            }
+        }
+
+        if (currentEmail != null) {
+            CollapsibleSection(
                 title = LocalStrings.current.triggers,
                 subtitle = LocalStrings.current.triggersSubtitle,
                 initiallyExpanded = false,
@@ -903,3 +920,63 @@ private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPr
     copy(
         triggerLabels = if (label.isBlank()) triggerLabels - key else triggerLabels + (key to label),
     )
+
+/** Nickname + personal reason inputs; commit on change (blur/enter). */
+@Composable
+private fun PersonalizationPanelWeb(
+    preferences: UserPreferences,
+    displayLoading: Boolean,
+    onChange: (UserPreferences) -> Unit,
+) {
+    val strings = LocalStrings.current
+    SurfaceCard {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
+            PersonalizationFieldWeb(
+                label = strings.nicknameLabel,
+                placeholder = strings.nicknamePlaceholder,
+                value = preferences.nickname,
+                enabled = !displayLoading,
+                onCommit = { onChange(preferences.copy(nickname = it)) },
+            )
+            PersonalizationFieldWeb(
+                label = strings.quitReasonLabel,
+                placeholder = strings.quitReasonPlaceholder,
+                value = preferences.quitReason,
+                enabled = !displayLoading,
+                onCommit = { onChange(preferences.copy(quitReason = it)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PersonalizationFieldWeb(
+    label: String,
+    placeholder: String,
+    value: String,
+    enabled: Boolean,
+    onCommit: (String) -> Unit,
+) {
+    var draft by remember(value) { mutableStateOf(value) }
+    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:6px;") }) {
+        Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(label) }
+        Input(
+            type = InputType.Text,
+            attrs = {
+                value(draft)
+                if (!enabled) disabled()
+                onInput { draft = it.value }
+                onChange { if (draft.trim() != value) onCommit(draft.trim()) }
+                attr("placeholder", placeholder)
+                style {
+                    property("box-sizing", "border-box")
+                    property("padding", "8px 10px")
+                    property("background", "var(--sa-color-surface-strong)")
+                    property("color", "var(--sa-color-onSurface)")
+                    property("border", "1px solid var(--sa-color-outline)")
+                    property("border-radius", "8px")
+                }
+            },
+        )
+    }
+}

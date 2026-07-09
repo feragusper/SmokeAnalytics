@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
@@ -159,6 +160,25 @@ data class SettingsViewState(
                 onSave = { updated -> intent(SettingsIntent.UpdatePreferences(updated)) },
                 onReset = { draftPreferences = preferences },
             )
+
+            if (currentEmail != null) {
+                SettingsSectionHeader(title = "Personalization")
+
+                SettingsCard(
+                    title = "Make it yours",
+                    subtitle = "A nickname for the greeting and a personal reason to keep in view during cravings.",
+                    initiallyExpanded = false,
+                ) {
+                    PersonalizationSection(
+                        preferences = draftPreferences,
+                        enabled = !displayLoading,
+                        onChange = { updated ->
+                            draftPreferences = updated
+                            intent(SettingsIntent.UpdatePreferences(updated))
+                        },
+                    )
+                }
+            }
 
             if (currentEmail != null) {
                 SettingsSectionHeader(title = "Triggers")
@@ -1366,3 +1386,48 @@ private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPr
     copy(
         triggerLabels = if (label.isBlank()) triggerLabels - key else triggerLabels + (key to label),
     )
+
+/** Nickname + personal reason fields; commit when the field loses focus. */
+@Composable
+private fun PersonalizationSection(
+    preferences: UserPreferences,
+    enabled: Boolean,
+    onChange: (UserPreferences) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PersonalizationField(
+            label = "Nickname",
+            value = preferences.nickname,
+            enabled = enabled,
+            onCommit = { onChange(preferences.copy(nickname = it)) },
+        )
+        PersonalizationField(
+            label = "Your reason",
+            value = preferences.quitReason,
+            enabled = enabled,
+            onCommit = { onChange(preferences.copy(quitReason = it)) },
+        )
+    }
+}
+
+@Composable
+private fun PersonalizationField(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    onCommit: (String) -> Unit,
+) {
+    var draft by remember(value) { mutableStateOf(value) }
+    OutlinedTextField(
+        value = draft,
+        onValueChange = { draft = it },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { state ->
+                if (!state.isFocused && draft.trim() != value) onCommit(draft.trim())
+            },
+        label = { Text(label) },
+        singleLine = true,
+        enabled = enabled,
+    )
+}

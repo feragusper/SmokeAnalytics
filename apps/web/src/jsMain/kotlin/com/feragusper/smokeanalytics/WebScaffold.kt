@@ -11,6 +11,7 @@ import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.i18n.AppLanguage
 import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
+import com.feragusper.smokeanalytics.libraries.design.theme.AccentColor
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
@@ -24,6 +25,8 @@ fun WebScaffold(
     onNavigate: (WebRoute) -> Unit,
     language: AppLanguage,
     onLanguageChange: (AppLanguage) -> Unit,
+    accent: AccentColor,
+    onAccentChange: (AccentColor) -> Unit,
     content: @Composable () -> Unit,
 ) {
     val strings = LocalStrings.current
@@ -110,6 +113,7 @@ fun WebScaffold(
 
             if (!isSidebarCollapsed) {
                 LanguageSelector(language = language, onLanguageChange = onLanguageChange)
+                AccentSelector(accent = accent, onAccentChange = onAccentChange)
             }
 
             Div(attrs = {
@@ -168,6 +172,31 @@ private fun LanguageSelector(
                     value = option.code,
                     attrs = { if (option == language) attr("selected", "selected") },
                 ) { Text(option.nativeLabel) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccentSelector(
+    accent: AccentColor,
+    onAccentChange: (AccentColor) -> Unit,
+) {
+    val strings = LocalStrings.current
+    Div(attrs = { attr("style", "padding:4px 12px 8px;display:flex;flex-direction:column;gap:6px;") }) {
+        Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text(strings.accent) }
+        Div(attrs = { attr("style", "display:flex;gap:8px;flex-wrap:wrap;") }) {
+            AccentColor.entries.forEach { option ->
+                Div(attrs = {
+                    attr("title", option.label)
+                    onClick { onAccentChange(option) }
+                    val ring = if (option == accent) "2px solid var(--sa-color-onSurface)" else "2px solid transparent"
+                    attr(
+                        "style",
+                        "width:22px;height:22px;border-radius:999px;cursor:pointer;" +
+                            "background:${option.primary};border:$ring;box-sizing:border-box;",
+                    )
+                })
             }
         }
     }

@@ -12,6 +12,13 @@ object SpanishStrings : AppStrings() {
     override val brandName: String = "Smoke Analytics"
     override val sidebarSectionWeb: String = "Web"
     override val language: String = "Idioma"
+    override val accent: String = "Acento"
+    override val personalization: String = "Personalización"
+    override val personalizationSubtitle: String = "Hacé la app tuya: un apodo para el saludo y un motivo para tener presente."
+    override val nicknameLabel: String = "Apodo"
+    override val nicknamePlaceholder: String = "¿Cómo te saludamos?"
+    override val quitReasonLabel: String = "Tu motivo"
+    override val quitReasonPlaceholder: String = "¿Por qué estás reduciendo?"
 
     // Document titles
     override val titleHome: String = "Smoke Analytics | Inicio"
@@ -42,6 +49,7 @@ object SpanishStrings : AppStrings() {
     override val cravingWaitOver: String =
         "Se terminó la espera. Registrá el cigarrillo si todavía lo querés, o dejá pasar las ganas para el premio completo."
     override val cravingHoldOn: String = "Hasta que tu próximo cigarrillo entre en el objetivo. Vos podés."
+    override fun rememberYourReason(reason: String): String = "Acordate por qué: $reason"
     override val vsLastMonth: String = "Vs mes pasado"
     override val startNewDayBody: String =
         "Si el día arrancó antes de lo habitual, reiniciá la ventana de reflexión ahora y mantené Inicio alineado con el día que estás viviendo."

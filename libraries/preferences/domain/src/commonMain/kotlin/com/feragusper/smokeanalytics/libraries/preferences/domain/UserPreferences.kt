@@ -18,6 +18,10 @@ data class UserPreferences(
     val triggerIcons: Map<String, String> = emptyMap(),
     /** Display name per trigger key: renames a tag without changing the key stored on smokes. */
     val triggerLabels: Map<String, String> = emptyMap(),
+    /** Optional nickname shown in the Home greeting ("Good morning, <nickname>"). */
+    val nickname: String = "",
+    /** Optional personal reason to cut down, surfaced on the craving cards as a reminder. */
+    val quitReason: String = "",
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

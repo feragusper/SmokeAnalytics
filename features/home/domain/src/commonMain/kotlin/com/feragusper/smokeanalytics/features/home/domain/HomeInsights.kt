@@ -66,12 +66,19 @@ fun elapsedToneFromMinutes(totalMinutes: Int): ElapsedTone = when {
     else -> ElapsedTone.Urgent
 }
 
-fun greetingStateFor(hourOfDay: Int, todayCount: Int, currentStreakHours: Long): GreetingState {
-    val title = when (hourOfDay) {
+fun greetingStateFor(
+    hourOfDay: Int,
+    todayCount: Int,
+    currentStreakHours: Long,
+    nickname: String = "",
+): GreetingState {
+    val base = when (hourOfDay) {
         in 5..11 -> "Good morning"
         in 12..18 -> "Good afternoon"
         else -> "Good evening"
     }
+    val name = nickname.trim()
+    val title = if (name.isNotEmpty()) "$base, $name" else base
 
     val message = when {
         currentStreakHours >= 8 -> "Strong pace today."

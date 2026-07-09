@@ -35,6 +35,7 @@ data class HomeViewState(
     val lastSmoke: Smoke? = null,
     val greetingTitle: String? = null,
     val greetingMessage: String? = null,
+    val quitReason: String = "",
     val financialSummary: FinancialSummary? = null,
     val rateSummary: RateSummary? = null,
     val gamificationSummary: GamificationSummary? = null,

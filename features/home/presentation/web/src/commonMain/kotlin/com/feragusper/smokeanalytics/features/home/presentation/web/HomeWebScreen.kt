@@ -175,13 +175,14 @@ fun HomeViewState.Render(
             activeCraving.let { craving ->
                 if (craving != null) {
                     CravingCountdownCard(
+                        quitReason = quitReason,
                         craving = craving,
                         onResolve = { smoked ->
                             onIntent(HomeIntent.ResolveCraving(craving = craving, smoked = smoked))
                         },
                     )
                 } else {
-                    CravingPromptCard(onTrack = { onIntent(HomeIntent.TrackCraving) })
+                    CravingPromptCard(quitReason = quitReason, onTrack = { onIntent(HomeIntent.TrackCraving) })
                 }
             }
 
@@ -494,8 +495,23 @@ private data class ConsistencyMilestone(
     val glyph: String,
 )
 
+/** Personal reminder line surfaced during a craving, only when the user set a reason. */
 @Composable
-private fun CravingPromptCard(onTrack: () -> Unit) {
+private fun QuitReasonReminder(quitReason: String) {
+    if (quitReason.isBlank()) return
+    Div(attrs = {
+        attr(
+            "style",
+            "font-size:14px;font-style:italic;padding:8px 12px;border-radius:10px;" +
+                "background:var(--sa-color-surface-strong);color:var(--sa-color-primary);",
+        )
+    }) {
+        Text(LocalStrings.current.rememberYourReason(quitReason))
+    }
+}
+
+@Composable
+private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
             HomeSectionChip("♥", LocalStrings.current.craving, "var(--sa-color-primary)")
@@ -505,6 +521,7 @@ private fun CravingPromptCard(onTrack: () -> Unit) {
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
                 Text(LocalStrings.current.feelingUrgeBody)
             }
+            QuitReasonReminder(quitReason)
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                 PrimaryButton(text = LocalStrings.current.iFeelLikeSmoking, onClick = onTrack)
             }
@@ -526,6 +543,7 @@ private fun CravingHintCard(onDismiss: () -> Unit) {
 
 @Composable
 private fun CravingCountdownCard(
+    quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
 ) {
@@ -560,6 +578,7 @@ private fun CravingCountdownCard(
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
                     Text(LocalStrings.current.cravingHoldOn)
                 }
+                QuitReasonReminder(quitReason)
             }
             // onResolve(true)  -> smoked (gave in while waiting / postponed once done)
             // onResolve(false) -> the urge passed without smoking (resisted)

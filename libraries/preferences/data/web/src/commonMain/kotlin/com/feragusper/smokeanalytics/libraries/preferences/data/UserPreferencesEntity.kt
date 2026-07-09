@@ -21,6 +21,8 @@ data class UserPreferencesEntity(
     val hiddenDefaultTriggers: List<String> = emptyList(),
     val triggerIcons: Map<String, String> = emptyMap(),
     val triggerLabels: Map<String, String> = emptyMap(),
+    val nickname: String = "",
+    val quitReason: String = "",
 ) {
     fun toDomain(): UserPreferences = UserPreferences(
         packPrice = packPrice,
@@ -39,6 +41,8 @@ data class UserPreferencesEntity(
         hiddenDefaultTriggers = hiddenDefaultTriggers.toSet(),
         triggerIcons = triggerIcons,
         triggerLabels = triggerLabels,
+        nickname = nickname,
+        quitReason = quitReason,
     )
 
     companion object {
@@ -57,5 +61,7 @@ data class UserPreferencesEntity(
         const val HIDDEN_DEFAULT_TRIGGERS = "hiddenDefaultTriggers"
         const val TRIGGER_ICONS = "triggerIcons"
         const val TRIGGER_LABELS = "triggerLabels"
+        const val NICKNAME = "nickname"
+        const val QUIT_REASON = "quitReason"
     }
 }

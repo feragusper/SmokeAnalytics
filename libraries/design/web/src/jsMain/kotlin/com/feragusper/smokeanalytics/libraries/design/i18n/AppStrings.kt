@@ -16,6 +16,13 @@ open class AppStrings internal constructor() {
     open val brandName: String = "Smoke Analytics"
     open val sidebarSectionWeb: String = "Web"
     open val language: String = "Language"
+    open val accent: String = "Accent"
+    open val personalization: String = "Personalization"
+    open val personalizationSubtitle: String = "Make the app yours: a nickname for the greeting and a reason to keep in view."
+    open val nicknameLabel: String = "Nickname"
+    open val nicknamePlaceholder: String = "How should we greet you?"
+    open val quitReasonLabel: String = "Your reason"
+    open val quitReasonPlaceholder: String = "Why are you cutting down?"
 
     // Document titles
     open val titleHome: String = "Smoke Analytics | Home"
@@ -46,6 +53,7 @@ open class AppStrings internal constructor() {
     open val cravingWaitOver: String =
         "The wait is over. Log the cigarette if you still want it, or let the urge pass for the full reward."
     open val cravingHoldOn: String = "Until your next cigarette fits the goal. You've got this."
+    open fun rememberYourReason(reason: String): String = "Remember why: $reason"
     open val vsLastMonth: String = "Vs last month"
     open val startNewDayBody: String =
         "If the day started earlier than usual, reset the reflection window now and keep Home aligned with the day you are actually living."

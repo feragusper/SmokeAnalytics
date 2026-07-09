@@ -95,6 +95,7 @@ class HomeWebStore(
                 timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                 greetingTitle = result.greetingState.title,
                 greetingMessage = result.greetingState.message,
+                quitReason = result.preferences.quitReason,
                 financialSummary = result.financialSummary,
                 rateSummary = result.rateSummary,
                 gamificationSummary = result.gamificationSummary,

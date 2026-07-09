@@ -202,6 +202,7 @@ class HomeProcessHolder constructor(
                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
                     todayCount = smokeCounts.countByToday,
                     currentStreakHours = smokeCounts.timeSinceLastCigarette.first,
+                    nickname = preferences.nickname,
                 )
                 emit(
                     HomeResult.FetchSmokesSuccess(
