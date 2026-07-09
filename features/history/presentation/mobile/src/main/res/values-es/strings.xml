@@ -1,0 +1,7 @@
+<resources>
+    <string name="history_button_track">Registrar</string>
+    <string name="error_generic">Ocurrió un error</string>
+    <string name="error_not_logged_in">Iniciá sesión para acceder a esta función.</string>
+    <string name="history_smoked_today">Cigarrillos</string>
+    <string name="history_smoked">Historial de cigarrillos</string>
+</resources>

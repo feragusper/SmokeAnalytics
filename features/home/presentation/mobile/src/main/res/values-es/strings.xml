@@ -1,0 +1,23 @@
+<resources>
+    <string name="home_button_track">Registrar</string>
+    <string name="home_label_per_day">Hoy</string>
+    <string name="home_label_per_week">Esta semana</string>
+    <string name="home_label_per_month">Este mes</string>
+    <string name="error_generic">Ocurrió un error</string>
+    <string name="error_not_logged_in">Iniciá sesión para acceder a esta función.</string>
+    <string name="home_smoked_today">Fumados hoy</string>
+    <string name="home_since_your_last_cigarette">Desde tu último cigarrillo</string>
+    <string name="home_smoked_after_minutes_short">%1$dm</string>
+    <string name="home_smoked_after_hours_short">%1$dh</string>
+    <string name="home_button_history">Historial de cigarrillos</string>
+
+    <plurals name="home_smoked_after_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+
+    <plurals name="home_smoked_after_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+</resources>

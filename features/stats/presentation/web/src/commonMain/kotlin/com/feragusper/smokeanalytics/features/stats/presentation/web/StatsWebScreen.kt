@@ -15,6 +15,8 @@ import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStatsPeriod
@@ -82,16 +84,17 @@ private fun StatsWebContent(
     onDateChange: (LocalDate) -> Unit,
     onReload: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         if (!embedded) {
             PageSectionHeader(
-                title = "Patterns in motion",
-                eyebrow = "Trends",
+                title = strings.patternsInMotion,
+                eyebrow = strings.eyebrowTrends,
                 badgeText = when {
-                    state.displayRefreshLoading -> "Refreshing"
-                    state.displayLoading -> "Loading"
-                    state.error != null -> "Error"
-                    else -> currentPeriod.label()
+                    state.displayRefreshLoading -> strings.refreshing
+                    state.displayLoading -> strings.loading
+                    state.error != null -> strings.errorBadge
+                    else -> currentPeriod.label(strings)
                 },
                 badgeTone = when {
                     state.displayLoading || state.displayRefreshLoading -> StatusTone.Busy
@@ -106,9 +109,9 @@ private fun StatsWebContent(
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                     Text(
                         when {
-                            state.displayRefreshLoading -> "Refreshing frequency in background."
-                            state.error != null && state.stats != null -> "Latest frequency refresh failed. Showing the last snapshot."
-                            else -> selectedDate.summaryLabel(currentPeriod)
+                            state.displayRefreshLoading -> strings.refreshingFrequency
+                            state.error != null && state.stats != null -> strings.freqRefreshFailed
+                            else -> selectedDate.summaryLabel(currentPeriod, strings)
                         }
                     )
                 }
@@ -119,13 +122,13 @@ private fun StatsWebContent(
                         StatsPeriod.entries.forEach { p ->
                             if (p == currentPeriod) {
                                 PrimaryButton(
-                                    text = p.label(),
+                                    text = p.label(strings),
                                     onClick = { },
                                     enabled = !state.displayLoading,
                                 )
                             } else {
                                 GhostButton(
-                                    text = p.label(),
+                                    text = p.label(strings),
                                     onClick = { onPeriodChange(p) },
                                     enabled = !state.displayLoading,
                                 )
@@ -141,7 +144,7 @@ private fun StatsWebContent(
                         )
 
                         Div(attrs = { classes(SmokeWebStyles.dateLabel) }) {
-                            Text(selectedDate.headerLabel(currentPeriod))
+                            Text(selectedDate.headerLabel(currentPeriod, strings))
                         }
 
                         GhostButton(
@@ -169,9 +172,9 @@ private fun StatsWebContent(
 
         when {
             state.error != null && state.stats == null -> EmptyStateCard(
-                title = "Pattern view unavailable",
-                message = "The selected range could not be assembled right now. Keep the period and date, then refresh to try this view again.",
-                actionLabel = "Try again",
+                title = strings.patternViewUnavailable,
+                message = strings.patternViewUnavailableBody,
+                actionLabel = strings.tryAgain,
                 onAction = onReload,
             )
 
@@ -211,7 +214,7 @@ private fun StatsWebContent(
                                 }
                             }
                             Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
-                                Text(selectedDate.summaryLabel(currentPeriod))
+                                Text(selectedDate.summaryLabel(currentPeriod, strings))
                             }
                         }
                     }
@@ -240,13 +243,13 @@ private fun StatsWebContent(
                         SurfaceCard {
                             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                                 Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                                    Text("Peak Window")
+                                    Text(strings.peakWindow)
                                 }
                                 Div(attrs = { attr("style", "font-size:32px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);") }) {
                                     Text(peakBucketFor(currentPeriod, stats))
                                 }
                                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                    Text("Highest activity bucket for the selected range.")
+                                    Text(strings.peakWindowBody)
                                 }
                             }
                         }
@@ -255,11 +258,11 @@ private fun StatsWebContent(
 
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.chartHeader) }) {
-                        Text("Smoking Frequency")
+                        Text(strings.smokingFrequency)
                     }
 
                     Div(attrs = { attr("style", "font-size:12px;color:var(--sa-color-secondary);margin-bottom:14px;") }) {
-                        Text("${selectedDate.headerLabel(currentPeriod)} • ${currentPeriod.chartTitle()}")
+                        Text("${selectedDate.headerLabel(currentPeriod, strings)} • ${currentPeriod.chartTitle(strings)}")
                     }
 
                     Div(attrs = { classes(SmokeWebStyles.chartWrap) }) {
@@ -273,25 +276,25 @@ private fun StatsWebContent(
                     when (currentPeriod) {
                         StatsPeriod.DAY -> LineChartJs(
                             canvasId = chartId,
-                            title = "Today",
+                            title = strings.periodToday,
                             data = stats.hourly.toCumulativeHourly()
                         )
 
                         StatsPeriod.WEEK -> BarChartJs(
                             canvasId = chartId,
-                            title = "Week",
+                            title = strings.periodWeek,
                             data = stats.weekly
                         )
 
                         StatsPeriod.MONTH -> BarChartJs(
                             canvasId = chartId,
-                            title = "Month",
+                            title = strings.periodMonth,
                             data = stats.monthly
                         )
 
                         StatsPeriod.YEAR -> BarChartJs(
                             canvasId = chartId,
-                            title = "Year",
+                            title = strings.periodYear,
                             data = stats.yearly
                         )
                     }
@@ -307,13 +310,14 @@ private fun StatsWebContent(
 private fun TriggerBreakdownCardWeb(
     stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats,
 ) {
+    val strings = LocalStrings.current
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.chartHeader) }) { Text("By trigger") }
+            Div(attrs = { classes(SmokeWebStyles.chartHeader) }) { Text(strings.byTrigger) }
             val breakdown = stats.triggerBreakdown
             if (breakdown.isEmpty()) {
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.")
+                    Text(strings.byTriggerEmpty)
                 }
             } else {
                 Div(attrs = { attr("style", "max-width:420px;margin:0 auto;") }) {
@@ -395,18 +399,18 @@ private val PIE_COLORS = arrayOf(
     "#9AB0B0",
 )
 
-private fun StatsPeriod.label(): String = when (this) {
-    StatsPeriod.DAY -> "Day"
-    StatsPeriod.WEEK -> "Week"
-    StatsPeriod.MONTH -> "Month"
-    StatsPeriod.YEAR -> "Year"
+private fun StatsPeriod.label(strings: AppStrings): String = when (this) {
+    StatsPeriod.DAY -> strings.periodDay
+    StatsPeriod.WEEK -> strings.periodWeek
+    StatsPeriod.MONTH -> strings.periodMonth
+    StatsPeriod.YEAR -> strings.periodYear
 }
 
-private fun StatsPeriod.chartTitle(): String = when (this) {
-    StatsPeriod.DAY -> "Today (hourly)"
-    StatsPeriod.WEEK -> "This week"
-    StatsPeriod.MONTH -> "This month"
-    StatsPeriod.YEAR -> "This year"
+private fun StatsPeriod.chartTitle(strings: AppStrings): String = when (this) {
+    StatsPeriod.DAY -> strings.chartTitleDay
+    StatsPeriod.WEEK -> strings.chartTitleWeek
+    StatsPeriod.MONTH -> strings.chartTitleMonth
+    StatsPeriod.YEAR -> strings.chartTitleYear
 }
 
 private fun StatsPeriod.totalLabel(stats: com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats): String = when (this) {
@@ -500,18 +504,18 @@ private fun LocalDate.shift(period: StatsPeriod, amount: Int): LocalDate {
     return this.plus(amount, unit)
 }
 
-private fun LocalDate.headerLabel(period: StatsPeriod): String = when (period) {
+private fun LocalDate.headerLabel(period: StatsPeriod, strings: AppStrings): String = when (period) {
     StatsPeriod.DAY -> toUiDate()
-    StatsPeriod.WEEK -> "Week of ${toUiDate()}"
+    StatsPeriod.WEEK -> strings.weekOf(toUiDate())
     StatsPeriod.MONTH -> "${monthNumber.toString().padStart(2, '0')}/$year"
     StatsPeriod.YEAR -> year.toString()
 }
 
-private fun LocalDate.summaryLabel(period: StatsPeriod): String = when (period) {
-    StatsPeriod.DAY -> "Selected day"
-    StatsPeriod.WEEK -> "Week of ${toUiDate()}"
-    StatsPeriod.MONTH -> "Month overview"
-    StatsPeriod.YEAR -> "Year to date"
+private fun LocalDate.summaryLabel(period: StatsPeriod, strings: AppStrings): String = when (period) {
+    StatsPeriod.DAY -> strings.selectedDay
+    StatsPeriod.WEEK -> strings.weekOf(toUiDate())
+    StatsPeriod.MONTH -> strings.monthOverview
+    StatsPeriod.YEAR -> strings.yearToDate
 }
 
 private fun LocalDate.toHtmlDate(): String {

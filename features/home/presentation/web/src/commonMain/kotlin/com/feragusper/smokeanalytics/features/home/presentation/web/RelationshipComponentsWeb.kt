@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import org.jetbrains.compose.web.attributes.InputType
@@ -37,18 +38,11 @@ internal fun RelationshipReminderCardWeb(
     pending: List<PendingTriggerSmoke>,
     onOpen: (smokeId: String) -> Unit,
 ) {
+    val strings = LocalStrings.current
     val shown = pending.take(MAX_PENDING_SHOWN)
     Div(attrs = { classes(SmokeWebStyles.card) }) {
-        H3 { Text("What were these about?") }
-        P {
-            Text(
-                if (pending.size == 1) {
-                    "1 cigarette still needs a trigger — tag it below."
-                } else {
-                    "${pending.size} cigarettes still need a trigger — tag them one at a time."
-                }
-            )
-        }
+        H3 { Text(strings.whatWereTheseAbout) }
+        P { Text(strings.pendingNeedsTrigger(pending.size)) }
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;margin-top:8px;") }) {
             shown.forEach { item ->
                 Div(attrs = {
@@ -59,13 +53,13 @@ internal fun RelationshipReminderCardWeb(
                     )
                 }) {
                     Span(attrs = { attr("style", "font-size:14px;") }) { Text(item.label) }
-                    GhostButton(text = "Add trigger", onClick = { onOpen(item.id) })
+                    GhostButton(text = strings.addTrigger, onClick = { onOpen(item.id) })
                 }
             }
         }
         if (pending.size > shown.size) {
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("+${pending.size - shown.size} more")
+                Text(strings.moreCount(pending.size - shown.size))
             }
         }
     }
@@ -87,6 +81,7 @@ internal fun RelationshipPromptDialogWeb(
     // chips don't pop in mid-dialog when a background refresh lands; while null the dialog
     // shows a loading row instead of a partial default list.
     val options = remember(availableTriggers != null) { availableTriggers }
+    val strings = LocalStrings.current
     var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
     var draft by remember { mutableStateOf("") }
 
@@ -118,14 +113,14 @@ internal fun RelationshipPromptDialogWeb(
                 onClick { it.stopPropagation() }
             }
         ) {
-            H3 { Text("What was it related to?") }
+            H3 { Text(strings.whatWasItRelatedTo) }
             dateLabel?.let {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Logged $it") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.loggedAt(it)) }
             }
-            P { Text("Tag what triggered this cigarette, or skip if it was nothing in particular.") }
+            P { Text(strings.tagWhatTriggered) }
 
             if (options == null) {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Loading your tags…") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.loadingYourTags) }
             } else Div(
                 attrs = {
                     style {
@@ -166,7 +161,7 @@ internal fun RelationshipPromptDialogWeb(
                 attrs = {
                     value(draft)
                     onInput { draft = it.value }
-                    attr("placeholder", "Add a tag…")
+                    attr("placeholder", strings.addATagPlaceholder)
                     style {
                         property("width", "100%")
                         property("box-sizing", "border-box")
@@ -189,9 +184,9 @@ internal fun RelationshipPromptDialogWeb(
                     }
                 }
             ) {
-                GhostButton(text = "No relation", onClick = onSkip)
+                GhostButton(text = strings.noRelation, onClick = onSkip)
                 PrimaryButton(
-                    text = "Save",
+                    text = strings.save,
                     enabled = selectedKeys.isNotEmpty() || draft.normalizedTag() != null,
                     onClick = {
                         val tags = selectedKeys + listOfNotNull(draft.normalizedTag())

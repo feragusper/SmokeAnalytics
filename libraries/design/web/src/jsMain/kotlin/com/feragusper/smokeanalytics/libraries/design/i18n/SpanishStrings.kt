@@ -1,0 +1,342 @@
+package com.feragusper.smokeanalytics.libraries.design.i18n
+
+/** Spanish catalog. Overrides every English value; anything missed falls back to English. */
+object SpanishStrings : AppStrings() {
+
+    // Nav / scaffold
+    override val navHome: String = "Inicio"
+    override val navAnalytics: String = "Analíticas y Mapa"
+    override val navHistory: String = "Historial"
+    override val navGoals: String = "Objetivos"
+    override val navYou: String = "Vos"
+    override val brandName: String = "Smoke Analytics"
+    override val sidebarSectionWeb: String = "Web"
+    override val language: String = "Idioma"
+
+    // Document titles
+    override val titleHome: String = "Smoke Analytics | Inicio"
+    override val titleAnalytics: String = "Smoke Analytics | Analíticas y Mapa"
+    override val titleHistory: String = "Smoke Analytics | Historial"
+    override val titleGoals: String = "Smoke Analytics | Objetivos"
+    override val titleYou: String = "Smoke Analytics | Vos"
+    override val titleSignIn: String = "Smoke Analytics | Iniciar sesión"
+
+    // Common actions
+    override val cancel: String = "Cancelar"
+    override val ok: String = "OK"
+    override val save: String = "Guardar"
+    override val add: String = "Agregar"
+    override val apply: String = "Aplicar"
+    override val rename: String = "Renombrar"
+    override val remove: String = "Quitar"
+    override val reset: String = "Restablecer"
+    override val clear: String = "Limpiar"
+    override val tryAgain: String = "Reintentar"
+    override val shareApp: String = "Compartir app"
+
+    // Home
+    override val feelingUrge: String = "¿Sentís ganas?"
+    override val feelingUrgeBody: String =
+        "Registrá la ganas antes de prender. Si todavía no es momento, te ayudamos a aguantar y premiamos el logro."
+    override val cravingGoodTime: String = "Ya es buen momento — dale cuando quieras."
+    override val cravingWaitOver: String =
+        "Se terminó la espera. Registrá el cigarrillo si todavía lo querés, o dejá pasar las ganas para el premio completo."
+    override val cravingHoldOn: String = "Hasta que tu próximo cigarrillo entre en el objetivo. Vos podés."
+    override val vsLastMonth: String = "Vs mes pasado"
+    override val startNewDayBody: String =
+        "Si el día arrancó antes de lo habitual, reiniciá la ventana de reflexión ahora y mantené Inicio alineado con el día que estás viviendo."
+    override val iFeelLikeSmoking: String = "Tengo ganas de fumar"
+    override val track: String = "Registrar"
+    override val dismiss: String = "Descartar"
+    override val imGood: String = "Estoy bien"
+    override val logTheCigarette: String = "Registrar el cigarrillo"
+    override val iSmokedAnyway: String = "Fumé igual"
+    override val nice: String = "Bien"
+    override val resisted: String = "Resistidos"
+    override val postponed: String = "Postergados"
+    override val waited: String = "Esperaste"
+    override val points: String = "Puntos"
+    override val startNewDay: String = "Empezar día nuevo"
+    override val timeSince: String = "Tiempo desde"
+    override val atLabel: String = "A las"
+    override val homeTitle: String = "Inicio"
+    override val needsAttention: String = "Necesita atención"
+    override val sessionRequired: String = "Se requiere sesión"
+    override val couldNotRefreshHome: String = "No se pudo actualizar Inicio"
+    override val homeNeedsSession: String =
+        "Inicio necesita una sesión activa para alinear tu objetivo, último cigarrillo y último intervalo."
+    override val homeGenericError: String = "No se pudo actualizar Inicio. Probá de nuevo en un momento."
+    override val openArchive: String = "Abrir archivo"
+    override val retry: String = "Reintentar"
+    override val resetDay: String = "Reiniciar día"
+    override val lastCigarette: String = "Último cigarrillo"
+    override val goal: String = "Objetivo"
+    override val consistency: String = "Consistencia"
+    override val craving: String = "Ganas"
+    override val cravings: String = "Ganas"
+    override val holdOnTitle: String = "Aguantá 💪"
+    override val youMadeItTitle: String = "¡Lo lograste! 🎉"
+    override val sameCountSoFar: String = "Mismo total hasta ahora"
+    override val samePaceLastMonth: String = "Mismo ritmo que el mes pasado"
+    override val smokingLessThanLastMonth: String = "Fumando menos que el mes pasado"
+    override val smokingMoreThanLastMonth: String = "Fumando más que el mes pasado"
+    override fun cravingPassedPoints(points: Int): String =
+        "Dejaste pasar las ganas sin fumar. +$points puntos ganados."
+    override fun cravingWaitedPoints(points: Int): String =
+        "Lo esperaste antes de fumar. +$points puntos ganados."
+
+    // Relationship prompt / reminder
+    override val whatWereTheseAbout: String = "¿Con qué se relacionaron?"
+    override val whatWasItRelatedTo: String = "¿Con qué se relacionó?"
+    override val tagWhatTriggered: String =
+        "Etiquetá qué disparó este cigarrillo, o salteá si no fue nada en particular."
+    override val loadingYourTags: String = "Cargando tus etiquetas…"
+    override val addTrigger: String = "Agregar disparador"
+    override val noRelation: String = "Sin relación"
+    override val addATagPlaceholder: String = "Agregar etiqueta…"
+    override fun loggedAt(dateLabel: String): String = "Registrado $dateLabel"
+    override fun moreCount(n: Int): String = "+$n más"
+    override fun pendingNeedsTrigger(n: Int): String =
+        if (n == 1) "1 cigarrillo todavía necesita un disparador — etiquetalo abajo."
+        else "$n cigarrillos todavía necesitan un disparador — etiquetalos de a uno."
+
+    // Edit smoke
+    override val editSmoke: String = "Editar cigarrillo"
+    override val date: String = "Fecha"
+    override val time: String = "Hora"
+
+    // Goals
+    override val noActiveGoalYet: String = "Todavía no hay objetivo activo"
+    override val noActiveGoalBody: String = "Fijá una meta para mantener tu progreso al frente en Inicio."
+    override val activeGoal: String = "Objetivo activo"
+    override val goalsNeedAccount: String = "Los objetivos necesitan una cuenta"
+    override val goalsNeedAccountBody: String =
+        "Iniciá sesión para guardar un objetivo activo y sincronizarlo entre plataformas."
+    override val goalSetup: String = "Configuración del objetivo"
+    override val goalsTitle: String = "Objetivos"
+    override val backToProgress: String = "← Volver al progreso"
+    override val setAGoal: String = "Fijar un objetivo"
+    override val goalsUnavailable: String = "Los objetivos no están disponibles"
+    override val configureGoal: String = "Configurar objetivo"
+    override val chooseOneTarget: String = "Elegí una meta activa y mantené su progreso visible desde Inicio."
+    override val completed: String = "Completado"
+    override val noGoalYet: String = "Todavía sin objetivo"
+    override val offTrack: String = "Fuera de camino"
+    override val onTrack: String = "En camino"
+    override val trackHowGoing: String = "Seguí cómo va tu objetivo activo."
+    override val yourGoal: String = "Tu objetivo"
+    // Goal editor
+    override val dailyCap: String = "Tope diario"
+    override val mindfulGap: String = "Intervalo consciente"
+    override val reduceVsPrevMonth: String = "Reducir vs mes anterior"
+    override val reduceVsPrevWeek: String = "Reducir vs semana anterior"
+    override val saveGoal: String = "Guardar objetivo"
+    override val updateGoal: String = "Actualizar objetivo"
+    override val usePositiveMinutes: String = "Usá un número positivo de minutos."
+    override val usePositiveWhole: String = "Usá un número entero positivo."
+    override val useValue1to90: String = "Usá un valor entre 1 y 90."
+    override fun dailyCapDesc(max: Int): String = "Tope diario: como máximo $max cigarrillos."
+    override fun reduceMonthDesc(pct: Int): String = "Reducí el mes actual un $pct%."
+    override fun reduceWeekDesc(pct: Int): String = "Reducí la semana actual un $pct%."
+    override fun waitAtLeastDesc(min: Int): String = "Esperá al menos $min minutos entre cigarrillos."
+    // History
+    override val archiveNeedsSession: String =
+        "El acceso al archivo necesita una sesión activa para que las ediciones, fechas y cigarrillos viejos queden atados a la misma cuenta."
+    override val goToSignIn: String = "Ir a iniciar sesión"
+    override val historyCouldNotLoad: String = "No se pudo cargar el historial"
+    override val signInRequired: String = "Se requiere iniciar sesión"
+    override val dayHistoryCouldNotLoad: String = "No se pudo cargar el historial del día seleccionado. Probá actualizar el día."
+    override fun afterHm(h: Int, m: Int): String = "Después de ${h}h ${m}m"
+    override fun afterM(m: Int): String = "Después de ${m}m"
+    // Auth extras
+    override val checkingSession: String = "Verificando sesión"
+    override val secureSignIn: String = "Inicio de sesión seguro"
+    override val keepEditsBody: String = "Mantené las ediciones, las franjas de fechas y las entradas viejas atadas a la misma cuenta."
+    override val keepReductionBody: String = "Mantené las metas de reducción y las preferencias atadas a la misma cuenta."
+    override val restorePreferencesBody: String = "Restaurá preferencias como la hora de inicio del día, el precio del paquete y el seguimiento de ubicación."
+
+    // History
+    override val historyRefreshFailed: String =
+        "Falló la última actualización. Mostrando el último estado disponible del archivo."
+    override val shiftMonthHint: String = "Cambiá de mes o tocá un día para inspeccionarlo en la lista de abajo."
+    override val dailyArchive: String = "Archivo diario"
+    override val theArchive: String = "El Archivo"
+    override val theArchiveSubtitle: String =
+        "Recorré el calendario, inspeccioná un día y editá el registro completo sin salir de la pantalla principal."
+    override val quietDay: String = "Día tranquilo en el archivo"
+    override val quietDayBody: String =
+        "Esta fecha todavía no tiene cigarrillos registrados. Cambiá la ventana del archivo o agregá uno para el día seleccionado."
+    override val addSmoke: String = "Agregar cigarrillo"
+    override val addForDate: String = "Agregar para la fecha"
+    override fun entriesCount(n: Int): String = if (n == 1) "$n registro" else "$n registros"
+    override fun dailyAverageUnits(avg: String): String = "Promedio diario $avg unidades"
+
+    // Auth
+    override val restoreShell: String = "Restaurá el entorno del producto"
+    override val restoreShellBody: String =
+        "Iniciá sesión con Google para recuperar el historial sincronizado, la configuración y el flujo completo multi-dispositivo."
+    override val beforeYouContinue: String = "Antes de continuar"
+    override val beforeYouContinueBody: String =
+        "El rediseño mantiene las mismas capacidades: registro rápido de cigarrillos, analíticas e insights de mapa, edición del archivo, objetivos y sincronización de ajustes."
+    override val signInToContinue: String = "Iniciá sesión para continuar"
+    override val authFailed: String = "Falló la autenticación"
+    override val authFailedBody: String = "No se pudo restaurar la sesión. Probá iniciar sesión de nuevo."
+    override val retrySessionCheck: String = "Reintentar verificación de sesión"
+    override val refreshSession: String = "Actualizar sesión"
+    override val clearSession: String = "Limpiar sesión"
+    override val archiveSync: String = "Sincronización del archivo"
+    override val routine: String = "Rutina"
+    override val stableDayModel: String = "Modelo de día estable"
+    override val contextAware: String = "Con contexto"
+
+    // Stats
+    override val statsRefreshFailed: String =
+        "Falló la última actualización. Mostrando la última instantánea de analíticas disponible."
+    override val peakWindow: String = "Ventana pico"
+    override val peakWindowBody: String = "Franja de mayor actividad para el rango seleccionado."
+    override val smokingFrequency: String = "Frecuencia de fumado"
+    override val byTrigger: String = "Por disparador"
+    override val byTriggerEmpty: String =
+        "Todavía no hay cigarrillos etiquetados en este período. Etiquetá con qué se relacionó cada uno y el desglose aparece acá."
+    override val eyebrowTrends: String = "Tendencias"
+    override val loading: String = "Cargando"
+    override val errorBadge: String = "Error"
+    override val refreshingFrequency: String = "Actualizando frecuencia en segundo plano."
+    override val freqRefreshFailed: String = "Falló la última actualización de frecuencia. Mostrando la última instantánea."
+    override val patternsInMotion: String = "Patrones en movimiento"
+    override val patternViewUnavailable: String = "Vista de patrones no disponible"
+    override val patternViewUnavailableBody: String =
+        "El rango seleccionado no se pudo armar ahora. Mantené el período y la fecha, y actualizá para reintentar esta vista."
+    override val periodToday: String = "Hoy"
+    override val periodWeek: String = "Semana"
+    override val periodMonth: String = "Mes"
+    override val periodYear: String = "Año"
+    override val chartTitleDay: String = "Hoy (por hora)"
+    override val chartTitleWeek: String = "Esta semana"
+    override val chartTitleMonth: String = "Este mes"
+    override val chartTitleYear: String = "Este año"
+
+    // Map
+    override val refreshingClusters: String = "Actualizando clusters en segundo plano."
+    override val mapRefreshFailed: String = "Falló la última actualización. Mostrando los últimos clusters disponibles."
+    override val mostFrequentArea: String = "Área más frecuente del período seleccionado"
+    override val topClusters: String = "Principales clusters"
+    override val pickAreaToInspect: String = "Elegí un área para inspeccionar en Google Maps."
+    override val observation: String = "Observación"
+    override val observationBody: String =
+        "Los clusters repetidos suelen indicar rutinas que conviene proteger o interrumpir, sobre todo en trayectos, pausas o transiciones de fin de día."
+    override val geographicClusters: String = "Clusters geográficos"
+    override val geographicClustersSubtitle: String =
+        "Inspeccioná áreas donde fumás seguido y los lugares que dominan el período actual del mapa."
+    override val locationOff: String = "El seguimiento de ubicación está apagado"
+    override val locationOffBody: String =
+        "Activá el seguimiento de ubicación en Vos para desbloquear los insights de mapa, la detección de áreas repetidas y el lado geográfico de Analíticas."
+    override val noMappedSmokes: String = "Todavía no hay cigarrillos en el mapa"
+    override val noMappedSmokesBody: String =
+        "Todavía no hay suficiente historial con ubicación para este período. Agregá más cigarrillos con el seguimiento de ubicación activado para armar clusters."
+    override val refreshing: String = "Actualizando"
+    override val view: String = "Ver"
+    override val viewing: String = "Viendo"
+    override fun smokesCount(n: Int): String = if (n == 1) "$n cigarrillo" else "$n cigarrillos"
+    override fun mappedSmokesInPeriod(count: Int, period: String): String =
+        "$count cigarrillos mapeados en el período seleccionado."
+    override fun smokesInArea(n: Int): String = if (n == 1) "$n cigarrillo en esta área" else "$n cigarrillos en esta área"
+    override fun clusterSummary(count: Int, radius: Int): String =
+        "$count cigarrillos agrupados en un área aproximada de $radius m."
+    override val analyticsAndMap: String = "Analíticas y Mapa"
+    override val analyticsAndMapSubtitle: String =
+        "Revisá la frecuencia de fumado y las áreas repetidas desde un solo lugar."
+    override val eyebrowPatterns: String = "Patrones"
+    override val eyebrowLocations: String = "Ubicaciones"
+    override val eyebrowPersonalSpace: String = "Espacio personal"
+    override val tabFrequency: String = "Frecuencia"
+    override val tabClusters: String = "Clusters"
+    override val periodDay: String = "Día"
+    override val youSubtitle: String =
+        "Mantené la cuenta, las preferencias de rutina, los objetivos y los detalles del producto en un solo lugar más tranquilo."
+    override fun weekOf(date: String): String = "Semana del $date"
+    override val selectedDay: String = "Día seleccionado"
+    override val monthOverview: String = "Resumen del mes"
+    override val yearToDate: String = "Año hasta hoy"
+
+    // Settings / You
+    override val account: String = "Cuenta"
+    override val accountSubtitle: String =
+        "El estado de la sesión y el contexto principal del producto quedan juntos acá en lugar de dividir Vos en restos de Ajustes/Acerca de."
+    override val session: String = "Sesión"
+    override val sessionGuestBody: String =
+        "El modo invitado mantiene todo legible, pero iniciar sesión restaura preferencias sincronizadas, un archivo estable y objetivos entre dispositivos."
+    override val plan: String = "Plan"
+    override val pointsCard: String = "Puntos"
+    override val recovery: String = "Recuperación"
+    override val planPremiumBody: String =
+        "Premium se plantea como una mejora futura con insights más ricos y sin anuncios."
+    override val pointsBody: String =
+        "El progreso se mide por los períodos sin fumar, no por la perfección. Cuanto más largos los períodos, más sube el puntaje."
+    override val yourSpaceUnavailable: String = "Tu espacio no está disponible"
+    override val preferences: String = "Preferencias"
+    override val preferencesSubtitle: String =
+        "Los ajustes de rutina y costo moldean cómo el resto del producto interpreta tu día."
+    override val preferencesSignInHint: String =
+        "Iniciá sesión para editar las preferencias de rutina y mantenerlas sincronizadas entre mobile y web."
+    override val triggers: String = "Disparadores"
+    override val triggersSubtitle: String =
+        "Elegí qué disparadores predefinidos aparecen al etiquetar un cigarrillo, y agregá los tuyos."
+    override val appSection: String = "App"
+    override val appSectionSubtitle: String =
+        "Soporte, compartir y detalles del producto quedan visibles dentro de Vos en lugar de una sección Acerca de aparte."
+    override val builtIn: String = "Predefinidos"
+    override val yourTags: String = "Tus etiquetas"
+    override val leaveEmptyToRestore: String = "Dejá vacío para restaurar el nombre original"
+    override fun restoreRemovedDefaults(n: Int): String = "Restaurar predefinidos quitados ($n)"
+    override val dayModel: String = "Modelo de día"
+    override val firstHourOfDay: String = "Primera hora del día"
+    override val sleepStarts: String = "Empieza el sueño"
+    override val bedtime: String = "Hora de dormir"
+    override val location: String = "Ubicación"
+    override val trackLocationWithSmokes: String = "Registrar ubicación con los cigarrillos"
+    override val currency: String = "Moneda"
+    override val packPrice: String = "Precio del paquete"
+    override val cigarettesPerPack: String = "Cigarrillos por paquete"
+    override val actions: String = "Acciones"
+    override val actionsSubtitle: String = "Compartí la app, reportá bugs y contactá soporte desde el mismo lugar."
+    override val signOut: String = "Cerrar sesión"
+    override val working: String = "Trabajando..."
+    override val off: String = "Apagado"
+    override val pickTriggerIcon: String = "Elegí un icono"
+    override val changesSavedAutomatically: String = "Los cambios se guardan automáticamente."
+    override val currencyOptional: String = "Opcional. Se usa para insights de mapa."
+    override val dayModelBody: String = "Hora de despertar usada como límite principal de las franjas en Inicio, Historial y Analíticas."
+    override val firstHourBody: String = "Las horas de sueño se excluyen del objetivo de intervalo y del promedio horario diario."
+    override val locationOnBody: String = "El seguimiento de ubicación está activado, así los insights de mapa aprenden de las áreas repetidas."
+    override val locationOffShortBody: String = "El seguimiento de ubicación está apagado, así que los insights de mapa quedan no disponibles hasta cambiar el ajuste."
+    override val packPriceBody: String = "La base de costo para estimaciones de gasto y resúmenes de progreso."
+    override val cigarettesPerPackBody: String = "Mantiene alineadas las métricas de costo y las estimaciones por paquete."
+    override val currencyBody: String = "Se usa para el precio del paquete y los cálculos de costo en todo el producto."
+    override val bedtimeBody: String = "Las horas de sueño se excluyen del objetivo de intervalo y del promedio horario diario."
+    override val historyCardBody: String = "Mantené las ediciones y los cigarrillos viejos conectados a la misma cuenta."
+    override val goalsCardBody: String = "Mantené las metas de reducción y las preferencias conectadas a la misma cuenta."
+    override val preferencesCardBody: String = "Llevá el precio del paquete, la hora de inicio del día y la ubicación entre dispositivos."
+    override val webCardBody: String = "La superficie del navegador se mantiene alineada con la misma dirección de producto que mobile."
+    override val routineSync: String = "Sincronización de rutina"
+    override val stableArchive: String = "Archivo estable"
+    override val stableTargets: String = "Metas estables"
+    override val version: String = "Versión"
+
+    // About
+    override val about: String = "Acerca de"
+    override val aboutTagline: String = "Registrá menos, notá más."
+    override val aboutBody: String =
+        "Smoke Analytics es un diario personal de fumado hecho para hacer visibles los patrones sin volver la app ruidosa. Te ayuda a revisar el día, seguir tendencias largas, entender el costo y notar dónde o cuándo el fumado tiende a agruparse, en mobile y web."
+    override val contact: String = "Contacto"
+    override val contactBody: String =
+        "Hecho por Fernando Perez. Si algo no anda bien, hoy el mejor camino es GitHub: mirá el repo, abrí un reporte de bug o iniciá una discusión."
+    override val github: String = "GitHub"
+    override val reportBug: String = "Reportar bug"
+    override val contactUs: String = "Contactanos"
+    override val free: String = "Gratis"
+    override val planAboutBody: String = "Premium se define como una mejora futura con insights más ricos y sin anuncios."
+    override val copyright: String = "Derechos"
+    override val copyrightBody: String = "© Fernando Perez. Todos los derechos reservados."
+    override val shareAppArrow: String = "↗ Compartir app"
+}

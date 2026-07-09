@@ -31,6 +31,7 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import org.jetbrains.compose.web.attributes.AttrsScope
 import org.jetbrains.compose.web.css.px
@@ -105,11 +106,11 @@ fun HomeViewState.Render(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = greetingTitle ?: "Home",
-            eyebrow = "Home",
+            title = greetingTitle ?: LocalStrings.current.homeTitle,
+            eyebrow = LocalStrings.current.homeTitle,
             badgeText = when {
-                displayRefreshLoading -> "Refreshing"
-                error != null -> "Needs attention"
+                displayRefreshLoading -> LocalStrings.current.refreshing
+                error != null -> LocalStrings.current.needsAttention
                 else -> null
             },
             badgeTone = when {
@@ -125,14 +126,14 @@ fun HomeViewState.Render(
 
         if (error != null) {
             EmptyStateCard(
-                title = if (error == HomeViewState.HomeError.NotLoggedIn) "Session required" else "Could not refresh home",
+                title = if (error == HomeViewState.HomeError.NotLoggedIn) LocalStrings.current.sessionRequired else LocalStrings.current.couldNotRefreshHome,
                 message = when (error) {
                     HomeViewState.HomeError.NotLoggedIn ->
-                        "Home needs an active session to line up your goal, last cigarette, and latest gap."
+                        LocalStrings.current.homeNeedsSession
                     HomeViewState.HomeError.Generic ->
-                        "The goal-first home could not be refreshed. Try again in a moment."
+                        LocalStrings.current.homeGenericError
                 },
-                actionLabel = if (error == HomeViewState.HomeError.NotLoggedIn) "Open archive" else "Retry",
+                actionLabel = if (error == HomeViewState.HomeError.NotLoggedIn) LocalStrings.current.openArchive else LocalStrings.current.retry,
                 onAction = if (error == HomeViewState.HomeError.NotLoggedIn) {
                     { onIntent(HomeIntent.OnClickHistory) }
                 } else {
@@ -248,7 +249,7 @@ private fun GoalHeroCard(
         ) {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
                 Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;") }) {
-                    HomeSectionChip("⌁", "Goal", heroProgress.tone.accentColor())
+                    HomeSectionChip("⌁", LocalStrings.current.goal, heroProgress.tone.accentColor())
                     TonePill(
                         text = narrative.statusLabel,
                         background = heroProgress.tone.pillBackground(),
@@ -374,14 +375,14 @@ private fun LastCigaretteCard(
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("◷", "Last cigarette", elapsedTone.pillForeground())
+            HomeSectionChip("◷", LocalStrings.current.lastCigarette, elapsedTone.pillForeground())
             Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;") }) {
                 LastCigaretteValueCard(
-                    label = "At",
+                    label = LocalStrings.current.atLabel,
                     value = lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--",
                 )
                 LastCigaretteValueCard(
-                    label = "Time since",
+                    label = LocalStrings.current.timeSince,
                     value = timeSinceLastCigarette.toElapsedGapLabel(),
                 )
             }
@@ -407,7 +408,7 @@ private fun DetachedTrackAction(
     ) {
         Div(attrs = { attr("style", "pointer-events:auto;") }) {
             PrimaryButton(
-                text = "Track",
+                text = LocalStrings.current.track,
                 onClick = onAddSmoke,
             )
         }
@@ -445,7 +446,7 @@ private fun ConsistencyCard(
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("↗", "Consistency", "var(--sa-color-primary)")
+            HomeSectionChip("↗", LocalStrings.current.consistency, "var(--sa-color-primary)")
             Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
                 Text(consistencyLabel)
             }
@@ -497,15 +498,15 @@ private data class ConsistencyMilestone(
 private fun CravingPromptCard(onTrack: () -> Unit) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("♥", "Craving", "var(--sa-color-primary)")
+            HomeSectionChip("♥", LocalStrings.current.craving, "var(--sa-color-primary)")
             Div(attrs = { attr("style", "font-size:18px;font-weight:800;") }) {
-                Text("Feeling the urge?")
+                Text(LocalStrings.current.feelingUrge)
             }
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("Track the craving before lighting up. If it isn't time yet, we'll help you wait it out and reward the win.")
+                Text(LocalStrings.current.feelingUrgeBody)
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
-                PrimaryButton(text = "I feel like smoking", onClick = onTrack)
+                PrimaryButton(text = LocalStrings.current.iFeelLikeSmoking, onClick = onTrack)
             }
         }
     }
@@ -516,9 +517,9 @@ private fun CravingHintCard(onDismiss: () -> Unit) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:14px;") }) {
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("It's already a good time — go ahead when you want.")
+                Text(LocalStrings.current.cravingGoodTime)
             }
-            CravingTextButton(text = "Dismiss", onClick = onDismiss)
+            CravingTextButton(text = LocalStrings.current.dismiss, onClick = onDismiss)
         }
     }
 }
@@ -546,18 +547,18 @@ private fun CravingCountdownCard(
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;") }) {
             Div(attrs = { attr("style", "font-size:20px;font-weight:800;") }) {
-                Text(if (done) "You made it! 🎉" else "Hold on 💪")
+                Text(if (done) LocalStrings.current.youMadeItTitle else LocalStrings.current.holdOnTitle)
             }
             if (done) {
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("The wait is over. Log the cigarette if you still want it, or let the urge pass for the full reward.")
+                    Text(LocalStrings.current.cravingWaitOver)
                 }
             } else {
                 Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
                     Text(remaining.toCountdownLabel())
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Until your next cigarette fits the goal. You've got this.")
+                    Text(LocalStrings.current.cravingHoldOn)
                 }
             }
             // onResolve(true)  -> smoked (gave in while waiting / postponed once done)
@@ -565,12 +566,12 @@ private fun CravingCountdownCard(
             Div(attrs = { attr("style", "display:flex;gap:12px;width:100%;justify-content:center;") }) {
                 if (done) {
                     // The wait paid off: log the now-allowed cigarette, or let it go.
-                    CravingTextButton(text = "I'm good", onClick = { onResolve(false) })
-                    PrimaryButton(text = "Log the cigarette", onClick = { onResolve(true) })
+                    CravingTextButton(text = LocalStrings.current.imGood, onClick = { onResolve(false) })
+                    PrimaryButton(text = LocalStrings.current.logTheCigarette, onClick = { onResolve(true) })
                 } else {
                     // While waiting the only manual action is the give-in escape hatch.
                     // Resisting is automatic when the countdown ends.
-                    CravingTextButton(text = "I smoked anyway", onClick = { onResolve(true) })
+                    CravingTextButton(text = LocalStrings.current.iSmokedAnyway, onClick = { onResolve(true) })
                 }
             }
         }
@@ -592,14 +593,14 @@ private fun CravingCelebrationCard(
                 Div(attrs = { attr("style", "font-size:14px;opacity:0.85;margin-top:6px;") }) {
                     Text(
                         if (resisted) {
-                            "You let the craving pass without smoking. +${celebration.points} points earned."
+                            LocalStrings.current.cravingPassedPoints(celebration.points)
                         } else {
-                            "You waited it out before smoking. +${celebration.points} points earned."
+                            LocalStrings.current.cravingWaitedPoints(celebration.points)
                         }
                     )
                 }
             }
-            CravingTextButton(text = "Nice", onClick = onDismiss)
+            CravingTextButton(text = LocalStrings.current.nice, onClick = onDismiss)
         }
     }
 }
@@ -608,12 +609,12 @@ private fun CravingCelebrationCard(
 private fun CravingStatsCard(stats: CravingStats) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("♥", "Cravings", "var(--sa-color-primary)")
+            HomeSectionChip("♥", LocalStrings.current.cravings, "var(--sa-color-primary)")
             Div(attrs = { attr("style", "display:flex;gap:12px;flex-wrap:wrap;") }) {
-                CravingStatCell(value = "${stats.resisted}", label = "Resisted")
-                CravingStatCell(value = "${stats.postponed}", label = "Postponed")
-                CravingStatCell(value = stats.minutesWaited.toWaitedLabel(), label = "Waited")
-                CravingStatCell(value = "${stats.points}", label = "Points")
+                CravingStatCell(value = "${stats.resisted}", label = LocalStrings.current.resisted)
+                CravingStatCell(value = "${stats.postponed}", label = LocalStrings.current.postponed)
+                CravingStatCell(value = stats.minutesWaited.toWaitedLabel(), label = LocalStrings.current.waited)
+                CravingStatCell(value = "${stats.points}", label = LocalStrings.current.points)
             }
         }
     }
@@ -684,15 +685,15 @@ private fun HomeTrendCard(
         else -> "linear-gradient(135deg,#5A6568 0%, #3E484B 100%)"
     }
     val headline = when {
-        improving -> "Smoking less than last month"
-        worsening -> "Smoking more than last month"
-        else -> "Same pace as last month"
+        improving -> LocalStrings.current.smokingLessThanLastMonth
+        worsening -> LocalStrings.current.smokingMoreThanLastMonth
+        else -> LocalStrings.current.samePaceLastMonth
     }
     val deltaLabel = delta?.let {
         when {
             it < 0 -> "${-it} fewer ${pluralCigarettes(-it)} so far"
             it > 0 -> "$it more ${pluralCigarettes(it)} so far"
-            else -> "Same count so far"
+            else -> LocalStrings.current.sameCountSoFar
         }
     }
     val glyph = if (improving) "↘" else if (worsening) "↗" else "→"
@@ -706,7 +707,7 @@ private fun HomeTrendCard(
         }) {
             Div {
                 Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.76;") }) {
-                    Text("Vs last month")
+                    Text(LocalStrings.current.vsLastMonth)
                 }
                 Div(attrs = { attr("style", "font-size:26px;font-weight:800;line-height:1.1;margin-top:10px;max-width:320px;") }) {
                     Text(headline)
@@ -740,13 +741,13 @@ private fun EveningResetCard(
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            HomeSectionChip("◌", "Reset day", "var(--sa-color-primary)")
+            HomeSectionChip("◌", LocalStrings.current.resetDay, "var(--sa-color-primary)")
             Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                Text("If the day started earlier than usual, reset the reflection window now and keep Home aligned with the day you are actually living.")
+                Text(LocalStrings.current.startNewDayBody)
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                 PrimaryButton(
-                    text = "Start New Day",
+                    text = LocalStrings.current.startNewDay,
                     onClick = onStartNewDay,
                 )
             }

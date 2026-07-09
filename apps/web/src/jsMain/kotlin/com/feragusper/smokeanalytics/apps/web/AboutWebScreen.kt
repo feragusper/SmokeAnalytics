@@ -5,6 +5,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import kotlinx.coroutines.launch
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.A
@@ -25,20 +26,21 @@ fun AboutWebSections(
     onShare: (suspend () -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
+    val strings = LocalStrings.current
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         SurfaceCard {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
                 Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                    Text("About")
+                    Text(strings.about)
                 }
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Track less, notice more.") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.aboutTagline) }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Smoke Analytics is a personal smoking journal built to make patterns visible without turning the app into noise. It helps you review the day, follow longer trends, understand cost, and notice where or when smoking tends to cluster across mobile and web.")
+                    Text(strings.aboutBody)
                 }
                 onShare?.let { share ->
                     Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                         PrimaryButton(
-                            text = "Share app",
+                            text = strings.shareApp,
                             onClick = { scope.launch { share() } },
                         )
                     }
@@ -48,19 +50,19 @@ fun AboutWebSections(
 
         SurfaceCard {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Contact") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.contact) }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Built by Fernando Perez. If something feels off, the best path today is GitHub: check the repo, open a bug report, or start a discussion.")
+                    Text(strings.contactBody)
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     A("https://github.com/feragusper/SmokeAnalytics", attrs = { attr("target", "_blank") }) {
-                        Text("GitHub")
+                        Text(strings.github)
                     }
                     A("https://github.com/feragusper/SmokeAnalytics/issues/new/choose", attrs = { attr("target", "_blank") }) {
-                        Text("Report bug")
+                        Text(strings.reportBug)
                     }
                     A("mailto:feragusper@gmail.com", attrs = { attr("target", "_blank") }) {
-                        Text("Contact us")
+                        Text(strings.contactUs)
                     }
                 }
             }
@@ -72,13 +74,13 @@ fun AboutWebSections(
             SurfaceCard {
                 Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;min-height:160px;") }) {
                     Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                        Text("Plan")
+                        Text(strings.plan)
                     }
                     Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text("Free")
+                        Text(strings.free)
                     }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Premium is defined as a future upgrade with richer insights and no ads.")
+                        Text(strings.planAboutBody)
                     }
                 }
             }
@@ -86,13 +88,13 @@ fun AboutWebSections(
             SurfaceCard {
                 Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;min-height:160px;") }) {
                     Div(attrs = { attr("style", "font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                        Text("Copyright")
+                        Text(strings.copyright)
                     }
                     Div(attrs = { attr("style", "font-size:28px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text("Smoke Analytics")
+                        Text(strings.brandName)
                     }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("© Fernando Perez. All rights reserved.")
+                        Text(strings.copyrightBody)
                     }
                 }
             }

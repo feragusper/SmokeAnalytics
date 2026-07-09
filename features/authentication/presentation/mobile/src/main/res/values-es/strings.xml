@@ -1,0 +1,4 @@
+<resources>
+    <string name="error_generic">Ocurrió un error</string>
+    <string name="authentication_sign_in_to_continue">Iniciá sesión para continuar</string>
+</resources>

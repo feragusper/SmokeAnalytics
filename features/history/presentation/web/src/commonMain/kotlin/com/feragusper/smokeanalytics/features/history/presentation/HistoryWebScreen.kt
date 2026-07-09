@@ -16,6 +16,8 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeRow
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import kotlinx.datetime.DatePeriod
@@ -47,6 +49,7 @@ fun HistoryWebScreen(
 
     val state by store.state.collectAsState()
     val tz = remember { TimeZone.currentSystemDefault() }
+    val strings = LocalStrings.current
 
     val editing = remember { mutableStateMapOf<String, Boolean>() }
     val draftDateTime = remember { mutableStateMapOf<String, String>() }
@@ -56,13 +59,13 @@ fun HistoryWebScreen(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "The Archive",
-            eyebrow = "The Archive",
-            subtitle = "Browse the calendar, inspect a single day, and edit the full smoking log without leaving the main shell.",
+            title = strings.theArchive,
+            eyebrow = strings.theArchive,
+            subtitle = strings.theArchiveSubtitle,
             badgeText = when {
-                state.displayLoading && state.smokes != null -> "Refreshing"
-                state.displayLoading -> "Loading"
-                state.error != null -> "Needs attention"
+                state.displayLoading && state.smokes != null -> strings.refreshing
+                state.displayLoading -> strings.loading
+                state.error != null -> strings.needsAttention
                 else -> "${state.smokes?.size ?: 0} entries"
             },
             badgeTone = when {
@@ -74,13 +77,13 @@ fun HistoryWebScreen(
 
         if (state.error != null && state.smokes == null) {
             EmptyStateCard(
-                title = if (state.error == HistoryResult.Error.NotLoggedIn) "Sign in required" else "History could not be loaded",
+                title = if (state.error == HistoryResult.Error.NotLoggedIn) strings.signInRequired else strings.historyCouldNotLoad,
                 message = when (state.error) {
-                    HistoryResult.Error.NotLoggedIn -> "Archive access needs an active session so edits, dates, and older smoke entries stay tied to the same account."
-                    HistoryResult.Error.Generic -> "The selected day's history could not be loaded. Try refreshing the day."
-                    else -> "The selected day's history could not be loaded. Try refreshing the day."
+                    HistoryResult.Error.NotLoggedIn -> strings.archiveNeedsSession
+                    HistoryResult.Error.Generic -> strings.dayHistoryCouldNotLoad
+                    else -> strings.dayHistoryCouldNotLoad
                 },
-                actionLabel = if (state.error == HistoryResult.Error.NotLoggedIn) "Go to sign in" else "Retry",
+                actionLabel = if (state.error == HistoryResult.Error.NotLoggedIn) strings.goToSignIn else strings.retry,
                 onAction = if (state.error == HistoryResult.Error.NotLoggedIn) onNavigateToAuth else {
                     { store.send(HistoryIntent.FetchSmokes(selectedDayStart)) }
                 },
@@ -111,7 +114,7 @@ fun HistoryWebScreen(
 
         if (state.error != null && state.smokes != null) {
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Latest refresh failed. Showing the last available archive state.")
+                Text(strings.historyRefreshFailed)
             }
         }
 
@@ -123,9 +126,9 @@ fun HistoryWebScreen(
             }
 
             state.smokes.isNullOrEmpty() -> EmptyStateCard(
-                title = "Quiet day in the archive",
-                message = "This date has no smoke entries yet. Shift the archive window or add one for the selected day.",
-                actionLabel = "Add smoke",
+                title = strings.quietDay,
+                message = strings.quietDayBody,
+                actionLabel = strings.addSmoke,
                 onAction = { store.send(HistoryIntent.AddSmoke(selectedDayStart)) },
             )
 
@@ -156,6 +159,7 @@ private fun ArchiveCalendarCard(
     onPickDate: (LocalDate) -> Unit,
     onAdd: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     val monthStart = LocalDate(
         year = selectedLocalDate.year,
         monthNumber = selectedLocalDate.monthNumber,
@@ -177,7 +181,7 @@ private fun ArchiveCalendarCard(
                         Text("Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units")
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);margin-top:4px;") }) {
-                        Text("Shift the month or tap a day to inspect it in the list below.")
+                        Text(strings.shiftMonthHint)
                     }
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
@@ -232,7 +236,7 @@ private fun ArchiveCalendarCard(
                         Text(selectedLocalDate.toUiMonthDay())
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
-                        Text("Daily archive")
+                        Text(strings.dailyArchive)
                     }
                 }
 
@@ -269,7 +273,7 @@ private fun ArchiveCalendarCard(
                     Text("$entriesCount entries")
                 }
                 PrimaryButton(
-                    text = "Add for Date",
+                    text = strings.addForDate,
                     onClick = onAdd,
                     enabled = !displayLoading,
                 )
@@ -287,6 +291,7 @@ private fun HistorySmokeList(
     onEditSmoke: (String, Instant) -> Unit,
     onDeleteSmoke: (String) -> Unit,
 ) {
+    val strings = LocalStrings.current
     Div(attrs = { classes(SmokeWebStyles.list) }) {
         state.smokes.orEmpty().forEach { smoke ->
             val id = smoke.id
@@ -296,7 +301,7 @@ private fun HistorySmokeList(
             val mm = local.minute.toString().padStart(2, '0')
             val timeLabel = "$hh:$mm"
             val subtitle = smoke.timeElapsedSincePreviousSmoke.let { (h, m) ->
-                if (h > 0) "After ${h}h ${m}m" else "After ${m}m"
+                if (h > 0) strings.afterHm(h.toInt(), m.toInt()) else strings.afterM(m.toInt())
             }
             val toneClass = when (elapsedToneFrom(smoke.timeElapsedSincePreviousSmoke.first, smoke.timeElapsedSincePreviousSmoke.second)) {
                 ElapsedTone.Urgent -> SmokeWebStyles.listRowUrgent
@@ -320,7 +325,7 @@ private fun HistorySmokeList(
                 val draft = draftDateTime[id] ?: smoke.date.toHtmlDateTimeLocal(tz)
 
                 SurfaceCard {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Edit smoke") }
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.editSmoke) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                         Text("${local.date.toUiDate()} ${local.toUiTime()}")
                     }
@@ -337,7 +342,7 @@ private fun HistorySmokeList(
 
                     Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                         PrimaryButton(
-                            text = "Apply",
+                            text = strings.apply,
                             enabled = !state.displayLoading,
                             onClick = {
                                 val v = draftDateTime[id] ?: return@PrimaryButton
@@ -347,7 +352,7 @@ private fun HistorySmokeList(
                             },
                         )
                         GhostButton(
-                            text = "Cancel",
+                            text = strings.cancel,
                             enabled = !state.displayLoading,
                             onClick = {
                                 editing[id] = false

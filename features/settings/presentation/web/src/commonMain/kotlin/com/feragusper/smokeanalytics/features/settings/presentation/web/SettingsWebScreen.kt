@@ -17,6 +17,7 @@ import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
@@ -71,17 +72,17 @@ private fun SettingsViewState.Render(
 
         if (errorMessage != null && currentEmail == null) {
             EmptyStateCard(
-                title = "Your space is unavailable",
+                title = LocalStrings.current.yourSpaceUnavailable,
                 message = errorMessage,
-                actionLabel = "Try again",
+                actionLabel = LocalStrings.current.tryAgain,
                 onAction = { onIntent(SettingsIntent.FetchUser) },
             )
             return@Div
         }
 
         SectionHeader(
-            title = "Account",
-            subtitle = "Session state and core product context stay together here instead of splitting You into old Settings/About leftovers.",
+            title = LocalStrings.current.account,
+            subtitle = LocalStrings.current.accountSubtitle,
         )
 
         if (currentEmail != null) {
@@ -101,29 +102,29 @@ private fun SettingsViewState.Render(
             attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
         }) {
             HighlightCard(
-                title = "Plan",
+                title = LocalStrings.current.plan,
                 value = preferences.accountTier.name,
-                body = "Premium stays framed as a future upgrade with richer insights and no ads.",
+                body = LocalStrings.current.planPremiumBody,
             )
             HighlightCard(
-                title = "Points",
-                value = "Recovery",
-                body = "Progress is tied to smoke-free gaps, not perfection. Longer gaps keep the score moving.",
+                title = LocalStrings.current.pointsCard,
+                value = LocalStrings.current.recovery,
+                body = LocalStrings.current.pointsBody,
             )
         }
 
         errorMessage?.let { msg ->
             EmptyStateCard(
-                title = "Your space is unavailable",
+                title = LocalStrings.current.yourSpaceUnavailable,
                 message = msg,
-                actionLabel = "Try again",
+                actionLabel = LocalStrings.current.tryAgain,
                 onAction = { onIntent(SettingsIntent.FetchUser) },
             )
         }
 
         SectionHeader(
-            title = "Preferences",
-            subtitle = "Routine and cost settings shape how the rest of the product interprets your day.",
+            title = LocalStrings.current.preferences,
+            subtitle = LocalStrings.current.preferencesSubtitle,
         )
 
         if (currentEmail != null) {
@@ -138,9 +139,9 @@ private fun SettingsViewState.Render(
         } else {
             SurfaceCard {
                 Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Preferences") }
+                    Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(LocalStrings.current.preferences) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Sign in to edit routine preferences and keep them synced across mobile and web.")
+                        Text(LocalStrings.current.preferencesSignInHint)
                     }
                 }
             }
@@ -148,8 +149,8 @@ private fun SettingsViewState.Render(
 
         if (currentEmail != null) {
             CollapsibleSection(
-                title = "Triggers",
-                subtitle = "Choose which built-in triggers appear when tagging a cigarette, and add your own.",
+                title = LocalStrings.current.triggers,
+                subtitle = LocalStrings.current.triggersSubtitle,
                 initiallyExpanded = false,
             ) {
                 ManageTriggersPanelWeb(
@@ -164,8 +165,8 @@ private fun SettingsViewState.Render(
         }
 
         SectionHeader(
-            title = "App",
-            subtitle = "Support, sharing, and product metadata stay visible inside You instead of a detached About route.",
+            title = LocalStrings.current.appSection,
+            subtitle = LocalStrings.current.appSectionSubtitle,
         )
 
         AppInfoCard(
@@ -246,40 +247,40 @@ private fun AppInfoCard(
                 attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
             }) {
                 SessionValueCard(
-                    title = "Plan",
+                    title = LocalStrings.current.plan,
                     value = accountTier,
-                    body = "Premium remains framed as a future upgrade with richer insights and no ads."
+                    body = LocalStrings.current.planPremiumBody
                 )
                 SessionValueCard(
-                    title = "Version",
-                    value = "Web",
-                    body = "The browser surface stays aligned with the same product direction as mobile."
+                    title = LocalStrings.current.version,
+                    value = LocalStrings.current.sidebarSectionWeb,
+                    body = LocalStrings.current.webCardBody
                 )
             }
 
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Actions") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(LocalStrings.current.actions) }
                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                    Text("Share the app, report bugs, and reach support from the same personal destination.")
+                    Text(LocalStrings.current.actionsSubtitle)
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                     PrimaryButton(
-                        text = "↗ Share app",
+                        text = LocalStrings.current.shareAppArrow,
                         onClick = { scope.launch { onShare() } },
                     )
                     LinkButton(
                         glyph = "⚑",
-                        label = "Report bug",
+                        label = LocalStrings.current.reportBug,
                         href = "https://github.com/feragusper/SmokeAnalytics/issues/new/choose",
                     )
                     LinkButton(
                         glyph = "✉",
-                        label = "Contact us",
+                        label = LocalStrings.current.contactUs,
                         href = "mailto:feragusper@gmail.com",
                     )
                     LinkButton(
                         glyph = "⌗",
-                        label = "GitHub",
+                        label = LocalStrings.current.github,
                         href = "https://github.com/feragusper/SmokeAnalytics",
                     )
                 }
@@ -313,7 +314,7 @@ private fun SessionCard(
 ) {
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Session") }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(LocalStrings.current.session) }
             displayName?.takeIf { it.isNotBlank() }?.let {
                 Div(attrs = { attr("style", "font-size:20px;font-weight:700;color:var(--sa-color-primary);") }) { Text(it) }
             }
@@ -321,7 +322,7 @@ private fun SessionCard(
 
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                 PrimaryButton(
-                    text = if (displayLoading) "Working..." else "Sign out",
+                    text = if (displayLoading) LocalStrings.current.working else LocalStrings.current.signOut,
                     onClick = onSignOut,
                     enabled = !displayLoading,
                 )
@@ -337,9 +338,9 @@ private fun SignInCard(
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:18px;") }) {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;max-width:720px;") }) {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Session") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(LocalStrings.current.session) }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and goals across devices.")
+                    Text(LocalStrings.current.sessionGuestBody)
                 }
             }
 
@@ -347,19 +348,19 @@ private fun SignInCard(
                 attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;")
             }) {
                 SessionValueCard(
-                    title = "Preferences",
-                    value = "Routine sync",
-                    body = "Carry pack price, day-start hour, and location settings across devices."
+                    title = LocalStrings.current.preferences,
+                    value = LocalStrings.current.routineSync,
+                    body = LocalStrings.current.preferencesCardBody
                 )
                 SessionValueCard(
-                    title = "History",
-                    value = "Stable archive",
-                    body = "Keep edits and older smoke entries connected to the same account."
+                    title = LocalStrings.current.navHistory,
+                    value = LocalStrings.current.stableArchive,
+                    body = LocalStrings.current.historyCardBody
                 )
                 SessionValueCard(
-                    title = "Goals",
-                    value = "Stable targets",
-                    body = "Keep reduction targets and product preferences connected to the same account."
+                    title = LocalStrings.current.goalsTitle,
+                    value = LocalStrings.current.stableTargets,
+                    body = LocalStrings.current.goalsCardBody
                 )
             }
 
@@ -430,12 +431,12 @@ private fun PreferencesCard(
                 attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;")
             }) {
                 PreferenceSummaryCard(
-                    title = "Day model",
+                    title = LocalStrings.current.dayModel,
                     value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                    body = "Wake-up hour used as the main bucket boundary across Home, History, and Analytics.",
+                    body = LocalStrings.current.dayModelBody,
                 ) {
                     TimeField(
-                        label = "First hour of the day",
+                        label = LocalStrings.current.firstHourOfDay,
                         value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
                         displayLoading = displayLoading,
                         onChange = {
@@ -445,12 +446,12 @@ private fun PreferencesCard(
                     )
                 }
                 PreferenceSummaryCard(
-                    title = "Sleep starts",
+                    title = LocalStrings.current.sleepStarts,
                     value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                    body = "Sleep hours are excluded from the mindful gap target and the daily hourly average.",
+                    body = LocalStrings.current.firstHourBody,
                 ) {
                     TimeField(
-                        label = "Bedtime",
+                        label = LocalStrings.current.bedtime,
                         value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
                         displayLoading = displayLoading,
                         onChange = {
@@ -460,15 +461,15 @@ private fun PreferencesCard(
                     )
                 }
                 PreferenceSummaryCard(
-                    title = "Location",
-                    value = if (preferences.locationTrackingEnabled) "On" else "Off",
+                    title = LocalStrings.current.location,
+                    value = if (preferences.locationTrackingEnabled) "On" else LocalStrings.current.off,
                     body = if (preferences.locationTrackingEnabled) {
-                        "Location tracking is enabled, so map insights can learn from repeated areas."
+                        LocalStrings.current.locationOnBody
                     } else {
-                        "Location tracking is off, so map insights stay unavailable until the setting changes."
+                        LocalStrings.current.locationOffShortBody
                     },
                 ) {
-                    LabeledField(label = "Track location with smokes") {
+                    LabeledField(label = LocalStrings.current.trackLocationWithSmokes) {
                         Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                             Input(type = InputType.Checkbox, attrs = {
                                 if (preferences.locationTrackingEnabled) attr("checked", "true")
@@ -478,18 +479,18 @@ private fun PreferencesCard(
                                 }
                             })
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("Optional. Used for map insights.")
+                                Text(LocalStrings.current.currencyOptional)
                             }
                         }
                     }
                 }
                 PreferenceSummaryCard(
-                    title = "Currency",
+                    title = LocalStrings.current.currency,
                     value = preferences.currencySymbol,
-                    body = "Used for pack-price and cost calculations across the product.",
+                    body = LocalStrings.current.currencyBody,
                 ) {
                     ChoiceField(
-                        label = "Currency",
+                        label = LocalStrings.current.currency,
                         displayLoading = displayLoading,
                         selected = preferences.currencySymbol,
                         options = listOf("€", "$", "£"),
@@ -497,12 +498,12 @@ private fun PreferencesCard(
                     )
                 }
                 PreferenceSummaryCard(
-                    title = "Pack price",
+                    title = LocalStrings.current.packPrice,
                     value = preferences.currencySymbol + preferences.packPrice.asDecimalString(),
-                    body = "The cost base for spend estimates and progress summaries.",
+                    body = LocalStrings.current.packPriceBody,
                 ) {
                     NumberField(
-                        label = "Pack price",
+                        label = LocalStrings.current.packPrice,
                         value = preferences.packPrice,
                         prefix = preferences.currencySymbol,
                         step = 0.5,
@@ -521,12 +522,12 @@ private fun PreferencesCard(
                     )
                 }
                 PreferenceSummaryCard(
-                    title = "Cigarettes per pack",
+                    title = LocalStrings.current.cigarettesPerPack,
                     value = preferences.cigarettesPerPack.toString(),
-                    body = "Keeps cost metrics and pack-level estimates aligned.",
+                    body = LocalStrings.current.cigarettesPerPackBody,
                 ) {
                     NumberField(
-                        label = "Cigarettes per pack",
+                        label = LocalStrings.current.cigarettesPerPack,
                         value = preferences.cigarettesPerPack.toDouble(),
                         step = 1.0,
                         displayLoading = displayLoading,
@@ -548,7 +549,7 @@ private fun PreferencesCard(
             }
 
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                Text("Changes are saved automatically.")
+                Text(LocalStrings.current.changesSavedAutomatically)
             }
         }
     }
@@ -678,11 +679,12 @@ private fun ManageTriggersPanelWeb(
     displayLoading: Boolean,
     onChange: (UserPreferences) -> Unit,
 ) {
+    val strings = LocalStrings.current
     var draft by remember { mutableStateOf("") }
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Built-in") }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(LocalStrings.current.builtIn) }
             SmokeTrigger.defaultOptions()
                 .filter { it.key !in preferences.hiddenDefaultTriggers }
                 .forEach { option ->
@@ -701,14 +703,14 @@ private fun ManageTriggersPanelWeb(
                 }
             if (preferences.hiddenDefaultTriggers.isNotEmpty()) {
                 GhostButton(
-                    text = "Restore removed defaults (${preferences.hiddenDefaultTriggers.size})",
+                    text = LocalStrings.current.restoreRemovedDefaults(preferences.hiddenDefaultTriggers.size),
                     enabled = !displayLoading,
                     onClick = { onChange(preferences.copy(hiddenDefaultTriggers = emptySet())) },
                 )
             }
 
             if (preferences.customTriggers.isNotEmpty()) {
-                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Your tags") }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(LocalStrings.current.yourTags) }
                 preferences.customTriggers.forEach { tag ->
                     TriggerRowWeb(
                         icon = preferences.triggerIcons[tag].orEmpty(),
@@ -727,7 +729,7 @@ private fun ManageTriggersPanelWeb(
                     attrs = {
                         value(draft)
                         onInput { draft = it.value }
-                        attr("placeholder", "Add a tag…")
+                        attr("placeholder", strings.addATagPlaceholder)
                         style {
                             property("flex", "1")
                             property("box-sizing", "border-box")
@@ -736,7 +738,7 @@ private fun ManageTriggersPanelWeb(
                     },
                 )
                 PrimaryButton(
-                    text = "Add",
+                    text = LocalStrings.current.add,
                     enabled = !displayLoading && draft.normalizedTag() != null,
                     onClick = {
                         val key = draft.normalizedTag() ?: return@PrimaryButton
@@ -758,6 +760,7 @@ private fun TriggerIconInputWeb(
     enabled: Boolean,
     onCommit: (String) -> Unit,
 ) {
+    val strings = LocalStrings.current
     var open by remember { mutableStateOf(false) }
 
     Div(attrs = { attr("style", "position:relative;") }) {
@@ -765,7 +768,7 @@ private fun TriggerIconInputWeb(
             attrs = {
                 if (!enabled) disabled()
                 onClick { open = !open }
-                attr("aria-label", "Pick trigger icon")
+                attr("aria-label", strings.pickTriggerIcon)
                 style {
                     property("width", "44px")
                     property("height", "36px")
@@ -832,7 +835,7 @@ private fun TriggerIconInputWeb(
                             property("border-radius", "8px")
                         }
                     }
-                ) { Text("Reset") }
+                ) { Text(LocalStrings.current.reset) }
             }
         }
     }
@@ -854,6 +857,7 @@ private fun TriggerRowWeb(
     onRename: (String) -> Unit,
     onRemove: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     var renaming by remember { mutableStateOf(false) }
     var draft by remember(label) { mutableStateOf(label) }
 
@@ -865,7 +869,7 @@ private fun TriggerRowWeb(
                 attrs = {
                     value(draft)
                     onInput { draft = it.value }
-                    attr("placeholder", "Leave empty to restore the original name")
+                    attr("placeholder", strings.leaveEmptyToRestore)
                     style {
                         property("flex", "1")
                         property("box-sizing", "border-box")
@@ -878,18 +882,18 @@ private fun TriggerRowWeb(
                 },
             )
             PrimaryButton(
-                text = "Save",
+                text = LocalStrings.current.save,
                 enabled = enabled,
                 onClick = {
                     onRename(draft.trim())
                     renaming = false
                 },
             )
-            GhostButton(text = "Cancel", onClick = { renaming = false })
+            GhostButton(text = LocalStrings.current.cancel, onClick = { renaming = false })
         } else {
             Span(attrs = { attr("style", "flex:1;") }) { Text(label) }
-            GhostButton(text = "Rename", enabled = enabled, onClick = { renaming = true })
-            GhostButton(text = "Remove", enabled = enabled, onClick = onRemove)
+            GhostButton(text = LocalStrings.current.rename, enabled = enabled, onClick = { renaming = true })
+            GhostButton(text = LocalStrings.current.remove, enabled = enabled, onClick = onRemove)
         }
     }
 }

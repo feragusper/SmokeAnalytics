@@ -11,6 +11,8 @@ import com.feragusper.smokeanalytics.libraries.authentication.presentation.compo
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.preferences.domain.GoalType
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
@@ -43,13 +45,14 @@ fun GoalsWebEditorPanel(
     }
 
     val draftGoal = selectedType.toGoalOrNull(draftValue)
+    val strings = LocalStrings.current
 
     if (currentEmail == null) {
         SurfaceCard {
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
-                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Goals need an account") }
+                Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.goalsNeedAccount) }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                    Text("Sign in to save one active goal and sync it across platforms.")
+                    Text(strings.goalsNeedAccountBody)
                 }
                 GoogleSignInComponentWeb(
                     onSignInSuccess = onSignInSuccess,
@@ -65,12 +68,12 @@ fun GoalsWebEditorPanel(
             GoalType.entries.forEach { type ->
                 if (selectedType == type) {
                     PrimaryButton(
-                        text = "✓ ${type.label()}",
+                        text = "✓ " + type.label(strings),
                         onClick = {},
                     )
                 } else {
                     GhostButton(
-                        text = type.label(),
+                        text = type.label(strings),
                         onClick = {
                             selectedType = type
                             draftValue = type.defaultDraftValue()
@@ -83,8 +86,8 @@ fun GoalsWebEditorPanel(
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Goal setup") }
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(selectedType.inputHelp()) }
+            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.goalSetup) }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(selectedType.inputHelp(strings)) }
             Input(type = if (selectedType == GoalType.DailyCap || selectedType == GoalType.MindfulGap) InputType.Number else InputType.Text, attrs = {
                 classes(SmokeWebStyles.dateInput)
                 value(draftValue)
@@ -92,7 +95,7 @@ fun GoalsWebEditorPanel(
                 onInput { draftValue = it.value?.toString() ?: "" }
             })
             draftGoal?.let {
-                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.summaryLabel()) }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.summaryLabel(strings)) }
             }
             goalProgress?.let {
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.progressLabel) }
@@ -102,12 +105,12 @@ fun GoalsWebEditorPanel(
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {
                 GhostButton(
-                    text = "Clear",
+                    text = strings.clear,
                     onClick = onClearGoal,
                     enabled = !displayLoading && preferences.activeGoal != null,
                 )
                 PrimaryButton(
-                    text = if (preferences.activeGoal == null) "Save goal" else "Update goal",
+                    text = if (preferences.activeGoal == null) strings.saveGoal else strings.updateGoal,
                     onClick = { draftGoal?.let(onSaveGoal) },
                     enabled = !displayLoading && draftGoal != null,
                 )
@@ -116,11 +119,11 @@ fun GoalsWebEditorPanel(
     }
 }
 
-private fun GoalType.label(): String = when (this) {
-    GoalType.DailyCap -> "Daily cap"
-    GoalType.ReductionVsPreviousWeek -> "Reduce vs previous week"
-    GoalType.ReductionVsPreviousMonth -> "Reduce vs previous month"
-    GoalType.MindfulGap -> "Mindful gap"
+private fun GoalType.label(strings: AppStrings): String = when (this) {
+    GoalType.DailyCap -> strings.dailyCap
+    GoalType.ReductionVsPreviousWeek -> strings.reduceVsPrevWeek
+    GoalType.ReductionVsPreviousMonth -> strings.reduceVsPrevMonth
+    GoalType.MindfulGap -> strings.mindfulGap
 }
 
 private fun GoalType.defaultDraftValue(): String = when (this) {
@@ -129,10 +132,10 @@ private fun GoalType.defaultDraftValue(): String = when (this) {
     GoalType.MindfulGap -> "90"
 }
 
-private fun GoalType.inputHelp(): String = when (this) {
-    GoalType.DailyCap -> "Use a positive whole number."
-    GoalType.ReductionVsPreviousWeek, GoalType.ReductionVsPreviousMonth -> "Use a value between 1 and 90."
-    GoalType.MindfulGap -> "Use a positive number of minutes."
+private fun GoalType.inputHelp(strings: AppStrings): String = when (this) {
+    GoalType.DailyCap -> strings.usePositiveWhole
+    GoalType.ReductionVsPreviousWeek, GoalType.ReductionVsPreviousMonth -> strings.useValue1to90
+    GoalType.MindfulGap -> strings.usePositiveMinutes
 }
 
 private fun SmokingGoal?.defaultDraftValue(): String = when (this) {
@@ -150,9 +153,9 @@ private fun GoalType.toGoalOrNull(value: String): SmokingGoal? = when (this) {
     GoalType.MindfulGap -> value.toIntOrNull()?.takeIf { it > 0 }?.let(SmokingGoal::MindfulGap)
 }
 
-private fun SmokingGoal.summaryLabel(): String = when (this) {
-    is SmokingGoal.DailyCap -> "Daily cap: at most $maxCigarettesPerDay cigarettes."
-    is SmokingGoal.ReductionVsPreviousWeek -> "Reduce the current week by $reductionPercent%."
-    is SmokingGoal.ReductionVsPreviousMonth -> "Reduce the current month by $reductionPercent%."
-    is SmokingGoal.MindfulGap -> "Wait at least $targetMinutes minutes between cigarettes."
+private fun SmokingGoal.summaryLabel(strings: AppStrings): String = when (this) {
+    is SmokingGoal.DailyCap -> strings.dailyCapDesc(maxCigarettesPerDay)
+    is SmokingGoal.ReductionVsPreviousWeek -> strings.reduceWeekDesc(reductionPercent.toInt())
+    is SmokingGoal.ReductionVsPreviousMonth -> strings.reduceMonthDesc(reductionPercent.toInt())
+    is SmokingGoal.MindfulGap -> strings.waitAtLeastDesc(targetMinutes)
 }
