@@ -147,18 +147,20 @@ private fun SettingsViewState.Render(
         }
 
         if (currentEmail != null) {
-            SectionHeader(
+            CollapsibleSection(
                 title = "Triggers",
                 subtitle = "Choose which built-in triggers appear when tagging a cigarette, and add your own.",
-            )
-            ManageTriggersPanelWeb(
-                preferences = draftPreferences,
-                displayLoading = displayLoading,
-                onChange = { updated ->
-                    draftPreferences = updated
-                    onIntent(SettingsIntent.UpdatePreferences(preferences = updated))
-                },
-            )
+                initiallyExpanded = false,
+            ) {
+                ManageTriggersPanelWeb(
+                    preferences = draftPreferences,
+                    displayLoading = displayLoading,
+                    onChange = { updated ->
+                        draftPreferences = updated
+                        onIntent(SettingsIntent.UpdatePreferences(preferences = updated))
+                    },
+                )
+            }
         }
 
         SectionHeader(
@@ -201,6 +203,34 @@ private fun SectionHeader(
             Text(title)
         }
         Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(subtitle) }
+    }
+}
+
+/** Section whose header toggles its content, so long panels don't stretch the page. */
+@Composable
+private fun CollapsibleSection(
+    title: String,
+    subtitle: String,
+    initiallyExpanded: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    var expanded by remember(title) { mutableStateOf(initiallyExpanded) }
+    Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
+        Div(attrs = {
+            attr("style", "display:flex;align-items:center;gap:12px;cursor:pointer;max-width:760px;")
+            onClick { expanded = !expanded }
+        }) {
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:6px;flex:1;") }) {
+                Div(attrs = { attr("style", "font-size:20px;font-weight:800;color:var(--sa-color-primary);") }) {
+                    Text(title)
+                }
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(subtitle) }
+            }
+            Div(attrs = { attr("style", "font-size:16px;color:var(--sa-color-secondary);") }) {
+                Text(if (expanded) "▾" else "▸")
+            }
+        }
+        if (expanded) content()
     }
 }
 
