@@ -312,6 +312,7 @@ open class AppStrings internal constructor() {
     open val working: String = "Working..."
     open val off: String = "Off"
     open val pickTriggerIcon: String = "Pick trigger icon"
+    open val searchEmoji: String = "Search emoji…"
     open val changesSavedAutomatically: String = "Changes are saved automatically."
     open val currencyOptional: String = "Optional. Used for map insights."
     open val dayModelBody: String = "Wake-up hour used as the main bucket boundary across Home, History, and Analytics."

@@ -74,7 +74,7 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.searchEmojis
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import com.valentinilk.shimmer.shimmer
 
@@ -1335,29 +1335,40 @@ private fun TriggerIconPicker(
         )
     }
     if (open) {
+        var query by remember { mutableStateOf("") }
+        val results = remember(query) { searchEmojis(query) }
         AlertDialog(
             onDismissRequest = { open = false },
             title = { Text("Pick an icon") },
             text = {
-                FlowRow(
-                    modifier = Modifier
-                        .heightIn(max = 320.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    TriggerEmojiPalette.forEach { emoji ->
-                        Text(
-                            text = emoji,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    onCommit(emoji)
-                                    open = false
-                                }
-                                .padding(10.dp),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search") },
+                        singleLine = true,
+                    )
+                    FlowRow(
+                        modifier = Modifier
+                            .heightIn(max = 300.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        results.forEach { entry ->
+                            Text(
+                                text = entry.emoji,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onCommit(entry.emoji)
+                                        open = false
+                                    }
+                                    .padding(10.dp),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
                     }
                 }
             },

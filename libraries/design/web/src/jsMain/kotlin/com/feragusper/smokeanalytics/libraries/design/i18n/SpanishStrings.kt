@@ -312,6 +312,7 @@ object SpanishStrings : AppStrings() {
     override val working: String = "Trabajando..."
     override val off: String = "Apagado"
     override val pickTriggerIcon: String = "Elegí un icono"
+    override val searchEmoji: String = "Buscar emoji…"
     override val changesSavedAutomatically: String = "Los cambios se guardan automáticamente."
     override val currencyOptional: String = "Opcional. Se usa para insights de mapa."
     override val dayModelBody: String = "Hora de despertar usada como límite principal de las franjas en Inicio, Historial y Analíticas."

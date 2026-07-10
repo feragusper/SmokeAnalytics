@@ -20,7 +20,7 @@ import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.searchEmojis
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import org.jetbrains.compose.web.dom.Button
 import kotlinx.coroutines.launch
@@ -779,6 +779,8 @@ private fun TriggerIconInputWeb(
 ) {
     val strings = LocalStrings.current
     var open by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val results = remember(query) { searchEmojis(query) }
 
     Div(attrs = { attr("style", "position:relative;") }) {
         Button(
@@ -813,26 +815,49 @@ private fun TriggerIconInputWeb(
                         "background:var(--sa-color-surface);color:var(--sa-color-onSurface);" +
                         "border:1px solid var(--sa-color-outline);border-radius:12px;" +
                         "padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);" +
-                        "display:flex;flex-wrap:wrap;gap:4px;width:280px;max-height:240px;overflow-y:auto;",
+                        "display:flex;flex-direction:column;gap:8px;width:300px;",
                 )
             }) {
-                TriggerEmojiPalette.forEach { emoji ->
-                    Button(
-                        attrs = {
-                            onClick {
-                                onCommit(emoji)
-                                open = false
-                            }
-                            style {
-                                property("font-size", "18px")
-                                property("padding", "6px")
-                                property("cursor", "pointer")
-                                property("background", "transparent")
-                                property("border", "none")
-                                property("border-radius", "8px")
-                            }
+                Input(
+                    type = InputType.Text,
+                    attrs = {
+                        value(query)
+                        onInput { query = it.value }
+                        attr("placeholder", strings.searchEmoji)
+                        attr("autofocus", "true")
+                        style {
+                            property("box-sizing", "border-box")
+                            property("width", "100%")
+                            property("padding", "8px 10px")
+                            property("background", "var(--sa-color-surface-strong)")
+                            property("color", "var(--sa-color-onSurface)")
+                            property("border", "1px solid var(--sa-color-outline)")
+                            property("border-radius", "8px")
                         }
-                    ) { Text(emoji) }
+                    },
+                )
+                Div(attrs = {
+                    attr("style", "display:flex;flex-wrap:wrap;gap:4px;max-height:220px;overflow-y:auto;")
+                }) {
+                    results.forEach { entry ->
+                        Button(
+                            attrs = {
+                                attr("title", entry.keywords.firstOrNull().orEmpty())
+                                onClick {
+                                    onCommit(entry.emoji)
+                                    open = false
+                                }
+                                style {
+                                    property("font-size", "18px")
+                                    property("padding", "6px")
+                                    property("cursor", "pointer")
+                                    property("background", "transparent")
+                                    property("border", "none")
+                                    property("border-radius", "8px")
+                                }
+                            }
+                        ) { Text(entry.emoji) }
+                    }
                 }
                 Button(
                     attrs = {
