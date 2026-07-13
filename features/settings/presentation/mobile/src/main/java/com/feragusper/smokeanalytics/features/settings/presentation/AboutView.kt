@@ -1,6 +1,8 @@
 package com.feragusper.smokeanalytics.features.settings.presentation
 
 import android.app.Activity
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.features.settings.presentation.R
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -50,7 +52,7 @@ fun AboutView(
             modifier = Modifier.fillMaxWidth(),
             onClick = onBack,
         ) {
-            Text("Back to settings")
+            Text(stringResource(R.string.about_back_to_settings))
         }
     }
 }
@@ -60,16 +62,17 @@ fun AboutSection() {
     val context = LocalContext.current
     val packageName = context.packageName
     val versionName = context.versionName().orEmpty()
+    val shareChooserTitle = stringResource(R.string.about_share_title)
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AboutBlock(
             title = "Smoke Analytics",
-            body = "A personal smoking journal focused on visibility over guilt. It helps review the day, compare longer trends, estimate cost, and understand where or when smoking tends to cluster."
+            body = stringResource(R.string.about_body)
         )
 
         AboutBlock(
-            title = "Actions",
-            body = "Share the app, rate it, or reach support.",
+            title = stringResource(R.string.about_actions),
+            body = stringResource(R.string.about_share_subtitle),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -77,7 +80,7 @@ fun AboutSection() {
             ) {
                 ActionIconButton(
                     modifier = Modifier.weight(1f),
-                    label = "Share",
+                    label = stringResource(R.string.about_share),
                     icon = { Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
                         val sendIntent = Intent(Intent.ACTION_SEND).apply {
@@ -88,12 +91,12 @@ fun AboutSection() {
                                 "Smoke Analytics helps track smokes, streaks and costs. https://github.com/feragusper/SmokeAnalytics"
                             )
                         }
-                        context.startActivity(Intent.createChooser(sendIntent, "Share Smoke Analytics"))
+                        context.startActivity(Intent.createChooser(sendIntent, shareChooserTitle))
                     },
                 )
                 ActionIconButton(
                     modifier = Modifier.weight(1f),
-                    label = "Rate",
+                    label = stringResource(R.string.about_rate),
                     icon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
                         val fallbackToStore = {
@@ -127,7 +130,7 @@ fun AboutSection() {
                 )
                 ActionIconButton(
                     modifier = Modifier.weight(1f),
-                    label = "Report",
+                    label = stringResource(R.string.about_report),
                     icon = { Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
                         context.startActivity(
@@ -140,7 +143,7 @@ fun AboutSection() {
                 )
                 ActionIconButton(
                     modifier = Modifier.weight(1f),
-                    label = "Contact",
+                    label = stringResource(R.string.about_contact),
                     icon = { Icon(Icons.Filled.Mail, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
                         context.startActivity(
@@ -155,8 +158,8 @@ fun AboutSection() {
         }
 
         AboutBlock(
-            title = "Copyright",
-            body = "Smoke Analytics © Fernando Perez. All rights reserved."
+            title = stringResource(R.string.about_copyright),
+            body = stringResource(R.string.about_copyright_line)
         )
 
         Row(
@@ -170,7 +173,7 @@ fun AboutSection() {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Version",
+                text = stringResource(R.string.about_version),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -70,6 +70,7 @@ class HistoryViewModel constructor(
                 selectedDate = result.selectedDate,
                 monthCounts = result.monthCounts,
                 previousMonthCounts = result.previousMonthCounts,
+                use24HourClock = result.use24HourClock,
                 pendingSmokeId = null,
                 pendingAction = null,
                 rowInteractionEpoch = previous.rowInteractionEpoch + 1,

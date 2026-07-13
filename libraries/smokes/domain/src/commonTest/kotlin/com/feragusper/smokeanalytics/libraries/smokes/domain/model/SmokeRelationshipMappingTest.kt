@@ -121,6 +121,21 @@ class SmokeRelationshipMappingTest {
     }
 
     @Test
+    fun `GIVEN a blank query THEN searchEmojis returns the whole catalog`() {
+        assertEquals(EmojiCatalog, searchEmojis("   "))
+    }
+
+    @Test
+    fun `GIVEN a keyword THEN searchEmojis filters by it and matches the glyph`() {
+        val coffee = searchEmojis("coffee")
+        assertEquals(true, coffee.any { it.emoji == "☕" })
+        assertEquals(true, coffee.all { it.keywords.any { k -> k.contains("coffee") } })
+        // The raw glyph resolves to its own entry.
+        assertEquals(true, searchEmojis("🍺").any { it.emoji == "🍺" })
+        assertEquals(true, searchEmojis("zzzzzz").isEmpty())
+    }
+
+    @Test
     fun `GIVEN an option THEN display prefixes the icon when present`() {
         assertEquals(
             "🎮 Gaming",

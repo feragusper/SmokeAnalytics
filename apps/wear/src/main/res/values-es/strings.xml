@@ -1,0 +1,15 @@
+<resources>
+    <string name="last_smoke_na">Último cigarrillo desconocido</string>
+    <string name="last_smoke_just_now">Último cigarrillo recién</string>
+    <string name="last_smoke_minutes_ago">Último cigarrillo hace %1$d min</string>
+    <string name="last_smoke_hours_ago">Último cigarrillo hace %1$d h</string>
+    <string name="last_smoke_days_ago">Último cigarrillo hace %1$d d</string>
+    <string name="last_smoke_short">%1$s</string>
+    <string name="next_pace_short">Próximo en %1$s</string>
+    <string name="pace_ready_now">ahora</string>
+    <string name="pace_time_na">--</string>
+    <string name="stats_today_short">Hoy %1$d</string>
+    <string name="sync_smokes">Sincronizar</string>
+    <string name="sync_smokes_syncing">Sincronizando</string>
+    <string name="add_smoke_track">Registrar</string>
+</resources>

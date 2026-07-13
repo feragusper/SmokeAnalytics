@@ -57,6 +57,7 @@ fun SwipeToDismissRow(
     onEdit: (Instant) -> Unit,
     isPending: Boolean = false,
     pendingLabel: String? = null,
+    use24HourClock: Boolean = true,
 ) {
     val timeZone = TimeZone.currentSystemDefault()
     val shape = RoundedCornerShape(22.dp)
@@ -82,6 +83,7 @@ fun SwipeToDismissRow(
                     date = date,
                     timeZone = timeZone,
                     timeAfterPrevious = timeElapsedSincePreviousSmoke,
+                    use24HourClock = use24HourClock,
                     tone = elapsedToneFrom(
                         timeElapsedSincePreviousSmoke.first,
                         timeElapsedSincePreviousSmoke.second,
@@ -168,6 +170,7 @@ private fun SmokeItem(
     date: Instant,
     timeZone: TimeZone,
     timeAfterPrevious: Pair<Long, Long>,
+    use24HourClock: Boolean,
     tone: ElapsedTone,
 ) {
     val local = date.toLocalDateTime(timeZone)
@@ -184,7 +187,7 @@ private fun SmokeItem(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = "%02d:%02d".format(local.hour, local.minute),
+                text = formatRowClock(local.hour, local.minute, use24HourClock),
                 style = MaterialTheme.typography.bodyLarge,
                 color = tone.rowContentColor()
             )
@@ -348,4 +351,15 @@ fun TimePickerDialog(
 private enum class DateTimeDialogType {
     Date,
     Time
+}
+
+private fun formatRowClock(hour: Int, minute: Int, use24HourClock: Boolean): String {
+    if (use24HourClock) return "%02d:%02d".format(hour, minute)
+    val suffix = if (hour < 12) "AM" else "PM"
+    val h12 = when {
+        hour == 0 -> 12
+        hour > 12 -> hour - 12
+        else -> hour
+    }
+    return "%d:%02d %s".format(h12, minute, suffix)
 }

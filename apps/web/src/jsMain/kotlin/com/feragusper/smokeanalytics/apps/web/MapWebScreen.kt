@@ -7,6 +7,7 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
 import org.jetbrains.compose.web.dom.Div
@@ -19,14 +20,15 @@ fun MapWebScreen(
     embedded: Boolean = false,
 ) {
     val state = stateHolder.state
+    val strings = LocalStrings.current
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         if (!embedded) {
             PageSectionHeader(
-                title = "Geographic Clusters",
-                eyebrow = "Locations",
-                badgeText = if (state.isRefreshing) "Refreshing" else "${state.clusters.sumOf { it.count }} smokes",
-                subtitle = "Inspect repeated smoking areas and the places that dominate the current map period.",
+                title = strings.geographicClusters,
+                eyebrow = strings.location,
+                badgeText = if (state.isRefreshing) strings.refreshing else strings.smokesCount(state.clusters.sumOf { it.count }),
+                subtitle = strings.geographicClustersSubtitle,
                 actions = {
                     SmokeMapPeriod.entries.forEach { candidate ->
                         PrimaryButton(
@@ -43,9 +45,9 @@ fun MapWebScreen(
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                         Text(
                             if (state.isRefreshing) {
-                                "Refreshing clusters in background."
+                                strings.refreshingClusters
                             } else {
-                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected ${state.period.name.lowercase()}."
+                                strings.mappedSmokesInPeriod(state.clusters.sumOf { it.count }, state.period.name.lowercase())
                             }
                         )
                     }
@@ -56,12 +58,12 @@ fun MapWebScreen(
         when {
             state.isLoading -> LoadingSkeletonCard(heightPx = 320, lineWidths = listOf("50%", "30%"))
             state.preferences?.locationTrackingEnabled == false -> EmptyStateCard(
-                title = "Location tracking is off",
-                message = "Enable location tracking in You to unlock map insights, repeated-area detection, and the geographic side of Analytics.",
+                title = strings.locationOff,
+                message = strings.locationOffBody,
             )
             state.clusters.isEmpty() -> EmptyStateCard(
-                title = "No mapped smokes yet",
-                message = "There is not enough location-linked history for this period yet. Add more smoke entries with location tracking enabled to build clusters.",
+                title = strings.noMappedSmokes,
+                message = strings.noMappedSmokesBody,
             )
 
             else -> {
@@ -73,16 +75,16 @@ fun MapWebScreen(
                     SurfaceCard {
                         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
                             if (state.isRefreshing) {
-                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Refreshing clusters in background.") }
+                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.refreshingClusters) }
                             } else if (state.error) {
-                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Latest refresh failed. Showing the last available clusters.") }
+                                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.mapRefreshFailed) }
                             }
                             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(activeCluster.label) }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.")
+                                Text(strings.clusterSummary(activeCluster.count, activeCluster.radiusMeters))
                             }
                             Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
-                                Text("Most frequent area for the selected period")
+                                Text(strings.mostFrequentArea)
                             }
                             Div(attrs = {
                                 attr("style", "position:relative;width:100%;height:400px;border-radius:24px;overflow:hidden;background:#f5f8f8;")
@@ -105,9 +107,9 @@ fun MapWebScreen(
 
                     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
                         SurfaceCard {
-                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Top Clusters") }
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.topClusters) }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("Pick an area to inspect on Google Maps.")
+                                Text(strings.pickAreaToInspect)
                             }
                             state.clusters.take(4).forEach { cluster ->
                                 Div(
@@ -120,11 +122,11 @@ fun MapWebScreen(
                                     Div {
                                         Div(attrs = { classes(SmokeWebStyles.timeText) }) { Text(cluster.label) }
                                         Div(attrs = { classes(SmokeWebStyles.subText) }) {
-                                            Text("${cluster.count} smokes in this area")
+                                            Text(strings.smokesInArea(cluster.count))
                                         }
                                     }
                                     PrimaryButton(
-                                        text = if (cluster == activeCluster) "Viewing" else "View",
+                                        text = if (cluster == activeCluster) strings.viewing else strings.view,
                                         onClick = { stateHolder.onSelectCluster(cluster) },
                                         enabled = cluster != activeCluster,
                                     )
@@ -133,9 +135,9 @@ fun MapWebScreen(
                         }
 
                         SurfaceCard {
-                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("Observation") }
+                            Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.observation) }
                             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                                Text("Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.")
+                                Text(strings.observationBody)
                             }
                         }
                     }

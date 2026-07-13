@@ -26,6 +26,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.features.goals.presentation.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,12 +84,12 @@ fun GoalsEditorScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Goals",
+                text = stringResource(R.string.goals_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Choose one active target and keep its progress visible from Home.",
+                text = stringResource(R.string.goals_choose_target),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -106,7 +108,7 @@ fun GoalsEditorScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        text = "Could not update your goal",
+                        text = stringResource(R.string.goals_could_not_update),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
@@ -121,12 +123,12 @@ fun GoalsEditorScreen(
             GoalsPanelCard {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Text(
-                        text = "Goals need an account",
+                        text = stringResource(R.string.goals_need_account),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Sign in to save one active goal and keep it aligned across mobile and web.",
+                        text = stringResource(R.string.goals_sign_in_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -143,7 +145,7 @@ fun GoalsEditorScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
                                 Text(
-                                    text = "Sign-in failed",
+                                    text = stringResource(R.string.goals_sign_in_failed),
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                                 Text(
@@ -166,7 +168,7 @@ fun GoalsEditorScreen(
         GoalsPanelCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Goal type",
+                    text = stringResource(R.string.goals_goal_type),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -186,7 +188,7 @@ fun GoalsEditorScreen(
         GoalsPanelCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Goal setup",
+                    text = stringResource(R.string.goals_goal_setup),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -265,14 +267,14 @@ fun GoalsEditorScreen(
                         onClick = onClearGoal,
                         enabled = !displayLoading && preferences.activeGoal != null,
                     ) {
-                        Text("Clear")
+                        Text(stringResource(R.string.goals_clear))
                     }
                     Button(
                         modifier = Modifier.weight(1f),
                         onClick = { draftGoal?.let(onSaveGoal) },
                         enabled = !displayLoading && draftGoal != null,
                     ) {
-                        Text(if (preferences.activeGoal == null) "Save goal" else "Update goal")
+                        Text(if (preferences.activeGoal == null) stringResource(R.string.goals_save_goal) else stringResource(R.string.goals_update_goal))
                     }
                 }
             }
@@ -344,31 +346,35 @@ private fun GoalsPanelCard(
     }
 }
 
+@Composable
 private fun GoalType.label(): String = when (this) {
-    GoalType.DailyCap -> "Daily cap"
-    GoalType.ReductionVsPreviousWeek -> "Reduce vs previous week"
-    GoalType.ReductionVsPreviousMonth -> "Reduce vs previous month"
-    GoalType.MindfulGap -> "Mindful gap"
+    GoalType.DailyCap -> stringResource(R.string.goals_daily_cap)
+    GoalType.ReductionVsPreviousWeek -> stringResource(R.string.goals_reduce_week)
+    GoalType.ReductionVsPreviousMonth -> stringResource(R.string.goals_reduce_month)
+    GoalType.MindfulGap -> stringResource(R.string.goals_mindful_gap)
 }
 
+@Composable
 private fun GoalType.description(): String = when (this) {
-    GoalType.DailyCap -> "Set a ceiling on how many cigarettes you allow per day."
-    GoalType.ReductionVsPreviousWeek -> "Smoke a set percentage less than last week's total."
-    GoalType.ReductionVsPreviousMonth -> "Smoke a set percentage less than last month's total."
-    GoalType.MindfulGap -> "Enforce a minimum gap in minutes between cigarettes."
+    GoalType.DailyCap -> stringResource(R.string.goals_daily_cap_body)
+    GoalType.ReductionVsPreviousWeek -> stringResource(R.string.goals_reduce_week_body)
+    GoalType.ReductionVsPreviousMonth -> stringResource(R.string.goals_reduce_month_body)
+    GoalType.MindfulGap -> stringResource(R.string.goals_mindful_gap_body)
 }
 
+@Composable
 private fun GoalType.inputLabel(): String = when (this) {
-    GoalType.DailyCap -> "Max cigarettes per day"
-    GoalType.ReductionVsPreviousWeek -> "Reduction percent"
-    GoalType.ReductionVsPreviousMonth -> "Reduction percent"
-    GoalType.MindfulGap -> "Target gap in minutes"
+    GoalType.DailyCap -> stringResource(R.string.goals_max_cigs_per_day)
+    GoalType.ReductionVsPreviousWeek -> stringResource(R.string.goals_reduction_percent)
+    GoalType.ReductionVsPreviousMonth -> stringResource(R.string.goals_reduction_percent)
+    GoalType.MindfulGap -> stringResource(R.string.goals_target_gap_minutes)
 }
 
+@Composable
 private fun GoalType.inputHelp(): String = when (this) {
-    GoalType.DailyCap -> "Use a positive whole number."
-    GoalType.ReductionVsPreviousWeek, GoalType.ReductionVsPreviousMonth -> "Use a value between 1 and 90."
-    GoalType.MindfulGap -> "Use a positive number of minutes."
+    GoalType.DailyCap -> stringResource(R.string.goals_use_positive_whole)
+    GoalType.ReductionVsPreviousWeek, GoalType.ReductionVsPreviousMonth -> stringResource(R.string.goals_use_1_90)
+    GoalType.MindfulGap -> stringResource(R.string.goals_use_positive_minutes)
 }
 
 private fun GoalType.defaultDraftValue(): String = when (this) {

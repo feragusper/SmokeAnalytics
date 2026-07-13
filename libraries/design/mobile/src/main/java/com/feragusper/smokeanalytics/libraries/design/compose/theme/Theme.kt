@@ -24,10 +24,11 @@ import androidx.core.view.WindowCompat
 fun SmokeAnalyticsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    accent: MobileAccent = AccentHolder.current,
     content: @Composable () -> Unit
 ) {
     // Determine the color scheme based on the current theme and device capabilities.
-    val colorScheme = when {
+    val baseColorScheme = when {
         // Use dynamic color scheme if supported (Android 12+).
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -37,6 +38,16 @@ fun SmokeAnalyticsTheme(
         darkTheme -> darkColorScheme
         // Use the custom light color scheme.
         else -> lightColorScheme
+    }
+
+    // Apply the user's accent by overriding the primary pair; Default leaves the scheme untouched.
+    val colorScheme = if (accent.primary != null) {
+        baseColorScheme.copy(
+            primary = accent.primary,
+            onPrimary = accent.onPrimary ?: baseColorScheme.onPrimary,
+        )
+    } else {
+        baseColorScheme
     }
 
     // Obtain the current view and check if it's in edit mode (e.g., in the preview).

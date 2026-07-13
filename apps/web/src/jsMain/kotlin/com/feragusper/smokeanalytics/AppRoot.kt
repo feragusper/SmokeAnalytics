@@ -1,12 +1,20 @@
 package com.feragusper.smokeanalytics
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppLanguage
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalAppLanguage
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
+import com.feragusper.smokeanalytics.libraries.design.theme.AccentColor
+import com.feragusper.smokeanalytics.libraries.design.theme.LocalAccentColor
+import com.feragusper.smokeanalytics.libraries.design.theme.applyAccent
 import com.feragusper.smokeanalytics.apps.web.AnalyticsTab
 import com.feragusper.smokeanalytics.apps.web.AnalyticsWebScreen
 import com.feragusper.smokeanalytics.apps.web.MapWebScreen
@@ -39,6 +47,40 @@ import kotlin.time.Clock
 
 @Composable
 fun AppRoot() {
+    var language by remember { mutableStateOf(AppLanguage.initial()) }
+    var accent by remember { mutableStateOf(AccentColor.initial()) }
+    val strings = AppStrings.forLanguage(language)
+
+    LaunchedEffect(accent) { applyAccent(accent) }
+
+    CompositionLocalProvider(
+        LocalStrings provides strings,
+        LocalAppLanguage provides language,
+        LocalAccentColor provides accent,
+    ) {
+        AppContent(
+            language = language,
+            onLanguageChange = {
+                language = it
+                AppLanguage.persist(it)
+            },
+            accent = accent,
+            onAccentChange = {
+                accent = it
+                AccentColor.persist(it)
+            },
+        )
+    }
+}
+
+@Composable
+private fun AppContent(
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    accent: AccentColor,
+    onAccentChange: (AccentColor) -> Unit,
+) {
+    val strings = LocalStrings.current
     var route by remember { mutableStateOf(parseRouteFromHash(window.location.hash)) }
     var analyticsTab by remember { mutableStateOf(parseAnalyticsTabFromHash(window.location.hash)) }
     var statsPeriod by remember { mutableStateOf(StatsPeriod.WEEK) }
@@ -76,14 +118,14 @@ fun AppRoot() {
     val settingsDeps = remember { getKoin().get<SettingsWebDependencies>() }
     val goalsDeps = remember { getKoin().get<GoalsWebDependencies>() }
 
-    LaunchedEffect(route) {
+    LaunchedEffect(route, language) {
         document.title = when (route) {
-            WebRoute.Home -> "Smoke Analytics | Home"
-            WebRoute.Analytics -> "Smoke Analytics | Analytics & Map"
-            WebRoute.History -> "Smoke Analytics | History"
-            WebRoute.Goals -> "Smoke Analytics | Goals"
-            WebRoute.Settings -> "Smoke Analytics | You"
-            WebRoute.Auth -> "Smoke Analytics | Sign in"
+            WebRoute.Home -> strings.titleHome
+            WebRoute.Analytics -> strings.titleAnalytics
+            WebRoute.History -> strings.titleHistory
+            WebRoute.Goals -> strings.titleGoals
+            WebRoute.Settings -> strings.titleYou
+            WebRoute.Auth -> strings.titleSignIn
         }
     }
 
@@ -122,6 +164,10 @@ fun AppRoot() {
     WebScaffold(
         route = route,
         onNavigate = ::navigateTo,
+        language = language,
+        onLanguageChange = onLanguageChange,
+        accent = accent,
+        onAccentChange = onAccentChange,
     ) {
         when (route) {
             WebRoute.Home -> HomeWebScreen(

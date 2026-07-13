@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics
 
 import android.app.Application
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
 import com.feragusper.smokeanalytics.features.authentication.presentation.di.authenticationPresentationModule
 import com.feragusper.smokeanalytics.features.goals.domain.di.goalsDomainModule
 import com.feragusper.smokeanalytics.features.goals.presentation.di.goalsPresentationModule
@@ -33,6 +34,8 @@ class SmokeAnalyticsApplication : Application() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
+        // Load the saved accent synchronously before any Activity applies the theme.
+        AccentHolder.load(this)
         startKoin {
             androidContext(this@SmokeAnalyticsApplication)
             modules(

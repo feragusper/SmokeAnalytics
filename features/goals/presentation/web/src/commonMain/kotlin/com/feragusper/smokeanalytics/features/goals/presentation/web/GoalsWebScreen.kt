@@ -17,6 +17,8 @@ import com.feragusper.smokeanalytics.libraries.design.LoadingSkeletonCard
 import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import com.feragusper.smokeanalytics.libraries.design.StatusTone
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
 import org.jetbrains.compose.web.dom.Div
@@ -35,21 +37,22 @@ fun GoalsWebScreen(
 
     // Whether the goal editor (selector + setup) is shown instead of the progress view.
     var configuring by remember { mutableStateOf(false) }
+    val strings = LocalStrings.current
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Goals",
-            eyebrow = "Goals",
+            title = strings.goalsTitle,
+            eyebrow = strings.goalsTitle,
             subtitle = if (configuring) {
-                "Choose one active target and keep its progress visible from Home."
+                strings.chooseOneTarget
             } else {
-                "Track how your active goal is going."
+                strings.trackHowGoing
             },
             badgeText = when {
-                state.displayLoading -> "Loading"
-                state.errorMessage != null -> "Needs attention"
-                state.preferences.activeGoal != null -> "Active goal"
-                else -> "No goal yet"
+                state.displayLoading -> strings.loading
+                state.errorMessage != null -> strings.needsAttention
+                state.preferences.activeGoal != null -> strings.activeGoal
+                else -> strings.noGoalYet
             },
             badgeTone = when {
                 state.displayLoading -> StatusTone.Busy
@@ -81,7 +84,7 @@ fun GoalsWebScreen(
             }
 
             configuring -> {
-                GhostButton(text = "← Back to progress", onClick = { configuring = false })
+                GhostButton(text = strings.backToProgress, onClick = { configuring = false })
                 GoalsWebEditorPanel(
                     currentEmail = state.currentEmail,
                     preferences = state.preferences,
@@ -97,11 +100,11 @@ fun GoalsWebScreen(
             state.preferences.activeGoal == null -> {
                 SurfaceCard {
                     Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;") }) {
-                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text("No active goal yet") }
+                        Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.noActiveGoalYet) }
                         Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
-                            Text("Set one target to keep your progress front and center on Home.")
+                            Text(strings.noActiveGoalBody)
                         }
-                        PrimaryButton(text = "Set a goal", onClick = { configuring = true })
+                        PrimaryButton(text = strings.setAGoal, onClick = { configuring = true })
                     }
                 }
             }
@@ -114,9 +117,9 @@ fun GoalsWebScreen(
 
         state.errorMessage?.let { msg ->
             EmptyStateCard(
-                title = "Goals are unavailable",
+                title = strings.goalsUnavailable,
                 message = msg,
-                actionLabel = "Try again",
+                actionLabel = strings.tryAgain,
                 onAction = { store.send(GoalsIntent.FetchGoals) },
             )
         }
@@ -132,14 +135,15 @@ private fun GoalProgressPanel(
     goalProgress: GoalProgress?,
     onConfigure: () -> Unit,
 ) {
+    val strings = LocalStrings.current
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
-            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text("Active goal") }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.activeGoal) }
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                Text(goalProgress?.title ?: "Your goal")
+                Text(goalProgress?.title ?: strings.yourGoal)
             }
             goalProgress?.let { progress ->
-                progress.status.label()?.let { status ->
+                progress.status.label(strings)?.let { status ->
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(status) }
                 }
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(progress.progressLabel) }
@@ -153,14 +157,14 @@ private fun GoalProgressPanel(
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
                 }
             }
-            PrimaryButton(text = "Configure goal", onClick = onConfigure)
+            PrimaryButton(text = strings.configureGoal, onClick = onConfigure)
         }
     }
 }
 
-private fun GoalStatus.label(): String? = when (this) {
-    GoalStatus.OnTrack -> "On track"
-    GoalStatus.OffTrack -> "Off track"
-    GoalStatus.Completed -> "Completed"
+private fun GoalStatus.label(strings: AppStrings): String? = when (this) {
+    GoalStatus.OnTrack -> strings.onTrack
+    GoalStatus.OffTrack -> strings.offTrack
+    GoalStatus.Completed -> strings.completed
     GoalStatus.NotEnoughData -> null
 }

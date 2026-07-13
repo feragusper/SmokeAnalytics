@@ -53,6 +53,7 @@ data class SmokeStats(
             bedtimeHour: Int = 22,
             periodType: SelectionPeriod = SelectionPeriod.MONTH,
             triggerLabelOverrides: Map<String, String> = emptyMap(),
+            weekStartsMonday: Boolean = true,
         ): SmokeStats {
             val monthStart = LocalDate(year, month, 1)
             val nextMonthStart = monthStart.plus(DatePeriod(months = 1))
@@ -74,8 +75,13 @@ data class SmokeStats(
                 .groupBy { (_, dt) -> dt.date.dayOfMonth.toString() }
                 .forEach { (k, v) -> dailyStats[k] = v.size }
 
-            // Weekly: "Mon".."Sun" (fixed labels; locale lo hacés en UI si querés)
-            val weeklyLabels = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            // Weekly: fixed English day keys; ordered per the user's week-start preference so
+            // the chart begins on Monday or Sunday. Order matters — weeklyStats is a LinkedHashMap.
+            val weeklyLabels = if (weekStartsMonday) {
+                listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            } else {
+                listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+            }
             val weeklyStats = weeklyLabels.associateWith { 0 }.toMutableMap()
             val weekSource = if (periodType == SelectionPeriod.WEEK) shiftedSmokes else monthSmokes
             weekSource

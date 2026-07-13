@@ -1,0 +1,29 @@
+<resources>
+    <string name="history_button_track">Registrar</string>
+    <string name="error_generic">Ocurrió un error</string>
+    <string name="error_not_logged_in">Iniciá sesión para acceder a esta función.</string>
+    <string name="history_smoked_today">Cigarrillos</string>
+    <string name="history_smoked">Historial de cigarrillos</string>
+    <string name="history_the_archive">El Archivo</string>
+    <string name="history_archive_subtitle">Recorré el calendario, inspeccioná un día y editá el registro de fumado.</string>
+    <string name="history_trend">Tendencia</string>
+    <string name="history_reduction_vs_last_month">Reducción vs mes pasado</string>
+    <string name="history_add_for_date">Agregar para la fecha</string>
+    <string name="history_retry">Reintentar</string>
+    <string name="history_session_required">Se requiere sesión</string>
+    <string name="history_sign_back_in">Volvé a iniciar sesión para mantener el archivo sincronizado.</string>
+    <string name="history_could_not_refresh">No se pudo actualizar el archivo</string>
+    <string name="history_showing_last_state">Mostrando el último estado disponible mientras no se pudo actualizar el día seleccionado.</string>
+    <string name="history_day_load_failed">No se pudo cargar el día seleccionado. Reintentá cuando se recupere la conexión o la cuota.</string>
+    <string name="history_entries">%1$d registros</string>
+    <string name="history_daily_average">Promedio diario %1$s unidades</string>
+    <string name="history_saving_edit">Guardando edición…</string>
+    <string name="history_deleting">Eliminando…</string>
+    <string name="history_dow_mon">LUN</string>
+    <string name="history_dow_tue">MAR</string>
+    <string name="history_dow_wed">MIÉ</string>
+    <string name="history_dow_thu">JUE</string>
+    <string name="history_dow_fri">VIE</string>
+    <string name="history_dow_sat">SÁB</string>
+    <string name="history_dow_sun">DOM</string>
+</resources>

@@ -1,0 +1,92 @@
+<resources>
+    <string name="home_button_track">Registrar</string>
+    <string name="home_label_per_day">Hoy</string>
+    <string name="home_label_per_week">Esta semana</string>
+    <string name="home_label_per_month">Este mes</string>
+    <string name="error_generic">Ocurrió un error</string>
+    <string name="error_not_logged_in">Iniciá sesión para acceder a esta función.</string>
+    <string name="home_smoked_today">Fumados hoy</string>
+    <string name="home_since_your_last_cigarette">Desde tu último cigarrillo</string>
+    <string name="home_smoked_after_minutes_short">%1$dm</string>
+    <string name="home_smoked_after_hours_short">%1$dh</string>
+    <string name="home_button_history">Historial de cigarrillos</string>
+
+    <plurals name="home_smoked_after_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+
+    <plurals name="home_smoked_after_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+    <string name="home_at">A las</string>
+    <string name="home_time_since">Tiempo desde</string>
+    <string name="home_last_cigarette">Último cigarrillo</string>
+    <string name="home_consistency">Consistencia</string>
+    <string name="home_goal">Objetivo</string>
+    <string name="home_cravings">Ganas</string>
+    <string name="home_vs_last_month">Vs mes pasado</string>
+    <string name="home_start_new_day">Empezar día nuevo</string>
+    <string name="home_starting_early">¿Arrancando temprano?</string>
+    <string name="home_reset_day_body">Si hoy arrancó antes de lo habitual, podés reiniciar la ventana de reflexión ahora y mantener el inicio alineado con el día que estás viviendo.</string>
+    <string name="home_feeling_urge">¿Sentís ganas?</string>
+    <string name="home_feeling_urge_body">Registrá las ganas antes de prender. Si todavía no es momento, te ayudamos a aguantar y premiamos el logro.</string>
+    <string name="home_i_feel_like_smoking">Tengo ganas de fumar</string>
+    <string name="home_dismiss">Descartar</string>
+    <string name="home_craving_good_time">Ya es buen momento — dale cuando quieras.</string>
+    <string name="home_hold_on">Aguantá 💪</string>
+    <string name="home_you_made_it">¡Lo lograste! 🎉</string>
+    <string name="home_wait_over">Se terminó la espera. Fumalo ahora si todavía lo querés, o dejalo pasar para el premio completo.</string>
+    <string name="home_hold_on_body">Hasta que tu próximo cigarrillo entre en el objetivo. Vos podés.</string>
+    <string name="home_im_good">Estoy bien</string>
+    <string name="home_log_the_cigarette">Registrar el cigarrillo</string>
+    <string name="home_i_smoked_anyway">Fumé igual</string>
+    <string name="home_nice">Bien</string>
+    <string name="home_resisted">Resistidos</string>
+    <string name="home_postponed">Postergados</string>
+    <string name="home_waited">Esperaste</string>
+    <string name="home_reward_points">Puntos de recompensa</string>
+    <string name="home_remember_why">Acordate por qué: %1$s</string>
+    <string name="home_craving_passed">Dejaste pasar las ganas sin fumar. +%1$d puntos ganados.</string>
+    <string name="home_craving_waited">Lo esperaste antes de fumar. +%1$d puntos ganados.</string>
+    <string name="home_same_count">Mismo total hasta ahora</string>
+    <string name="home_same_pace">Mismo ritmo que el mes pasado</string>
+    <string name="home_smoking_less">Fumando menos que el mes pasado</string>
+    <string name="home_smoking_more">Fumando más que el mes pasado</string>
+    <string name="home_session_required">Se requiere sesión</string>
+    <string name="home_session_required_body">Iniciá sesión de nuevo para mantener sincronizados Inicio, objetivos y el último intervalo.</string>
+    <string name="home_could_not_load">Inicio no pudo cargar tus datos. Reintentá cuando se recupere la conexión o la cuota.</string>
+    <string name="home_could_not_complete">No se pudo completar la acción</string>
+    <string name="home_keeping_state">Manteniendo el último estado visible. Reintentá cuando se recupere la conexión o la cuota.</string>
+    <string name="home_refreshing_snapshot">Actualizando tu resumen orientado al objetivo.</string>
+    <string name="home_checking_new_day">Verificando si podés empezar un día nuevo ahora.</string>
+    <string name="home_retry">Reintentar</string>
+    <string name="home_title">Inicio</string>
+    <string name="home_location_on">Ubicación activada</string>
+    <string name="home_location_off">Ubicación apagada</string>
+    <string name="home_location_off_permission">Ubicación apagada - permiso</string>
+    <string name="home_location_off_system">Ubicación apagada - sistema</string>
+    <string name="home_header_subtitle">Arrancá por el objetivo y leé el último intervalo con el menor ruido posible.</string>
+    <string name="home_urge_beaten">¡Ganas vencidas!</string>
+    <string name="home_nice_and_slow">Tranqui y de a poco</string>
+    <string name="home_what_were_these">¿Con qué se relacionaron?</string>
+    <string name="home_what_related">¿Con qué se relacionó?</string>
+    <string name="home_tag_what_triggered">Etiquetá qué disparó este cigarrillo, o salteá si no fue nada en particular.</string>
+    <string name="home_add_trigger">Agregar disparador</string>
+    <string name="home_no_relation">Sin relación</string>
+    <string name="home_add_a_tag">Agregar etiqueta</string>
+    <string name="home_add">Agregar</string>
+    <string name="home_save">Guardar</string>
+    <string name="home_other">Otro</string>
+    <string name="home_type_and_add">Escribí y tocá Agregar…</string>
+    <string name="home_logged">Registrado %1$s</string>
+    <plurals name="home_pending_needs_trigger">
+        <item quantity="one">%1$d cigarrillo todavía necesita un disparador — etiquetalo abajo.</item>
+        <item quantity="other">%1$d cigarrillos todavía necesitan un disparador — etiquetalos de a uno.</item>
+    </plurals>
+    <plurals name="home_more_count">
+        <item quantity="one">+%1$d más</item>
+        <item quantity="other">+%1$d más</item>
+    </plurals>
+</resources>

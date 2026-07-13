@@ -193,6 +193,7 @@ class HistoryProcessHolder constructor(
                         smokes = fetchSmokesUseCase.invoke(dayStart, nextDayStart),
                         monthCounts = monthCounts,
                         previousMonthCounts = previousMonthCounts,
+                        use24HourClock = preferences.use24HourClock,
                     )
                 )
             }

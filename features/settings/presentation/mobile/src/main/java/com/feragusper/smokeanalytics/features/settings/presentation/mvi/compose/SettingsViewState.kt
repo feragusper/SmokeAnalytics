@@ -6,7 +6,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +44,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.runtime.Composable
@@ -47,11 +52,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -65,10 +74,12 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
-import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerEmojiPalette
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.searchEmojis
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import com.valentinilk.shimmer.shimmer
 
@@ -133,7 +144,7 @@ data class SettingsViewState(
                 return@Column
             }
 
-            SettingsSectionHeader(title = "Account")
+            SettingsSectionHeader(title = stringResource(R.string.settings_account))
 
             SessionCard(
                 currentEmail = currentEmail,
@@ -145,7 +156,7 @@ data class SettingsViewState(
                 onSignInError = { signInErrorMessage = it },
             )
 
-            SettingsSectionHeader(title = "Preferences")
+            SettingsSectionHeader(title = stringResource(R.string.settings_preferences))
 
             PreferencesCard(
                 preferences = draftPreferences,
@@ -156,11 +167,31 @@ data class SettingsViewState(
             )
 
             if (currentEmail != null) {
-                SettingsSectionHeader(title = "Triggers")
+                SettingsSectionHeader(title = stringResource(R.string.settings_personalization))
 
                 SettingsCard(
-                    title = "Manage triggers",
-                    subtitle = "Choose which built-in triggers appear when you tag a cigarette, and add your own.",
+                    title = stringResource(R.string.settings_make_it_yours),
+                    subtitle = stringResource(R.string.settings_personalization_subtitle),
+                    initiallyExpanded = false,
+                ) {
+                    PersonalizationSection(
+                        preferences = draftPreferences,
+                        enabled = !displayLoading,
+                        onChange = { updated ->
+                            draftPreferences = updated
+                            intent(SettingsIntent.UpdatePreferences(updated))
+                        },
+                    )
+                }
+            }
+
+            if (currentEmail != null) {
+                SettingsSectionHeader(title = stringResource(R.string.settings_triggers))
+
+                SettingsCard(
+                    title = stringResource(R.string.settings_manage_triggers),
+                    subtitle = stringResource(R.string.settings_manage_triggers_subtitle),
+                    initiallyExpanded = false,
                 ) {
                     ManageTriggersSection(
                         preferences = draftPreferences,
@@ -173,11 +204,12 @@ data class SettingsViewState(
                 }
             }
 
-            SettingsSectionHeader(title = "App")
+            SettingsSectionHeader(title = stringResource(R.string.settings_app))
 
             SettingsCard(
-                title = "About & Support",
-                subtitle = "Share the app, reach support, and review plan metadata from your personal destination.",
+                title = stringResource(R.string.settings_about_support),
+                subtitle = stringResource(R.string.settings_about_subtitle),
+                initiallyExpanded = false,
             ) {
                 AboutSection()
             }
@@ -197,7 +229,7 @@ data class SettingsViewState(
 private fun SettingsErrorCard(
     message: String,
     onRetry: (() -> Unit)? = null,
-    title: String = "Your space is unavailable",
+    title: String = stringResource(R.string.settings_space_unavailable),
 ) {
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -221,7 +253,7 @@ private fun SettingsErrorCard(
             )
             if (onRetry != null) {
                 Button(onClick = onRetry) {
-                    Text("Retry")
+                    Text(stringResource(R.string.settings_retry))
                 }
             }
         }
@@ -261,24 +293,24 @@ private fun SettingsScreenHeader(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = if (currentDisplayName.isNullOrBlank()) "You" else currentDisplayName,
+            text = if (currentDisplayName.isNullOrBlank()) stringResource(R.string.settings_you) else currentDisplayName,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = if (currentEmail == null) {
-                "Sign in to sync preferences and keep goals across devices."
+                stringResource(R.string.settings_sign_in_subtitle)
             } else {
-                "Manage session, preferences, and app settings."
+                stringResource(R.string.settings_manage_session_subtitle)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         StatusBadge(
             text = when {
-                displayLoading -> "Refreshing"
-                currentEmail != null -> "Signed in"
-                else -> "Guest mode"
+                displayLoading -> stringResource(R.string.settings_refreshing)
+                currentEmail != null -> stringResource(R.string.settings_signed_in)
+                else -> stringResource(R.string.settings_guest_mode)
             },
         )
     }
@@ -294,15 +326,15 @@ private fun HighlightsRow(
     ) {
         HighlightCard(
             modifier = Modifier.weight(1f),
-            title = "Plan",
+            title = stringResource(R.string.settings_plan),
             value = tier.name,
-            body = "Premium stays defined as a future upgrade with richer insights and no ads.",
+            body = stringResource(R.string.settings_plan_body),
         )
         HighlightCard(
             modifier = Modifier.weight(1f),
-            title = "Points",
-            value = "Recovery",
-            body = "Progress is tied to smoke-free gaps, not perfection. Longer gaps keep the score moving.",
+            title = stringResource(R.string.settings_points),
+            value = stringResource(R.string.settings_recovery),
+            body = stringResource(R.string.settings_points_body),
         )
     }
 }
@@ -349,8 +381,8 @@ private fun RoutineSnapshotCard(
     preferences: UserPreferences,
 ) {
     SettingsCard(
-        title = "Routine model",
-        subtitle = "The app's daily interpretation depends on these values before any chart or map is computed.",
+        title = stringResource(R.string.settings_routine_model),
+        subtitle = stringResource(R.string.settings_routine_body),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -359,15 +391,15 @@ private fun RoutineSnapshotCard(
             ) {
                 HighlightCard(
                     modifier = Modifier.weight(1f),
-                    title = "Day starts",
+                    title = stringResource(R.string.settings_day_starts),
                     value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                    body = "Custom day boundary for Home, History, and Analytics.",
+                    body = stringResource(R.string.settings_day_boundary_body),
                 )
                 HighlightCard(
                     modifier = Modifier.weight(1f),
-                    title = "Sleep starts",
+                    title = stringResource(R.string.settings_sleep_starts),
                     value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                    body = "Sleep hours are excluded from the mindful gap target and hourly averages.",
+                    body = stringResource(R.string.settings_sleep_body),
                 )
             }
             Row(
@@ -376,15 +408,15 @@ private fun RoutineSnapshotCard(
             ) {
                 HighlightCard(
                     modifier = Modifier.weight(1f),
-                    title = "Awake window",
+                    title = stringResource(R.string.settings_awake_window),
                     value = "${preferences.awakeMinutesPerDay / 60}h",
-                    body = "This is the daily window used to calculate a healthier target pace.",
+                    body = stringResource(R.string.settings_awake_body),
                 )
                 HighlightCard(
                     modifier = Modifier.weight(1f),
-                    title = "Location",
-                    value = if (preferences.locationTrackingEnabled) "On" else "Off",
-                    body = "Controls whether the map can learn from repeated smoking areas.",
+                    title = stringResource(R.string.settings_location),
+                    value = if (preferences.locationTrackingEnabled) "On" else stringResource(R.string.settings_off),
+                    body = stringResource(R.string.settings_location_body),
                 )
             }
         }
@@ -402,8 +434,8 @@ private fun SessionCard(
     onSignInError: (String) -> Unit,
 ) {
     SettingsCard(
-        title = "Session",
-        subtitle = "Authentication and sync state.",
+        title = stringResource(R.string.settings_session),
+        subtitle = stringResource(R.string.settings_account_subtitle),
     ) {
         if (currentEmail != null) {
             Row(
@@ -448,12 +480,12 @@ private fun SessionCard(
                 onClick = onSignOut,
                 enabled = !displayLoading,
             ) {
-                Text(text = stringResourceSafe(R.string.settings_logout, "Logout"))
+                Text(text = stringResourceSafe(R.string.settings_logout, stringResource(R.string.settings_logout)))
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(
-                    text = "Guest mode keeps the shell readable, but sign-in restores synced preferences, a stable archive, and goals across devices.",
+                    text = stringResource(R.string.settings_session_guest_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -464,28 +496,28 @@ private fun SessionCard(
                 ) {
                     SessionBenefitCard(
                         modifier = Modifier.weight(1f),
-                        title = "Routine",
-                        value = "Sync",
-                        body = "Carry pack price, day-start hour, and location settings across devices.",
+                        title = stringResource(R.string.settings_routine),
+                        value = stringResource(R.string.settings_sync),
+                        body = stringResource(R.string.settings_preferences_card_body),
                     )
                     SessionBenefitCard(
                         modifier = Modifier.weight(1f),
-                        title = "History",
-                        value = "Archive",
-                        body = "Keep edits and older smoke entries tied to the same account.",
+                        title = stringResource(R.string.settings_history),
+                        value = stringResource(R.string.settings_archive),
+                        body = stringResource(R.string.settings_history_card_body),
                     )
                 }
 
                 SessionBenefitCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = "Goals",
-                    value = "Targets",
-                    body = "Keep reduction targets and product preferences connected to the same account.",
+                    title = stringResource(R.string.settings_goals),
+                    value = stringResource(R.string.settings_targets),
+                    body = stringResource(R.string.settings_goals_card_body),
                 )
 
                 signInErrorMessage?.let { message ->
                     SettingsErrorCard(
-                        title = "Sign-in failed",
+                        title = stringResource(R.string.settings_sign_in_failed),
                         message = message,
                     )
                 }
@@ -564,7 +596,7 @@ private fun PreferencesCard(
     var showPackPricePicker by remember { mutableStateOf(false) }
     var showCigsPerPackPicker by remember { mutableStateOf(false) }
 
-    SettingsCard(title = "Preferences") {
+    SettingsCard(title = stringResource(R.string.settings_preferences)) {
         // Row 1: Day starts + Sleep starts
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -572,17 +604,17 @@ private fun PreferencesCard(
         ) {
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
-                title = "Day starts",
+                title = stringResource(R.string.settings_day_starts),
                 value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                body = "Tap to change",
+                body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
                 onClick = { showDayStartPicker = true },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
-                title = "Sleep starts",
+                title = stringResource(R.string.settings_sleep_starts),
                 value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                body = "Tap to change",
+                body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
                 onClick = { showBedtimePicker = true },
             )
@@ -595,25 +627,25 @@ private fun PreferencesCard(
         ) {
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
-                title = "Currency",
+                title = stringResource(R.string.settings_currency),
                 value = preferences.currencySymbol,
-                body = "Tap to change",
+                body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
                 onClick = { showCurrencyPicker = true },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
-                title = "Pack price",
+                title = stringResource(R.string.settings_pack_price),
                 value = "%.2f".format(preferences.packPrice),
-                body = "Tap to change",
+                body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
                 onClick = { showPackPricePicker = true },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
-                title = "Cigs/pack",
+                title = stringResource(R.string.settings_cigs_pack_short),
                 value = preferences.cigarettesPerPack.toString(),
-                body = "Tap to change",
+                body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
                 onClick = { showCigsPerPackPicker = true },
             )
@@ -645,7 +677,7 @@ private fun PreferencesCard(
     // Day start time picker
     if (showDayStartPicker) {
         TimePickerDialogCompat(
-            label = "Day starts at",
+            label = stringResource(R.string.settings_day_starts_at),
             initialHour = preferences.dayStartHour,
             onDismiss = { showDayStartPicker = false },
             onConfirm = { hour ->
@@ -659,7 +691,7 @@ private fun PreferencesCard(
     // Bedtime picker
     if (showBedtimePicker) {
         TimePickerDialogCompat(
-            label = "Sleep starts at",
+            label = stringResource(R.string.settings_sleep_starts_at),
             initialHour = preferences.bedtimeHour,
             onDismiss = { showBedtimePicker = false },
             onConfirm = { hour ->
@@ -674,7 +706,7 @@ private fun PreferencesCard(
     if (showCurrencyPicker) {
         AlertDialog(
             onDismissRequest = { showCurrencyPicker = false },
-            title = { Text("Currency") },
+            title = { Text(stringResource(R.string.settings_currency)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf("€", "$", "£").forEach { symbol ->
@@ -699,7 +731,7 @@ private fun PreferencesCard(
                                 else MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = when (symbol) { "€" -> "Euro"; "$" -> "Dollar"; else -> "Pound" },
+                                text = when (symbol) { "€" -> stringResource(R.string.settings_currency_euro); "$" -> stringResource(R.string.settings_currency_dollar); else -> stringResource(R.string.settings_currency_pound) },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -708,7 +740,7 @@ private fun PreferencesCard(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showCurrencyPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showCurrencyPicker = false }) { Text(stringResource(R.string.settings_cancel)) } },
         )
     }
 
@@ -717,7 +749,7 @@ private fun PreferencesCard(
         var draftPrice by remember { mutableStateOf("%.2f".format(preferences.packPrice)) }
         AlertDialog(
             onDismissRequest = { showPackPricePicker = false },
-            title = { Text("Pack price (${preferences.currencySymbol})") },
+            title = { Text(stringResource(R.string.settings_pack_price_with_symbol, preferences.currencySymbol)) },
             text = {
                 OutlinedTextField(
                     value = draftPrice,
@@ -734,9 +766,9 @@ private fun PreferencesCard(
                         val updated = preferences.copy(packPrice = price)
                         onPreferencesChange(updated); onSave(updated)
                     }
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.settings_save)) }
             },
-            dismissButton = { TextButton(onClick = { showPackPricePicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showPackPricePicker = false }) { Text(stringResource(R.string.settings_cancel)) } },
         )
     }
 
@@ -745,7 +777,7 @@ private fun PreferencesCard(
         var draftCigs by remember { mutableStateOf(preferences.cigarettesPerPack.toString()) }
         AlertDialog(
             onDismissRequest = { showCigsPerPackPicker = false },
-            title = { Text("Cigarettes per pack") },
+            title = { Text(stringResource(R.string.settings_cigs_per_pack)) },
             text = {
                 OutlinedTextField(
                     value = draftCigs,
@@ -762,9 +794,9 @@ private fun PreferencesCard(
                         val updated = preferences.copy(cigarettesPerPack = count)
                         onPreferencesChange(updated); onSave(updated)
                     }
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.settings_save)) }
             },
-            dismissButton = { TextButton(onClick = { showCigsPerPackPicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showCigsPerPackPicker = false }) { Text(stringResource(R.string.settings_cancel)) } },
         )
     }
 }
@@ -836,12 +868,12 @@ private fun LocationPreferenceCard(
             )
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = "Location tracking",
+                    text = stringResource(R.string.settings_location_tracking),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = if (isTracking) "On — used for map insights" else "Off",
+                    text = if (isTracking) stringResource(R.string.settings_location_on) else stringResource(R.string.settings_off),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -885,7 +917,7 @@ private fun CurrencyField(
     var expanded by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "Currency", style = MaterialTheme.typography.bodySmall)
+        Text(text = stringResource(R.string.settings_currency), style = MaterialTheme.typography.bodySmall)
         Box {
             OutlinedButton(
                 onClick = { expanded = true },
@@ -1032,7 +1064,7 @@ private fun TimePreferenceRow(
             },
             enabled = enabled,
         ) {
-            Text("Change")
+            Text(stringResource(R.string.settings_change))
         }
     }
 }
@@ -1041,8 +1073,14 @@ private fun TimePreferenceRow(
 private fun SettingsCard(
     title: String,
     subtitle: String? = null,
+    initiallyExpanded: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "settingsCardChevron",
+    )
     Card(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
@@ -1054,20 +1092,43 @@ private fun SettingsCard(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            subtitle?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    subtitle?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) stringResource(R.string.settings_collapse) else stringResource(R.string.settings_expand),
+                    modifier = Modifier.rotate(chevronRotation),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            content()
+            AnimatedVisibility(visible = expanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    content()
+                }
+            }
         }
     }
 }
@@ -1150,7 +1211,7 @@ private fun ManageTriggersSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(
-            text = "Built-in",
+            text = stringResource(R.string.settings_builtin),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1174,12 +1235,12 @@ private fun ManageTriggersSection(
             TextButton(
                 onClick = { onChange(preferences.copy(hiddenDefaultTriggers = emptySet())) },
                 enabled = enabled,
-            ) { Text("Restore removed defaults (${preferences.hiddenDefaultTriggers.size})") }
+            ) { Text(stringResource(R.string.settings_restore_removed_defaults, preferences.hiddenDefaultTriggers.size)) }
         }
 
         if (preferences.customTriggers.isNotEmpty()) {
             Text(
-                text = "Your tags",
+                text = stringResource(R.string.settings_your_tags),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1199,7 +1260,7 @@ private fun ManageTriggersSection(
             value = draft,
             onValueChange = { draft = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Add a tag") },
+            label = { Text(stringResource(R.string.settings_add_a_tag)) },
             singleLine = true,
             enabled = enabled,
             trailingIcon = {
@@ -1209,7 +1270,7 @@ private fun ManageTriggersSection(
                             onChange(preferences.copy(customTriggers = preferences.customTriggers + key))
                         }
                         draft = ""
-                    }) { Text("Add") }
+                    }) { Text(stringResource(R.string.settings_add)) }
                 }
             },
         )
@@ -1234,31 +1295,31 @@ private fun TriggerRow(
     ) {
         TriggerIconPicker(icon = icon, enabled = enabled, onCommit = onIconCommit)
         Text(text = label, modifier = Modifier.weight(1f))
-        TextButton(onClick = { renaming = true }, enabled = enabled) { Text("Rename") }
-        TextButton(onClick = onRemove, enabled = enabled) { Text("Remove") }
+        TextButton(onClick = { renaming = true }, enabled = enabled) { Text(stringResource(R.string.settings_rename)) }
+        TextButton(onClick = onRemove, enabled = enabled) { Text(stringResource(R.string.settings_remove)) }
     }
     if (renaming) {
         var draft by remember { mutableStateOf(label) }
         AlertDialog(
             onDismissRequest = { renaming = false },
-            title = { Text("Rename trigger") },
+            title = { Text(stringResource(R.string.settings_rename_trigger)) },
             text = {
                 OutlinedTextField(
                     value = draft,
                     onValueChange = { draft = it },
                     singleLine = true,
-                    label = { Text("Name") },
-                    supportingText = { Text("Leave empty to restore the original name.") },
+                    label = { Text(stringResource(R.string.settings_name)) },
+                    supportingText = { Text(stringResource(R.string.settings_leave_empty_restore)) },
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     onRename(draft.trim())
                     renaming = false
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.settings_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { renaming = false }) { Text("Cancel") }
+                TextButton(onClick = { renaming = false }) { Text(stringResource(R.string.settings_cancel)) }
             },
         )
     }
@@ -1279,29 +1340,40 @@ private fun TriggerIconPicker(
         )
     }
     if (open) {
+        var query by remember { mutableStateOf("") }
+        val results = remember(query) { searchEmojis(query) }
         AlertDialog(
             onDismissRequest = { open = false },
-            title = { Text("Pick an icon") },
+            title = { Text(stringResource(R.string.settings_pick_an_icon)) },
             text = {
-                FlowRow(
-                    modifier = Modifier
-                        .heightIn(max = 320.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    TriggerEmojiPalette.forEach { emoji ->
-                        Text(
-                            text = emoji,
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    onCommit(emoji)
-                                    open = false
-                                }
-                                .padding(10.dp),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.settings_search)) },
+                        singleLine = true,
+                    )
+                    FlowRow(
+                        modifier = Modifier
+                            .heightIn(max = 300.dp)
+                            .verticalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        results.forEach { entry ->
+                            Text(
+                                text = entry.emoji,
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onCommit(entry.emoji)
+                                        open = false
+                                    }
+                                    .padding(10.dp),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
                     }
                 }
             },
@@ -1310,10 +1382,10 @@ private fun TriggerIconPicker(
                 TextButton(onClick = {
                     onCommit("")
                     open = false
-                }) { Text("Reset") }
+                }) { Text(stringResource(R.string.settings_reset)) }
             },
             dismissButton = {
-                TextButton(onClick = { open = false }) { Text("Cancel") }
+                TextButton(onClick = { open = false }) { Text(stringResource(R.string.settings_cancel)) }
             },
         )
     }
@@ -1330,3 +1402,147 @@ private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPr
     copy(
         triggerLabels = if (label.isBlank()) triggerLabels - key else triggerLabels + (key to label),
     )
+
+/** Nickname + personal reason fields; commit when the field loses focus. */
+@Composable
+private fun PersonalizationSection(
+    preferences: UserPreferences,
+    enabled: Boolean,
+    onChange: (UserPreferences) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PersonalizationField(
+            label = stringResource(R.string.settings_nickname),
+            value = preferences.nickname,
+            enabled = enabled,
+            onCommit = { onChange(preferences.copy(nickname = it)) },
+        )
+        PersonalizationField(
+            label = stringResource(R.string.settings_your_reason),
+            value = preferences.quitReason,
+            enabled = enabled,
+            onCommit = { onChange(preferences.copy(quitReason = it)) },
+        )
+        ToggleRow(
+            label = stringResource(R.string.settings_clock_24h),
+            checked = preferences.use24HourClock,
+            enabled = enabled,
+            onToggle = { onChange(preferences.copy(use24HourClock = it)) },
+        )
+        ToggleRow(
+            label = stringResource(R.string.settings_week_starts_monday),
+            checked = preferences.weekStartsMonday,
+            enabled = enabled,
+            onToggle = { onChange(preferences.copy(weekStartsMonday = it)) },
+        )
+        HomeFocusPicker(
+            current = preferences.homeHeroChoice,
+            enabled = enabled,
+            onSelect = { onChange(preferences.copy(homeHeroChoice = it)) },
+        )
+        AccentPicker()
+    }
+}
+
+/** Segmented picker for which metric the Home hero emphasizes. */
+@Composable
+private fun HomeFocusPicker(
+    current: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    val options = listOf(
+        "auto" to stringResource(R.string.settings_focus_auto),
+        "count" to stringResource(R.string.settings_focus_count),
+        "streak" to stringResource(R.string.settings_focus_streak),
+        "money" to stringResource(R.string.settings_focus_money),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.settings_home_focus),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.forEach { (key, label) ->
+                FilterChip(
+                    selected = current == key,
+                    enabled = enabled,
+                    onClick = { onSelect(key) },
+                    label = { Text(label) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = label, modifier = Modifier.weight(1f))
+        Switch(checked = checked, enabled = enabled, onCheckedChange = onToggle)
+    }
+}
+
+/** Accent color swatches; applied immediately and stored locally on the device. */
+@Composable
+private fun AccentPicker() {
+    val context = LocalContext.current
+    val current = AccentHolder.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.settings_accent),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MobileAccent.entries.forEach { accent ->
+                val swatch = accent.primary ?: MaterialTheme.colorScheme.primary
+                val selected = accent == current
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(swatch)
+                        .border(
+                            width = if (selected) 3.dp else 1.dp,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape,
+                        )
+                        .clickable { AccentHolder.set(context, accent) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PersonalizationField(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    onCommit: (String) -> Unit,
+) {
+    var draft by remember(value) { mutableStateOf(value) }
+    OutlinedTextField(
+        value = draft,
+        onValueChange = { draft = it },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { state ->
+                if (!state.isFocused && draft.trim() != value) onCommit(draft.trim())
+            },
+        label = { Text(label) },
+        singleLine = true,
+        enabled = enabled,
+    )
+}

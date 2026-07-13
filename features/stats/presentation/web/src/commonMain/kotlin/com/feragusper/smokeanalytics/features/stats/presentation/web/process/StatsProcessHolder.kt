@@ -28,6 +28,7 @@ class StatsProcessHolder(
             dayStartHour = preferences.dayStartHour,
             bedtimeHour = preferences.bedtimeHour,
             triggerLabelOverrides = preferences.triggerLabels,
+            weekStartsMonday = preferences.weekStartsMonday,
         )
         emit(StatsResult.Success(stats))
     }.catch { e ->

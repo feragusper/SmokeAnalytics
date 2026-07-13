@@ -9,6 +9,8 @@ import com.feragusper.smokeanalytics.libraries.design.PageSectionHeader
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
 import com.feragusper.smokeanalytics.libraries.design.SurfaceCard
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -28,12 +30,13 @@ fun AnalyticsWebScreen(
     statsContent: @Composable () -> Unit,
     mapContent: @Composable () -> Unit,
 ) {
+    val strings = LocalStrings.current
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "Analytics & Map",
-            eyebrow = "Patterns",
-            subtitle = "Review smoking frequency and repeated smoking areas from one destination.",
-            badgeText = selectedTab.label,
+            title = strings.analyticsAndMap,
+            eyebrow = strings.eyebrowPatterns,
+            subtitle = strings.analyticsAndMapSubtitle,
+            badgeText = selectedTab.label(strings),
         )
 
         SurfaceCard {
@@ -43,7 +46,7 @@ fun AnalyticsWebScreen(
                     onClick = { onDateChange(selectedDate.shift(selectedPeriod, -1)) },
                 )
                 Div(attrs = { classes(SmokeWebStyles.analyticsDateLabel) }) {
-                    Text(selectedDate.headerLabel(selectedPeriod))
+                    Text(selectedDate.headerLabel(selectedPeriod, strings))
                 }
                 GhostButton(
                     text = "→",
@@ -65,10 +68,10 @@ fun AnalyticsWebScreen(
             Div(attrs = { classes(SmokeWebStyles.analyticsPeriodBand) }) {
                 StatsPeriod.entries.forEach { period ->
                     if (period == selectedPeriod) {
-                        PrimaryButton(text = period.label(), onClick = {})
+                        PrimaryButton(text = period.label(strings), onClick = {})
                     } else {
                         GhostButton(
-                            text = period.label(),
+                            text = period.label(strings),
                             onClick = { onPeriodChange(period) },
                         )
                     }
@@ -79,10 +82,10 @@ fun AnalyticsWebScreen(
         Div(attrs = { classes(SmokeWebStyles.analyticsTabBand) }) {
             AnalyticsTab.entries.forEach { tab ->
                 if (selectedTab == tab) {
-                    PrimaryButton(text = tab.label, onClick = {})
+                    PrimaryButton(text = tab.label(strings), onClick = {})
                 } else {
                     GhostButton(
-                        text = tab.label,
+                        text = tab.label(strings),
                         onClick = { onSelectTab(tab) },
                     )
                 }
@@ -101,11 +104,12 @@ fun SettingsAboutWebScreen(
     settingsDeps: SettingsWebDependencies,
     onShare: suspend () -> Unit,
 ) {
+    val strings = LocalStrings.current
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = "You",
-            eyebrow = "Personal space",
-            subtitle = "Keep account, routine preferences, goals, and product details in one calmer destination.",
+            title = strings.navYou,
+            eyebrow = strings.eyebrowPersonalSpace,
+            subtitle = strings.youSubtitle,
         )
 
         SettingsWebScreen(
@@ -115,16 +119,21 @@ fun SettingsAboutWebScreen(
     }
 }
 
-enum class AnalyticsTab(val label: String) {
-    Trends("Frequency"),
-    Map("Clusters"),
+enum class AnalyticsTab {
+    Trends,
+    Map,
 }
 
-private fun StatsPeriod.label(): String = when (this) {
-    StatsPeriod.DAY -> "Day"
-    StatsPeriod.WEEK -> "Week"
-    StatsPeriod.MONTH -> "Month"
-    StatsPeriod.YEAR -> "Year"
+private fun AnalyticsTab.label(strings: AppStrings): String = when (this) {
+    AnalyticsTab.Trends -> strings.tabFrequency
+    AnalyticsTab.Map -> strings.tabClusters
+}
+
+private fun StatsPeriod.label(strings: AppStrings): String = when (this) {
+    StatsPeriod.DAY -> strings.periodDay
+    StatsPeriod.WEEK -> strings.periodWeek
+    StatsPeriod.MONTH -> strings.periodMonth
+    StatsPeriod.YEAR -> strings.periodYear
 }
 
 private fun LocalDate.shift(period: StatsPeriod, amount: Int): LocalDate {
@@ -137,9 +146,9 @@ private fun LocalDate.shift(period: StatsPeriod, amount: Int): LocalDate {
     return plus(amount, unit)
 }
 
-private fun LocalDate.headerLabel(period: StatsPeriod): String = when (period) {
+private fun LocalDate.headerLabel(period: StatsPeriod, strings: AppStrings): String = when (period) {
     StatsPeriod.DAY -> toUiDate()
-    StatsPeriod.WEEK -> "Week of ${toUiDate()}"
+    StatsPeriod.WEEK -> strings.weekOf(toUiDate())
     StatsPeriod.MONTH -> "${monthNumber.toString().padStart(2, '0')}/$year"
     StatsPeriod.YEAR -> year.toString()
 }

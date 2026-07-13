@@ -29,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.feragusper.smokeanalytics.features.home.presentation.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,16 +70,12 @@ internal fun RelationshipReminderCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "What were these about?",
+                text = stringResource(R.string.home_what_were_these),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = if (pending.size == 1) {
-                    "1 cigarette still needs a trigger — tag it below."
-                } else {
-                    "${pending.size} cigarettes still need a trigger — tag them one at a time."
-                },
+                text = pluralStringResource(R.plurals.home_pending_needs_trigger, pending.size, pending.size),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -98,13 +97,13 @@ internal fun RelationshipReminderCard(
                             modifier = Modifier.size(16.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Add trigger")
+                        Text(stringResource(R.string.home_add_trigger))
                     }
                 }
             }
             if (pending.size > shown.size) {
                 Text(
-                    text = "+${pending.size - shown.size} more",
+                    text = pluralStringResource(R.plurals.home_more_count, pending.size - shown.size, pending.size - shown.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -173,19 +172,19 @@ internal fun RelationshipPromptSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "What was it related to?",
+                text = stringResource(R.string.home_what_related),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
             dateLabel?.let {
                 Text(
-                    text = "Logged $it",
+                    text = stringResource(R.string.home_logged, it),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
-                text = "Tag what triggered this cigarette, or skip if it was nothing in particular.",
+                text = stringResource(R.string.home_tag_what_triggered),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -223,8 +222,8 @@ internal fun RelationshipPromptSheet(
                 value = draft,
                 onValueChange = { draft = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Add a tag") },
-                placeholder = { Text("Type and press Add…") },
+                label = { Text(stringResource(R.string.home_add_a_tag)) },
+                placeholder = { Text(stringResource(R.string.home_type_and_add)) },
                 singleLine = true,
                 trailingIcon = {
                     val key = draft.normalizedTag()
@@ -233,7 +232,7 @@ internal fun RelationshipPromptSheet(
                             adHoc = adHoc + TriggerOption(key = key, label = key, isCustom = true)
                             selectedKeys = selectedKeys + key
                             draft = ""
-                        }) { Text("Add") }
+                        }) { Text(stringResource(R.string.home_add)) }
                     }
                 },
             )
@@ -246,7 +245,7 @@ internal fun RelationshipPromptSheet(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("No relation")
+                    Text(stringResource(R.string.home_no_relation))
                 }
                 Button(
                     onClick = {
@@ -257,7 +256,7 @@ internal fun RelationshipPromptSheet(
                     shape = RoundedCornerShape(16.dp),
                     enabled = selectedKeys.isNotEmpty() || draft.normalizedTag() != null,
                 ) {
-                    Text("Save", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_save), fontWeight = FontWeight.Bold)
                 }
             }
         }

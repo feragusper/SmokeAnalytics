@@ -23,8 +23,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.feragusper.smokeanalytics.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +59,7 @@ fun WearInstallPromptBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "The Smoke Analytics tile, on your wrist",
+                text = stringResource(R.string.app_wear_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
@@ -65,7 +67,7 @@ fun WearInstallPromptBottomSheet(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Install the tile on $deviceName to track smokes and glance at today's count without picking up your phone.",
+                text = stringResource(R.string.app_wear_body, deviceName),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -74,7 +76,7 @@ fun WearInstallPromptBottomSheet(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "After installing, swipe to the tiles carousel on the watch and add Smoke Analytics.",
+                text = stringResource(R.string.app_wear_hint),
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -90,14 +92,14 @@ fun WearInstallPromptBottomSheet(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Not now")
+                    Text(stringResource(R.string.app_not_now))
                 }
 
                 Button(
                     onClick = onInstall,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Get the tile")
+                    Text(stringResource(R.string.app_get_the_tile))
                 }
             }
         }

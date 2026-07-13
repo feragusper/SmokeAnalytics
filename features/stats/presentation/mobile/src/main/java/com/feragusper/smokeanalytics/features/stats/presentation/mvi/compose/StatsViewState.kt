@@ -45,6 +45,8 @@ import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.features.stats.presentation.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +79,7 @@ import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.VicoTheme
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalConfiguration
 import java.time.LocalDate as JavaLocalDate
 import java.util.Locale
 import kotlin.math.max
@@ -145,19 +148,19 @@ data class StatsViewState(
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(
-                                        text = "Trends",
+                                        text = stringResource(R.string.stats_trends),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     Text(
-                                        text = "Patterns in motion",
+                                        text = stringResource(R.string.stats_patterns_in_motion),
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
                                     )
                                     Text(
                                         text = when {
-                                            displayRefreshLoading -> "Refreshing in background"
-                                            error != null && stats != null -> "Latest refresh failed"
+                                            displayRefreshLoading -> stringResource(R.string.stats_refreshing_bg)
+                                            error != null && stats != null -> stringResource(R.string.stats_latest_refresh_failed)
                                             else -> selectedDate.summaryMeta(currentPeriod)
                                         },
                                         style = MaterialTheme.typography.bodySmall,
@@ -172,7 +175,7 @@ data class StatsViewState(
                                 ) {
                                     Text(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        text = if (displayRefreshLoading) "Refreshing" else selectedDate.summaryMeta(currentPeriod),
+                                        text = if (displayRefreshLoading) stringResource(R.string.stats_refreshing) else selectedDate.summaryMeta(currentPeriod),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
@@ -182,8 +185,8 @@ data class StatsViewState(
                             Text(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 text = when {
-                                    displayRefreshLoading -> "Refreshing trends in background"
-                                    error != null && stats != null -> "Latest frequency refresh failed. Showing the last snapshot."
+                                    displayRefreshLoading -> stringResource(R.string.stats_refreshing_trends_bg)
+                                    error != null && stats != null -> stringResource(R.string.stats_freq_refresh_failed)
                                     else -> selectedDate.summaryMeta(currentPeriod)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -261,11 +264,11 @@ data class StatsViewState(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Text(
-                                text = "Could not refresh trends",
+                                text = stringResource(R.string.stats_could_not_refresh),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                             Text(
-                                text = "Retry to rebuild the frequency view for the selected range.",
+                                text = stringResource(R.string.stats_retry_rebuild),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
@@ -293,7 +296,7 @@ data class StatsViewState(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Smoking Frequency",
+                                    text = stringResource(R.string.stats_smoking_frequency),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                 )
@@ -339,13 +342,13 @@ private fun TriggerBreakdownCard(stats: SmokeStats) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "By trigger",
+                text = stringResource(R.string.stats_by_trigger),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
             if (breakdown.isEmpty()) {
                 Text(
-                    text = "No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.",
+                    text = stringResource(R.string.stats_by_trigger_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -464,13 +467,13 @@ private fun SummaryCards(
         ) {
             SummaryCard(
                 modifier = Modifier.weight(1.6f),
-                title = if (isDay) "Total Frequency" else averageSummary.title,
+                title = if (isDay) stringResource(R.string.stats_total_frequency) else averageSummary.title,
                 headline = if (isDay) {
                     stats.totalDay.toString()
                 } else {
                     String.format(locale, "%.1f", averageSummary.value)
                 },
-                supporting = if (isDay) "Cigarettes" else averageSummary.supporting,
+                supporting = if (isDay) stringResource(R.string.stats_cigarettes) else averageSummary.supporting,
                 meta = selectedDate.summaryMeta(currentPeriod),
                 prominent = true,
             )
@@ -492,9 +495,9 @@ private fun SummaryCards(
                 }
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = "Peak Window",
+                    title = stringResource(R.string.stats_peak_window),
                     headline = peakBucketFor(currentPeriod, stats),
-                    supporting = "Highest activity",
+                    supporting = stringResource(R.string.stats_highest_activity),
                     compact = true,
                 )
             }
@@ -610,7 +613,7 @@ fun HeaderNavigation(
                 }
             )
         }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.stats_previous))
         }
 
         Text(
@@ -638,7 +641,7 @@ fun HeaderNavigation(
                 }
             )
         }) {
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.stats_next))
         }
     }
 }
@@ -751,21 +754,23 @@ fun rememberSmokeAnalyticsVicoTheme(): VicoTheme {
     }
 }
 
+@Composable
 private fun chartCaptionFor(period: StatsViewState.StatsPeriod): String = when (period) {
-    StatsViewState.StatsPeriod.DAY -> "Hourly view across the selected day."
-    StatsViewState.StatsPeriod.WEEK -> "How smoking volume is distributed across the selected week."
-    StatsViewState.StatsPeriod.MONTH -> "Week buckets across the selected month."
-    StatsViewState.StatsPeriod.YEAR -> "Month totals across the selected year."
+    StatsViewState.StatsPeriod.DAY -> stringResource(R.string.stats_hourly_view)
+    StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_distribution)
+    StatsViewState.StatsPeriod.MONTH -> stringResource(R.string.stats_week_buckets)
+    StatsViewState.StatsPeriod.YEAR -> stringResource(R.string.stats_month_totals)
 }
 
 private fun JavaLocalDate.analyticsLabel(): String =
     "${month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} $dayOfMonth, $year"
 
+@Composable
 private fun JavaLocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
-    StatsViewState.StatsPeriod.DAY -> "Selected day"
-    StatsViewState.StatsPeriod.WEEK -> "Week of ${analyticsLabel()}"
-    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
-    StatsViewState.StatsPeriod.YEAR -> "Year to date"
+    StatsViewState.StatsPeriod.DAY -> stringResource(R.string.stats_selected_day)
+    StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_of, analyticsLabel())
+    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, LocalConfiguration.current.locales[0])
+    StatsViewState.StatsPeriod.YEAR -> stringResource(R.string.stats_year_to_date)
 }
 
 private fun peakBucketFor(

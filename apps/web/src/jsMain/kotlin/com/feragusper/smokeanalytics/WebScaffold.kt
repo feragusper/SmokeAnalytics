@@ -9,24 +9,34 @@ import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.apps.web.BuildKonfig
 import com.feragusper.smokeanalytics.libraries.design.GhostButton
 import com.feragusper.smokeanalytics.libraries.design.SmokeWebStyles
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppLanguage
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
+import com.feragusper.smokeanalytics.libraries.design.theme.AccentColor
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
+import org.jetbrains.compose.web.dom.Option
+import org.jetbrains.compose.web.dom.Select
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun WebScaffold(
     route: WebRoute,
     onNavigate: (WebRoute) -> Unit,
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+    accent: AccentColor,
+    onAccentChange: (AccentColor) -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val strings = LocalStrings.current
     var isSidebarCollapsed by remember { mutableStateOf(false) }
     val items = listOf(
-        NavItem("/icons/nav-home.svg", "Home", WebRoute.Home),
-        NavItem("/icons/nav-analytics.svg", "Analytics & Map", WebRoute.Analytics),
-        NavItem("/icons/nav-history.svg", "History", WebRoute.History),
-        NavItem("/icons/nav-goals.svg", "Goals", WebRoute.Goals),
-        NavItem("/icons/nav-you.svg", "You", WebRoute.Settings),
+        NavItem("/icons/nav-home.svg", strings.navHome, WebRoute.Home),
+        NavItem("/icons/nav-analytics.svg", strings.navAnalytics, WebRoute.Analytics),
+        NavItem("/icons/nav-history.svg", strings.navHistory, WebRoute.History),
+        NavItem("/icons/nav-goals.svg", strings.navGoals, WebRoute.Goals),
+        NavItem("/icons/nav-you.svg", strings.navYou, WebRoute.Settings),
     )
 
     Div(attrs = { classes(SmokeWebStyles.shell) }) {
@@ -49,7 +59,7 @@ fun WebScaffold(
                 }
                 if (!isSidebarCollapsed) {
                     Div(attrs = { classes(SmokeWebStyles.brandText) }) {
-                        Div(attrs = { classes(SmokeWebStyles.sidebarTitle) }) { Text("Smoke Analytics") }
+                        Div(attrs = { classes(SmokeWebStyles.sidebarTitle) }) { Text(strings.brandName) }
                     }
                 }
                 Div(attrs = { classes(SmokeWebStyles.sidebarToggle) }) {
@@ -101,12 +111,17 @@ fun WebScaffold(
             }
             Div(attrs = { classes(SmokeWebStyles.navSpacer) })
 
+            if (!isSidebarCollapsed) {
+                LanguageSelector(language = language, onLanguageChange = onLanguageChange)
+                AccentSelector(accent = accent, onAccentChange = onAccentChange)
+            }
+
             Div(attrs = {
                 classes(SmokeWebStyles.navFooter)
                 if (isSidebarCollapsed) classes(SmokeWebStyles.navFooterCompact)
             }) {
                 if (!isSidebarCollapsed) {
-                    Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text("Web") }
+                    Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text(strings.sidebarSectionWeb) }
                 }
                 Div(attrs = { classes(SmokeWebStyles.navFooterBody) }) {
                     Text(BuildKonfig.APP_VERSION)
@@ -121,6 +136,67 @@ fun WebScaffold(
                         content()
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageSelector(
+    language: AppLanguage,
+    onLanguageChange: (AppLanguage) -> Unit,
+) {
+    val strings = LocalStrings.current
+    Div(attrs = { attr("style", "padding:8px 12px;display:flex;flex-direction:column;gap:4px;") }) {
+        Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text(strings.language) }
+        Select(
+            attrs = {
+                onChange { event ->
+                    val code = event.value
+                    AppLanguage.entries.firstOrNull { it.code == code }?.let(onLanguageChange)
+                }
+                style {
+                    property("width", "100%")
+                    property("box-sizing", "border-box")
+                    property("padding", "6px 8px")
+                    property("cursor", "pointer")
+                    property("background", "var(--sa-color-surface-strong)")
+                    property("color", "var(--sa-color-onSurface)")
+                    property("border", "1px solid var(--sa-color-outline)")
+                    property("border-radius", "8px")
+                }
+            }
+        ) {
+            AppLanguage.entries.forEach { option ->
+                Option(
+                    value = option.code,
+                    attrs = { if (option == language) attr("selected", "selected") },
+                ) { Text(option.nativeLabel) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccentSelector(
+    accent: AccentColor,
+    onAccentChange: (AccentColor) -> Unit,
+) {
+    val strings = LocalStrings.current
+    Div(attrs = { attr("style", "padding:4px 12px 8px;display:flex;flex-direction:column;gap:6px;") }) {
+        Div(attrs = { classes(SmokeWebStyles.navFooterTitle) }) { Text(strings.accent) }
+        Div(attrs = { attr("style", "display:flex;gap:8px;flex-wrap:wrap;") }) {
+            AccentColor.entries.forEach { option ->
+                Div(attrs = {
+                    attr("title", option.label)
+                    onClick { onAccentChange(option) }
+                    val ring = if (option == accent) "2px solid var(--sa-color-onSurface)" else "2px solid transparent"
+                    attr(
+                        "style",
+                        "width:22px;height:22px;border-radius:999px;cursor:pointer;" +
+                            "background:${option.primary};border:$ring;box-sizing:border-box;",
+                    )
+                })
             }
         }
     }

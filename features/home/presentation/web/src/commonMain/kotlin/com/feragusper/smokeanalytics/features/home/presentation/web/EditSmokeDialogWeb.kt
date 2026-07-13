@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.web.attributes.InputType
@@ -32,6 +33,7 @@ internal fun EditSmokeDialogWeb(
     onConfirm: (Instant) -> Unit,
 ) {
     val timeZone = remember { TimeZone.currentSystemDefault() }
+    val strings = LocalStrings.current
 
     var dateValue by remember(initialInstant) {
         mutableStateOf(
@@ -74,10 +76,10 @@ internal fun EditSmokeDialogWeb(
                 onClick { it.stopPropagation() } // prevent backdrop click
             }
         ) {
-            H3 { Text("Edit smoke") }
+            H3 { Text(strings.editSmoke) }
 
             if (fullDateTimeEdit) {
-                Label(forId = "date") { Text("Date") }
+                Label(forId = "date") { Text(strings.date) }
                 Input(
                     type = InputType.Date,
                     attrs = {
@@ -90,7 +92,7 @@ internal fun EditSmokeDialogWeb(
                 Br()
             }
 
-            Label(forId = "time") { Text("Time") }
+            Label(forId = "time") { Text(strings.time) }
             Input(
                 type = InputType.Time,
                 attrs = {
@@ -104,7 +106,7 @@ internal fun EditSmokeDialogWeb(
             Br()
 
             Div {
-                Button(attrs = { onClick { onDismiss() } }) { Text("Cancel") }
+                Button(attrs = { onClick { onDismiss() } }) { Text(strings.cancel) }
                 Text(" ")
                 Button(
                     attrs = {

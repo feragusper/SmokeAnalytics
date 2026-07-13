@@ -108,7 +108,7 @@ private fun WidgetContent(
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         ) {
             MetricCard(
-                label = "Today",
+                label = LocalContext.current.getString(R.string.widget_today),
                 value = snapshot.todayCount.toString(),
                 modifier = GlanceModifier.defaultWeight(),
             )
@@ -121,7 +121,7 @@ private fun WidgetContent(
             if (!compact) {
                 Spacer(GlanceModifier.width(6.dp))
                 MetricCard(
-                    label = "Since last",
+                    label = LocalContext.current.getString(R.string.widget_since_last),
                     value = elapsedMinutes.toDurationLabel(),
                     modifier = GlanceModifier.defaultWeight(),
                 )
@@ -146,7 +146,7 @@ private fun WidgetHeader(
             horizontalAlignment = Alignment.Horizontal.Start,
         ) {
             Text(
-                text = "Goal focus",
+                text = LocalContext.current.getString(R.string.widget_goal_focus),
                 style = TextStyle(
                     color = WidgetColors.Text,
                     fontSize = if (compact) 13.sp else 14.sp,
@@ -156,7 +156,7 @@ private fun WidgetHeader(
             )
             if (!compact) {
                 Text(
-                    text = "Home snapshot",
+                    text = LocalContext.current.getString(R.string.widget_home_snapshot),
                     style = TextStyle(
                         color = WidgetColors.Muted,
                         fontSize = 11.sp,
@@ -202,7 +202,7 @@ private fun GapHeroCard(
                 horizontalAlignment = Alignment.Horizontal.Start,
             ) {
                 Text(
-                    text = "Next smoke",
+                    text = LocalContext.current.getString(R.string.widget_next_smoke),
                     style = TextStyle(
                         color = WidgetColors.Primary,
                         fontSize = if (compact) 11.sp else 12.sp,
@@ -215,7 +215,7 @@ private fun GapHeroCard(
                     compact = compact,
                 )
                 Text(
-                    text = "Target wait $targetLabel",
+                    text = LocalContext.current.getString(R.string.widget_target_wait, targetLabel),
                     style = TextStyle(
                         color = WidgetColors.Muted,
                         fontSize = if (compact) 11.sp else 12.sp,
@@ -238,7 +238,7 @@ private fun NextSmokeCountdown(
 ) {
     if (remainingMinutes <= 0L) {
         Text(
-            text = "Ready now",
+            text = LocalContext.current.getString(R.string.widget_ready_now),
             style = TextStyle(
                 color = WidgetColors.Text,
                 fontSize = if (compact) 22.sp else 28.sp,

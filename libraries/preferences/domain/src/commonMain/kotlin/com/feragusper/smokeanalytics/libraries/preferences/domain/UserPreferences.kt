@@ -18,6 +18,16 @@ data class UserPreferences(
     val triggerIcons: Map<String, String> = emptyMap(),
     /** Display name per trigger key: renames a tag without changing the key stored on smokes. */
     val triggerLabels: Map<String, String> = emptyMap(),
+    /** Optional nickname shown in the Home greeting ("Good morning, <nickname>"). */
+    val nickname: String = "",
+    /** Optional personal reason to cut down, surfaced on the craving cards as a reminder. */
+    val quitReason: String = "",
+    /** Clock format for time labels: true = 24-hour (default), false = 12-hour with AM/PM. */
+    val use24HourClock: Boolean = true,
+    /** Week starts on Monday (default) vs Sunday — affects the weekly breakdown order. */
+    val weekStartsMonday: Boolean = true,
+    /** Which metric the Home hero emphasizes: "auto" (goal-aware), "count", "streak", "money". */
+    val homeHeroChoice: String = "auto",
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

@@ -57,6 +57,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.features.home.presentation.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
@@ -69,6 +71,7 @@ import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroChoiceFromKey
 import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
@@ -106,6 +109,11 @@ data class HomeViewState(
     internal val lastSmoke: Smoke? = null,
     internal val greetingTitle: String? = null,
     internal val greetingMessage: String? = null,
+    internal val quitReason: String = "",
+    internal val use24HourClock: Boolean = true,
+    internal val currencySymbol: String = "",
+    internal val cigarettePrice: Double = 0.0,
+    internal val homeHeroChoice: String = "auto",
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
@@ -134,7 +142,7 @@ data class HomeViewState(
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
-        get() = lastSmoke?.date?.toHomeClockLabel()
+        get() = lastSmoke?.date?.toHomeClockLabel(use24HourClock = use24HourClock)
 
     interface TestTags {
         companion object {
@@ -201,6 +209,10 @@ data class HomeViewState(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
+                quitReason = quitReason,
+                homeHeroChoice = homeHeroChoice,
+                cigarettePrice = cigarettePrice,
+                currencySymbol = currencySymbol,
                 rateSummary = rateSummary,
                 goalProgress = goalProgress,
                 hasActiveGoal = hasActiveGoal,
@@ -257,6 +269,10 @@ private fun HomeContent(
     lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
+    quitReason: String,
+    homeHeroChoice: String,
+    cigarettePrice: Double,
+    currencySymbol: String,
     rateSummary: RateSummary?,
     goalProgress: GoalProgress?,
     hasActiveGoal: Boolean,
@@ -301,6 +317,9 @@ private fun HomeContent(
         awakeMinutesPerDay = awakeMinutesPerDay,
         dayStartHour = dayStartHour,
         bedtimeHour = bedtimeHour,
+        choice = homeHeroChoiceFromKey(homeHeroChoice),
+        cigarettePrice = cigarettePrice,
+        currencySymbol = currencySymbol,
     )
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
     val gapFocus = gapFocusSummary(
@@ -365,13 +384,14 @@ private fun HomeContent(
             item {
                 if (activeCraving != null) {
                     CravingCountdownCard(
+                        quitReason = quitReason,
                         craving = activeCraving,
                         onResolve = { smoked ->
                             intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
                         },
                     )
                 } else {
-                    CravingPromptCard(onTrack = { intent(HomeIntent.TrackCraving) })
+                    CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
                 }
             }
         }
@@ -428,16 +448,16 @@ private fun HomeTrendCard(trendValue: Int, delta: Int?) {
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val headline = when {
-        improving -> "Smoking less than last month"
-        worsening -> "Smoking more than last month"
-        else -> "Same pace as last month"
+        improving -> stringResource(R.string.home_smoking_less)
+        worsening -> stringResource(R.string.home_smoking_more)
+        else -> stringResource(R.string.home_same_pace)
     }
     // delta = current - previous (same elapsed window). Negative = fewer so far.
     val deltaLabel = delta?.let {
         when {
             it < 0 -> "${-it} fewer ${pluralCigarettes(-it)} so far"
             it > 0 -> "$it more ${pluralCigarettes(it)} so far"
-            else -> "Same count so far"
+            else -> stringResource(R.string.home_same_count)
         }
     }
 
@@ -454,7 +474,7 @@ private fun HomeTrendCard(trendValue: Int, delta: Int?) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Vs last month",
+                    text = stringResource(R.string.home_vs_last_month),
                     style = MaterialTheme.typography.labelLarge,
                     color = contentColor.copy(alpha = 0.72f),
                 )
@@ -499,8 +519,27 @@ private fun HomeTrendCard(trendValue: Int, delta: Int?) {
 
 private fun pluralCigarettes(count: Int): String = if (count == 1) "cigarette" else "cigarettes"
 
+/** Personal reminder shown during a craving, only when the user set a reason. */
 @Composable
-private fun CravingPromptCard(onTrack: () -> Unit) {
+private fun QuitReasonReminder(quitReason: String) {
+    if (quitReason.isBlank()) return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.home_remember_why, quitReason),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
+private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
@@ -513,15 +552,16 @@ private fun CravingPromptCard(onTrack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Feeling the urge?",
+                text = stringResource(R.string.home_feeling_urge),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Track the craving before lighting up. If it isn't time yet, we'll help you wait it out and reward the win.",
+                text = stringResource(R.string.home_feeling_urge_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            QuitReasonReminder(quitReason)
             Button(
                 onClick = onTrack,
                 modifier = Modifier.fillMaxWidth(),
@@ -533,7 +573,7 @@ private fun CravingPromptCard(onTrack: () -> Unit) {
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("I feel like smoking", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_i_feel_like_smoking), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -553,7 +593,7 @@ private fun CravingHintBanner(onDismiss: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "It's already a good time — go ahead when you want.",
+                text = stringResource(R.string.home_craving_good_time),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -561,7 +601,7 @@ private fun CravingHintBanner(onDismiss: () -> Unit) {
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Filled.Close,
-                    contentDescription = "Dismiss",
+                    contentDescription = stringResource(R.string.home_dismiss),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -571,6 +611,7 @@ private fun CravingHintBanner(onDismiss: () -> Unit) {
 
 @Composable
 private fun CravingCountdownCard(
+    quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
 ) {
@@ -602,7 +643,7 @@ private fun CravingCountdownCard(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = if (done) "You made it! 🎉" else "Hold on 💪",
+                text = if (done) stringResource(R.string.home_you_made_it) else stringResource(R.string.home_hold_on),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -635,9 +676,9 @@ private fun CravingCountdownCard(
                     }
                     Text(
                         text = if (done) {
-                            "The wait is over. Smoke it now if you still want it, or let it go for the full reward."
+                            stringResource(R.string.home_wait_over)
                         } else {
-                            "Until your next cigarette fits the goal. You've got this."
+                            stringResource(R.string.home_hold_on_body)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (done) {
@@ -649,6 +690,8 @@ private fun CravingCountdownCard(
                     )
                 }
             }
+
+            QuitReasonReminder(quitReason)
 
             // onResolve(true)  -> the user smoked (gave in while waiting / postponed once done)
             // onResolve(false) -> the urge passed without smoking (resisted)
@@ -663,14 +706,14 @@ private fun CravingCountdownCard(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                     ) {
-                        Text("I'm good")
+                        Text(stringResource(R.string.home_im_good))
                     }
                     Button(
                         onClick = { onResolve(true) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                     ) {
-                        Text("Log the cigarette", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.home_log_the_cigarette), fontWeight = FontWeight.Bold)
                     }
                 }
             } else {
@@ -681,7 +724,7 @@ private fun CravingCountdownCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("I smoked anyway")
+                    Text(stringResource(R.string.home_i_smoked_anyway))
                 }
             }
         }
@@ -703,7 +746,7 @@ private fun CravingStatsCard(stats: CravingStats) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Cravings",
+                text = stringResource(R.string.home_cravings),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -714,17 +757,17 @@ private fun CravingStatsCard(stats: CravingStats) {
                 CravingStatCell(
                     modifier = Modifier.weight(1f),
                     value = "${stats.resisted}",
-                    label = "Resisted",
+                    label = stringResource(R.string.home_resisted),
                 )
                 CravingStatCell(
                     modifier = Modifier.weight(1f),
                     value = "${stats.postponed}",
-                    label = "Postponed",
+                    label = stringResource(R.string.home_postponed),
                 )
                 CravingStatCell(
                     modifier = Modifier.weight(1f),
                     value = stats.minutesWaited.toWaitedLabel(),
-                    label = "Waited",
+                    label = stringResource(R.string.home_waited),
                 )
             }
             Surface(
@@ -739,7 +782,7 @@ private fun CravingStatsCard(stats: CravingStats) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Reward points",
+                        text = stringResource(R.string.home_reward_points),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -807,22 +850,22 @@ private fun CravingCelebrationDialog(
         },
         title = {
             Text(
-                text = if (resisted) "Urge beaten!" else "Nice and slow",
+                text = if (resisted) stringResource(R.string.home_urge_beaten) else stringResource(R.string.home_nice_and_slow),
                 fontWeight = FontWeight.Bold,
             )
         },
         text = {
             Text(
                 text = if (resisted) {
-                    "You let the craving pass without smoking. +${celebration.points} points earned."
+                    stringResource(R.string.home_craving_passed, celebration.points)
                 } else {
-                    "You waited it out before smoking. +${celebration.points} points earned."
+                    stringResource(R.string.home_craving_waited, celebration.points)
                 },
             )
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Nice")
+                Text(stringResource(R.string.home_nice))
             }
         },
     )
@@ -873,16 +916,16 @@ private fun HomeErrorSection(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = if (error == HomeResult.Error.NotLoggedIn) "Session required" else "Could not complete action",
+                text = if (error == HomeResult.Error.NotLoggedIn) stringResource(R.string.home_session_required) else stringResource(R.string.home_could_not_complete),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = when {
-                    error == HomeResult.Error.NotLoggedIn -> "Sign in again to keep Home, goals, and the latest gap synced."
+                    error == HomeResult.Error.NotLoggedIn -> stringResource(R.string.home_session_required_body)
                     error is HomeResult.Error.Generic && error.debugMessage != null -> error.debugMessage
-                    hasLoadedContent -> "Keeping the last visible state. Retry when the connection or quota recovers."
-                    else -> "Home could not load your smoke data. Retry when the connection or quota recovers."
+                    hasLoadedContent -> stringResource(R.string.home_keeping_state)
+                    else -> stringResource(R.string.home_could_not_load)
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -893,7 +936,7 @@ private fun HomeErrorSection(
                     contentColor = MaterialTheme.colorScheme.errorContainer,
                 ),
             ) {
-                Text("Retry")
+                Text(stringResource(R.string.home_retry))
             }
         }
     }
@@ -913,15 +956,15 @@ private fun HomeHeaderSection(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = greetingTitle ?: "Home",
+            text = greetingTitle ?: stringResource(R.string.home_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = when {
-                isLoading -> "Refreshing your goal-first snapshot."
+                isLoading -> stringResource(R.string.home_refreshing_snapshot)
                 greetingMessage != null -> greetingMessage
-                else -> "Start from the goal, then read the latest gap with as little noise as possible."
+                else -> stringResource(R.string.home_header_subtitle)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -936,11 +979,11 @@ private fun LocationTrackingChip(
 ) {
     val isReady = locationTrackingAvailability.isReady
     val label = when {
-        isReady -> "Location On"
-        !locationTrackingAvailability.preferenceEnabled -> "Location Off"
-        !locationTrackingAvailability.permissionGranted -> "Location Off - permission"
-        !locationTrackingAvailability.providerEnabled -> "Location Off - system"
-        else -> "Location Off"
+        isReady -> stringResource(R.string.home_location_on)
+        !locationTrackingAvailability.preferenceEnabled -> stringResource(R.string.home_location_off)
+        !locationTrackingAvailability.permissionGranted -> stringResource(R.string.home_location_off_permission)
+        !locationTrackingAvailability.providerEnabled -> stringResource(R.string.home_location_off_system)
+        else -> stringResource(R.string.home_location_off)
     }
     val containerColor = if (isReady) {
         MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.52f)
@@ -1045,7 +1088,7 @@ private fun GoalHeroSection(
                 }
             } else {
                 Text(
-                    text = "Goal",
+                    text = stringResource(R.string.home_goal),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1289,7 +1332,7 @@ private fun LastCigaretteSection(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Last cigarette",
+                text = stringResource(R.string.home_last_cigarette),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1299,13 +1342,13 @@ private fun LastCigaretteSection(
             ) {
                 LastCigaretteValueCard(
                     modifier = Modifier.weight(1f),
-                    label = "At",
+                    label = stringResource(R.string.home_at),
                     value = if (isLoading) "" else ((lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--"),
                     loading = isLoading,
                 )
                 LastCigaretteValueCard(
                     modifier = Modifier.weight(1f),
-                    label = "Time since",
+                    label = stringResource(R.string.home_time_since),
                     value = if (isLoading) "" else timeSinceLastCigarette.toElapsedGapLabel(),
                     loading = isLoading,
                 )
@@ -1402,7 +1445,7 @@ private fun ConsistencySection(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "Consistency",
+                text = stringResource(R.string.home_consistency),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1551,16 +1594,16 @@ private fun EveningResetSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Starting early?",
+                text = stringResource(R.string.home_starting_early),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = if (isLoading) {
-                    "Checking whether you can begin a new day now."
+                    stringResource(R.string.home_checking_new_day)
                 } else {
-                    "If today started earlier than usual, you can reset the reflection window now and keep the home aligned with the day you're actually living."
+                    stringResource(R.string.home_reset_day_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1576,7 +1619,7 @@ private fun EveningResetSection(
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ),
             ) {
-                Text("Start New Day", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_start_new_day), fontWeight = FontWeight.Bold)
             }
         }
     }

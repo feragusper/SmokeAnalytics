@@ -25,6 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.features.goals.presentation.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +41,7 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 /**
  * The Goals tab landing screen: focuses on how the active goal is going, not on the
  * selector. While loading it shows a skeleton (so the sign-in/empty state never flashes),
- * and a "Configure goal" button leads to [GoalsEditorScreen].
+ * and a stringResource(R.string.goals_configure_goal) button leads to [GoalsEditorScreen].
  */
 @Composable
 fun GoalsProgressScreen(
@@ -66,12 +68,12 @@ fun GoalsProgressScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Goals",
+                text = stringResource(R.string.goals_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Track how your active goal is going.",
+                text = stringResource(R.string.goals_track_how),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -88,7 +90,7 @@ fun GoalsProgressScreen(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
             ) {
-                Text("Could not load your goal", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.goals_could_not_load), style = MaterialTheme.typography.titleMedium)
                 Text(message, style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -96,12 +98,12 @@ fun GoalsProgressScreen(
         if (currentEmail == null) {
             GoalsCard {
                 Text(
-                    text = "Goals need an account",
+                    text = stringResource(R.string.goals_need_account),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Sign in to save one active goal and keep it aligned across mobile and web.",
+                    text = stringResource(R.string.goals_sign_in_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -124,12 +126,12 @@ fun GoalsProgressScreen(
         if (activeGoal == null) {
             GoalsCard {
                 Text(
-                    text = "No active goal yet",
+                    text = stringResource(R.string.goals_no_active_goal),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "Set one target to keep your progress front and center on Home.",
+                    text = stringResource(R.string.goals_no_active_goal_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -138,7 +140,7 @@ fun GoalsProgressScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                 ) {
-                    Text("Set a goal", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.goals_set_a_goal), fontWeight = FontWeight.Bold)
                 }
             }
             return
@@ -155,12 +157,12 @@ private fun GoalProgressCard(
 ) {
     GoalsCard {
         Text(
-            text = "Active goal",
+            text = stringResource(R.string.goals_active_goal),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = goalProgress?.title ?: "Your goal",
+            text = goalProgress?.title ?: stringResource(R.string.goals_your_goal),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -219,7 +221,7 @@ private fun GoalProgressCard(
         ) {
             Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Configure goal", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.goals_configure_goal), fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -277,17 +279,17 @@ private fun GoalsCard(
 @Composable
 private fun GoalStatus.pill(): Triple<String, Color, Color>? = when (this) {
     GoalStatus.OnTrack -> Triple(
-        "On track",
+        stringResource(R.string.goals_on_track),
         MaterialTheme.colorScheme.primaryContainer,
         MaterialTheme.colorScheme.onPrimaryContainer,
     )
     GoalStatus.OffTrack -> Triple(
-        "Off track",
+        stringResource(R.string.goals_off_track),
         MaterialTheme.colorScheme.errorContainer,
         MaterialTheme.colorScheme.onErrorContainer,
     )
     GoalStatus.Completed -> Triple(
-        "Completed",
+        stringResource(R.string.goals_completed),
         MaterialTheme.colorScheme.tertiaryContainer,
         MaterialTheme.colorScheme.onTertiaryContainer,
     )

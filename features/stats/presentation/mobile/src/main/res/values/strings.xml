@@ -1,0 +1,27 @@
+<resources>
+    <string name="stats_patterns_in_motion">Patterns in motion</string>
+    <string name="stats_trends">Trends</string>
+    <string name="stats_refreshing">Refreshing</string>
+    <string name="stats_refreshing_bg">Refreshing in background</string>
+    <string name="stats_refreshing_trends_bg">Refreshing trends in background</string>
+    <string name="stats_latest_refresh_failed">Latest refresh failed</string>
+    <string name="stats_freq_refresh_failed">Latest frequency refresh failed. Showing the last snapshot.</string>
+    <string name="stats_could_not_refresh">Could not refresh trends</string>
+    <string name="stats_retry_rebuild">Retry to rebuild the frequency view for the selected range.</string>
+    <string name="stats_peak_window">Peak Window</string>
+    <string name="stats_highest_activity">Highest activity</string>
+    <string name="stats_smoking_frequency">Smoking Frequency</string>
+    <string name="stats_total_frequency">Total Frequency</string>
+    <string name="stats_cigarettes">Cigarettes</string>
+    <string name="stats_by_trigger">By trigger</string>
+    <string name="stats_by_trigger_empty">No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.</string>
+    <string name="stats_hourly_view">Hourly view across the selected day.</string>
+    <string name="stats_week_distribution">How smoking volume is distributed across the selected week.</string>
+    <string name="stats_week_buckets">Week buckets across the selected month.</string>
+    <string name="stats_month_totals">Month totals across the selected year.</string>
+    <string name="stats_selected_day">Selected day</string>
+    <string name="stats_year_to_date">Year to date</string>
+    <string name="stats_next">Next</string>
+    <string name="stats_previous">Previous</string>
+    <string name="stats_week_of">Week of %1$s</string>
+</resources>

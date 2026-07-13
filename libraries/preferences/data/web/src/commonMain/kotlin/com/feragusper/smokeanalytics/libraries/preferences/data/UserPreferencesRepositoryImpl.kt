@@ -36,6 +36,11 @@ class UserPreferencesRepositoryImpl(
                 hiddenDefaultTriggers = preferences.hiddenDefaultTriggers.toList(),
                 triggerIcons = preferences.triggerIcons,
                 triggerLabels = preferences.triggerLabels,
+                nickname = preferences.nickname,
+                quitReason = preferences.quitReason,
+                use24HourClock = preferences.use24HourClock,
+                weekStartsMonday = preferences.weekStartsMonday,
+                homeHeroChoice = preferences.homeHeroChoice,
             )
         )
     }
@@ -64,6 +69,11 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         hiddenDefaultTriggers = getOrNull<List<String>>(UserPreferencesEntity.HIDDEN_DEFAULT_TRIGGERS).orEmpty(),
         triggerIcons = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_ICONS).orEmpty(),
         triggerLabels = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_LABELS).orEmpty(),
+        nickname = getOrNull<String>(UserPreferencesEntity.NICKNAME).orEmpty(),
+        quitReason = getOrNull<String>(UserPreferencesEntity.QUIT_REASON).orEmpty(),
+        use24HourClock = getOrNull<Boolean>(UserPreferencesEntity.USE_24H_CLOCK) ?: true,
+        weekStartsMonday = getOrNull<Boolean>(UserPreferencesEntity.WEEK_STARTS_MONDAY) ?: true,
+        homeHeroChoice = getOrNull<String>(UserPreferencesEntity.HOME_HERO_CHOICE) ?: "auto",
     )
 }
 

@@ -89,7 +89,7 @@ data class AuthenticationViewState(
                             ) {
                                 CircularProgressIndicator()
                                 Text(
-                                    text = "Checking session",
+                                    text = stringResource(R.string.auth_checking_session),
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                             }
@@ -136,12 +136,12 @@ private fun AuthHeroCard() {
                 )
             }
             Text(
-                text = "Bring the full product back into sync.",
+                text = stringResource(R.string.auth_bring_back_sync),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Sign in with Google to recover history, restore preferences, and keep your product state synced across devices.",
+                text = stringResource(R.string.auth_restore_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -167,11 +167,11 @@ private fun AuthEntryCard(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Continue with Google",
+                text = stringResource(R.string.auth_continue_google),
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
-                text = "Use the same account to preserve your archive, analytics framing, and settings across devices.",
+                text = stringResource(R.string.auth_use_same_account),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -199,20 +199,20 @@ private fun AuthHighlightsCard() {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "What comes back with your session",
+                text = stringResource(R.string.auth_what_comes_back),
                 style = MaterialTheme.typography.titleMedium,
             )
             AuthHighlightRow(
-                title = "History",
-                body = "Edits, day buckets, and archive browsing stay tied to one account.",
+                title = stringResource(R.string.auth_history),
+                body = stringResource(R.string.auth_history_body),
             )
             AuthHighlightRow(
-                title = "Routine",
-                body = "Pack price, day-start hour, and map preferences stay stable across devices.",
+                title = stringResource(R.string.auth_routine),
+                body = stringResource(R.string.auth_routine_body),
             )
             AuthHighlightRow(
-                title = "Goals",
-                body = "Reduction targets and product preferences stay tied to the same account.",
+                title = stringResource(R.string.auth_goals),
+                body = stringResource(R.string.auth_goals_body),
             )
         }
     }
@@ -252,11 +252,11 @@ private fun SupportCard() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "This keeps the same product scope",
+                text = stringResource(R.string.auth_keeps_scope),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Logging, analytics, map insights, archive editing, goals, and settings all stay intact. This screen only restores the account context around them.",
+                text = stringResource(R.string.auth_keeps_scope_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

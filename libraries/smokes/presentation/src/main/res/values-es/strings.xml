@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smokes_smoked_after">Después de</string>
+    <string name="smokes_date_time_picker_button_cancel">Cancelar</string>
+    <string name="smokes_date_time_picker_button_ok">OK</string>
+    <string name="smokes_date_time_picker_title">Elegí la hora</string>
+    <string name="smokes_no_smokes">Sin cigarrillos</string>
+
+    <plurals name="smokes_smoked_after_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+
+    <plurals name="smokes_smoked_after_hours">
+        <item quantity="one">%1$d hora</item>
+        <item quantity="other">%1$d horas</item>
+    </plurals>
+    <string name="smokes_quiet_day">Día tranquilo</string>
+    <string name="smokes_no_archive_entries">Sin registros para este día</string>
+    <string name="smokes_use_add_for_date">Usá Agregar para la fecha para mantener el archivo completo sin salir de esta vista.</string>
+</resources>

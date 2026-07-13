@@ -133,6 +133,7 @@ class HistoryProcessHolder(
                         smokes = filtered,
                         monthCounts = monthCounts,
                         previousMonthCounts = previousMonthCounts,
+                        use24HourClock = preferences.use24HourClock,
                     )
                 )
             }
