@@ -79,6 +79,7 @@ import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.VicoTheme
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalConfiguration
 import java.time.LocalDate as JavaLocalDate
 import java.util.Locale
 import kotlin.math.max
@@ -768,7 +769,7 @@ private fun JavaLocalDate.analyticsLabel(): String =
 private fun JavaLocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
     StatsViewState.StatsPeriod.DAY -> stringResource(R.string.stats_selected_day)
     StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_of, analyticsLabel())
-    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, LocalConfiguration.current.locales[0])
     StatsViewState.StatsPeriod.YEAR -> stringResource(R.string.stats_year_to_date)
 }
 

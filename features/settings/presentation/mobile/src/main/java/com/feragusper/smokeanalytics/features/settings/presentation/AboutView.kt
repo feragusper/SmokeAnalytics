@@ -62,6 +62,7 @@ fun AboutSection() {
     val context = LocalContext.current
     val packageName = context.packageName
     val versionName = context.versionName().orEmpty()
+    val shareChooserTitle = stringResource(R.string.about_share_title)
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AboutBlock(
@@ -90,7 +91,7 @@ fun AboutSection() {
                                 "Smoke Analytics helps track smokes, streaks and costs. https://github.com/feragusper/SmokeAnalytics"
                             )
                         }
-                        context.startActivity(Intent.createChooser(sendIntent, context.getString(R.string.about_share_title)))
+                        context.startActivity(Intent.createChooser(sendIntent, shareChooserTitle))
                     },
                 )
                 ActionIconButton(
