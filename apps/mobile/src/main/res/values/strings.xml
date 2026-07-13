@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_update_available">Update available</string>
+    <string name="app_update_body">A newer version is ready in Google Play.</string>
+    <string name="app_later">Later</string>
+    <string name="app_update_now">Update now</string>
+    <string name="app_restart_title">Restart to finish update</string>
+    <string name="app_restart_body">The update has finished downloading. Restart the app to install the latest version.</string>
+    <string name="app_restart_now">Restart now</string>
+    <string name="app_wear_title">The Smoke Analytics tile, on your wrist</string>
+    <string name="app_wear_body">Install the tile on %1$s to track smokes and glance at today\'s count without picking up your phone.</string>
+    <string name="app_wear_hint">After installing, swipe to the tiles carousel on the watch and add Smoke Analytics.</string>
+    <string name="app_get_the_tile">Get the tile</string>
+    <string name="app_not_now">Not now</string>
+    <plurals name="app_update_available_days">
+        <item quantity="one"> Available for %1$d day.</item>
+        <item quantity="other"> Available for %1$d days.</item>
+    </plurals>
+</resources>

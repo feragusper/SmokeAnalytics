@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_update_available">Actualización disponible</string>
+    <string name="app_update_body">Hay una versión nueva lista en Google Play.</string>
+    <string name="app_later">Más tarde</string>
+    <string name="app_update_now">Actualizar ahora</string>
+    <string name="app_restart_title">Reiniciá para terminar la actualización</string>
+    <string name="app_restart_body">La actualización terminó de descargarse. Reiniciá la app para instalar la última versión.</string>
+    <string name="app_restart_now">Reiniciar ahora</string>
+    <string name="app_wear_title">El tile de Smoke Analytics, en tu muñeca</string>
+    <string name="app_wear_body">Instalá el tile en %1$s para registrar cigarrillos y ver el total de hoy sin tocar el teléfono.</string>
+    <string name="app_wear_hint">Después de instalar, deslizá al carrusel de tiles en el reloj y agregá Smoke Analytics.</string>
+    <string name="app_get_the_tile">Obtener el tile</string>
+    <string name="app_not_now">Ahora no</string>
+    <plurals name="app_update_available_days">
+        <item quantity="one"> Disponible hace %1$d día.</item>
+        <item quantity="other"> Disponible hace %1$d días.</item>
+    </plurals>
+</resources>

@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -440,19 +441,15 @@ private fun InAppUpdateDialog(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Update available",
+                text = stringResource(R.string.app_update_available),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(8.dp))
+            val staleDays = prompt.stalenessDays?.takeIf { it > 0 }
             Text(
-                text = buildString {
-                    append("A newer version is ready in Google Play.")
-                    prompt.stalenessDays?.takeIf { it > 0 }?.let { days ->
-                        append(" Available for $days day")
-                        append(if (days == 1) "." else "s.")
-                    }
-                },
+                text = stringResource(R.string.app_update_body) +
+                    (staleDays?.let { pluralStringResource(R.plurals.app_update_available_days, it, it) } ?: ""),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -463,10 +460,10 @@ private fun InAppUpdateDialog(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text("Later")
+                    Text(stringResource(R.string.app_later))
                 }
                 Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
-                    Text("Update now")
+                    Text(stringResource(R.string.app_update_now))
                 }
             }
         }
@@ -497,13 +494,13 @@ private fun DownloadedUpdateDialog(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Restart to finish update",
+                text = stringResource(R.string.app_restart_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "The update has finished downloading. Restart the app to install the latest version.",
+                text = stringResource(R.string.app_restart_body),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -514,10 +511,10 @@ private fun DownloadedUpdateDialog(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text("Later")
+                    Text(stringResource(R.string.app_later))
                 }
                 Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
-                    Text("Restart now")
+                    Text(stringResource(R.string.app_restart_now))
                 }
             }
         }
