@@ -46,4 +46,11 @@
     <string name="map_observation_body">Los clusters repetidos suelen indicar rutinas que conviene proteger o interrumpir, sobre todo en trayectos, pausas o transiciones de fin de día.</string>
     <string name="map_view">Ver</string>
     <string name="map_viewing">Viendo</string>
+    <string name="widget_today">Hoy</string>
+    <string name="widget_since_last">Desde el último</string>
+    <string name="widget_goal_focus">Foco del objetivo</string>
+    <string name="widget_home_snapshot">Resumen de inicio</string>
+    <string name="widget_next_smoke">Próximo cigarrillo</string>
+    <string name="widget_ready_now">Listo ahora</string>
+    <string name="widget_target_wait">Espera objetivo %1$s</string>
 </resources>

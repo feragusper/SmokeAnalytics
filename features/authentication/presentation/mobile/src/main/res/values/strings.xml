@@ -1,4 +1,18 @@
 <resources>
     <string name="error_generic">An error has occurred</string>
     <string name="authentication_sign_in_to_continue">Sign in to continue</string>
+    <string name="auth_checking_session">Checking session</string>
+    <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_bring_back_sync">Bring the full product back into sync.</string>
+    <string name="auth_restore_body">Sign in with Google to recover history, restore preferences, and keep your product state synced across devices.</string>
+    <string name="auth_what_comes_back">What comes back with your session</string>
+    <string name="auth_history">History</string>
+    <string name="auth_history_body">Edits, day buckets, and archive browsing stay tied to one account.</string>
+    <string name="auth_routine">Routine</string>
+    <string name="auth_routine_body">Pack price, day-start hour, and map preferences stay stable across devices.</string>
+    <string name="auth_goals">Goals</string>
+    <string name="auth_goals_body">Reduction targets and product preferences stay tied to the same account.</string>
+    <string name="auth_keeps_scope">This keeps the same product scope</string>
+    <string name="auth_keeps_scope_body">Logging, analytics, map insights, archive editing, goals, and settings all stay intact. This screen only restores the account context around them.</string>
+    <string name="auth_use_same_account">Use the same account to preserve your archive, analytics framing, and settings across devices.</string>
 </resources>

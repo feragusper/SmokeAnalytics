@@ -1,4 +1,18 @@
 <resources>
     <string name="error_generic">Ocurrió un error</string>
     <string name="authentication_sign_in_to_continue">Iniciá sesión para continuar</string>
+    <string name="auth_checking_session">Verificando sesión</string>
+    <string name="auth_continue_google">Continuar con Google</string>
+    <string name="auth_bring_back_sync">Volvé a sincronizar todo el producto.</string>
+    <string name="auth_restore_body">Iniciá sesión con Google para recuperar el historial, restaurar las preferencias y mantener el estado sincronizado entre dispositivos.</string>
+    <string name="auth_what_comes_back">Qué vuelve con tu sesión</string>
+    <string name="auth_history">Historial</string>
+    <string name="auth_history_body">Las ediciones, las franjas del día y la navegación del archivo quedan atadas a una cuenta.</string>
+    <string name="auth_routine">Rutina</string>
+    <string name="auth_routine_body">El precio del paquete, la hora de inicio del día y las preferencias de mapa quedan estables entre dispositivos.</string>
+    <string name="auth_goals">Objetivos</string>
+    <string name="auth_goals_body">Las metas de reducción y las preferencias quedan atadas a la misma cuenta.</string>
+    <string name="auth_keeps_scope">Esto mantiene el mismo alcance del producto</string>
+    <string name="auth_keeps_scope_body">El registro, las analíticas, los insights de mapa, la edición del archivo, los objetivos y los ajustes quedan intactos. Esta pantalla solo restaura el contexto de la cuenta.</string>
+    <string name="auth_use_same_account">Usá la misma cuenta para preservar tu archivo, tus analíticas y tus ajustes entre dispositivos.</string>
 </resources>

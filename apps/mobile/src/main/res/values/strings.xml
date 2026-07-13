@@ -46,4 +46,11 @@
     <string name="map_observation_body">Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.</string>
     <string name="map_view">View</string>
     <string name="map_viewing">Viewing</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_since_last">Since last</string>
+    <string name="widget_goal_focus">Goal focus</string>
+    <string name="widget_home_snapshot">Home snapshot</string>
+    <string name="widget_next_smoke">Next smoke</string>
+    <string name="widget_ready_now">Ready now</string>
+    <string name="widget_target_wait">Target wait %1$s</string>
 </resources>
