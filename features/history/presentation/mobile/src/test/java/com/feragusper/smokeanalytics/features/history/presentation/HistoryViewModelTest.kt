@@ -73,6 +73,7 @@ class HistoryViewModelTest {
                 smokes = smokes,
                 monthCounts = mapOf(1 to 5),
                 previousMonthCounts = emptyMap(),
+                use24HourClock = true,
             )
         )
 

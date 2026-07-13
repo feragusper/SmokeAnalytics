@@ -76,6 +76,7 @@ data class HistoryViewState(
     internal val pendingSmokeId: String? = null,
     internal val pendingAction: com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction? = null,
     internal val rowInteractionEpoch: Int = 0,
+    internal val use24HourClock: Boolean = true,
 ) : MVIViewState<HistoryIntent> {
 
     @Composable
@@ -210,6 +211,7 @@ data class HistoryViewState(
                                 itemKey = smoke.id,
                                 date = smoke.date,
                                 timeElapsedSincePreviousSmoke = smoke.timeElapsedSincePreviousSmoke,
+                                use24HourClock = use24HourClock,
                                 onDelete = { intent(HistoryIntent.DeleteSmoke(smoke.id)) },
                                 fullDateTimeEdit = true,
                                 onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },

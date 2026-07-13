@@ -13,6 +13,7 @@ sealed interface HistoryResult {
         val smokes: List<Smoke>,
         val monthCounts: Map<Int, Int>,
         val previousMonthCounts: Map<Int, Int>,
+        val use24HourClock: Boolean,
     ) : HistoryResult
 
     data object FetchSmokesError : HistoryResult

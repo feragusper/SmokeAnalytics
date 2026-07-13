@@ -327,7 +327,7 @@ private fun HistorySmokeList(
                 SurfaceCard {
                     Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) { Text(strings.editSmoke) }
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("${local.date.toUiDate()} ${local.toUiTime()}")
+                        Text("${local.date.toUiDate()} ${local.toUiTime(state.use24HourClock)}")
                     }
 
                     Input(
@@ -434,10 +434,16 @@ private fun LocalDate.toUiMonthDay(): String {
 
 private fun DayOfWeek.mondayBasedIndex(): Int = isoDayNumber - 1
 
-private fun LocalDateTime.toUiTime(): String {
-    val h = hour.toString().padStart(2, '0')
-    val m = minute.toString().padStart(2, '0')
-    return "$h:$m"
+private fun LocalDateTime.toUiTime(use24HourClock: Boolean = true): String {
+    val mm = minute.toString().padStart(2, '0')
+    if (use24HourClock) return "${hour.toString().padStart(2, '0')}:$mm"
+    val suffix = if (hour < 12) "AM" else "PM"
+    val h12 = when {
+        hour == 0 -> 12
+        hour > 12 -> hour - 12
+        else -> hour
+    }
+    return "$h12:$mm $suffix"
 }
 
 private fun Instant.toHtmlDateTimeLocal(timeZone: TimeZone): String {

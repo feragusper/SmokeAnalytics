@@ -11,5 +11,6 @@ data class HistoryViewState(
     val monthCounts: Map<Int, Int> = emptyMap(),
     val previousMonthCounts: Map<Int, Int> = emptyMap(),
     val selectedDate: Instant = Clock.System.now(),
+    val use24HourClock: Boolean = true,
     val error: HistoryResult.Error? = null,
 )
