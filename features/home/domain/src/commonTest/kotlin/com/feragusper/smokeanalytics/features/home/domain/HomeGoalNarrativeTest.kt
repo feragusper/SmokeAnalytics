@@ -143,6 +143,54 @@ class HomeGoalNarrativeTest {
     }
 
     @Test
+    fun `hero choice overrides the meter with the picked metric`() {
+        val goal = GoalProgress(
+            goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
+            title = "Daily cap",
+            targetLabel = "Target: at most 6 today",
+            progressLabel = "3 / 6 smoked today",
+            supportingText = "On track",
+            status = GoalStatus.OnTrack,
+            progressFraction = 0.5f,
+        )
+        fun readoutWith(choice: HomeHeroChoice) = homeHeroReadout(
+            goalProgress = goal,
+            smokesPerDay = 3,
+            timeSinceLastCigarette = 1L to 15L,
+            awakeMinutesPerDay = 960,
+            now = noon,
+            timeZone = utc,
+            choice = choice,
+            cigarettePrice = 0.5,
+            currencySymbol = "$",
+        )
+
+        assertEquals("Cap used today", readoutWith(HomeHeroChoice.Auto).meterLabel)
+        readoutWith(HomeHeroChoice.CountToday).let {
+            assertEquals("Smoked today", it.meterLabel)
+            assertEquals("3", it.meterValue)
+        }
+        readoutWith(HomeHeroChoice.Streak).let {
+            assertEquals("Since last", it.meterLabel)
+            assertEquals("1h 15m", it.meterValue)
+        }
+        readoutWith(HomeHeroChoice.MoneyToday).let {
+            assertEquals("Spent today", it.meterLabel)
+            assertEquals("$1.50", it.meterValue)
+        }
+        // Sub-metrics stay intact under an override.
+        assertEquals(2, readoutWith(HomeHeroChoice.CountToday).metrics.size)
+    }
+
+    @Test
+    fun `homeHeroChoiceFromKey maps keys and falls back to Auto`() {
+        assertEquals(HomeHeroChoice.CountToday, homeHeroChoiceFromKey("count"))
+        assertEquals(HomeHeroChoice.Streak, homeHeroChoiceFromKey("streak"))
+        assertEquals(HomeHeroChoice.MoneyToday, homeHeroChoiceFromKey("money"))
+        assertEquals(HomeHeroChoice.Auto, homeHeroChoiceFromKey("nonsense"))
+    }
+
+    @Test
     fun `daily cap hero progress uses cumulative pace right after logging`() {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(

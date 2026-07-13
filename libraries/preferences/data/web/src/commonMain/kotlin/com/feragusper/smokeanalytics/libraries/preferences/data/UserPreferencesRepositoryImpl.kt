@@ -40,6 +40,7 @@ class UserPreferencesRepositoryImpl(
                 quitReason = preferences.quitReason,
                 use24HourClock = preferences.use24HourClock,
                 weekStartsMonday = preferences.weekStartsMonday,
+                homeHeroChoice = preferences.homeHeroChoice,
             )
         )
     }
@@ -72,6 +73,7 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         quitReason = getOrNull<String>(UserPreferencesEntity.QUIT_REASON).orEmpty(),
         use24HourClock = getOrNull<Boolean>(UserPreferencesEntity.USE_24H_CLOCK) ?: true,
         weekStartsMonday = getOrNull<Boolean>(UserPreferencesEntity.WEEK_STARTS_MONDAY) ?: true,
+        homeHeroChoice = getOrNull<String>(UserPreferencesEntity.HOME_HERO_CHOICE) ?: "auto",
     )
 }
 

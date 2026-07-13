@@ -23,6 +23,11 @@ object SpanishStrings : AppStrings() {
     override val clockFormatBody: String = "Apagado muestra las horas en AM/PM."
     override val weekStart: String = "La semana empieza el lunes"
     override val weekStartBody: String = "Apagado arranca el desglose semanal el domingo."
+    override val homeFocus: String = "Foco del inicio"
+    override val homeFocusAuto: String = "Auto"
+    override val homeFocusCount: String = "Cantidad"
+    override val homeFocusStreak: String = "Racha"
+    override val homeFocusMoney: String = "Plata"
 
     // Document titles
     override val titleHome: String = "Smoke Analytics | Inicio"

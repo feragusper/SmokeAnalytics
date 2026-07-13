@@ -99,6 +99,7 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.QUIT_REASON to quitReason,
         UserPreferencesEntity.USE_24H_CLOCK to use24HourClock,
         UserPreferencesEntity.WEEK_STARTS_MONDAY to weekStartsMonday,
+        UserPreferencesEntity.HOME_HERO_CHOICE to homeHeroChoice,
     )
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
@@ -138,6 +139,7 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         quitReason = stringOrNull(UserPreferencesEntity.QUIT_REASON).orEmpty(),
         use24HourClock = booleanOrNull(UserPreferencesEntity.USE_24H_CLOCK) ?: true,
         weekStartsMonday = booleanOrNull(UserPreferencesEntity.WEEK_STARTS_MONDAY) ?: true,
+        homeHeroChoice = stringOrNull(UserPreferencesEntity.HOME_HERO_CHOICE) ?: "auto",
     )
 }
 

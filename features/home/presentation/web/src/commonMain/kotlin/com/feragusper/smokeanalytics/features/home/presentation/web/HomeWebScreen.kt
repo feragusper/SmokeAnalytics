@@ -20,6 +20,7 @@ import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroChoiceFromKey
 import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
@@ -88,6 +89,9 @@ fun HomeViewState.Render(
         awakeMinutesPerDay = awakeMinutesPerDay,
         dayStartHour = dayStartHour,
         bedtimeHour = bedtimeHour,
+        choice = homeHeroChoiceFromKey(homeHeroChoice),
+        cigarettePrice = cigarettePrice,
+        currencySymbol = currencySymbol,
     )
     val gapFocus = gapFocusSummary(
         elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second },

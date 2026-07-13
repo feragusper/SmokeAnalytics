@@ -34,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -1433,7 +1434,44 @@ private fun PersonalizationSection(
             enabled = enabled,
             onToggle = { onChange(preferences.copy(weekStartsMonday = it)) },
         )
+        HomeFocusPicker(
+            current = preferences.homeHeroChoice,
+            enabled = enabled,
+            onSelect = { onChange(preferences.copy(homeHeroChoice = it)) },
+        )
         AccentPicker()
+    }
+}
+
+/** Segmented picker for which metric the Home hero emphasizes. */
+@Composable
+private fun HomeFocusPicker(
+    current: String,
+    enabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    val options = listOf(
+        "auto" to "Auto",
+        "count" to "Count",
+        "streak" to "Streak",
+        "money" to "Money",
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Home focus",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.forEach { (key, label) ->
+                FilterChip(
+                    selected = current == key,
+                    enabled = enabled,
+                    onClick = { onSelect(key) },
+                    label = { Text(label) },
+                )
+            }
+        }
     }
 }
 

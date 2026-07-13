@@ -984,6 +984,29 @@ private fun PersonalizationPanelWeb(
                 enabled = !displayLoading,
                 onToggle = { onChange(preferences.copy(weekStartsMonday = it)) },
             )
+            Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:6px;") }) {
+                Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.homeFocus) }
+                Div(attrs = { attr("style", "display:flex;gap:8px;flex-wrap:wrap;") }) {
+                    val options = listOf(
+                        "auto" to strings.homeFocusAuto,
+                        "count" to strings.homeFocusCount,
+                        "streak" to strings.homeFocusStreak,
+                        "money" to strings.homeFocusMoney,
+                    )
+                    options.forEach { (key, label) ->
+                        val selected = preferences.homeHeroChoice == key
+                        if (selected) {
+                            PrimaryButton(text = label, enabled = !displayLoading, onClick = {})
+                        } else {
+                            GhostButton(
+                                text = label,
+                                enabled = !displayLoading,
+                                onClick = { onChange(preferences.copy(homeHeroChoice = key)) },
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -214,7 +214,67 @@ fun homeHeroProgress(
     )
 }
 
+/** Which metric the user wants emphasized as the Home hero meter. */
+enum class HomeHeroChoice { Auto, CountToday, Streak, MoneyToday }
+
+/** Maps the persisted preference key to a [HomeHeroChoice]; unknown values fall back to Auto. */
+fun homeHeroChoiceFromKey(key: String): HomeHeroChoice = when (key) {
+    "count" -> HomeHeroChoice.CountToday
+    "streak" -> HomeHeroChoice.Streak
+    "money" -> HomeHeroChoice.MoneyToday
+    else -> HomeHeroChoice.Auto
+}
+
+/**
+ * The Home hero readout. [choice] lets the user override the top meter with a plain metric
+ * (today's count, current streak, money spent today); [HomeHeroChoice.Auto] keeps the
+ * goal-aware default. The sub-metrics below the meter are unchanged.
+ */
 fun homeHeroReadout(
+    goalProgress: GoalProgress?,
+    smokesPerDay: Int?,
+    timeSinceLastCigarette: Pair<Long, Long>?,
+    awakeMinutesPerDay: Int,
+    dayStartHour: Int = 0,
+    bedtimeHour: Int = 0,
+    now: Instant = Clock.System.now(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    choice: HomeHeroChoice = HomeHeroChoice.Auto,
+    cigarettePrice: Double = 0.0,
+    currencySymbol: String = "",
+): HomeHeroReadout {
+    val base = homeHeroReadoutBase(
+        goalProgress = goalProgress,
+        smokesPerDay = smokesPerDay,
+        timeSinceLastCigarette = timeSinceLastCigarette,
+        awakeMinutesPerDay = awakeMinutesPerDay,
+        dayStartHour = dayStartHour,
+        bedtimeHour = bedtimeHour,
+        now = now,
+        timeZone = timeZone,
+    )
+    if (choice == HomeHeroChoice.Auto) return base
+
+    val count = smokesPerDay ?: 0
+    val (meterLabel, meterValue) = when (choice) {
+        HomeHeroChoice.CountToday -> "Smoked today" to count.toString()
+        HomeHeroChoice.Streak -> "Since last" to (
+            timeSinceLastCigarette?.let { (h, m) -> "${h}h ${m}m" } ?: "--"
+            )
+        HomeHeroChoice.MoneyToday -> "Spent today" to formatHeroMoney(currencySymbol, count * cigarettePrice)
+        HomeHeroChoice.Auto -> return base
+    }
+    return base.copy(meterLabel = meterLabel, meterValue = meterValue, meterFraction = null)
+}
+
+private fun formatHeroMoney(currencySymbol: String, amount: Double): String {
+    val rounded = (amount * 100).roundToInt()
+    val whole = rounded / 100
+    val cents = (rounded % 100).let { if (it < 10) "0$it" else "$it" }
+    return "$currencySymbol$whole.$cents"
+}
+
+private fun homeHeroReadoutBase(
     goalProgress: GoalProgress?,
     smokesPerDay: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,

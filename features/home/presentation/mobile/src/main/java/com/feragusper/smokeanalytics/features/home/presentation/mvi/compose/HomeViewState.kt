@@ -69,6 +69,7 @@ import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroProgress
 import com.feragusper.smokeanalytics.features.home.domain.homeHeroReadout
+import com.feragusper.smokeanalytics.features.home.domain.homeHeroChoiceFromKey
 import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
@@ -108,6 +109,9 @@ data class HomeViewState(
     internal val greetingMessage: String? = null,
     internal val quitReason: String = "",
     internal val use24HourClock: Boolean = true,
+    internal val currencySymbol: String = "",
+    internal val cigarettePrice: Double = 0.0,
+    internal val homeHeroChoice: String = "auto",
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
@@ -204,6 +208,9 @@ data class HomeViewState(
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
                 quitReason = quitReason,
+                homeHeroChoice = homeHeroChoice,
+                cigarettePrice = cigarettePrice,
+                currencySymbol = currencySymbol,
                 rateSummary = rateSummary,
                 goalProgress = goalProgress,
                 hasActiveGoal = hasActiveGoal,
@@ -261,6 +268,9 @@ private fun HomeContent(
     greetingTitle: String?,
     greetingMessage: String?,
     quitReason: String,
+    homeHeroChoice: String,
+    cigarettePrice: Double,
+    currencySymbol: String,
     rateSummary: RateSummary?,
     goalProgress: GoalProgress?,
     hasActiveGoal: Boolean,
@@ -305,6 +315,9 @@ private fun HomeContent(
         awakeMinutesPerDay = awakeMinutesPerDay,
         dayStartHour = dayStartHour,
         bedtimeHour = bedtimeHour,
+        choice = homeHeroChoiceFromKey(homeHeroChoice),
+        cigarettePrice = cigarettePrice,
+        currencySymbol = currencySymbol,
     )
     val elapsedMinutes = timeSinceLastCigarette?.let { it.first * 60 + it.second }
     val gapFocus = gapFocusSummary(

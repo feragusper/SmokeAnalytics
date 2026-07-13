@@ -25,6 +25,7 @@ data class UserPreferencesEntity(
     val quitReason: String = "",
     val use24HourClock: Boolean = true,
     val weekStartsMonday: Boolean = true,
+    val homeHeroChoice: String = "auto",
 ) {
     fun toDomain(): UserPreferences = UserPreferences(
         packPrice = packPrice,
@@ -47,6 +48,7 @@ data class UserPreferencesEntity(
         quitReason = quitReason,
         use24HourClock = use24HourClock,
         weekStartsMonday = weekStartsMonday,
+        homeHeroChoice = homeHeroChoice,
     )
 
     companion object {
@@ -69,5 +71,6 @@ data class UserPreferencesEntity(
         const val QUIT_REASON = "quitReason"
         const val USE_24H_CLOCK = "use24HourClock"
         const val WEEK_STARTS_MONDAY = "weekStartsMonday"
+        const val HOME_HERO_CHOICE = "homeHeroChoice"
     }
 }

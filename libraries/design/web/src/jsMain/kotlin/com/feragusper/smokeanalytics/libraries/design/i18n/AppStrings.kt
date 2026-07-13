@@ -27,6 +27,11 @@ open class AppStrings internal constructor() {
     open val clockFormatBody: String = "Off shows AM/PM times instead."
     open val weekStart: String = "Week starts on Monday"
     open val weekStartBody: String = "Off starts the weekly breakdown on Sunday."
+    open val homeFocus: String = "Home focus"
+    open val homeFocusAuto: String = "Auto"
+    open val homeFocusCount: String = "Count"
+    open val homeFocusStreak: String = "Streak"
+    open val homeFocusMoney: String = "Money"
 
     // Document titles
     open val titleHome: String = "Smoke Analytics | Home"

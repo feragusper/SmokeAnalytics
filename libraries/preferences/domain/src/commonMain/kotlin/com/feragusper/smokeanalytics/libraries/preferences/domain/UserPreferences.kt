@@ -26,6 +26,8 @@ data class UserPreferences(
     val use24HourClock: Boolean = true,
     /** Week starts on Monday (default) vs Sunday — affects the weekly breakdown order. */
     val weekStartsMonday: Boolean = true,
+    /** Which metric the Home hero emphasizes: "auto" (goal-aware), "count", "streak", "money". */
+    val homeHeroChoice: String = "auto",
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

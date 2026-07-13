@@ -37,6 +37,8 @@ data class HomeViewState(
     val greetingMessage: String? = null,
     val quitReason: String = "",
     val use24HourClock: Boolean = true,
+    val cigarettePrice: Double = 0.0,
+    val homeHeroChoice: String = "auto",
     val financialSummary: FinancialSummary? = null,
     val rateSummary: RateSummary? = null,
     val gamificationSummary: GamificationSummary? = null,
