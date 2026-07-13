@@ -158,16 +158,16 @@ data class HistoryViewState(
                                 verticalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 Text(
-                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) "Session required" else "Could not refresh archive",
+                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) stringResource(R.string.history_session_required) else stringResource(R.string.history_could_not_refresh),
                                     style = MaterialTheme.typography.titleSmall,
                                 )
                                 Text(
                                     text = if (currentError == HistoryResult.Error.NotLoggedIn) {
-                                        "Sign back in to keep the archive synced."
+                                        stringResource(R.string.history_sign_back_in)
                                     } else if (smokes == null) {
-                                        "The selected day could not be loaded. Retry when the connection or quota recovers."
+                                        stringResource(R.string.history_day_load_failed)
                                     } else {
-                                        "Showing the last available state while the selected day could not be refreshed."
+                                        stringResource(R.string.history_showing_last_state)
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -180,7 +180,7 @@ data class HistoryViewState(
                                             contentColor = MaterialTheme.colorScheme.onError,
                                         ),
                                     ) {
-                                        Text("Retry")
+                                        Text(stringResource(R.string.history_retry))
                                     }
                                 }
                             }
@@ -217,8 +217,8 @@ data class HistoryViewState(
                                 onEdit = { editedInstant -> intent(HistoryIntent.EditSmoke(smoke.id, editedInstant)) },
                                 isPending = pendingSmokeId == smoke.id,
                                 pendingLabel = when (pendingAction) {
-                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Editing -> "Saving edit…"
-                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Deleting -> "Deleting…"
+                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Editing -> stringResource(R.string.history_saving_edit)
+                                    com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction.Deleting -> stringResource(R.string.history_deleting)
                                     null -> null
                                 },
                             )
@@ -256,13 +256,13 @@ private fun ArchiveHeader(
                 }
             }
             Text(
-                text = "The Archive",
+                text = stringResource(R.string.history_the_archive),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
         }
         Text(
-            text = "Browse the calendar, inspect one day, and edit the smoking log.",
+            text = stringResource(R.string.history_archive_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -342,7 +342,7 @@ private fun ArchiveCalendarCard(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = "Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units",
+                        text = stringResource(R.string.history_daily_average, monthCounts.averageOrZero().formatOneDecimal()),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -358,7 +358,7 @@ private fun ArchiveCalendarCard(
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { label ->
+                listOf(stringResource(R.string.history_dow_mon), stringResource(R.string.history_dow_tue), stringResource(R.string.history_dow_wed), stringResource(R.string.history_dow_thu), stringResource(R.string.history_dow_fri), stringResource(R.string.history_dow_sat), stringResource(R.string.history_dow_sun)).forEach { label ->
                     CalendarCell(width = calendarCellWidth) {
                         Text(
                             text = label,
@@ -432,7 +432,7 @@ private fun ArchiveCalendarCard(
                     shape = RoundedCornerShape(999.dp),
                 ) {
                     Text(
-                        text = "$entriesCount entries",
+                        text = stringResource(R.string.history_entries, entriesCount),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -444,7 +444,7 @@ private fun ArchiveCalendarCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(20.dp),
                 ) {
-                    Text(text = "Add for date", style = MaterialTheme.typography.labelLarge)
+                    Text(text = stringResource(R.string.history_add_for_date), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -480,7 +480,7 @@ private fun TrendCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Trend",
+                    text = stringResource(R.string.history_trend),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
                 )
@@ -490,7 +490,7 @@ private fun TrendCard(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
                 Text(
-                    text = "Reduction vs last month",
+                    text = stringResource(R.string.history_reduction_vs_last_month),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f),
                 )
