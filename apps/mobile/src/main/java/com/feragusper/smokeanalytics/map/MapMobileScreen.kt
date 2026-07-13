@@ -28,6 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.R
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -123,14 +125,14 @@ private fun LoadingState(modifier: Modifier) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                StatusChip(text = "Refreshing")
+                StatusChip(text = stringResource(R.string.map_refreshing))
                 CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 Text(
-                    text = "Loading geographic clusters",
+                    text = stringResource(R.string.map_loading_clusters),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "Pulling repeated smoking areas for the selected period and rebuilding the geographic side of Analytics.",
+                    text = stringResource(R.string.map_pulling),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -169,16 +171,16 @@ private fun LoadedState(
                     if (!embedded) {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = "Locations",
+                                text = stringResource(R.string.map_locations),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = "Geographic clusters",
+                                text = stringResource(R.string.map_geographic_clusters),
                                 style = MaterialTheme.typography.headlineSmall,
                             )
                             Text(
-                                text = "See where repeated smoking clusters show up across the selected period.",
+                                text = stringResource(R.string.map_see_where),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -186,7 +188,7 @@ private fun LoadedState(
                     } else {
                         Text(
                             text = if (state.isRefreshing) {
-                                "Refreshing clusters in background"
+                                stringResource(R.string.map_refreshing_clusters_bg)
                             } else {
                                 "${state.clusters.sumOf { it.count }} mapped smokes in the selected period"
                             },
@@ -212,7 +214,7 @@ private fun LoadedState(
                     }
                     if (state.isRefreshing && !embedded) {
                         Text(
-                            text = "Refreshing clusters in background",
+                            text = stringResource(R.string.map_refreshing_clusters_bg),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -249,7 +251,7 @@ private fun LoadedState(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "Most frequent area for the selected period.",
+                        text = stringResource(R.string.map_most_frequent),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -278,7 +280,7 @@ private fun LoadedState(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        text = "Top clusters",
+                        text = stringResource(R.string.map_top_clusters),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     state.clusters.take(3).forEachIndexed { index, cluster ->
@@ -308,12 +310,12 @@ private fun LoadedState(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "Observation",
+                        text = stringResource(R.string.map_observation),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                            text = "Repeated clusters usually point to routines worth protecting or interrupting, especially around commute, breaks, or end-of-day transitions.",
+                            text = stringResource(R.string.map_observation_body),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
@@ -323,7 +325,7 @@ private fun LoadedState(
 
         item {
             Text(
-                text = "All clusters",
+                text = stringResource(R.string.map_all_clusters),
                 style = MaterialTheme.typography.titleMedium,
             )
         }
@@ -359,7 +361,7 @@ private fun LoadedState(
                         )
                     }
                     Text(
-                        text = if (cluster == activeCluster) "Viewing" else "View",
+                        text = if (cluster == activeCluster) stringResource(R.string.map_viewing) else stringResource(R.string.map_view),
                         style = MaterialTheme.typography.labelLarge,
                         color = if (cluster == activeCluster) {
                             MaterialTheme.colorScheme.onSecondaryContainer
@@ -414,7 +416,7 @@ private fun ClusterLegendRow(
             }
         }
         TextButton(onClick = { onSelectCluster(cluster) }) {
-            Text(if (isActive) "Viewing" else "View")
+            Text(if (isActive) stringResource(R.string.map_viewing) else stringResource(R.string.map_view))
         }
     }
 }
@@ -437,18 +439,18 @@ private fun DisabledState(modifier: Modifier) {
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StatusChip(text = "Action required")
+                StatusChip(text = stringResource(R.string.map_action_required))
                 Text(
-                    text = "Location tracking is off",
+                    text = stringResource(R.string.map_location_off),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Enable location tracking in You to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.",
+                    text = stringResource(R.string.map_location_off_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "The rest of the product still works, but this destination needs location-linked history to become useful.",
+                    text = stringResource(R.string.map_rest_works),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -475,18 +477,18 @@ private fun EmptyState(modifier: Modifier) {
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StatusChip(text = "Quiet map")
+                StatusChip(text = stringResource(R.string.map_quiet))
                 Text(
-                    text = "No mapped areas yet",
+                    text = stringResource(R.string.map_no_mapped),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "There is not enough location-linked history for this period yet. Track a few smokes with location enabled to start building repeated areas here.",
+                    text = stringResource(R.string.map_no_mapped_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "Once enough entries accumulate, the app will cluster repeated areas automatically.",
+                    text = stringResource(R.string.map_once_enough),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -516,24 +518,24 @@ private fun ErrorState(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StatusChip(text = "Needs attention")
+                StatusChip(text = stringResource(R.string.map_needs_attention))
                 Text(
-                    text = "Map view unavailable",
+                    text = stringResource(R.string.map_view_unavailable),
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "The geographic clusters could not be refreshed right now. Keep the selected period and try again in a moment.",
+                    text = stringResource(R.string.map_could_not_refresh),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "This does not affect the rest of your tracked history or analytics.",
+                    text = stringResource(R.string.map_this_does_not_affect),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 TextButton(onClick = onRetry) {
-                    Text("Retry")
+                    Text(stringResource(R.string.map_retry))
                 }
             }
         }

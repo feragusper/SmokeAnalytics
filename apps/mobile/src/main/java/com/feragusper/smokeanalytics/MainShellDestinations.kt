@@ -11,6 +11,8 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.feragusper.smokeanalytics.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -114,12 +116,12 @@ fun AnalyticsMobileDestination(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "Analytics & Map",
+                text = stringResource(R.string.map_analytics_and_map),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Review smoking frequency and the places where smoking clusters show up.",
+                text = stringResource(R.string.map_analytics_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -156,7 +158,7 @@ fun AnalyticsMobileDestination(
                 Tab(
                     selected = selectedTab == tab,
                     onClick = { selectedTab = tab },
-                    text = { Text(tab.label) },
+                    text = { Text(stringResource(tab.labelRes)) },
                 )
             }
         }
@@ -235,7 +237,7 @@ private fun StatsMobileDestination(
     }
 }
 
-private enum class AnalyticsTab(val label: String) {
-    Trends("Frequency"),
-    Map("Clusters"),
+private enum class AnalyticsTab(val labelRes: Int) {
+    Trends(R.string.map_tab_frequency),
+    Map(R.string.map_tab_clusters),
 }

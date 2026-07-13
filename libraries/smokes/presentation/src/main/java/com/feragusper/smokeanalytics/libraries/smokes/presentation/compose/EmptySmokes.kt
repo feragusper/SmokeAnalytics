@@ -36,14 +36,14 @@ fun EmptySmokes() {
                 shape = RoundedCornerShape(999.dp),
             ) {
                 Text(
-                    text = "Quiet day",
+                    text = stringResource(R.string.smokes_quiet_day),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
             Text(
-                text = "No archive entries for this day",
+                text = stringResource(R.string.smokes_no_archive_entries),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -53,7 +53,7 @@ fun EmptySmokes() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "Use Add for Date to keep the archive complete without leaving this view.",
+                text = stringResource(R.string.smokes_use_add_for_date),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

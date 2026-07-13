@@ -1,0 +1,27 @@
+<resources>
+    <string name="stats_patterns_in_motion">Patrones en movimiento</string>
+    <string name="stats_trends">Tendencias</string>
+    <string name="stats_refreshing">Actualizando</string>
+    <string name="stats_refreshing_bg">Actualizando en segundo plano</string>
+    <string name="stats_refreshing_trends_bg">Actualizando tendencias en segundo plano</string>
+    <string name="stats_latest_refresh_failed">Falló la última actualización</string>
+    <string name="stats_freq_refresh_failed">Falló la última actualización de frecuencia. Mostrando la última instantánea.</string>
+    <string name="stats_could_not_refresh">No se pudieron actualizar las tendencias</string>
+    <string name="stats_retry_rebuild">Reintentá para reconstruir la vista de frecuencia del rango seleccionado.</string>
+    <string name="stats_peak_window">Ventana pico</string>
+    <string name="stats_highest_activity">Mayor actividad</string>
+    <string name="stats_smoking_frequency">Frecuencia de fumado</string>
+    <string name="stats_total_frequency">Frecuencia total</string>
+    <string name="stats_cigarettes">Cigarrillos</string>
+    <string name="stats_by_trigger">Por disparador</string>
+    <string name="stats_by_trigger_empty">Todavía no hay cigarrillos etiquetados en este período. Etiquetá con qué se relacionó cada uno y el desglose aparece acá.</string>
+    <string name="stats_hourly_view">Vista por hora del día seleccionado.</string>
+    <string name="stats_week_distribution">Cómo se distribuye el volumen de fumado en la semana seleccionada.</string>
+    <string name="stats_week_buckets">Franjas semanales del mes seleccionado.</string>
+    <string name="stats_month_totals">Totales mensuales del año seleccionado.</string>
+    <string name="stats_selected_day">Día seleccionado</string>
+    <string name="stats_year_to_date">Año hasta hoy</string>
+    <string name="stats_next">Siguiente</string>
+    <string name="stats_previous">Anterior</string>
+    <string name="stats_week_of">Semana del %1$s</string>
+</resources>

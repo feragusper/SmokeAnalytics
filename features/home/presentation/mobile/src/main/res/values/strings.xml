@@ -68,4 +68,25 @@
     <string name="home_location_off_permission">Location Off - permission</string>
     <string name="home_location_off_system">Location Off - system</string>
     <string name="home_header_subtitle">Start from the goal, then read the latest gap with as little noise as possible.</string>
+    <string name="home_urge_beaten">Urge beaten!</string>
+    <string name="home_nice_and_slow">Nice and slow</string>
+    <string name="home_what_were_these">What were these about?</string>
+    <string name="home_what_related">What was it related to?</string>
+    <string name="home_tag_what_triggered">Tag what triggered this cigarette, or skip if it was nothing in particular.</string>
+    <string name="home_add_trigger">Add trigger</string>
+    <string name="home_no_relation">No relation</string>
+    <string name="home_add_a_tag">Add a tag</string>
+    <string name="home_add">Add</string>
+    <string name="home_save">Save</string>
+    <string name="home_other">Other</string>
+    <string name="home_type_and_add">Type and press Add…</string>
+    <string name="home_logged">Logged %1$s</string>
+    <plurals name="home_pending_needs_trigger">
+        <item quantity="one">%1$d cigarette still needs a trigger — tag it below.</item>
+        <item quantity="other">%1$d cigarettes still need a trigger — tag them one at a time.</item>
+    </plurals>
+    <plurals name="home_more_count">
+        <item quantity="one">+%1$d more</item>
+        <item quantity="other">+%1$d more</item>
+    </plurals>
 </resources>

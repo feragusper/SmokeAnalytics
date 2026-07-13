@@ -96,4 +96,17 @@
     <string name="settings_currency_dollar">Dollar</string>
     <string name="settings_currency_euro">Euro</string>
     <string name="settings_currency_pound">Pound</string>
+    <string name="settings_back_to_settings">Back to settings</string>
+    <string name="about_actions">Actions</string>
+    <string name="about_contact">Contact</string>
+    <string name="about_copyright">Copyright</string>
+    <string name="about_rate">Rate</string>
+    <string name="about_report">Report</string>
+    <string name="about_share">Share</string>
+    <string name="about_share_title">Share Smoke Analytics</string>
+    <string name="about_share_subtitle">Share the app, rate it, or reach support.</string>
+    <string name="about_version">Version</string>
+    <string name="about_back_to_settings">Back to settings</string>
+    <string name="about_body">A personal smoking journal focused on visibility over guilt. It helps review the day, compare longer trends, estimate cost, and understand where or when smoking tends to cluster.</string>
+    <string name="about_copyright_line">Smoke Analytics © Fernando Perez. All rights reserved.</string>
 </resources>

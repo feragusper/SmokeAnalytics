@@ -96,4 +96,17 @@
     <string name="settings_currency_dollar">Dólar</string>
     <string name="settings_currency_euro">Euro</string>
     <string name="settings_currency_pound">Libra</string>
+    <string name="settings_back_to_settings">Volver a ajustes</string>
+    <string name="about_actions">Acciones</string>
+    <string name="about_contact">Contacto</string>
+    <string name="about_copyright">Derechos</string>
+    <string name="about_rate">Calificar</string>
+    <string name="about_report">Reportar</string>
+    <string name="about_share">Compartir</string>
+    <string name="about_share_title">Compartir Smoke Analytics</string>
+    <string name="about_share_subtitle">Compartí la app, calificala o contactá soporte.</string>
+    <string name="about_version">Versión</string>
+    <string name="about_back_to_settings">Volver a ajustes</string>
+    <string name="about_body">Un diario personal de fumado enfocado en la visibilidad por sobre la culpa. Ayuda a revisar el día, comparar tendencias largas, estimar el costo y entender dónde o cuándo el fumado tiende a agruparse.</string>
+    <string name="about_copyright_line">Smoke Analytics © Fernando Perez. Todos los derechos reservados.</string>
 </resources>

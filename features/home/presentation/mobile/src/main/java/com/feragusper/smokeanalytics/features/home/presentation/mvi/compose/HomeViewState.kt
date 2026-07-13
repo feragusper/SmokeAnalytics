@@ -850,7 +850,7 @@ private fun CravingCelebrationDialog(
         },
         title = {
             Text(
-                text = if (resisted) "Urge beaten!" else "Nice and slow",
+                text = if (resisted) stringResource(R.string.home_urge_beaten) else stringResource(R.string.home_nice_and_slow),
                 fontWeight = FontWeight.Bold,
             )
         },

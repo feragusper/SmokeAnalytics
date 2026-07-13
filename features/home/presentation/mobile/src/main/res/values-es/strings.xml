@@ -68,4 +68,25 @@
     <string name="home_location_off_permission">Ubicación apagada - permiso</string>
     <string name="home_location_off_system">Ubicación apagada - sistema</string>
     <string name="home_header_subtitle">Arrancá por el objetivo y leé el último intervalo con el menor ruido posible.</string>
+    <string name="home_urge_beaten">¡Ganas vencidas!</string>
+    <string name="home_nice_and_slow">Tranqui y de a poco</string>
+    <string name="home_what_were_these">¿Con qué se relacionaron?</string>
+    <string name="home_what_related">¿Con qué se relacionó?</string>
+    <string name="home_tag_what_triggered">Etiquetá qué disparó este cigarrillo, o salteá si no fue nada en particular.</string>
+    <string name="home_add_trigger">Agregar disparador</string>
+    <string name="home_no_relation">Sin relación</string>
+    <string name="home_add_a_tag">Agregar etiqueta</string>
+    <string name="home_add">Agregar</string>
+    <string name="home_save">Guardar</string>
+    <string name="home_other">Otro</string>
+    <string name="home_type_and_add">Escribí y tocá Agregar…</string>
+    <string name="home_logged">Registrado %1$s</string>
+    <plurals name="home_pending_needs_trigger">
+        <item quantity="one">%1$d cigarrillo todavía necesita un disparador — etiquetalo abajo.</item>
+        <item quantity="other">%1$d cigarrillos todavía necesitan un disparador — etiquetalos de a uno.</item>
+    </plurals>
+    <plurals name="home_more_count">
+        <item quantity="one">+%1$d más</item>
+        <item quantity="other">+%1$d más</item>
+    </plurals>
 </resources>
