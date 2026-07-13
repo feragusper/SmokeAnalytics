@@ -536,9 +536,22 @@ fun Pair<Long, Long>?.toElapsedGapLabel(): String = this?.let { (hours, minutes)
 
 fun Instant.toHomeClockLabel(
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    use24HourClock: Boolean = true,
 ): String {
     val time = toLocalDateTime(timeZone).time
-    return "${time.hour.toTwoDigits()}:${time.minute.toTwoDigits()}"
+    return formatClock(time.hour, time.minute, use24HourClock)
+}
+
+/** Shared clock formatter: "14:05" (24h) or "2:05 PM" (12h). */
+fun formatClock(hour: Int, minute: Int, use24HourClock: Boolean): String {
+    if (use24HourClock) return "${hour.toTwoDigits()}:${minute.toTwoDigits()}"
+    val suffix = if (hour < 12) "AM" else "PM"
+    val h12 = when {
+        hour == 0 -> 12
+        hour > 12 -> hour - 12
+        else -> hour
+    }
+    return "$h12:${minute.toTwoDigits()} $suffix"
 }
 
 private fun reductionConsistency(goalProgress: GoalProgress): String =

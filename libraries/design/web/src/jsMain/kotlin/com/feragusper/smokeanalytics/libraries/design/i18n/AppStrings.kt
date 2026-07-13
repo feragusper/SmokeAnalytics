@@ -23,6 +23,10 @@ open class AppStrings internal constructor() {
     open val nicknamePlaceholder: String = "How should we greet you?"
     open val quitReasonLabel: String = "Your reason"
     open val quitReasonPlaceholder: String = "Why are you cutting down?"
+    open val clockFormat: String = "24-hour clock"
+    open val clockFormatBody: String = "Off shows AM/PM times instead."
+    open val weekStart: String = "Week starts on Monday"
+    open val weekStartBody: String = "Off starts the weekly breakdown on Sunday."
 
     // Document titles
     open val titleHome: String = "Smoke Analytics | Home"

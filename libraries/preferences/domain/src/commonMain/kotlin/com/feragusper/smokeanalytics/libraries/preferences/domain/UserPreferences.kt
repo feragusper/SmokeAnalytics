@@ -22,6 +22,10 @@ data class UserPreferences(
     val nickname: String = "",
     /** Optional personal reason to cut down, surfaced on the craving cards as a reminder. */
     val quitReason: String = "",
+    /** Clock format for time labels: true = 24-hour (default), false = 12-hour with AM/PM. */
+    val use24HourClock: Boolean = true,
+    /** Week starts on Monday (default) vs Sunday — affects the weekly breakdown order. */
+    val weekStartsMonday: Boolean = true,
 ) {
     val cigarettePrice: Double
         get() = if (cigarettesPerPack > 0) packPrice / cigarettesPerPack else 0.0

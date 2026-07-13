@@ -97,6 +97,8 @@ private fun UserPreferences.toFirestorePayload(): Map<String, Any?> =
         UserPreferencesEntity.TRIGGER_LABELS to triggerLabels,
         UserPreferencesEntity.NICKNAME to nickname,
         UserPreferencesEntity.QUIT_REASON to quitReason,
+        UserPreferencesEntity.USE_24H_CLOCK to use24HourClock,
+        UserPreferencesEntity.WEEK_STARTS_MONDAY to weekStartsMonday,
     )
 
 private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
@@ -134,6 +136,8 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         triggerLabels = stringMapOrNull(UserPreferencesEntity.TRIGGER_LABELS).orEmpty(),
         nickname = stringOrNull(UserPreferencesEntity.NICKNAME).orEmpty(),
         quitReason = stringOrNull(UserPreferencesEntity.QUIT_REASON).orEmpty(),
+        use24HourClock = booleanOrNull(UserPreferencesEntity.USE_24H_CLOCK) ?: true,
+        weekStartsMonday = booleanOrNull(UserPreferencesEntity.WEEK_STARTS_MONDAY) ?: true,
     )
 }
 

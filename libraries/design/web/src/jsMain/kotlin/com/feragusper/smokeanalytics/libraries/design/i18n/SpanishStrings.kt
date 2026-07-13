@@ -19,6 +19,10 @@ object SpanishStrings : AppStrings() {
     override val nicknamePlaceholder: String = "¿Cómo te saludamos?"
     override val quitReasonLabel: String = "Tu motivo"
     override val quitReasonPlaceholder: String = "¿Por qué estás reduciendo?"
+    override val clockFormat: String = "Reloj de 24 horas"
+    override val clockFormatBody: String = "Apagado muestra las horas en AM/PM."
+    override val weekStart: String = "La semana empieza el lunes"
+    override val weekStartBody: String = "Apagado arranca el desglose semanal el domingo."
 
     // Document titles
     override val titleHome: String = "Smoke Analytics | Inicio"

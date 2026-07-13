@@ -38,6 +38,8 @@ class UserPreferencesRepositoryImpl(
                 triggerLabels = preferences.triggerLabels,
                 nickname = preferences.nickname,
                 quitReason = preferences.quitReason,
+                use24HourClock = preferences.use24HourClock,
+                weekStartsMonday = preferences.weekStartsMonday,
             )
         )
     }
@@ -68,6 +70,8 @@ private fun DocumentSnapshot.toUserPreferencesEntity(): UserPreferencesEntity? {
         triggerLabels = getOrNull<Map<String, String>>(UserPreferencesEntity.TRIGGER_LABELS).orEmpty(),
         nickname = getOrNull<String>(UserPreferencesEntity.NICKNAME).orEmpty(),
         quitReason = getOrNull<String>(UserPreferencesEntity.QUIT_REASON).orEmpty(),
+        use24HourClock = getOrNull<Boolean>(UserPreferencesEntity.USE_24H_CLOCK) ?: true,
+        weekStartsMonday = getOrNull<Boolean>(UserPreferencesEntity.WEEK_STARTS_MONDAY) ?: true,
     )
 }
 

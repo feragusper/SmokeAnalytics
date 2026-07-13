@@ -36,6 +36,7 @@ data class HomeViewState(
     val greetingTitle: String? = null,
     val greetingMessage: String? = null,
     val quitReason: String = "",
+    val use24HourClock: Boolean = true,
     val financialSummary: FinancialSummary? = null,
     val rateSummary: RateSummary? = null,
     val gamificationSummary: GamificationSummary? = null,

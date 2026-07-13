@@ -196,7 +196,8 @@ fun HomeViewState.Render(
             }
 
             HomeInsightGrid(
-                lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(),
+                lastSmokeTimeLabel = lastSmoke?.date?.toHomeClockLabel(use24HourClock = use24HourClock),
+                use24HourClock = use24HourClock,
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 gapFocus = gapFocus,
                 consistencyLabel = narrative.consistencyLabel,
@@ -347,6 +348,7 @@ private fun GoalHeroMetricCard(
 @Composable
 private fun HomeInsightGrid(
     lastSmokeTimeLabel: String?,
+    use24HourClock: Boolean,
     timeSinceLastCigarette: Pair<Long, Long>?,
     gapFocus: GapFocusSummary,
     consistencyLabel: String,
@@ -356,6 +358,7 @@ private fun HomeInsightGrid(
     Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;") }) {
         LastCigaretteCard(
             lastSmokeTimeLabel = lastSmokeTimeLabel,
+            use24HourClock = use24HourClock,
             timeSinceLastCigarette = timeSinceLastCigarette,
             gapFocus = gapFocus,
             elapsedTone = elapsedTone,
@@ -370,6 +373,7 @@ private fun HomeInsightGrid(
 @Composable
 private fun LastCigaretteCard(
     lastSmokeTimeLabel: String?,
+    use24HourClock: Boolean,
     timeSinceLastCigarette: Pair<Long, Long>?,
     gapFocus: GapFocusSummary,
     elapsedTone: ElapsedTone,
@@ -380,7 +384,8 @@ private fun LastCigaretteCard(
             Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;") }) {
                 LastCigaretteValueCard(
                     label = LocalStrings.current.atLabel,
-                    value = lastSmokeTimeLabel?.let { "$it hs" } ?: "--:--",
+                    // "hs" suffix only reads right for the 24h clock; 12h already carries AM/PM.
+                    value = lastSmokeTimeLabel?.let { if (use24HourClock) "$it hs" else it } ?: "--:--",
                 )
                 LastCigaretteValueCard(
                     label = LocalStrings.current.timeSince,

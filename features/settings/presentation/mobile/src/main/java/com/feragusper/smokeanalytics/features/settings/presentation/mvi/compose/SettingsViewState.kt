@@ -1421,7 +1421,36 @@ private fun PersonalizationSection(
             enabled = enabled,
             onCommit = { onChange(preferences.copy(quitReason = it)) },
         )
+        ToggleRow(
+            label = "24-hour clock",
+            checked = preferences.use24HourClock,
+            enabled = enabled,
+            onToggle = { onChange(preferences.copy(use24HourClock = it)) },
+        )
+        ToggleRow(
+            label = "Week starts on Monday",
+            checked = preferences.weekStartsMonday,
+            enabled = enabled,
+            onToggle = { onChange(preferences.copy(weekStartsMonday = it)) },
+        )
         AccentPicker()
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = label, modifier = Modifier.weight(1f))
+        Switch(checked = checked, enabled = enabled, onCheckedChange = onToggle)
     }
 }
 

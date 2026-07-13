@@ -970,7 +970,46 @@ private fun PersonalizationPanelWeb(
                 enabled = !displayLoading,
                 onCommit = { onChange(preferences.copy(quitReason = it)) },
             )
+            ToggleRowWeb(
+                label = strings.clockFormat,
+                body = strings.clockFormatBody,
+                checked = preferences.use24HourClock,
+                enabled = !displayLoading,
+                onToggle = { onChange(preferences.copy(use24HourClock = it)) },
+            )
+            ToggleRowWeb(
+                label = strings.weekStart,
+                body = strings.weekStartBody,
+                checked = preferences.weekStartsMonday,
+                enabled = !displayLoading,
+                onToggle = { onChange(preferences.copy(weekStartsMonday = it)) },
+            )
         }
+    }
+}
+
+@Composable
+private fun ToggleRowWeb(
+    label: String,
+    body: String,
+    checked: Boolean,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;gap:12px;") }) {
+        Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:2px;") }) {
+            Span { Text(label) }
+            Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(body) }
+        }
+        Input(
+            type = InputType.Checkbox,
+            attrs = {
+                checked(checked)
+                if (!enabled) disabled()
+                onChange { onToggle(it.value) }
+                style { property("width", "20px"); property("height", "20px"); property("cursor", "pointer") }
+            },
+        )
     }
 }
 

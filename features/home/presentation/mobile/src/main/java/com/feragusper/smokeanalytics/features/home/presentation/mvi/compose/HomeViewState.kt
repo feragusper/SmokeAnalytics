@@ -107,6 +107,7 @@ data class HomeViewState(
     internal val greetingTitle: String? = null,
     internal val greetingMessage: String? = null,
     internal val quitReason: String = "",
+    internal val use24HourClock: Boolean = true,
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
@@ -135,7 +136,7 @@ data class HomeViewState(
 ) : MVIViewState<HomeIntent> {
 
     internal val lastSmokeTimeLabel: String?
-        get() = lastSmoke?.date?.toHomeClockLabel()
+        get() = lastSmoke?.date?.toHomeClockLabel(use24HourClock = use24HourClock)
 
     interface TestTags {
         companion object {

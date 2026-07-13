@@ -96,6 +96,7 @@ class HomeWebStore(
                 greetingTitle = result.greetingState.title,
                 greetingMessage = result.greetingState.message,
                 quitReason = result.preferences.quitReason,
+                use24HourClock = result.preferences.use24HourClock,
                 financialSummary = result.financialSummary,
                 rateSummary = result.rateSummary,
                 gamificationSummary = result.gamificationSummary,

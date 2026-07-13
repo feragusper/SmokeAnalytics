@@ -255,6 +255,21 @@ class HomeGoalNarrativeTest {
     }
 
     @Test
+    fun `formatClock renders 24h and 12h variants`() {
+        assertEquals("14:05", formatClock(14, 5, use24HourClock = true))
+        assertEquals("2:05 PM", formatClock(14, 5, use24HourClock = false))
+        assertEquals("12:00 AM", formatClock(0, 0, use24HourClock = false))
+        assertEquals("12:30 PM", formatClock(12, 30, use24HourClock = false))
+        assertEquals("9:05 AM", formatClock(9, 5, use24HourClock = false))
+    }
+
+    @Test
+    fun `toHomeClockLabel honors the 12h preference`() {
+        val instant = Instant.parse("2026-05-07T15:05:00Z")
+        assertEquals("3:05 PM", instant.toHomeClockLabel(utc, use24HourClock = false))
+    }
+
+    @Test
     fun `elapsedToneFromMinutes boundaries`() {
         assertEquals(ElapsedTone.Urgent, elapsedToneFromMinutes(0))
         assertEquals(ElapsedTone.Urgent, elapsedToneFromMinutes(44))

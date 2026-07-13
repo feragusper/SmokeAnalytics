@@ -141,6 +141,7 @@ class HomeViewModel constructor(
                     greetingTitle = result.greetingState.title,
                     greetingMessage = result.greetingState.message,
                     quitReason = result.preferences.quitReason,
+                    use24HourClock = result.preferences.use24HourClock,
                     rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
                     goalProgress = result.goalProgress,
