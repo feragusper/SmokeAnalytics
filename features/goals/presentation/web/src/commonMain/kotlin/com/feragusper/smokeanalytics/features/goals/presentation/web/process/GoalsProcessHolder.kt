@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressU
 import com.feragusper.smokeanalytics.features.goals.domain.goalDataFetchStart
 import com.feragusper.smokeanalytics.features.goals.presentation.web.mvi.GoalsIntent
 import com.feragusper.smokeanalytics.features.goals.presentation.web.mvi.GoalsResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
@@ -19,6 +20,7 @@ class GoalsProcessHolder(
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
+    private val analyticsTracker: AnalyticsTracker,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) {
 
@@ -39,6 +41,7 @@ class GoalsProcessHolder(
         emit(GoalsResult.Loading)
         val preferences = fetchUserPreferencesUseCase()
         updateUserPreferencesUseCase(preferences.copy(activeGoal = goal))
+        if (goal != null) analyticsTracker.goalSet(goal.type.name) else analyticsTracker.goalCleared()
         emit(fetchGoalsSnapshot())
         emit(GoalsResult.GoalSaved)
     }.catch {

@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.features.authentication.presentation.proce
 
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationIntent
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.domain.SignOutUseCase
@@ -20,6 +21,7 @@ class AuthenticationProcessHolder(
     private val fetchSessionUseCase: FetchSessionUseCase,
     private val signOutUseCase: SignOutUseCase,
     private val signInWithGoogle: suspend () -> Unit,
+    private val analyticsTracker: AnalyticsTracker,
 ) {
 
     /**
@@ -44,6 +46,7 @@ class AuthenticationProcessHolder(
     private fun processSignIn(): Flow<AuthenticationResult> = flow {
         emit(AuthenticationResult.Loading)
         signInWithGoogle()
+        analyticsTracker.login()
         emit(fetchSessionResult())
     }.catch {
         emit(AuthenticationResult.Error.Generic)
@@ -52,6 +55,7 @@ class AuthenticationProcessHolder(
     private fun processSignOut(): Flow<AuthenticationResult> = flow {
         emit(AuthenticationResult.Loading)
         signOutUseCase()
+        analyticsTracker.logout()
         emit(AuthenticationResult.UserLoggedOut)
     }.catch {
         emit(AuthenticationResult.Error.Generic)

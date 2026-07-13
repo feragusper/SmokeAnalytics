@@ -41,6 +41,8 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.mp.KoinPlatform.getKoin
 import org.w3c.dom.events.Event
 import kotlin.time.Clock
@@ -117,6 +119,23 @@ private fun AppContent(
     val mapStateHolder = remember { getKoin().get<MapWebStateHolder>() }
     val settingsDeps = remember { getKoin().get<SettingsWebDependencies>() }
     val goalsDeps = remember { getKoin().get<GoalsWebDependencies>() }
+    val analytics = remember { getKoin().get<AnalyticsTracker>() }
+
+    LaunchedEffect(route, analyticsTab) {
+        analytics.screenView(
+            when (route) {
+                WebRoute.Home -> AnalyticsScreen.HOME
+                WebRoute.Analytics -> when (analyticsTab) {
+                    AnalyticsTab.Map -> AnalyticsScreen.MAP
+                    else -> AnalyticsScreen.ANALYTICS
+                }
+                WebRoute.History -> AnalyticsScreen.HISTORY
+                WebRoute.Goals -> AnalyticsScreen.GOALS
+                WebRoute.Settings -> AnalyticsScreen.SETTINGS
+                WebRoute.Auth -> AnalyticsScreen.AUTHENTICATION
+            }
+        )
+    }
 
     LaunchedEffect(route, language) {
         document.title = when (route) {
@@ -165,9 +184,15 @@ private fun AppContent(
         route = route,
         onNavigate = ::navigateTo,
         language = language,
-        onLanguageChange = onLanguageChange,
+        onLanguageChange = {
+            analytics.languageChanged(it.name)
+            onLanguageChange(it)
+        },
         accent = accent,
-        onAccentChange = onAccentChange,
+        onAccentChange = {
+            analytics.accentChanged(it.name)
+            onAccentChange(it)
+        },
     ) {
         when (route) {
             WebRoute.Home -> HomeWebScreen(
@@ -203,7 +228,10 @@ private fun AppContent(
 
             WebRoute.Settings -> SettingsAboutWebScreen(
                 settingsDeps = settingsDeps,
-                onShare = { shareSmokeAnalytics() },
+                onShare = {
+                    analytics.shareApp()
+                    shareSmokeAnalytics()
+                },
             )
 
             WebRoute.Goals -> GoalsWebScreen(

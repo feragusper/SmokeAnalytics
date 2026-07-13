@@ -16,6 +16,7 @@ import com.feragusper.smokeanalytics.features.stats.presentation.web.mvi.StatsWe
 import com.feragusper.smokeanalytics.features.stats.presentation.web.process.StatsProcessHolder
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.authentication.data.AuthenticationRepositoryImpl
 import com.feragusper.smokeanalytics.libraries.authentication.domain.AuthenticationRepository
@@ -45,13 +46,14 @@ val webModule = module {
     single<UserPreferencesRepository> { UserPreferencesRepositoryImpl() }
     single<AuthenticationRepository> { AuthenticationRepositoryImpl() }
     single<LocationCaptureService> { WebLocationCaptureService() }
+    single<AnalyticsTracker> { WebAnalyticsTracker() }
 
     factoryOf(::HomeProcessHolder)
     factoryOf(::HistoryProcessHolder)
     factoryOf(::GoalsProcessHolder)
     factoryOf(::SettingsProcessHolder)
     factoryOf(::StatsProcessHolder)
-    factory { AuthenticationProcessHolder(get(), get(), ::signInWithGoogleWeb) }
+    factory { AuthenticationProcessHolder(get(), get(), ::signInWithGoogleWeb, get()) }
 
     factory { HomeWebStore(processHolder = get()) }
     factory { HistoryWebStore(processHolder = get()) }

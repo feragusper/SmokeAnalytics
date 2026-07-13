@@ -17,6 +17,8 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCrav
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.web.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsSource
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferStartNewDay
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
@@ -70,6 +72,7 @@ class HomeProcessHolder(
     private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
     private val fetchCravingsUseCase: FetchCravingsUseCase,
     private val resolveCravingUseCase: ResolveCravingUseCase,
+    private val analyticsTracker: AnalyticsTracker,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
     private val cravingWaitCalculator: CravingWaitCalculator = CravingWaitCalculator(),
 ) {
@@ -113,6 +116,7 @@ class HomeProcessHolder(
             relationship = SmokeRelationship.Tagged(tags = intent.tags),
         )
         persistNewCustomTags(intent.tags)
+        analyticsTracker.relationshipTagged(intent.tags.size)
         emit(HomeResult.RelationshipUpdated)
     }.catch { emit(HomeResult.Error.Generic) }
 
@@ -135,6 +139,7 @@ class HomeProcessHolder(
 
     private fun processSkipRelationship(intent: HomeIntent.SkipSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
         setSmokeRelationshipUseCase(id = intent.smokeId, relationship = SmokeRelationship.Skipped)
+        analyticsTracker.relationshipSkipped()
         emit(HomeResult.RelationshipUpdated)
     }.catch { emit(HomeResult.Error.Generic) }
 
@@ -269,6 +274,7 @@ class HomeProcessHolder(
                 }
                 val smokeId = addSmokeUseCase(location = location)
                 AppLogger.i { "Smoke added successfully" }
+                analyticsTracker.smokeAdded(AnalyticsSource.HOME)
                 emit(HomeResult.AddSmokeSuccess(smokeId))
             }
         }
@@ -299,6 +305,7 @@ class HomeProcessHolder(
                     emit(HomeResult.CravingNoWaitNeeded)
                 } else {
                     val craving = addCravingUseCase(targetAt = advice.nextAllowedAt)
+                    analyticsTracker.cravingTracked()
                     emit(HomeResult.CravingTracked(craving))
                 }
             }
@@ -323,6 +330,7 @@ class HomeProcessHolder(
         if (intent.smoked) {
             addSmokeUseCase()
         }
+        analyticsTracker.cravingResolved(smoked = intent.smoked)
         emit(HomeResult.CravingResolved(outcome = outcome, points = points))
     }.catch {
         emit(HomeResult.Error.Generic)
@@ -334,6 +342,7 @@ class HomeProcessHolder(
         updateUserPreferencesUseCase(
             preferences.copy(manualDayStartEpochMillis = Clock.System.now().toEpochMilliseconds())
         )
+        analyticsTracker.newDayStarted()
         emit(HomeResult.StartNewDaySuccess)
     }.catch {
         emit(HomeResult.Error.Generic)
