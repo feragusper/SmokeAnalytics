@@ -140,6 +140,7 @@ class HomeViewModel constructor(
                     timeSinceLastCigarette = result.smokeCountListResult.timeSinceLastCigarette,
                     greetingTitle = result.greetingState.title,
                     greetingMessage = result.greetingState.message,
+                    quitReason = result.preferences.quitReason,
                     rateSummary = result.rateSummary,
                     gamificationSummary = result.gamificationSummary,
                     goalProgress = result.goalProgress,

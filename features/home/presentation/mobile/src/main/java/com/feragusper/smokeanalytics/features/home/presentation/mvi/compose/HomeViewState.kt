@@ -106,6 +106,7 @@ data class HomeViewState(
     internal val lastSmoke: Smoke? = null,
     internal val greetingTitle: String? = null,
     internal val greetingMessage: String? = null,
+    internal val quitReason: String = "",
     internal val rateSummary: RateSummary? = null,
     internal val gamificationSummary: GamificationSummary? = null,
     internal val goalProgress: GoalProgress? = null,
@@ -201,6 +202,7 @@ data class HomeViewState(
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
                 greetingTitle = greetingTitle,
                 greetingMessage = greetingMessage,
+                quitReason = quitReason,
                 rateSummary = rateSummary,
                 goalProgress = goalProgress,
                 hasActiveGoal = hasActiveGoal,
@@ -257,6 +259,7 @@ private fun HomeContent(
     lastSmokeTimeLabel: String?,
     greetingTitle: String?,
     greetingMessage: String?,
+    quitReason: String,
     rateSummary: RateSummary?,
     goalProgress: GoalProgress?,
     hasActiveGoal: Boolean,
@@ -365,13 +368,14 @@ private fun HomeContent(
             item {
                 if (activeCraving != null) {
                     CravingCountdownCard(
+                        quitReason = quitReason,
                         craving = activeCraving,
                         onResolve = { smoked ->
                             intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
                         },
                     )
                 } else {
-                    CravingPromptCard(onTrack = { intent(HomeIntent.TrackCraving) })
+                    CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
                 }
             }
         }
@@ -499,8 +503,27 @@ private fun HomeTrendCard(trendValue: Int, delta: Int?) {
 
 private fun pluralCigarettes(count: Int): String = if (count == 1) "cigarette" else "cigarettes"
 
+/** Personal reminder shown during a craving, only when the user set a reason. */
 @Composable
-private fun CravingPromptCard(onTrack: () -> Unit) {
+private fun QuitReasonReminder(quitReason: String) {
+    if (quitReason.isBlank()) return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(14.dp),
+    ) {
+        Text(
+            text = "Remember why: $quitReason",
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
+private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
@@ -522,6 +545,7 @@ private fun CravingPromptCard(onTrack: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            QuitReasonReminder(quitReason)
             Button(
                 onClick = onTrack,
                 modifier = Modifier.fillMaxWidth(),
@@ -571,6 +595,7 @@ private fun CravingHintBanner(onDismiss: () -> Unit) {
 
 @Composable
 private fun CravingCountdownCard(
+    quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
 ) {
@@ -649,6 +674,8 @@ private fun CravingCountdownCard(
                     )
                 }
             }
+
+            QuitReasonReminder(quitReason)
 
             // onResolve(true)  -> the user smoked (gave in while waiting / postponed once done)
             // onResolve(false) -> the urge passed without smoking (resisted)

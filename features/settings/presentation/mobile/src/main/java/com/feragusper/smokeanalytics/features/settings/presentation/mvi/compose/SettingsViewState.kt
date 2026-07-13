@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,6 +72,8 @@ import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVI
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
@@ -1418,6 +1421,39 @@ private fun PersonalizationSection(
             enabled = enabled,
             onCommit = { onChange(preferences.copy(quitReason = it)) },
         )
+        AccentPicker()
+    }
+}
+
+/** Accent color swatches; applied immediately and stored locally on the device. */
+@Composable
+private fun AccentPicker() {
+    val context = LocalContext.current
+    val current = AccentHolder.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Accent",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MobileAccent.entries.forEach { accent ->
+                val swatch = accent.primary ?: MaterialTheme.colorScheme.primary
+                val selected = accent == current
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(swatch)
+                        .border(
+                            width = if (selected) 3.dp else 1.dp,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape,
+                        )
+                        .clickable { AccentHolder.set(context, accent) },
+                )
+            }
+        }
     }
 }
 
