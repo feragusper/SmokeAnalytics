@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.home.presentation.process
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.NoOpAnalyticsTracker
+
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
@@ -97,6 +99,7 @@ class HomeProcessHolderTest {
             fetchActiveCravingUseCase = fetchActiveCravingUseCase,
             fetchCravingsUseCase = fetchCravingsUseCase,
             resolveCravingUseCase = resolveCravingUseCase,
+            analyticsTracker = NoOpAnalyticsTracker,
         )
 
         coEvery { fetchActiveCravingUseCase() } returns null

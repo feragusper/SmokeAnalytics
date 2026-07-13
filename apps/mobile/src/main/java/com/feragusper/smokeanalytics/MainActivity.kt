@@ -74,8 +74,11 @@ import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.design.compose.pressScaleMicroInteraction
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
+import org.koin.compose.koinInject
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -300,6 +303,20 @@ private fun MainContainerScreen(
 ) {
     val navController = rememberNavController()
     val activeRoute = currentRoute(navController)
+    val analytics = koinInject<AnalyticsTracker>()
+
+    LaunchedEffect(activeRoute) {
+        val screen = when (activeRoute) {
+            BottomNavigationScreens.Home.route -> AnalyticsScreen.HOME
+            BottomNavigationScreens.Analytics.route -> AnalyticsScreen.ANALYTICS
+            BottomNavigationScreens.History.route -> AnalyticsScreen.HISTORY
+            BottomNavigationScreens.Goals.route -> AnalyticsScreen.GOALS
+            GOALS_CONFIGURE_ROUTE -> AnalyticsScreen.GOALS_CONFIGURE
+            BottomNavigationScreens.You.route -> AnalyticsScreen.SETTINGS
+            else -> null
+        }
+        screen?.let { analytics.screenView(it) }
+    }
 
     val bottomNavigationItems = listOf(
         BottomNavigationScreens.Home,
