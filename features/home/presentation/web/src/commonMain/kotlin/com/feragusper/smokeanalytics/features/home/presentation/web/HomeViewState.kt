@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.features.home.presentation.web
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.FinancialSummary
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
+import com.feragusper.smokeanalytics.features.home.domain.GreetingState
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
@@ -33,8 +34,7 @@ data class HomeViewState(
     val timeSinceLastCigarette: Pair<Long, Long>? = null,
     val latestSmokes: List<Smoke>? = null,
     val lastSmoke: Smoke? = null,
-    val greetingTitle: String? = null,
-    val greetingMessage: String? = null,
+    val greeting: GreetingState? = null,
     val quitReason: String = "",
     val use24HourClock: Boolean = true,
     val cigarettePrice: Double = 0.0,

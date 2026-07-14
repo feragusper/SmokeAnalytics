@@ -11,16 +11,18 @@ enum class GoalStatus {
 
 data class GoalProgress(
     val goal: SmokingGoal,
-    val title: String,
-    val targetLabel: String,
-    val progressLabel: String,
-    val baselineLabel: String? = null,
-    val supportingText: String,
+    val titleKind: GoalTitleKind = GoalTitleKind.DailyCap,
+    val target: GoalTargetSpec = GoalTargetSpec.DailyCap(0),
+    val progress: GoalProgressSpec = GoalProgressSpec.WaitingBaseline,
+    val baseline: GoalBaselineKind? = null,
+    val supporting: GoalSupportingSpec = GoalSupportingSpec.None,
     val status: GoalStatus,
     val progressFraction: Float? = null,
-    val warningLabel: String? = null,
-    val celebrationLabel: String? = null,
+    val warning: GoalWarningKind? = null,
+    val celebration: GoalCelebrationKind? = null,
     val streakDays: Int = 0,
-    val streakLabel: String? = null,
     val isBroken: Boolean = false,
-)
+) {
+    /** True when a completed-day streak exists (drives the streak line in presentation). */
+    val hasStreak: Boolean get() = streakDays > 0
+}

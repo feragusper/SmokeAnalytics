@@ -32,8 +32,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across the selected week", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossWeek, summary.supporting)
         assertEquals(2.0, summary.value)
     }
 
@@ -58,8 +58,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across elapsed days in the selected month", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossElapsedMonth, summary.supporting)
         assertEquals(2.0, summary.value) // 30 / 15
     }
 
@@ -84,8 +84,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across the selected month", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossMonth, summary.supporting)
         assertEquals(1.0, summary.value) // 31 / 31
     }
 
@@ -110,8 +110,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across elapsed days in the selected year", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossElapsedYear, summary.supporting)
         val total = 31 + 28 + 15
         val elapsed = 74 // Jan 1 to Mar 15 = 74 days
         assertEquals(total.toDouble() / elapsed.toDouble(), summary.value, 0.01)
@@ -138,8 +138,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across the selected year", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossYear, summary.supporting)
         assertEquals(1.0, summary.value) // 365 / 365
     }
 
@@ -168,8 +168,8 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Awake-hour pace", summary.title)
-        assertEquals("Average per awake hour", summary.supporting)
+        assertEquals(StatsSummaryTitle.AwakeHourPace, summary.title)
+        assertEquals(StatsSummarySupporting.AwakeHour, summary.supporting)
         assertEquals(1.0, summary.value) // 3 / 3
     }
 
@@ -196,7 +196,7 @@ class SmokeStatsInsightsExtendedTest {
             timeZone = tz,
         )
 
-        assertEquals("Awake-hour pace", summary.title)
+        assertEquals(StatsSummaryTitle.AwakeHourPace, summary.title)
     }
 }
 

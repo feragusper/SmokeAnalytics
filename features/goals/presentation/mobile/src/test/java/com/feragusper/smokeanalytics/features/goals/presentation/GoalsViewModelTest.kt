@@ -54,10 +54,6 @@ class GoalsViewModelTest {
         val preferences = UserPreferences()
         val goalProgress = GoalProgress(
             goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-            title = "Daily Limit",
-            targetLabel = "5 / day",
-            progressLabel = "3 today",
-            supportingText = "On track!",
             status = GoalStatus.OnTrack,
         )
 

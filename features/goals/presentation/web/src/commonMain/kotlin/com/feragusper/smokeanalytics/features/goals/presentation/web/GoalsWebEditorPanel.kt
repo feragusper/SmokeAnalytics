@@ -98,9 +98,9 @@ fun GoalsWebEditorPanel(
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.summaryLabel(strings)) }
             }
             goalProgress?.let {
-                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.progressLabel) }
-                it.baselineLabel?.let { baseline ->
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(baseline) }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(it.progress.text(strings)) }
+                it.baseline?.let { baseline ->
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(baseline.text(strings)) }
                 }
             }
             Div(attrs = { classes(SmokeWebStyles.sectionActions) }) {

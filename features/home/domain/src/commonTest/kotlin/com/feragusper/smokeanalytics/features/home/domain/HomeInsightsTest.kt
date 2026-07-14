@@ -146,10 +146,6 @@ class HomeInsightsTest {
         )
         val goalProgress = GoalProgress(
             goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-            title = "Daily cap",
-            targetLabel = "Target: at most 15 today",
-            progressLabel = "13 / 15 smoked today",
-            supportingText = "2 left before reaching today's cap.",
             status = GoalStatus.OnTrack,
         )
 
@@ -177,10 +173,6 @@ class HomeInsightsTest {
             ),
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 120),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 2h",
-                progressLabel = "Current gap: 1h 35m",
-                supportingText = "Keep going.",
                 status = GoalStatus.OnTrack,
             ),
             awakeMinutesPerDay = 780,
@@ -192,8 +184,8 @@ class HomeInsightsTest {
 
         assertEquals(120, summary.targetMinutes)
         assertEquals(95f / 120f, summary.progressFraction)
-        assertEquals("25m until you reach your goal gap.", summary.pulseSummaryText)
-        assertEquals("You are building toward your 2h mindful gap goal.", summary.recoverySummaryText)
+        assertEquals(GapPulseSpec.Until("25m", GapTargetKind.GoalGap), summary.pulseSummary)
+        assertEquals(GapRecoverySpec.MindfulBuilding("2h"), summary.recoverySummary)
     }
 
     @Test
@@ -209,10 +201,6 @@ class HomeInsightsTest {
             ),
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-                title = "Daily cap",
-                targetLabel = "Target: at most 15 today",
-                progressLabel = "6 / 15 smoked today",
-                supportingText = "9 left before reaching today's cap.",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.4f,
             ),
@@ -225,8 +213,8 @@ class HomeInsightsTest {
         )
 
         assertEquals(193, summary.targetMinutes)
-        assertEquals("3h 13m until you reach your daily cap pace.", summary.pulseSummaryText)
-        assertEquals("You are building toward a 3h 13m pace that keeps today's cap intact.", summary.recoverySummaryText)
+        assertEquals(GapPulseSpec.Until("3h 13m", GapTargetKind.DailyCapPace), summary.pulseSummary)
+        assertEquals(GapRecoverySpec.DailyCapBuilding("3h 13m"), summary.recoverySummary)
     }
 
     @Test
@@ -243,7 +231,7 @@ class HomeInsightsTest {
         )
         assertEquals(90, summary.targetMinutes)
         assertEquals(null, summary.progressFraction)
-        assertEquals("Log a smoke or refresh to rebuild today's pulse.", summary.pulseSummaryText)
+        assertEquals(GapPulseSpec.LogOrRefresh, summary.pulseSummary)
     }
 
     @Test
@@ -260,8 +248,8 @@ class HomeInsightsTest {
         )
         assertEquals(null, summary.targetMinutes)
         assertEquals(null, summary.progressFraction)
-        assertEquals("Stay with this gap and watch the daily pulse settle.", summary.pulseSummaryText)
-        assertEquals("Each longer gap compounds into steadier recovery.", summary.recoverySummaryText)
+        assertEquals(GapPulseSpec.StayWithGap, summary.pulseSummary)
+        assertEquals(GapRecoverySpec.EachLongerGap, summary.recoverySummary)
     }
 
     @Test
@@ -278,8 +266,8 @@ class HomeInsightsTest {
         )
         assertEquals(90, summary.targetMinutes)
         assertEquals(1f, summary.progressFraction) // capped at 1
-        assertEquals("You are 40m beyond your steady gap target.", summary.pulseSummaryText)
-        assertEquals("You are building toward a 1h 30m steady gap rhythm.", summary.recoverySummaryText)
+        assertEquals(GapPulseSpec.Beyond("40m", GapTargetKind.SteadyGap), summary.pulseSummary)
+        assertEquals(GapRecoverySpec.SteadyBuilding("1h 30m"), summary.recoverySummary)
     }
 
     @Test
@@ -290,10 +278,6 @@ class HomeInsightsTest {
             rateSummary = null,
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "5 / 5 smoked today",
-                supportingText = "Cap reached.",
                 status = GoalStatus.Completed,
             ),
             smokesPerDay = 5,

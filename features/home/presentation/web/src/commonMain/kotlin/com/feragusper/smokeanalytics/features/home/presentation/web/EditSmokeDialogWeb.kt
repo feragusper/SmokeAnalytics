@@ -119,7 +119,7 @@ internal fun EditSmokeDialogWeb(
                             onConfirm(dateTimeInputsToInstant(baseDate, timeValue, timeZone))
                         }
                     }
-                ) { Text("OK") }
+                ) { Text(strings.ok) }
             }
         }
     }

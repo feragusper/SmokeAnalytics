@@ -206,8 +206,8 @@ class HomeProcessHolder(
                             smokeCountListResult = smokeCounts,
                             preferences = preferences,
                             greetingState = greetingState.copy(
-                                title = personalizeGreetingTitle(
-                                    greetingTitle = greetingState.title,
+                                name = personalizeGreetingName(
+                                    nickname = greetingState.name,
                                     displayName = session.user.displayName,
                                 ),
                             ),
@@ -371,15 +371,16 @@ class HomeProcessHolder(
     }
 }
 
-private fun personalizeGreetingTitle(
-    greetingTitle: String,
+/** Keeps an explicit nickname, otherwise falls back to the account's first name. */
+private fun personalizeGreetingName(
+    nickname: String,
     displayName: String?,
 ): String {
-    val firstName = displayName
+    if (nickname.isNotBlank()) return nickname
+    return displayName
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
         ?.substringBefore(" ")
         ?.takeIf { it.isNotBlank() }
-
-    return if (firstName != null) "$greetingTitle $firstName" else greetingTitle
+        .orEmpty()
 }

@@ -6,6 +6,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -31,7 +32,7 @@ class EvaluateGoalProgressUseCaseTest {
         )
 
         assertEquals(GoalStatus.Completed, progress?.status)
-        assertTrue(progress?.celebrationLabel?.contains("reached today's cap") == true)
+        assertEquals(GoalCelebrationKind.ReachedCapHold, progress?.celebration)
     }
 
     @Test
@@ -46,7 +47,7 @@ class EvaluateGoalProgressUseCaseTest {
         )
 
         assertEquals(GoalStatus.OnTrack, progress?.status)
-        assertEquals("One more cigarette breaks today's cap.", progress?.warningLabel)
+        assertEquals(GoalWarningKind.OneMoreBreaksCap, progress?.warning)
     }
 
     @Test
@@ -65,8 +66,8 @@ class EvaluateGoalProgressUseCaseTest {
         )
 
         assertEquals(2, progress?.streakDays)
-        assertTrue(progress?.celebrationLabel?.contains("Yesterday stayed under your cap") == true)
-        assertTrue(progress?.streakLabel?.contains("2 days") == true)
+        assertEquals(GoalCelebrationKind.YesterdayUnderCap, progress?.celebration)
+        assertEquals(2, progress?.streakDays)
     }
 
     @Test
@@ -86,7 +87,7 @@ class EvaluateGoalProgressUseCaseTest {
 
         assertEquals(GoalStatus.OffTrack, progress?.status)
         assertTrue(progress?.isBroken == true)
-        assertFalse(progress?.warningLabel.isNullOrBlank())
+        assertNotNull(progress?.warning)
     }
 
     @Test

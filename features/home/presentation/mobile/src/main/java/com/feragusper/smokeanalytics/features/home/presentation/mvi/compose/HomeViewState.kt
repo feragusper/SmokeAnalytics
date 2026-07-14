@@ -57,6 +57,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.home.presentation.R
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,24 @@ import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.domain.GamificationSummary
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.GreetingDayPart
+import com.feragusper.smokeanalytics.features.home.domain.GreetingMessage
+import com.feragusper.smokeanalytics.features.home.domain.GreetingState
+import com.feragusper.smokeanalytics.features.goals.domain.GoalBaselineKind
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgressSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalSupportingSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalTargetSpec
+import com.feragusper.smokeanalytics.features.home.domain.ConsistencySpec
+import com.feragusper.smokeanalytics.features.home.domain.HeroMeterValue
+import com.feragusper.smokeanalytics.features.home.domain.GapPulseSpec
+import com.feragusper.smokeanalytics.features.home.domain.GapTargetKind
+import com.feragusper.smokeanalytics.features.home.domain.HeroMeterLabel
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricLabel
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricSupporting
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricValue
+import com.feragusper.smokeanalytics.features.home.domain.HeroSupportingSpec
+import com.feragusper.smokeanalytics.features.home.domain.HeroTitleSpec
+import com.feragusper.smokeanalytics.features.home.domain.HomeGoalStatusLabel
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroReadout
 import com.feragusper.smokeanalytics.features.home.domain.RateSummary
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
@@ -107,8 +126,7 @@ data class HomeViewState(
     internal val timeSinceLastCigarette: Pair<Long, Long>? = null,
     internal val latestSmokes: List<Smoke>? = null,
     internal val lastSmoke: Smoke? = null,
-    internal val greetingTitle: String? = null,
-    internal val greetingMessage: String? = null,
+    internal val greeting: GreetingState? = null,
     internal val quitReason: String = "",
     internal val use24HourClock: Boolean = true,
     internal val currencySymbol: String = "",
@@ -207,8 +225,7 @@ data class HomeViewState(
                 smokesPerDay = smokesPerDay,
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 lastSmokeTimeLabel = lastSmokeTimeLabel,
-                greetingTitle = greetingTitle,
-                greetingMessage = greetingMessage,
+                greeting = greeting,
                 quitReason = quitReason,
                 homeHeroChoice = homeHeroChoice,
                 cigarettePrice = cigarettePrice,
@@ -267,8 +284,7 @@ private fun HomeContent(
     smokesPerDay: Int?,
     timeSinceLastCigarette: Pair<Long, Long>?,
     lastSmokeTimeLabel: String?,
-    greetingTitle: String?,
-    greetingMessage: String?,
+    greeting: GreetingState?,
     quitReason: String,
     homeHeroChoice: String,
     cigarettePrice: Double,
@@ -340,8 +356,7 @@ private fun HomeContent(
     ) {
         item {
             HomeHeaderSection(
-                greetingTitle = greetingTitle,
-                greetingMessage = greetingMessage,
+                greeting = greeting,
                 locationTrackingAvailability = locationTrackingAvailability,
                 isLoading = isLoading,
             )
@@ -361,9 +376,9 @@ private fun HomeContent(
         }
         item {
             GoalHeroSection(
-                heroTitle = narrative.heroTitle,
-                heroSupporting = narrative.heroSupporting,
-                statusLabel = narrative.statusLabel,
+                heroTitle = heroTitleText(narrative.heroTitle),
+                heroSupporting = heroSupportingText(narrative.heroSupporting),
+                statusLabel = homeStatusText(narrative.status),
                 heroProgress = heroProgress,
                 heroReadout = heroReadout,
                 isLoading = isLoading,
@@ -406,8 +421,9 @@ private fun HomeContent(
         }
         item {
             ConsistencySection(
-                consistencyLabel = narrative.consistencyLabel,
-                statusLabel = narrative.statusLabel,
+                consistency = narrative.consistency,
+                streakDays = narrative.streakDays,
+                statusLabel = homeStatusText(narrative.status),
                 isLoading = isLoading,
             )
         }
@@ -944,8 +960,7 @@ private fun HomeErrorSection(
 
 @Composable
 private fun HomeHeaderSection(
-    greetingTitle: String?,
-    greetingMessage: String?,
+    greeting: GreetingState?,
     locationTrackingAvailability: LocationTrackingAvailability,
     isLoading: Boolean,
 ) {
@@ -956,14 +971,14 @@ private fun HomeHeaderSection(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = greetingTitle ?: stringResource(R.string.home_title),
+            text = greeting?.let { greetingTitle(it) } ?: stringResource(R.string.home_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = when {
                 isLoading -> stringResource(R.string.home_refreshing_snapshot)
-                greetingMessage != null -> greetingMessage
+                greeting != null -> greetingMessageText(greeting.message)
                 else -> stringResource(R.string.home_header_subtitle)
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -971,6 +986,200 @@ private fun HomeHeaderSection(
         )
         LocationTrackingChip(locationTrackingAvailability = locationTrackingAvailability)
     }
+}
+
+@Composable
+private fun greetingTitle(greeting: GreetingState): String {
+    val dayPart = when (greeting.dayPart) {
+        GreetingDayPart.Morning -> stringResource(R.string.home_greeting_morning)
+        GreetingDayPart.Afternoon -> stringResource(R.string.home_greeting_afternoon)
+        GreetingDayPart.Evening -> stringResource(R.string.home_greeting_evening)
+    }
+    return if (greeting.name.isBlank()) {
+        dayPart
+    } else {
+        stringResource(R.string.home_greeting_named, dayPart, greeting.name)
+    }
+}
+
+@Composable
+private fun greetingMessageText(message: GreetingMessage): String = when (message) {
+    GreetingMessage.StrongPace -> stringResource(R.string.home_greeting_strong_pace)
+    GreetingMessage.KeepFirstAway -> stringResource(R.string.home_greeting_keep_first_away)
+    GreetingMessage.HoldingLine -> stringResource(R.string.home_greeting_holding_line)
+    GreetingMessage.OneLessCounts -> stringResource(R.string.home_greeting_one_less_counts)
+}
+
+@Composable
+private fun homeStatusText(status: HomeGoalStatusLabel): String = when (status) {
+    HomeGoalStatusLabel.NoActiveGoal -> stringResource(R.string.home_status_no_active_goal)
+    HomeGoalStatusLabel.OnTrack -> stringResource(R.string.home_status_on_track)
+    HomeGoalStatusLabel.AtRisk -> stringResource(R.string.home_status_at_risk)
+    HomeGoalStatusLabel.GoalMet -> stringResource(R.string.home_status_goal_met)
+    HomeGoalStatusLabel.NeedsBaseline -> stringResource(R.string.home_status_needs_baseline)
+}
+
+@Composable
+private fun heroTitleText(spec: HeroTitleSpec): String = when (spec) {
+    HeroTitleSpec.SetOneGoal -> stringResource(R.string.home_hero_set_one_goal)
+    is HeroTitleSpec.CigarettesLeft ->
+        pluralStringResource(R.plurals.home_hero_cigarettes_left, spec.remaining, spec.remaining)
+    is HeroTitleSpec.OverCap -> stringResource(R.string.home_hero_over_cap, spec.over)
+    is HeroTitleSpec.WaitBeforeNext -> stringResource(R.string.home_hero_wait_before_next, spec.durationLabel)
+    is HeroTitleSpec.ReduceThisWeek -> stringResource(R.string.home_hero_reduce_week, spec.percentLabel)
+    is HeroTitleSpec.ReduceThisMonth -> stringResource(R.string.home_hero_reduce_month, spec.percentLabel)
+}
+
+@Composable
+private fun heroSupportingText(spec: HeroSupportingSpec): String = when (spec) {
+    HeroSupportingSpec.SetGoalHint -> stringResource(R.string.home_hero_set_goal_hint)
+    HeroSupportingSpec.OverCapHold -> stringResource(R.string.home_hero_over_cap_hold)
+    HeroSupportingSpec.CapReachedHold -> stringResource(R.string.home_hero_cap_reached_hold)
+    HeroSupportingSpec.InsidePace -> stringResource(R.string.home_hero_inside_pace)
+    is HeroSupportingSpec.BetweenRemaining -> stringResource(R.string.home_hero_between_remaining, spec.gapLabel)
+    HeroSupportingSpec.FasterThanPace -> stringResource(R.string.home_hero_faster_than_pace)
+    is HeroSupportingSpec.Goal -> goalSupportingTextOrEmpty(spec.spec)
+}
+
+@Composable
+private fun consistencyText(spec: ConsistencySpec): String = when (spec) {
+    is ConsistencySpec.StreakDays ->
+        pluralStringResource(R.plurals.home_consistency_streak_days, spec.days, spec.days)
+    ConsistencySpec.NoGoalHint -> stringResource(R.string.home_consistency_no_goal)
+    ConsistencySpec.CapStillWithin -> stringResource(R.string.home_consistency_cap_still_within)
+    ConsistencySpec.CapReachedHold -> stringResource(R.string.home_consistency_cap_reached_hold)
+    ConsistencySpec.CapPauseSteady -> stringResource(R.string.home_consistency_cap_pause_steady)
+    ConsistencySpec.CapWaitingData -> stringResource(R.string.home_consistency_cap_waiting_data)
+    ConsistencySpec.GapBuildingRight -> stringResource(R.string.home_consistency_gap_building_right)
+    ConsistencySpec.GapMeetsTarget -> stringResource(R.string.home_consistency_gap_meets_target)
+    ConsistencySpec.GapFewMore -> stringResource(R.string.home_consistency_gap_few_more)
+    ConsistencySpec.GapWaitingData -> stringResource(R.string.home_consistency_gap_waiting_data)
+    ConsistencySpec.ReduceMovingRight -> stringResource(R.string.home_consistency_reduce_moving_right)
+    ConsistencySpec.ReduceBelowTarget -> stringResource(R.string.home_consistency_reduce_below_target)
+    ConsistencySpec.ReduceSteadierNeeded -> stringResource(R.string.home_consistency_reduce_steadier_needed)
+    ConsistencySpec.ReduceNeedBaseline -> stringResource(R.string.home_consistency_reduce_need_baseline)
+}
+
+@Composable
+private fun gapTargetText(kind: GapTargetKind): String = when (kind) {
+    GapTargetKind.GoalGap -> stringResource(R.string.home_gap_target_goal_gap)
+    GapTargetKind.DailyCapPace -> stringResource(R.string.home_gap_target_daily_cap_pace)
+    GapTargetKind.SteadyGap -> stringResource(R.string.home_gap_target_steady)
+}
+
+@Composable
+private fun gapPulseText(spec: GapPulseSpec): String = when (spec) {
+    GapPulseSpec.LogOrRefresh -> stringResource(R.string.home_gap_log_or_refresh)
+    GapPulseSpec.StayWithGap -> stringResource(R.string.home_gap_stay_with_gap)
+    is GapPulseSpec.Beyond -> stringResource(R.string.home_gap_beyond, spec.durationLabel, gapTargetText(spec.target))
+    is GapPulseSpec.Until -> stringResource(R.string.home_gap_until, spec.durationLabel, gapTargetText(spec.target))
+}
+
+@Composable
+private fun heroMeterValueText(value: HeroMeterValue): String = when (value) {
+    is HeroMeterValue.Raw -> value.text
+    is HeroMeterValue.GoalTarget -> goalTargetSpecText(value.spec)
+    is HeroMeterValue.GoalProgress -> goalProgressSpecText(value.spec)
+}
+
+@Composable
+private fun goalTargetSpecText(spec: GoalTargetSpec): String = when (spec) {
+    is GoalTargetSpec.DailyCap -> stringResource(R.string.home_goal_target_daily_cap, spec.max)
+    is GoalTargetSpec.ReduceByPercent -> stringResource(R.string.home_goal_target_reduce_percent, spec.percentLabel)
+    is GoalTargetSpec.SmokesOrFewer -> stringResource(R.string.home_goal_target_smokes_or_fewer, spec.countLabel)
+    is GoalTargetSpec.WaitBetween -> stringResource(R.string.home_goal_target_wait_between, spec.durationLabel)
+}
+
+@Composable
+private fun goalProgressSpecText(spec: GoalProgressSpec): String = when (spec) {
+    is GoalProgressSpec.DailyCap -> stringResource(R.string.home_goal_progress_daily_cap, spec.today, spec.max)
+    GoalProgressSpec.WaitingBaseline -> stringResource(R.string.home_goal_progress_waiting_baseline)
+    is GoalProgressSpec.CurrentVsBaseline -> stringResource(R.string.home_goal_progress_current_vs_baseline, spec.current, spec.baseline)
+    is GoalProgressSpec.CurrentGap -> stringResource(R.string.home_goal_progress_current_gap, spec.durationLabel)
+}
+
+@Composable
+private fun goalBaselineSpecText(kind: GoalBaselineKind): String = when (kind) {
+    GoalBaselineKind.PreviousWeek -> stringResource(R.string.home_goal_baseline_previous_week)
+    GoalBaselineKind.PreviousMonth -> stringResource(R.string.home_goal_baseline_previous_month)
+}
+
+@Composable
+private fun goalSupportingTextOrEmpty(spec: GoalSupportingSpec): String = when (spec) {
+    GoalSupportingSpec.None -> ""
+    is GoalSupportingSpec.CapRemaining -> stringResource(R.string.home_goal_supp_cap_remaining, spec.remaining)
+    GoalSupportingSpec.CapOneMoreBreaks -> stringResource(R.string.home_goal_supp_cap_one_more)
+    GoalSupportingSpec.CapReachedHold -> stringResource(R.string.home_goal_supp_cap_reached)
+    GoalSupportingSpec.CapExceeded -> stringResource(R.string.home_goal_supp_cap_exceeded)
+    GoalSupportingSpec.CapYesterdayUnder -> stringResource(R.string.home_goal_supp_cap_yesterday)
+    GoalSupportingSpec.ReduceBelowTarget -> stringResource(R.string.home_goal_supp_reduce_below)
+    GoalSupportingSpec.ReduceMovingRight -> stringResource(R.string.home_goal_supp_reduce_moving)
+    GoalSupportingSpec.ReduceStillAbove -> stringResource(R.string.home_goal_supp_reduce_above)
+    GoalSupportingSpec.ReduceNeedBaseline -> stringResource(R.string.home_goal_supp_reduce_baseline)
+    GoalSupportingSpec.GapMeetsTarget -> stringResource(R.string.home_goal_supp_gap_meets)
+    GoalSupportingSpec.GapBuilding -> stringResource(R.string.home_goal_supp_gap_building)
+    GoalSupportingSpec.GapStillShort -> stringResource(R.string.home_goal_supp_gap_short)
+}
+
+@Composable
+private fun heroMeterLabelText(label: HeroMeterLabel): String = when (label) {
+    HeroMeterLabel.CapUsedToday -> stringResource(R.string.home_meter_cap_used_today)
+    HeroMeterLabel.GapBuilt -> stringResource(R.string.home_meter_gap_built)
+    HeroMeterLabel.ReductionProgress -> stringResource(R.string.home_meter_reduction_progress)
+    HeroMeterLabel.SmokedToday -> stringResource(R.string.home_meter_smoked_today)
+    HeroMeterLabel.SinceLast -> stringResource(R.string.home_meter_since_last)
+    HeroMeterLabel.SpentToday -> stringResource(R.string.home_meter_spent_today)
+}
+
+@Composable
+private fun heroMetricLabelText(label: HeroMetricLabel): String = when (label) {
+    HeroMetricLabel.Cap -> stringResource(R.string.home_metric_cap)
+    HeroMetricLabel.Gap -> stringResource(R.string.home_metric_gap)
+    HeroMetricLabel.Reduce -> stringResource(R.string.home_metric_reduce)
+    HeroMetricLabel.Start -> stringResource(R.string.home_metric_start)
+    HeroMetricLabel.Every -> stringResource(R.string.home_metric_every)
+    HeroMetricLabel.Pace -> stringResource(R.string.home_metric_pace)
+    HeroMetricLabel.Current -> stringResource(R.string.home_metric_current)
+    HeroMetricLabel.Target -> stringResource(R.string.home_metric_target)
+    HeroMetricLabel.Remaining -> stringResource(R.string.home_metric_remaining)
+    HeroMetricLabel.Status -> stringResource(R.string.home_metric_status)
+    HeroMetricLabel.Window -> stringResource(R.string.home_metric_window)
+}
+
+@Composable
+private fun heroMetricValueText(value: HeroMetricValue): String = when (value) {
+    is HeroMetricValue.Raw -> value.text
+    is HeroMetricValue.Status -> homeStatusText(value.label)
+    is HeroMetricValue.GoalTarget -> goalTargetSpecText(value.spec)
+    is HeroMetricValue.GoalProgress -> goalProgressSpecText(value.spec)
+    HeroMetricValue.SetOne -> stringResource(R.string.home_mvalue_set_one)
+    HeroMetricValue.BuildOne -> stringResource(R.string.home_mvalue_build_one)
+    HeroMetricValue.TrackIt -> stringResource(R.string.home_mvalue_track_it)
+    HeroMetricValue.Today -> stringResource(R.string.home_mvalue_today)
+    HeroMetricValue.ThisWeek -> stringResource(R.string.home_mvalue_this_week)
+    HeroMetricValue.ThisMonth -> stringResource(R.string.home_mvalue_this_month)
+    HeroMetricValue.ReadyNow -> stringResource(R.string.home_mvalue_ready_now)
+}
+
+@Composable
+private fun heroMetricSupportingText(supporting: HeroMetricSupporting): String = when (supporting) {
+    is HeroMetricSupporting.GoalSupporting -> goalSupportingTextOrEmpty(supporting.spec)
+    is HeroMetricSupporting.GoalBaseline -> goalBaselineSpecText(supporting.kind)
+    HeroMetricSupporting.LimitTodaysTotal -> stringResource(R.string.home_msupp_limit_todays_total)
+    HeroMetricSupporting.StretchNextWait -> stringResource(R.string.home_msupp_stretch_next_wait)
+    HeroMetricSupporting.CompareLastWeek -> stringResource(R.string.home_msupp_compare_last_week)
+    HeroMetricSupporting.MakeHomeUseful -> stringResource(R.string.home_msupp_make_home_useful)
+    HeroMetricSupporting.PerRemainingCigarette -> stringResource(R.string.home_msupp_per_remaining_cigarette)
+    HeroMetricSupporting.CapAlreadyUsed -> stringResource(R.string.home_msupp_cap_already_used)
+    HeroMetricSupporting.NoActiveGapLeft -> stringResource(R.string.home_msupp_no_active_gap_left)
+    HeroMetricSupporting.IdealByNow -> stringResource(R.string.home_msupp_ideal_by_now)
+    HeroMetricSupporting.SinceLastCigarette -> stringResource(R.string.home_msupp_since_last_cigarette)
+    HeroMetricSupporting.MindfulGapGoal -> stringResource(R.string.home_msupp_mindful_gap_goal)
+    HeroMetricSupporting.NeededToHitTarget -> stringResource(R.string.home_msupp_needed_to_hit_target)
+    HeroMetricSupporting.TargetGapMet -> stringResource(R.string.home_msupp_target_gap_met)
+    HeroMetricSupporting.ReductionGoal -> stringResource(R.string.home_msupp_reduction_goal)
+    HeroMetricSupporting.HowThisGapReads -> stringResource(R.string.home_msupp_how_this_gap_reads)
+    HeroMetricSupporting.CurrentRead -> stringResource(R.string.home_msupp_current_read)
 }
 
 @Composable
@@ -1174,13 +1383,13 @@ private fun GoalHeroSection(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = label,
+                                        text = heroMeterLabelText(label),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     heroReadout.meterValue?.let { value ->
                                         Text(
-                                            text = value,
+                                            text = heroMeterValueText(value),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = heroProgress.tone.progressColor(),
@@ -1205,9 +1414,9 @@ private fun GoalHeroSection(
                             ) {
                                 rowMetrics.forEach { metric ->
                                     GoalHeroMetricCard(
-                                        label = metric.label,
-                                        value = metric.value,
-                                        supporting = metric.supporting,
+                                        label = heroMetricLabelText(metric.label),
+                                        value = heroMetricValueText(metric.value),
+                                        supporting = metric.supporting?.let { heroMetricSupportingText(it) },
                                         modifier = Modifier.weight(1f),
                                     )
                                 }
@@ -1367,7 +1576,7 @@ private fun LastCigaretteSection(
                     )
                 } else {
                     Text(
-                        text = gapFocus.pulseSummaryText,
+                        text = gapPulseText(gapFocus.pulseSummary),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = elapsedTone.contentColor(),
@@ -1426,11 +1635,12 @@ private fun LastCigaretteValueCard(
 
 @Composable
 private fun ConsistencySection(
-    consistencyLabel: String,
+    consistency: ConsistencySpec,
+    streakDays: Int,
     statusLabel: String,
     isLoading: Boolean,
 ) {
-    val streakDays = consistencyLabel.completedStreakDays()
+    val milestoneStreakDays = streakDays.takeIf { it > 0 }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1464,11 +1674,11 @@ private fun ConsistencySection(
                 )
             } else {
                 Text(
-                    text = consistencyLabel,
+                    text = consistencyText(consistency),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                ConsistencyMilestoneRow(streakDays = streakDays)
+                ConsistencyMilestoneRow(streakDays = milestoneStreakDays)
                 Text(
                     text = statusLabel,
                     style = MaterialTheme.typography.bodySmall,
@@ -1534,13 +1744,6 @@ private data class ConsistencyMilestone(
     val days: Int,
     val icon: ImageVector,
 )
-
-private fun String.completedStreakDays(): Int? =
-    Regex("""(\d+)\s+days?\s+completed\s+in\s+a\s+row""")
-        .find(this)
-        ?.groupValues
-        ?.getOrNull(1)
-        ?.toIntOrNull()
 
 @Composable
 private fun SkeletonBlock(
@@ -1698,8 +1901,11 @@ private fun HomeViewPreview() {
             smokesPerWeek = 16,
             smokesPerMonth = 58,
             timeSinceLastCigarette = 4L to 22L,
-            greetingTitle = "Good morning",
-            greetingMessage = "You are pacing well for a steadier Tuesday.",
+            greeting = GreetingState(
+                dayPart = GreetingDayPart.Morning,
+                message = GreetingMessage.StrongPace,
+                name = "Fer",
+            ),
             rateSummary = RateSummary(
                 latestIntervalMinutes = 262,
                 averageIntervalMinutesToday = 250,

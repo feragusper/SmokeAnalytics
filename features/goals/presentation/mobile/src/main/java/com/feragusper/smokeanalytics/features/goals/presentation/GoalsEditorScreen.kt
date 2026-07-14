@@ -224,34 +224,34 @@ fun GoalsEditorScreen(
                         )
                     }
                     Text(
-                        text = progress.progressLabel,
+                        text = progress.progress.text(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    progress.baselineLabel?.let { baseline ->
+                    progress.baseline?.let { baseline ->
                         Text(
-                            text = baseline,
+                            text = baseline.text(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    progress.warningLabel?.let { warning ->
+                    progress.warning?.let { warning ->
                         Text(
-                            text = warning,
+                            text = warning.text(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                         )
                     }
-                    progress.celebrationLabel?.let { celebration ->
+                    progress.celebration?.let { celebration ->
                         Text(
-                            text = celebration,
+                            text = celebration.text(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
-                    progress.streakLabel?.let { streak ->
+                    if (progress.hasStreak) {
                         Text(
-                            text = streak,
+                            text = goalStreakText(progress.streakDays),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -409,9 +409,14 @@ private fun GoalType.toGoalOrNull(value: String): SmokingGoal? = when (this) {
         ?.let(SmokingGoal::MindfulGap)
 }
 
+@Composable
 private fun SmokingGoal.summaryLabel(): String = when (this) {
-    is SmokingGoal.DailyCap -> "Daily cap: at most $maxCigarettesPerDay cigarettes."
-    is SmokingGoal.ReductionVsPreviousWeek -> "Reduce the current week by $reductionPercent%."
-    is SmokingGoal.ReductionVsPreviousMonth -> "Reduce the current month by $reductionPercent%."
-    is SmokingGoal.MindfulGap -> "Wait at least $targetMinutes minutes between cigarettes."
+    is SmokingGoal.DailyCap ->
+        stringResource(R.string.goals_summary_daily_cap, maxCigarettesPerDay)
+    is SmokingGoal.ReductionVsPreviousWeek ->
+        stringResource(R.string.goals_summary_reduce_week, reductionPercent)
+    is SmokingGoal.ReductionVsPreviousMonth ->
+        stringResource(R.string.goals_summary_reduce_month, reductionPercent)
+    is SmokingGoal.MindfulGap ->
+        stringResource(R.string.goals_summary_mindful_gap, targetMinutes)
 }
