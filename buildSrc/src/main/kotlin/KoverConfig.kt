@@ -38,6 +38,8 @@ class KoverConfig(private val layout: ProjectLayout) {
             "*.BuildConfig",
             // WearSync platform-specific
             "*.WearSyncManagerImpl*",
+            // Firebase Analytics platform wrapper (thin adapter over the Firebase SDK)
+            "*.FirebaseAnalyticsTracker", "*.FirebaseAnalyticsTracker\$*",
             // Abstract MVI framework (tested transitively through concrete ViewModels)
             "*.MVIViewModel", "*.MVIViewModel\$*",
             // Hilt generated code
