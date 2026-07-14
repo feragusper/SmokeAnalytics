@@ -13,8 +13,26 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutc
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingStats
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
+import com.feragusper.smokeanalytics.features.home.domain.ConsistencySpec
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
+import com.feragusper.smokeanalytics.features.home.domain.GapPulseSpec
+import com.feragusper.smokeanalytics.features.home.domain.GapTargetKind
 import com.feragusper.smokeanalytics.features.home.domain.GapFocusSummary
+import com.feragusper.smokeanalytics.features.home.domain.GreetingDayPart
+import com.feragusper.smokeanalytics.features.home.domain.GreetingMessage
+import com.feragusper.smokeanalytics.features.home.domain.GreetingState
+import com.feragusper.smokeanalytics.features.home.domain.HeroSupportingSpec
+import com.feragusper.smokeanalytics.features.home.domain.HeroTitleSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalBaselineKind
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgressSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalSupportingSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalTargetSpec
+import com.feragusper.smokeanalytics.features.home.domain.HeroMeterLabel
+import com.feragusper.smokeanalytics.features.home.domain.HeroMeterValue
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricLabel
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricSupporting
+import com.feragusper.smokeanalytics.features.home.domain.HeroMetricValue
+import com.feragusper.smokeanalytics.features.home.domain.HomeGoalStatusLabel
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroMetricIcon
 import com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgressTone
 import com.feragusper.smokeanalytics.features.home.domain.gapFocusSummary
@@ -110,7 +128,8 @@ fun HomeViewState.Render(
 
     Div(attrs = { classes(SmokeWebStyles.panelStack) }) {
         PageSectionHeader(
-            title = greetingTitle ?: LocalStrings.current.homeTitle,
+            title = greeting?.let { greetingTitleText(it, LocalStrings.current) }
+                ?: LocalStrings.current.homeTitle,
             eyebrow = LocalStrings.current.homeTitle,
             badgeText = when {
                 displayRefreshLoading -> LocalStrings.current.refreshing
@@ -124,8 +143,10 @@ fun HomeViewState.Render(
             },
         )
 
-        greetingMessage?.let { message ->
-            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(message) }
+        greeting?.let { greetingState ->
+            Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                Text(greetingMessageText(greetingState.message, LocalStrings.current))
+            }
         }
 
         if (error != null) {
@@ -204,8 +225,9 @@ fun HomeViewState.Render(
                 use24HourClock = use24HourClock,
                 timeSinceLastCigarette = timeSinceLastCigarette,
                 gapFocus = gapFocus,
-                consistencyLabel = narrative.consistencyLabel,
-                statusLabel = narrative.statusLabel,
+                consistency = narrative.consistency,
+                streakDays = narrative.streakDays,
+                statusLabel = homeStatusText(narrative.status, LocalStrings.current),
                 elapsedTone = elapsedTone,
             )
 
@@ -257,15 +279,15 @@ private fun GoalHeroCard(
                 Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;") }) {
                     HomeSectionChip("⌁", LocalStrings.current.goal, heroProgress.tone.accentColor())
                     TonePill(
-                        text = narrative.statusLabel,
+                        text = homeStatusText(narrative.status, LocalStrings.current),
                         background = heroProgress.tone.pillBackground(),
                         foreground = heroProgress.tone.pillForeground(),
                     )
                 }
                 Div(attrs = { attr("style", "font-size:clamp(28px,4vw,40px);font-weight:850;line-height:1.02;color:var(--sa-color-on-surface);max-width:720px;") }) {
-                    Text(narrative.heroTitle)
+                    Text(heroTitleText(narrative.heroTitle, LocalStrings.current))
                 }
-                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(narrative.heroSupporting) }
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(heroSupportingText(narrative.heroSupporting, LocalStrings.current)) }
             }
             GoalHeroReadoutCard(heroProgress = heroProgress, heroReadout = heroReadout)
         }
@@ -289,11 +311,11 @@ private fun GoalHeroReadoutCard(
             Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:8px;") }) {
                 Div(attrs = { attr("style", "display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap;") }) {
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text(label)
+                        Text(heroMeterLabelText(label, LocalStrings.current))
                     }
                     heroReadout.meterValue?.let { value ->
                         Div(attrs = { attr("style", "font-size:18px;font-weight:800;color:${heroProgress.tone.accentColor()};") }) {
-                            Text(value)
+                            Text(heroMeterValueText(value, LocalStrings.current))
                         }
                     }
                 }
@@ -312,9 +334,9 @@ private fun GoalHeroReadoutCard(
         Div(attrs = { attr("style", "display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;") }) {
             heroReadout.metrics.forEach { metric ->
                 GoalHeroMetricCard(
-                    label = metric.label,
-                    value = metric.value,
-                    supporting = metric.supporting,
+                    label = heroMetricLabelText(metric.label, LocalStrings.current),
+                    value = heroMetricValueText(metric.value, LocalStrings.current),
+                    supporting = metric.supporting?.let { heroMetricSupportingText(it, LocalStrings.current) },
                     icon = metric.icon,
                 )
             }
@@ -355,7 +377,8 @@ private fun HomeInsightGrid(
     use24HourClock: Boolean,
     timeSinceLastCigarette: Pair<Long, Long>?,
     gapFocus: GapFocusSummary,
-    consistencyLabel: String,
+    consistency: ConsistencySpec,
+    streakDays: Int,
     statusLabel: String,
     elapsedTone: ElapsedTone,
 ) {
@@ -368,7 +391,8 @@ private fun HomeInsightGrid(
             elapsedTone = elapsedTone,
         )
         ConsistencyCard(
-            consistencyLabel = consistencyLabel,
+            consistency = consistency,
+            streakDays = streakDays,
             statusLabel = statusLabel,
         )
     }
@@ -397,7 +421,7 @@ private fun LastCigaretteCard(
                 )
             }
             TonePill(
-                text = gapFocus.pulseSummaryText,
+                text = gapPulseText(gapFocus.pulseSummary, LocalStrings.current),
                 background = elapsedTone.pillBackground(),
                 foreground = elapsedTone.pillForeground(),
                 large = true,
@@ -449,18 +473,17 @@ private fun LastCigaretteValueCard(
 
 @Composable
 private fun ConsistencyCard(
-    consistencyLabel: String,
+    consistency: ConsistencySpec,
+    streakDays: Int,
     statusLabel: String,
 ) {
-    val streakDays = consistencyLabel.completedStreakDays()
-
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;") }) {
             HomeSectionChip("↗", LocalStrings.current.consistency, "var(--sa-color-primary)")
             Div(attrs = { attr("style", "font-size:28px;font-weight:800;line-height:1.1;color:var(--sa-color-on-surface);") }) {
-                Text(consistencyLabel)
+                Text(consistencyText(consistency, LocalStrings.current))
             }
-            ConsistencyMilestones(streakDays = streakDays)
+            ConsistencyMilestones(streakDays = streakDays.takeIf { it > 0 })
             Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                 Text(statusLabel)
             }
@@ -836,12 +859,100 @@ private fun metricGlyph(icon: HomeHeroMetricIcon): String = when (icon) {
     HomeHeroMetricIcon.Window -> "◌"
 }
 
-private fun String.completedStreakDays(): Int? =
-    Regex("""(\d+)\s+days?\s+completed\s+in\s+a\s+row""")
-        .find(this)
-        ?.groupValues
-        ?.getOrNull(1)
-        ?.toIntOrNull()
+private fun consistencyText(
+    spec: ConsistencySpec,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    is ConsistencySpec.StreakDays -> strings.consistencyStreakDays(spec.days)
+    ConsistencySpec.NoGoalHint -> strings.consistencyNoGoal
+    ConsistencySpec.CapStillWithin -> strings.consistencyCapStillWithin
+    ConsistencySpec.CapReachedHold -> strings.consistencyCapReachedHold
+    ConsistencySpec.CapPauseSteady -> strings.consistencyCapPauseSteady
+    ConsistencySpec.CapWaitingData -> strings.consistencyCapWaitingData
+    ConsistencySpec.GapBuildingRight -> strings.consistencyGapBuildingRight
+    ConsistencySpec.GapMeetsTarget -> strings.consistencyGapMeetsTarget
+    ConsistencySpec.GapFewMore -> strings.consistencyGapFewMore
+    ConsistencySpec.GapWaitingData -> strings.consistencyGapWaitingData
+    ConsistencySpec.ReduceMovingRight -> strings.consistencyReduceMovingRight
+    ConsistencySpec.ReduceBelowTarget -> strings.consistencyReduceBelowTarget
+    ConsistencySpec.ReduceSteadierNeeded -> strings.consistencyReduceSteadierNeeded
+    ConsistencySpec.ReduceNeedBaseline -> strings.consistencyReduceNeedBaseline
+}
+
+private fun gapTargetText(
+    kind: GapTargetKind,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (kind) {
+    GapTargetKind.GoalGap -> strings.gapTargetGoalGap
+    GapTargetKind.DailyCapPace -> strings.gapTargetDailyCapPace
+    GapTargetKind.SteadyGap -> strings.gapTargetSteady
+}
+
+private fun gapPulseText(
+    spec: GapPulseSpec,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    GapPulseSpec.LogOrRefresh -> strings.gapLogOrRefresh
+    GapPulseSpec.StayWithGap -> strings.gapStayWithGap
+    is GapPulseSpec.Beyond -> strings.gapBeyond(spec.durationLabel, gapTargetText(spec.target, strings))
+    is GapPulseSpec.Until -> strings.gapUntil(spec.durationLabel, gapTargetText(spec.target, strings))
+}
+
+private fun heroMeterValueText(
+    value: HeroMeterValue,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (value) {
+    is HeroMeterValue.Raw -> value.text
+    is HeroMeterValue.GoalTarget -> goalTargetSpecText(value.spec, strings)
+    is HeroMeterValue.GoalProgress -> goalProgressSpecText(value.spec, strings)
+}
+
+private fun goalTargetSpecText(
+    spec: GoalTargetSpec,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    is GoalTargetSpec.DailyCap -> s.goalTargetDailyCap(spec.max)
+    is GoalTargetSpec.ReduceByPercent -> s.goalTargetReduceByPercent(spec.percentLabel)
+    is GoalTargetSpec.SmokesOrFewer -> s.goalTargetSmokesOrFewer(spec.countLabel)
+    is GoalTargetSpec.WaitBetween -> s.goalTargetWaitBetween(spec.durationLabel)
+}
+
+private fun goalProgressSpecText(
+    spec: GoalProgressSpec,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    is GoalProgressSpec.DailyCap -> s.goalProgressDailyCap(spec.today, spec.max)
+    GoalProgressSpec.WaitingBaseline -> s.goalProgressWaitingBaseline
+    is GoalProgressSpec.CurrentVsBaseline -> s.goalProgressCurrentVsBaseline(spec.current, spec.baseline)
+    is GoalProgressSpec.CurrentGap -> s.goalProgressCurrentGap(spec.durationLabel)
+}
+
+private fun goalBaselineSpecText(
+    kind: GoalBaselineKind,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (kind) {
+    GoalBaselineKind.PreviousWeek -> s.goalBaselinePreviousWeek
+    GoalBaselineKind.PreviousMonth -> s.goalBaselinePreviousMonth
+}
+
+private fun goalSupportingTextOrEmpty(
+    spec: GoalSupportingSpec,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    GoalSupportingSpec.None -> ""
+    is GoalSupportingSpec.CapRemaining -> s.goalSupportingCapRemaining(spec.remaining)
+    GoalSupportingSpec.CapOneMoreBreaks -> s.goalSupportingCapOneMoreBreaks
+    GoalSupportingSpec.CapReachedHold -> s.goalSupportingCapReachedHold
+    GoalSupportingSpec.CapExceeded -> s.goalSupportingCapExceeded
+    GoalSupportingSpec.CapYesterdayUnder -> s.goalSupportingCapYesterdayUnder
+    GoalSupportingSpec.ReduceBelowTarget -> s.goalSupportingReduceBelowTarget
+    GoalSupportingSpec.ReduceMovingRight -> s.goalSupportingReduceMovingRight
+    GoalSupportingSpec.ReduceStillAbove -> s.goalSupportingReduceStillAbove
+    GoalSupportingSpec.ReduceNeedBaseline -> s.goalSupportingReduceNeedBaseline
+    GoalSupportingSpec.GapMeetsTarget -> s.goalSupportingGapMeetsTarget
+    GoalSupportingSpec.GapBuilding -> s.goalSupportingGapBuilding
+    GoalSupportingSpec.GapStillShort -> s.goalSupportingGapStillShort
+}
 
 private fun HomeHeroProgressTone.accentColor(): String = when (this) {
     HomeHeroProgressTone.Green -> "var(--sa-color-primary)"
@@ -876,4 +987,131 @@ private fun ElapsedTone.pillForeground(): String = when (this) {
     ElapsedTone.Warning -> "var(--sa-color-on-tertiary-container)"
     ElapsedTone.Caution -> "var(--sa-color-on-secondary-container)"
     ElapsedTone.Calm -> "var(--sa-color-on-primary-container)"
+}
+
+private fun greetingTitleText(
+    greeting: GreetingState,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String {
+    val dayPart = when (greeting.dayPart) {
+        GreetingDayPart.Morning -> strings.greetingMorning
+        GreetingDayPart.Afternoon -> strings.greetingAfternoon
+        GreetingDayPart.Evening -> strings.greetingEvening
+    }
+    return if (greeting.name.isBlank()) dayPart else strings.greetingNamed(dayPart, greeting.name)
+}
+
+private fun greetingMessageText(
+    message: GreetingMessage,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (message) {
+    GreetingMessage.StrongPace -> strings.greetingStrongPace
+    GreetingMessage.KeepFirstAway -> strings.greetingKeepFirstAway
+    GreetingMessage.HoldingLine -> strings.greetingHoldingLine
+    GreetingMessage.OneLessCounts -> strings.greetingOneLessCounts
+}
+
+private fun homeStatusText(
+    status: HomeGoalStatusLabel,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (status) {
+    HomeGoalStatusLabel.NoActiveGoal -> strings.homeStatusNoActiveGoal
+    HomeGoalStatusLabel.OnTrack -> strings.homeStatusOnTrack
+    HomeGoalStatusLabel.AtRisk -> strings.homeStatusAtRisk
+    HomeGoalStatusLabel.GoalMet -> strings.homeStatusGoalMet
+    HomeGoalStatusLabel.NeedsBaseline -> strings.homeStatusNeedsBaseline
+}
+
+private fun heroTitleText(
+    spec: HeroTitleSpec,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    HeroTitleSpec.SetOneGoal -> strings.heroSetOneGoal
+    is HeroTitleSpec.CigarettesLeft -> strings.heroCigarettesLeft(spec.remaining)
+    is HeroTitleSpec.OverCap -> strings.heroOverCap(spec.over)
+    is HeroTitleSpec.WaitBeforeNext -> strings.heroWaitBeforeNext(spec.durationLabel)
+    is HeroTitleSpec.ReduceThisWeek -> strings.heroReduceWeek(spec.percentLabel)
+    is HeroTitleSpec.ReduceThisMonth -> strings.heroReduceMonth(spec.percentLabel)
+}
+
+private fun heroSupportingText(
+    spec: HeroSupportingSpec,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (spec) {
+    HeroSupportingSpec.SetGoalHint -> strings.heroSetGoalHint
+    HeroSupportingSpec.OverCapHold -> strings.heroOverCapHold
+    HeroSupportingSpec.CapReachedHold -> strings.heroCapReachedHold
+    HeroSupportingSpec.InsidePace -> strings.heroInsidePace
+    is HeroSupportingSpec.BetweenRemaining -> strings.heroBetweenRemaining(spec.gapLabel)
+    HeroSupportingSpec.FasterThanPace -> strings.heroFasterThanPace
+    is HeroSupportingSpec.Goal -> goalSupportingTextOrEmpty(spec.spec, strings)
+}
+
+private fun heroMeterLabelText(
+    label: HeroMeterLabel,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (label) {
+    HeroMeterLabel.CapUsedToday -> strings.heroMeterCapUsedToday
+    HeroMeterLabel.GapBuilt -> strings.heroMeterGapBuilt
+    HeroMeterLabel.ReductionProgress -> strings.heroMeterReductionProgress
+    HeroMeterLabel.SmokedToday -> strings.heroMeterSmokedToday
+    HeroMeterLabel.SinceLast -> strings.heroMeterSinceLast
+    HeroMeterLabel.SpentToday -> strings.heroMeterSpentToday
+}
+
+private fun heroMetricLabelText(
+    label: HeroMetricLabel,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (label) {
+    HeroMetricLabel.Cap -> strings.heroMetricCap
+    HeroMetricLabel.Gap -> strings.heroMetricGap
+    HeroMetricLabel.Reduce -> strings.heroMetricReduce
+    HeroMetricLabel.Start -> strings.heroMetricStart
+    HeroMetricLabel.Every -> strings.heroMetricEvery
+    HeroMetricLabel.Pace -> strings.heroMetricPace
+    HeroMetricLabel.Current -> strings.heroMetricCurrent
+    HeroMetricLabel.Target -> strings.heroMetricTarget
+    HeroMetricLabel.Remaining -> strings.heroMetricRemaining
+    HeroMetricLabel.Status -> strings.heroMetricStatus
+    HeroMetricLabel.Window -> strings.heroMetricWindow
+}
+
+private fun heroMetricValueText(
+    value: HeroMetricValue,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (value) {
+    is HeroMetricValue.Raw -> value.text
+    is HeroMetricValue.Status -> homeStatusText(value.label, strings)
+    is HeroMetricValue.GoalTarget -> goalTargetSpecText(value.spec, strings)
+    is HeroMetricValue.GoalProgress -> goalProgressSpecText(value.spec, strings)
+    HeroMetricValue.SetOne -> strings.heroMValueSetOne
+    HeroMetricValue.BuildOne -> strings.heroMValueBuildOne
+    HeroMetricValue.TrackIt -> strings.heroMValueTrackIt
+    HeroMetricValue.Today -> strings.heroMValueToday
+    HeroMetricValue.ThisWeek -> strings.heroMValueThisWeek
+    HeroMetricValue.ThisMonth -> strings.heroMValueThisMonth
+    HeroMetricValue.ReadyNow -> strings.heroMValueReadyNow
+}
+
+private fun heroMetricSupportingText(
+    supporting: HeroMetricSupporting,
+    strings: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (supporting) {
+    is HeroMetricSupporting.GoalSupporting -> goalSupportingTextOrEmpty(supporting.spec, strings)
+    is HeroMetricSupporting.GoalBaseline -> goalBaselineSpecText(supporting.kind, strings)
+    HeroMetricSupporting.LimitTodaysTotal -> strings.heroMSuppLimitTodaysTotal
+    HeroMetricSupporting.StretchNextWait -> strings.heroMSuppStretchNextWait
+    HeroMetricSupporting.CompareLastWeek -> strings.heroMSuppCompareLastWeek
+    HeroMetricSupporting.MakeHomeUseful -> strings.heroMSuppMakeHomeUseful
+    HeroMetricSupporting.PerRemainingCigarette -> strings.heroMSuppPerRemainingCigarette
+    HeroMetricSupporting.CapAlreadyUsed -> strings.heroMSuppCapAlreadyUsed
+    HeroMetricSupporting.NoActiveGapLeft -> strings.heroMSuppNoActiveGapLeft
+    HeroMetricSupporting.IdealByNow -> strings.heroMSuppIdealByNow
+    HeroMetricSupporting.SinceLastCigarette -> strings.heroMSuppSinceLastCigarette
+    HeroMetricSupporting.MindfulGapGoal -> strings.heroMSuppMindfulGapGoal
+    HeroMetricSupporting.NeededToHitTarget -> strings.heroMSuppNeededToHitTarget
+    HeroMetricSupporting.TargetGapMet -> strings.heroMSuppTargetGapMet
+    HeroMetricSupporting.ReductionGoal -> strings.heroMSuppReductionGoal
+    HeroMetricSupporting.HowThisGapReads -> strings.heroMSuppHowThisGapReads
+    HeroMetricSupporting.CurrentRead -> strings.heroMSuppCurrentRead
 }

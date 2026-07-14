@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.feragusper.smokeanalytics.libraries.design.PrimaryButton
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import dev.gitlive.firebase.auth.externals.GoogleAuthProvider
 import dev.gitlive.firebase.auth.externals.getAuth
 import dev.gitlive.firebase.auth.externals.signInWithPopup
@@ -26,10 +27,11 @@ fun GoogleSignInComponentWeb(
     onSignInError: (Throwable) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val strings = LocalStrings.current
     var loading by remember { mutableStateOf(false) }
 
     PrimaryButton(
-        text = if (loading) "Signing in..." else "Continue with Google",
+        text = if (loading) strings.signingIn else strings.continueWithGoogle,
         enabled = !loading,
         onClick = {
             scope.launch(start = CoroutineStart.UNDISPATCHED) {

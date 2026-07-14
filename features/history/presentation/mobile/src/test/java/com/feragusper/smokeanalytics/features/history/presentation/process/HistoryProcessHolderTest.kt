@@ -1,5 +1,7 @@
 package com.feragusper.smokeanalytics.features.history.presentation.process
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.NoOpAnalyticsTracker
+
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.SmokeCountListResult
@@ -77,6 +79,7 @@ class HistoryProcessHolderTest {
             fetchUserPreferencesUseCase,
             locationCaptureService,
             widgetRefreshService,
+            NoOpAnalyticsTracker,
         )
 
         coEvery { syncWithWearUseCase.invoke() } just Runs

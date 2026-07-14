@@ -1,7 +1,11 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
+import com.feragusper.smokeanalytics.features.goals.domain.GoalBaselineKind
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
+import com.feragusper.smokeanalytics.features.goals.domain.GoalProgressSpec
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
+import com.feragusper.smokeanalytics.features.goals.domain.GoalSupportingSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalTargetSpec
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -10,11 +14,54 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlin.time.Clock
 
+/** Localized by presentation; [NoActiveGoal] is the no-goal case, the rest map from [GoalStatus]. */
+enum class HomeGoalStatusLabel { NoActiveGoal, OnTrack, AtRisk, GoalMet, NeedsBaseline }
+
+/** Hero title variants; presentation supplies the localized words, domain supplies the numbers. */
+sealed interface HeroTitleSpec {
+    data object SetOneGoal : HeroTitleSpec
+    data class CigarettesLeft(val remaining: Int) : HeroTitleSpec
+    data class OverCap(val over: Int) : HeroTitleSpec
+    data class WaitBeforeNext(val durationLabel: String) : HeroTitleSpec
+    data class ReduceThisWeek(val percentLabel: String) : HeroTitleSpec
+    data class ReduceThisMonth(val percentLabel: String) : HeroTitleSpec
+}
+
+/** Hero supporting-line variants; [Goal] defers to a goals-domain supporting descriptor. */
+sealed interface HeroSupportingSpec {
+    data object SetGoalHint : HeroSupportingSpec
+    data object OverCapHold : HeroSupportingSpec
+    data object CapReachedHold : HeroSupportingSpec
+    data object InsidePace : HeroSupportingSpec
+    data class BetweenRemaining(val gapLabel: String) : HeroSupportingSpec
+    data object FasterThanPace : HeroSupportingSpec
+    data class Goal(val spec: GoalSupportingSpec) : HeroSupportingSpec
+}
+
+/** Consistency line variants; [StreakDays] carries the numeric streak for the localized plural. */
+sealed interface ConsistencySpec {
+    data class StreakDays(val days: Int) : ConsistencySpec
+    data object NoGoalHint : ConsistencySpec
+    data object CapStillWithin : ConsistencySpec
+    data object CapReachedHold : ConsistencySpec
+    data object CapPauseSteady : ConsistencySpec
+    data object CapWaitingData : ConsistencySpec
+    data object GapBuildingRight : ConsistencySpec
+    data object GapMeetsTarget : ConsistencySpec
+    data object GapFewMore : ConsistencySpec
+    data object GapWaitingData : ConsistencySpec
+    data object ReduceMovingRight : ConsistencySpec
+    data object ReduceBelowTarget : ConsistencySpec
+    data object ReduceSteadierNeeded : ConsistencySpec
+    data object ReduceNeedBaseline : ConsistencySpec
+}
+
 data class HomeGoalNarrative(
-    val heroTitle: String,
-    val heroSupporting: String,
-    val statusLabel: String,
-    val consistencyLabel: String,
+    val heroTitle: HeroTitleSpec,
+    val heroSupporting: HeroSupportingSpec,
+    val status: HomeGoalStatusLabel,
+    val consistency: ConsistencySpec,
+    val streakDays: Int,
 )
 
 enum class HomeHeroProgressTone {
@@ -29,10 +76,59 @@ data class HomeHeroProgress(
     val tone: HomeHeroProgressTone,
 )
 
+/** Keyed hero-metric label; presentation localizes. */
+enum class HeroMetricLabel { Cap, Gap, Reduce, Start, Every, Pace, Current, Target, Remaining, Status, Window }
+
+/** Hero-metric value: [Raw] is a language-neutral number/duration; [Goal*] defer to goals domain. */
+sealed interface HeroMetricValue {
+    data class Raw(val text: String) : HeroMetricValue
+    data class Status(val label: HomeGoalStatusLabel) : HeroMetricValue
+    data class GoalTarget(val spec: GoalTargetSpec) : HeroMetricValue
+    data class GoalProgress(val spec: GoalProgressSpec) : HeroMetricValue
+    data object SetOne : HeroMetricValue
+    data object BuildOne : HeroMetricValue
+    data object TrackIt : HeroMetricValue
+    data object Today : HeroMetricValue
+    data object ThisWeek : HeroMetricValue
+    data object ThisMonth : HeroMetricValue
+    data object ReadyNow : HeroMetricValue
+}
+
+/** Hero-metric supporting line; [Goal*] defer to goals-domain descriptors. */
+sealed interface HeroMetricSupporting {
+    data class GoalSupporting(val spec: GoalSupportingSpec) : HeroMetricSupporting
+    data class GoalBaseline(val kind: GoalBaselineKind) : HeroMetricSupporting
+    data object LimitTodaysTotal : HeroMetricSupporting
+    data object StretchNextWait : HeroMetricSupporting
+    data object CompareLastWeek : HeroMetricSupporting
+    data object MakeHomeUseful : HeroMetricSupporting
+    data object PerRemainingCigarette : HeroMetricSupporting
+    data object CapAlreadyUsed : HeroMetricSupporting
+    data object NoActiveGapLeft : HeroMetricSupporting
+    data object IdealByNow : HeroMetricSupporting
+    data object SinceLastCigarette : HeroMetricSupporting
+    data object MindfulGapGoal : HeroMetricSupporting
+    data object NeededToHitTarget : HeroMetricSupporting
+    data object TargetGapMet : HeroMetricSupporting
+    data object ReductionGoal : HeroMetricSupporting
+    data object HowThisGapReads : HeroMetricSupporting
+    data object CurrentRead : HeroMetricSupporting
+}
+
+/** Keyed hero meter label; presentation localizes. */
+enum class HeroMeterLabel { CapUsedToday, GapBuilt, ReductionProgress, SmokedToday, SinceLast, SpentToday }
+
+/** Hero meter value: [Raw] is language-neutral; [Goal*] defer to goals-domain descriptors. */
+sealed interface HeroMeterValue {
+    data class Raw(val text: String) : HeroMeterValue
+    data class GoalTarget(val spec: GoalTargetSpec) : HeroMeterValue
+    data class GoalProgress(val spec: GoalProgressSpec) : HeroMeterValue
+}
+
 data class HomeHeroMetric(
-    val label: String,
-    val value: String,
-    val supporting: String? = null,
+    val label: HeroMetricLabel,
+    val value: HeroMetricValue,
+    val supporting: HeroMetricSupporting? = null,
     val icon: HomeHeroMetricIcon = HomeHeroMetricIcon.Focus,
 )
 
@@ -48,8 +144,8 @@ enum class HomeHeroMetricIcon {
 }
 
 data class HomeHeroReadout(
-    val meterLabel: String? = null,
-    val meterValue: String? = null,
+    val meterLabel: HeroMeterLabel? = null,
+    val meterValue: HeroMeterValue? = null,
     val meterFraction: Float? = null,
     val metrics: List<HomeHeroMetric> = emptyList(),
 )
@@ -76,10 +172,11 @@ fun homeGoalNarrative(
 ): HomeGoalNarrative {
     if (goalProgress == null) {
         return HomeGoalNarrative(
-            heroTitle = "Set one goal for today",
-            heroSupporting = "Cap, gap, or reduction target.",
-            statusLabel = "No active goal",
-            consistencyLabel = "Add a daily cap, reduction target, or mindful gap to make the day easier to read.",
+            heroTitle = HeroTitleSpec.SetOneGoal,
+            heroSupporting = HeroSupportingSpec.SetGoalHint,
+            status = HomeGoalStatusLabel.NoActiveGoal,
+            consistency = ConsistencySpec.NoGoalHint,
+            streakDays = 0,
         )
     }
 
@@ -103,54 +200,57 @@ fun homeGoalNarrative(
                 awakeMinutesPerDay = awakeMinutesPerDay,
                 dailyCap = goal.maxCigarettesPerDay,
             )
-            val pacingMessage = when {
-                remaining < 0 -> "Over today's cap. Hold here."
-                remaining == 0 -> "Cap reached. Hold here."
-                smokedToday <= expectedSmokesByNow -> "Inside today's pace."
-                dynamicGapMinutes != null -> "~${dynamicGapMinutes.toDurationLabel()} between the remaining cigarettes."
-                else -> "Faster than today's pace."
+            val pacingMessage: HeroSupportingSpec = when {
+                remaining < 0 -> HeroSupportingSpec.OverCapHold
+                remaining == 0 -> HeroSupportingSpec.CapReachedHold
+                smokedToday <= expectedSmokesByNow -> HeroSupportingSpec.InsidePace
+                dynamicGapMinutes != null -> HeroSupportingSpec.BetweenRemaining(dynamicGapMinutes.toDurationLabel())
+                else -> HeroSupportingSpec.FasterThanPace
             }
             HomeGoalNarrative(
                 heroTitle = when {
-                    remaining > 0 -> "$remaining ${if (remaining == 1) "cigarette" else "cigarettes"} left today"
-                    remaining == 0 -> "0 cigarettes left today"
-                    else -> "${remaining.absoluteValue} over today's cap"
+                    remaining >= 0 -> HeroTitleSpec.CigarettesLeft(remaining)
+                    else -> HeroTitleSpec.OverCap(remaining.absoluteValue)
                 },
                 heroSupporting = pacingMessage,
-                statusLabel = goalProgress.status.toHomeStatusLabel(),
-                consistencyLabel = goalProgress.streakLabel ?: when (goalProgress.status) {
-                    GoalStatus.OnTrack -> "Still within today's cap."
-                    GoalStatus.Completed -> "You've reached the cap. Holding here keeps the day intact."
-                    GoalStatus.OffTrack -> "Pause the count here to steady the rest of the day."
-                    GoalStatus.NotEnoughData -> "Waiting for enough data to judge today's pace."
+                status = goalProgress.status.toHomeStatusLabel(),
+                consistency = goalProgress.streakConsistency() ?: when (goalProgress.status) {
+                    GoalStatus.OnTrack -> ConsistencySpec.CapStillWithin
+                    GoalStatus.Completed -> ConsistencySpec.CapReachedHold
+                    GoalStatus.OffTrack -> ConsistencySpec.CapPauseSteady
+                    GoalStatus.NotEnoughData -> ConsistencySpec.CapWaitingData
                 },
+                streakDays = goalProgress.streakDays,
             )
         }
 
         is SmokingGoal.MindfulGap -> HomeGoalNarrative(
-            heroTitle = "Wait ${goal.targetMinutes.toDurationLabel()} before the next cigarette",
-            heroSupporting = goalProgress.supportingText,
-            statusLabel = goalProgress.status.toHomeStatusLabel(),
-            consistencyLabel = goalProgress.streakLabel ?: when (goalProgress.status) {
-                GoalStatus.OnTrack -> "The current gap is building in the right direction."
-                GoalStatus.Completed -> "Latest gap meets the target."
-                GoalStatus.OffTrack -> "A few more minutes will change the shape of this gap."
-                GoalStatus.NotEnoughData -> "Waiting for enough data to judge the gap."
+            heroTitle = HeroTitleSpec.WaitBeforeNext(goal.targetMinutes.toDurationLabel()),
+            heroSupporting = HeroSupportingSpec.Goal(goalProgress.supporting),
+            status = goalProgress.status.toHomeStatusLabel(),
+            consistency = goalProgress.streakConsistency() ?: when (goalProgress.status) {
+                GoalStatus.OnTrack -> ConsistencySpec.GapBuildingRight
+                GoalStatus.Completed -> ConsistencySpec.GapMeetsTarget
+                GoalStatus.OffTrack -> ConsistencySpec.GapFewMore
+                GoalStatus.NotEnoughData -> ConsistencySpec.GapWaitingData
             },
+            streakDays = goalProgress.streakDays,
         )
 
         is SmokingGoal.ReductionVsPreviousWeek -> HomeGoalNarrative(
-            heroTitle = "Reduce by ${goal.reductionPercent.toCompactPercent()} this week",
-            heroSupporting = goalProgress.supportingText,
-            statusLabel = goalProgress.status.toHomeStatusLabel(),
-            consistencyLabel = goalProgress.streakLabel ?: reductionConsistency(goalProgress),
+            heroTitle = HeroTitleSpec.ReduceThisWeek(goal.reductionPercent.toCompactPercent()),
+            heroSupporting = HeroSupportingSpec.Goal(goalProgress.supporting),
+            status = goalProgress.status.toHomeStatusLabel(),
+            consistency = goalProgress.streakConsistency() ?: reductionConsistency(goalProgress),
+            streakDays = goalProgress.streakDays,
         )
 
         is SmokingGoal.ReductionVsPreviousMonth -> HomeGoalNarrative(
-            heroTitle = "Reduce by ${goal.reductionPercent.toCompactPercent()} this month",
-            heroSupporting = goalProgress.supportingText,
-            statusLabel = goalProgress.status.toHomeStatusLabel(),
-            consistencyLabel = goalProgress.streakLabel ?: reductionConsistency(goalProgress),
+            heroTitle = HeroTitleSpec.ReduceThisMonth(goal.reductionPercent.toCompactPercent()),
+            heroSupporting = HeroSupportingSpec.Goal(goalProgress.supporting),
+            status = goalProgress.status.toHomeStatusLabel(),
+            consistency = goalProgress.streakConsistency() ?: reductionConsistency(goalProgress),
+            streakDays = goalProgress.streakDays,
         )
     }
 }
@@ -256,15 +356,15 @@ fun homeHeroReadout(
     if (choice == HomeHeroChoice.Auto) return base
 
     val count = smokesPerDay ?: 0
-    val (meterLabel, meterValue) = when (choice) {
-        HomeHeroChoice.CountToday -> "Smoked today" to count.toString()
-        HomeHeroChoice.Streak -> "Since last" to (
+    val (meterLabel, meterValueText) = when (choice) {
+        HomeHeroChoice.CountToday -> HeroMeterLabel.SmokedToday to count.toString()
+        HomeHeroChoice.Streak -> HeroMeterLabel.SinceLast to (
             timeSinceLastCigarette?.let { (h, m) -> "${h}h ${m}m" } ?: "--"
             )
-        HomeHeroChoice.MoneyToday -> "Spent today" to formatHeroMoney(currencySymbol, count * cigarettePrice)
+        HomeHeroChoice.MoneyToday -> HeroMeterLabel.SpentToday to formatHeroMoney(currencySymbol, count * cigarettePrice)
         HomeHeroChoice.Auto -> return base
     }
-    return base.copy(meterLabel = meterLabel, meterValue = meterValue, meterFraction = null)
+    return base.copy(meterLabel = meterLabel, meterValue = HeroMeterValue.Raw(meterValueText), meterFraction = null)
 }
 
 private fun formatHeroMoney(currencySymbol: String, amount: Double): String {
@@ -289,27 +389,27 @@ private fun homeHeroReadoutBase(
         return HomeHeroReadout(
             metrics = listOf(
                 HomeHeroMetric(
-                    label = "Cap",
-                    value = "Set one",
-                    supporting = "Limit today's total.",
+                    label = HeroMetricLabel.Cap,
+                    value = HeroMetricValue.SetOne,
+                    supporting = HeroMetricSupporting.LimitTodaysTotal,
                     icon = HomeHeroMetricIcon.Target,
                 ),
                 HomeHeroMetric(
-                    label = "Gap",
-                    value = "Build one",
-                    supporting = "Stretch the next wait.",
+                    label = HeroMetricLabel.Gap,
+                    value = HeroMetricValue.BuildOne,
+                    supporting = HeroMetricSupporting.StretchNextWait,
                     icon = HomeHeroMetricIcon.Gap,
                 ),
                 HomeHeroMetric(
-                    label = "Reduce",
-                    value = "Track it",
-                    supporting = "Compare with last week.",
+                    label = HeroMetricLabel.Reduce,
+                    value = HeroMetricValue.TrackIt,
+                    supporting = HeroMetricSupporting.CompareLastWeek,
                     icon = HomeHeroMetricIcon.Trend,
                 ),
                 HomeHeroMetric(
-                    label = "Start",
-                    value = "Today",
-                    supporting = "Make home useful fast.",
+                    label = HeroMetricLabel.Start,
+                    value = HeroMetricValue.Today,
+                    supporting = HeroMetricSupporting.MakeHomeUseful,
                     icon = HomeHeroMetricIcon.Focus,
                 ),
             ),
@@ -337,24 +437,24 @@ private fun homeHeroReadoutBase(
                 remainingActiveMinutes = dayWindow.remainingMinutes,
             )
             HomeHeroReadout(
-                meterLabel = "Cap used today",
-                meterValue = "$smokedToday of ${goal.maxCigarettesPerDay}",
+                meterLabel = HeroMeterLabel.CapUsedToday,
+                meterValue = HeroMeterValue.Raw("$smokedToday of ${goal.maxCigarettesPerDay}"),
                 meterFraction = (smokedToday.toFloat() / goal.maxCigarettesPerDay.toFloat()).coerceIn(0f, 1f),
                 metrics = listOf(
                     HomeHeroMetric(
-                        label = "Every",
-                        value = remainingGapMinutes?.let { "~${it.toDurationLabel()}" } ?: "--",
+                        label = HeroMetricLabel.Every,
+                        value = HeroMetricValue.Raw(remainingGapMinutes?.let { "~${it.toDurationLabel()}" } ?: "--"),
                         supporting = when {
-                            remainingGapMinutes != null -> "Per remaining cigarette"
-                            remaining == 0 -> "Cap already used"
-                            else -> "No active gap left"
+                            remainingGapMinutes != null -> HeroMetricSupporting.PerRemainingCigarette
+                            remaining == 0 -> HeroMetricSupporting.CapAlreadyUsed
+                            else -> HeroMetricSupporting.NoActiveGapLeft
                         },
                         icon = HomeHeroMetricIcon.Gap,
                     ),
                     HomeHeroMetric(
-                        label = "Pace",
-                        value = expectedByNow.toString(),
-                        supporting = "Ideal by now",
+                        label = HeroMetricLabel.Pace,
+                        value = HeroMetricValue.Raw(expectedByNow.toString()),
+                        supporting = HeroMetricSupporting.IdealByNow,
                         icon = HomeHeroMetricIcon.Pace,
                     ),
                 ),
@@ -365,35 +465,36 @@ private fun homeHeroReadoutBase(
             val elapsedMinutes = timeSinceLastCigarette?.let { (hours, minutes) -> (hours * 60L + minutes).toInt() }
             val remainingMinutes = elapsedMinutes?.let { (goal.targetMinutes - it).coerceAtLeast(0) }
             HomeHeroReadout(
-                meterLabel = "Gap built",
-                meterValue = elapsedMinutes?.let { "${it.toDurationLabel()} of ${goal.targetMinutes.toDurationLabel()}" }
-                    ?: goalProgress.progressLabel,
+                meterLabel = HeroMeterLabel.GapBuilt,
+                meterValue = elapsedMinutes?.let { HeroMeterValue.Raw("${it.toDurationLabel()} of ${goal.targetMinutes.toDurationLabel()}") }
+                    ?: HeroMeterValue.GoalProgress(goalProgress.progress),
                 meterFraction = elapsedMinutes?.let {
                     (it.toFloat() / goal.targetMinutes.toFloat()).coerceIn(0f, 1f)
                 } ?: goalProgress.progressFraction?.coerceIn(0f, 1f),
                 metrics = listOf(
                     HomeHeroMetric(
-                        label = "Current",
-                        value = elapsedMinutes?.toDurationLabel() ?: "--",
-                        supporting = "Since the last cigarette",
+                        label = HeroMetricLabel.Current,
+                        value = HeroMetricValue.Raw(elapsedMinutes?.toDurationLabel() ?: "--"),
+                        supporting = HeroMetricSupporting.SinceLastCigarette,
                         icon = HomeHeroMetricIcon.Clock,
                     ),
                     HomeHeroMetric(
-                        label = "Target",
-                        value = goal.targetMinutes.toDurationLabel(),
-                        supporting = "Mindful gap goal",
+                        label = HeroMetricLabel.Target,
+                        value = HeroMetricValue.Raw(goal.targetMinutes.toDurationLabel()),
+                        supporting = HeroMetricSupporting.MindfulGapGoal,
                         icon = HomeHeroMetricIcon.Target,
                     ),
                     HomeHeroMetric(
-                        label = "Remaining",
-                        value = remainingMinutes?.takeIf { it > 0 }?.toDurationLabel() ?: "Ready now",
-                        supporting = if ((remainingMinutes ?: 0) > 0) "Needed to hit the target" else "The target gap is already met",
+                        label = HeroMetricLabel.Remaining,
+                        value = remainingMinutes?.takeIf { it > 0 }?.toDurationLabel()
+                            ?.let { HeroMetricValue.Raw(it) } ?: HeroMetricValue.ReadyNow,
+                        supporting = if ((remainingMinutes ?: 0) > 0) HeroMetricSupporting.NeededToHitTarget else HeroMetricSupporting.TargetGapMet,
                         icon = HomeHeroMetricIcon.Margin,
                     ),
                     HomeHeroMetric(
-                        label = "Status",
-                        value = goalProgress.status.toHomeStatusLabel(),
-                        supporting = "How this gap reads now",
+                        label = HeroMetricLabel.Status,
+                        value = HeroMetricValue.Status(goalProgress.status.toHomeStatusLabel()),
+                        supporting = HeroMetricSupporting.HowThisGapReads,
                         icon = HomeHeroMetricIcon.Focus,
                     ),
                 ),
@@ -401,64 +502,64 @@ private fun homeHeroReadoutBase(
         }
 
         is SmokingGoal.ReductionVsPreviousWeek -> HomeHeroReadout(
-            meterLabel = "Reduction progress",
-            meterValue = goalProgress.targetLabel,
+            meterLabel = HeroMeterLabel.ReductionProgress,
+            meterValue = HeroMeterValue.GoalTarget(goalProgress.target),
             meterFraction = goalProgress.progressFraction?.coerceIn(0f, 1f),
             metrics = listOf(
                 HomeHeroMetric(
-                    label = "Window",
-                    value = "This week",
-                    supporting = goalProgress.baselineLabel,
+                    label = HeroMetricLabel.Window,
+                    value = HeroMetricValue.ThisWeek,
+                    supporting = goalProgress.baseline?.let { HeroMetricSupporting.GoalBaseline(it) },
                     icon = HomeHeroMetricIcon.Window,
                 ),
                 HomeHeroMetric(
-                    label = "Pace",
-                    value = goalProgress.progressLabel,
-                    supporting = goalProgress.supportingText,
+                    label = HeroMetricLabel.Pace,
+                    value = HeroMetricValue.GoalProgress(goalProgress.progress),
+                    supporting = HeroMetricSupporting.GoalSupporting(goalProgress.supporting),
                     icon = HomeHeroMetricIcon.Trend,
                 ),
                 HomeHeroMetric(
-                    label = "Target",
-                    value = goalProgress.targetLabel,
-                    supporting = "Reduction goal",
+                    label = HeroMetricLabel.Target,
+                    value = HeroMetricValue.GoalTarget(goalProgress.target),
+                    supporting = HeroMetricSupporting.ReductionGoal,
                     icon = HomeHeroMetricIcon.Target,
                 ),
                 HomeHeroMetric(
-                    label = "Status",
-                    value = goalProgress.status.toHomeStatusLabel(),
-                    supporting = "Current read",
+                    label = HeroMetricLabel.Status,
+                    value = HeroMetricValue.Status(goalProgress.status.toHomeStatusLabel()),
+                    supporting = HeroMetricSupporting.CurrentRead,
                     icon = HomeHeroMetricIcon.Focus,
                 ),
             ),
         )
 
         is SmokingGoal.ReductionVsPreviousMonth -> HomeHeroReadout(
-            meterLabel = "Reduction progress",
-            meterValue = goalProgress.targetLabel,
+            meterLabel = HeroMeterLabel.ReductionProgress,
+            meterValue = HeroMeterValue.GoalTarget(goalProgress.target),
             meterFraction = goalProgress.progressFraction?.coerceIn(0f, 1f),
             metrics = listOf(
                 HomeHeroMetric(
-                    label = "Window",
-                    value = "This month",
-                    supporting = goalProgress.baselineLabel,
+                    label = HeroMetricLabel.Window,
+                    value = HeroMetricValue.ThisMonth,
+                    supporting = goalProgress.baseline?.let { HeroMetricSupporting.GoalBaseline(it) },
                     icon = HomeHeroMetricIcon.Window,
                 ),
                 HomeHeroMetric(
-                    label = "Pace",
-                    value = goalProgress.progressLabel,
-                    supporting = goalProgress.supportingText,
+                    label = HeroMetricLabel.Pace,
+                    value = HeroMetricValue.GoalProgress(goalProgress.progress),
+                    supporting = HeroMetricSupporting.GoalSupporting(goalProgress.supporting),
                     icon = HomeHeroMetricIcon.Trend,
                 ),
                 HomeHeroMetric(
-                    label = "Target",
-                    value = goalProgress.targetLabel,
-                    supporting = "Reduction goal",
+                    label = HeroMetricLabel.Target,
+                    value = HeroMetricValue.GoalTarget(goalProgress.target),
+                    supporting = HeroMetricSupporting.ReductionGoal,
                     icon = HomeHeroMetricIcon.Target,
                 ),
                 HomeHeroMetric(
-                    label = "Status",
-                    value = goalProgress.status.toHomeStatusLabel(),
-                    supporting = "Current read",
+                    label = HeroMetricLabel.Status,
+                    value = HeroMetricValue.Status(goalProgress.status.toHomeStatusLabel()),
+                    supporting = HeroMetricSupporting.CurrentRead,
                     icon = HomeHeroMetricIcon.Focus,
                 ),
             ),
@@ -581,7 +682,7 @@ fun gapFocusDebugBlock(
             }
             add("progressShown = ${gapFocus.progressFraction?.toPercentLabel() ?: "null"}")
             add("delta = ${deltaMinutes.toSignedDebugMinutesLabel()}")
-            add("summary = ${gapFocus.pulseSummaryText}")
+            add("summary = ${gapFocus.pulseSummary}")
         },
     )
 }
@@ -614,20 +715,25 @@ fun formatClock(hour: Int, minute: Int, use24HourClock: Boolean): String {
     return "$h12:${minute.toTwoDigits()} $suffix"
 }
 
-private fun reductionConsistency(goalProgress: GoalProgress): String =
+private fun reductionConsistency(goalProgress: GoalProgress): ConsistencySpec =
     when (goalProgress.status) {
-        GoalStatus.OnTrack -> "The current pace is moving in the right direction."
-        GoalStatus.Completed -> "The current pace is already below the target."
-        GoalStatus.OffTrack -> "A steadier stretch is needed to bring this reduction back on track."
-        GoalStatus.NotEnoughData -> "A previous comparison window is needed before this goal can be judged."
+        GoalStatus.OnTrack -> ConsistencySpec.ReduceMovingRight
+        GoalStatus.Completed -> ConsistencySpec.ReduceBelowTarget
+        GoalStatus.OffTrack -> ConsistencySpec.ReduceSteadierNeeded
+        GoalStatus.NotEnoughData -> ConsistencySpec.ReduceNeedBaseline
     }
 
-private fun GoalStatus.toHomeStatusLabel(): String = when (this) {
-    GoalStatus.OnTrack -> "On track"
-    GoalStatus.OffTrack -> "At risk"
-    GoalStatus.Completed -> "Goal met"
-    GoalStatus.NotEnoughData -> "Needs baseline"
+/** A streak line when one exists (streakLabel is non-null exactly when streakDays > 0). */
+private fun GoalProgress.streakConsistency(): ConsistencySpec? =
+    if (hasStreak) ConsistencySpec.StreakDays(streakDays) else null
+
+private fun GoalStatus.toHomeStatusLabel(): HomeGoalStatusLabel = when (this) {
+    GoalStatus.OnTrack -> HomeGoalStatusLabel.OnTrack
+    GoalStatus.OffTrack -> HomeGoalStatusLabel.AtRisk
+    GoalStatus.Completed -> HomeGoalStatusLabel.GoalMet
+    GoalStatus.NotEnoughData -> HomeGoalStatusLabel.NeedsBaseline
 }
+
 
 private fun Double.toCompactPercent(): String {
     val rounded = (this * 10).toInt() / 10.0

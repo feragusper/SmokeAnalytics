@@ -22,6 +22,8 @@ class KoverConfig(private val layout: ProjectLayout) {
             "*.*ViewState*Kt", "*.*ViewState*Kt\$*",
             "*.ComposableSingletons\$*",
             "*.*ScreenKt", "*.*ScreenKt\$*", "*.*Screen\$*",
+            // i18n descriptor→string resolvers (Compose stringResource glue, not unit-testable)
+            "*.GoalProgressTextMobileKt", "*.GoalProgressTextMobileKt\$*",
             // Design tokens (Color, Typography, Theme)
             "*.ColorKt", "*.ColorKt\$*", "*.TypographyKt", "*.TypographyKt\$*",
             "*.ThemeKt", "*.ThemeKt\$*", "*.PaletteTokens", "*.PaletteTokens\$*",
@@ -38,6 +40,8 @@ class KoverConfig(private val layout: ProjectLayout) {
             "*.BuildConfig",
             // WearSync platform-specific
             "*.WearSyncManagerImpl*",
+            // Firebase Analytics platform wrapper (thin adapter over the Firebase SDK)
+            "*.FirebaseAnalyticsTracker", "*.FirebaseAnalyticsTracker\$*",
             // Abstract MVI framework (tested transitively through concrete ViewModels)
             "*.MVIViewModel", "*.MVIViewModel\$*",
             // Hilt generated code

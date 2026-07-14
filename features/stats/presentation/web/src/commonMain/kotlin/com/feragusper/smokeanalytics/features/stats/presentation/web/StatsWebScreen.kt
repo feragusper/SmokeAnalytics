@@ -189,7 +189,7 @@ private fun StatsWebContent(
 
                 if (state.error != null) {
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) {
-                        Text("Latest refresh failed. Showing the last available analytics snapshot.")
+                        Text(strings.statsRefreshFailed)
                     }
                 }
 
@@ -203,14 +203,14 @@ private fun StatsWebContent(
                     SurfaceCard {
                         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:12px;min-height:0;") }) {
                             Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--sa-color-secondary);") }) {
-                                Text(if (isDay) "Total Frequency" else averageSummary.title)
+                                Text(if (isDay) strings.totalFrequency else statsSummaryTitleText(averageSummary.title, strings))
                             }
                             Div(attrs = { attr("style", "display:flex;align-items:flex-end;gap:10px;") }) {
                                 Div(attrs = { attr("style", "font-size:48px;font-weight:800;line-height:1;color:var(--sa-color-primary);") }) {
                                     Text(if (isDay) currentPeriod.totalLabel(stats) else averageSummary.value.formatOneDecimal())
                                 }
                                 Div(attrs = { attr("style", "font-size:14px;color:var(--sa-color-secondary);margin-bottom:6px;") }) {
-                                    Text(if (isDay) "Cigarettes" else averageSummary.supporting)
+                                    Text(if (isDay) strings.cigarettes else statsSummarySupportingText(averageSummary.supporting, strings))
                                 }
                             }
                             Div(attrs = { attr("style", "font-size:12px;font-weight:700;text-transform:uppercase;color:#7A4A04;") }) {
@@ -227,14 +227,14 @@ private fun StatsWebContent(
                                 }) {
                                     Div {
                                         Div(attrs = { attr("style", "font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.8;") }) {
-                                            Text(averageSummary.title)
+                                            Text(statsSummaryTitleText(averageSummary.title, strings))
                                         }
                                         Div(attrs = { attr("style", "font-size:40px;font-weight:800;line-height:1;margin-top:8px;") }) {
                                             Text(averageSummary.value.formatOneDecimal())
                                         }
                                     }
                                     Div(attrs = { attr("style", "font-size:13px;opacity:0.75;") }) {
-                                        Text(averageSummary.supporting)
+                                        Text(statsSummarySupportingText(averageSummary.supporting, strings))
                                     }
                                 }
                             }
@@ -246,7 +246,7 @@ private fun StatsWebContent(
                                     Text(strings.peakWindow)
                                 }
                                 Div(attrs = { attr("style", "font-size:32px;font-weight:800;line-height:1.1;color:var(--sa-color-primary);") }) {
-                                    Text(peakBucketFor(currentPeriod, stats))
+                                    Text(LocalStrings.current.statsBucketLabel(peakBucketFor(currentPeriod, stats)))
                                 }
                                 Div(attrs = { classes(SmokeWebStyles.helperText) }) {
                                     Text(strings.peakWindowBody)
@@ -283,19 +283,19 @@ private fun StatsWebContent(
                         StatsPeriod.WEEK -> BarChartJs(
                             canvasId = chartId,
                             title = strings.periodWeek,
-                            data = stats.weekly
+                            data = stats.weekly.mapKeys { strings.statsBucketLabel(it.key) }
                         )
 
                         StatsPeriod.MONTH -> BarChartJs(
                             canvasId = chartId,
                             title = strings.periodMonth,
-                            data = stats.monthly
+                            data = stats.monthly.mapKeys { strings.statsBucketLabel(it.key) }
                         )
 
                         StatsPeriod.YEAR -> BarChartJs(
                             canvasId = chartId,
                             title = strings.periodYear,
-                            data = stats.yearly
+                            data = stats.yearly.mapKeys { strings.statsBucketLabel(it.key) }
                         )
                     }
                 }
@@ -607,4 +607,26 @@ private fun barDataset(title: String, values: List<Number>): dynamic {
     dataset["borderRadius"] = 10
     dataset["maxBarThickness"] = 42
     return dataset
+}
+
+private fun statsSummaryTitleText(
+    title: com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummaryTitle,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (title) {
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummaryTitle.AwakeHourPace -> s.statsSummaryAwakeHourPace
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummaryTitle.DailyPace -> s.statsSummaryDailyPace
+}
+
+private fun statsSummarySupportingText(
+    supporting: com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting,
+    s: com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings,
+): String = when (supporting) {
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AwakeHourSoFar -> s.statsSummaryAwakeSoFar
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AwakeHour -> s.statsSummaryAwake
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossWeek -> s.statsSummaryAcrossWeek
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossElapsedWeek -> s.statsSummaryAcrossElapsedWeek
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossMonth -> s.statsSummaryAcrossMonth
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossElapsedMonth -> s.statsSummaryAcrossElapsedMonth
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossYear -> s.statsSummaryAcrossYear
+    com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting.AcrossElapsedYear -> s.statsSummaryAcrossElapsedYear
 }

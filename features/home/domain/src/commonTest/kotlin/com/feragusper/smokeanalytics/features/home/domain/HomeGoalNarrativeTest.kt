@@ -18,10 +18,6 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
-                title = "Daily cap",
-                targetLabel = "Target: at most 6 today",
-                progressLabel = "3 / 6 smoked today",
-                supportingText = "3 left before reaching today's cap.",
                 status = GoalStatus.OnTrack,
             ),
             smokesPerDay = 3,
@@ -33,13 +29,10 @@ class HomeGoalNarrativeTest {
             timeZone = utc,
         )
 
-        assertEquals("3 cigarettes left today", narrative.heroTitle)
-        assertEquals("On track", narrative.statusLabel)
-        assertEquals("Still within today's cap.", narrative.consistencyLabel)
-        assertEquals(
-            "~3h 20m between the remaining cigarettes.",
-            narrative.heroSupporting,
-        )
+        assertEquals(HeroTitleSpec.CigarettesLeft(3), narrative.heroTitle)
+        assertEquals(HomeGoalStatusLabel.OnTrack, narrative.status)
+        assertEquals(ConsistencySpec.CapStillWithin, narrative.consistency)
+        assertEquals(HeroSupportingSpec.BetweenRemaining("3h 20m"), narrative.heroSupporting)
     }
 
     @Test
@@ -47,17 +40,13 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m between cigarettes",
-                progressLabel = "Current gap: 50m",
-                supportingText = "The current gap is building toward the target interval.",
                 status = GoalStatus.OnTrack,
             ),
             smokesPerDay = 2,
         )
 
-        assertEquals("Wait 1h 30m before the next cigarette", narrative.heroTitle)
-        assertEquals("On track", narrative.statusLabel)
+        assertEquals(HeroTitleSpec.WaitBeforeNext("1h 30m"), narrative.heroTitle)
+        assertEquals(HomeGoalStatusLabel.OnTrack, narrative.status)
     }
 
     @Test
@@ -65,10 +54,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-                title = "Daily cap",
-                targetLabel = "Target: at most 15 today",
-                progressLabel = "3 / 15 smoked today",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.2f,
             ),
@@ -90,10 +75,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-                title = "Daily cap",
-                targetLabel = "Target: at most 15 today",
-                progressLabel = "3 / 15 smoked today",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.2f,
             ),
@@ -115,10 +96,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
-                title = "Daily cap",
-                targetLabel = "Target: at most 6 today",
-                progressLabel = "3 / 6 smoked today",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.5f,
             ),
@@ -131,14 +108,14 @@ class HomeGoalNarrativeTest {
             timeZone = utc,
         )
 
-        assertEquals("Cap used today", readout.meterLabel)
-        assertEquals("3 of 6", readout.meterValue)
+        assertEquals(HeroMeterLabel.CapUsedToday, readout.meterLabel)
+        assertEquals(HeroMeterValue.Raw("3 of 6"), readout.meterValue)
         assertEquals(2, readout.metrics.size)
-        assertEquals("Every", readout.metrics[0].label)
-        assertEquals("~3h 20m", readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Every, readout.metrics[0].label)
+        assertEquals(HeroMetricValue.Raw("~3h 20m"), readout.metrics[0].value)
         assertEquals(HomeHeroMetricIcon.Gap, readout.metrics[0].icon)
-        assertEquals("Pace", readout.metrics[1].label)
-        assertEquals("2", readout.metrics[1].value)
+        assertEquals(HeroMetricLabel.Pace, readout.metrics[1].label)
+        assertEquals(HeroMetricValue.Raw("2"), readout.metrics[1].value)
         assertEquals(HomeHeroMetricIcon.Pace, readout.metrics[1].icon)
     }
 
@@ -146,10 +123,6 @@ class HomeGoalNarrativeTest {
     fun `hero choice overrides the meter with the picked metric`() {
         val goal = GoalProgress(
             goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
-            title = "Daily cap",
-            targetLabel = "Target: at most 6 today",
-            progressLabel = "3 / 6 smoked today",
-            supportingText = "On track",
             status = GoalStatus.OnTrack,
             progressFraction = 0.5f,
         )
@@ -165,18 +138,18 @@ class HomeGoalNarrativeTest {
             currencySymbol = "$",
         )
 
-        assertEquals("Cap used today", readoutWith(HomeHeroChoice.Auto).meterLabel)
+        assertEquals(HeroMeterLabel.CapUsedToday, readoutWith(HomeHeroChoice.Auto).meterLabel)
         readoutWith(HomeHeroChoice.CountToday).let {
-            assertEquals("Smoked today", it.meterLabel)
-            assertEquals("3", it.meterValue)
+            assertEquals(HeroMeterLabel.SmokedToday, it.meterLabel)
+            assertEquals(HeroMeterValue.Raw("3"), it.meterValue)
         }
         readoutWith(HomeHeroChoice.Streak).let {
-            assertEquals("Since last", it.meterLabel)
-            assertEquals("1h 15m", it.meterValue)
+            assertEquals(HeroMeterLabel.SinceLast, it.meterLabel)
+            assertEquals(HeroMeterValue.Raw("1h 15m"), it.meterValue)
         }
         readoutWith(HomeHeroChoice.MoneyToday).let {
-            assertEquals("Spent today", it.meterLabel)
-            assertEquals("$1.50", it.meterValue)
+            assertEquals(HeroMeterLabel.SpentToday, it.meterLabel)
+            assertEquals(HeroMeterValue.Raw("$1.50"), it.meterValue)
         }
         // Sub-metrics stay intact under an override.
         assertEquals(2, readoutWith(HomeHeroChoice.CountToday).metrics.size)
@@ -195,10 +168,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-                title = "Daily cap",
-                targetLabel = "Target: at most 15 today",
-                progressLabel = "5 / 15 smoked today",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.33f,
             ),
@@ -220,10 +189,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 15),
-                title = "Daily cap",
-                targetLabel = "Target: at most 15 today",
-                progressLabel = "16 / 15 smoked today",
-                supportingText = "Over cap",
                 status = GoalStatus.OffTrack,
                 progressFraction = 1f,
             ),
@@ -245,10 +210,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m between cigarettes",
-                progressLabel = "Current gap: 50m",
-                supportingText = "The current gap is building toward the target interval.",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.55f,
             ),
@@ -257,14 +218,14 @@ class HomeGoalNarrativeTest {
             awakeMinutesPerDay = 960,
         )
 
-        assertEquals("Gap built", readout.meterLabel)
-        assertEquals("50m of 1h 30m", readout.meterValue)
-        assertEquals("Current", readout.metrics[0].label)
-        assertEquals("50m", readout.metrics[0].value)
-        assertEquals("Target", readout.metrics[1].label)
-        assertEquals("1h 30m", readout.metrics[1].value)
-        assertEquals("Remaining", readout.metrics[2].label)
-        assertEquals("40m", readout.metrics[2].value)
+        assertEquals(HeroMeterLabel.GapBuilt, readout.meterLabel)
+        assertEquals(HeroMeterValue.Raw("50m of 1h 30m"), readout.meterValue)
+        assertEquals(HeroMetricLabel.Current, readout.metrics[0].label)
+        assertEquals(HeroMetricValue.Raw("50m"), readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Target, readout.metrics[1].label)
+        assertEquals(HeroMetricValue.Raw("1h 30m"), readout.metrics[1].value)
+        assertEquals(HeroMetricLabel.Remaining, readout.metrics[2].label)
+        assertEquals(HeroMetricValue.Raw("40m"), readout.metrics[2].value)
     }
 
     @Test
@@ -274,8 +235,8 @@ class HomeGoalNarrativeTest {
             smokesPerDay = null,
         )
 
-        assertEquals("Set one goal for today", narrative.heroTitle)
-        assertEquals("No active goal", narrative.statusLabel)
+        assertEquals(HeroTitleSpec.SetOneGoal, narrative.heroTitle)
+        assertEquals(HomeGoalStatusLabel.NoActiveGoal, narrative.status)
     }
 
     @Test
@@ -337,28 +298,34 @@ class HomeGoalNarrativeTest {
     @Test
     fun `greetingState morning with zero smokes`() {
         val greeting = greetingStateFor(hourOfDay = 8, todayCount = 0, currentStreakHours = 0)
-        assertEquals("Good morning", greeting.title)
-        assertEquals("Keep the first one away.", greeting.message)
+        assertEquals(GreetingDayPart.Morning, greeting.dayPart)
+        assertEquals(GreetingMessage.KeepFirstAway, greeting.message)
     }
 
     @Test
     fun `greetingState afternoon with few smokes`() {
         val greeting = greetingStateFor(hourOfDay = 14, todayCount = 2, currentStreakHours = 0)
-        assertEquals("Good afternoon", greeting.title)
-        assertEquals("You are holding the line.", greeting.message)
+        assertEquals(GreetingDayPart.Afternoon, greeting.dayPart)
+        assertEquals(GreetingMessage.HoldingLine, greeting.message)
     }
 
     @Test
     fun `greetingState evening with many smokes`() {
         val greeting = greetingStateFor(hourOfDay = 21, todayCount = 5, currentStreakHours = 0)
-        assertEquals("Good evening", greeting.title)
-        assertEquals("One less still counts.", greeting.message)
+        assertEquals(GreetingDayPart.Evening, greeting.dayPart)
+        assertEquals(GreetingMessage.OneLessCounts, greeting.message)
     }
 
     @Test
     fun `greetingState long streak overrides message`() {
         val greeting = greetingStateFor(hourOfDay = 10, todayCount = 2, currentStreakHours = 10)
-        assertEquals("Strong pace today.", greeting.message)
+        assertEquals(GreetingMessage.StrongPace, greeting.message)
+    }
+
+    @Test
+    fun `greetingState uses trimmed nickname as name`() {
+        val greeting = greetingStateFor(hourOfDay = 8, todayCount = 0, currentStreakHours = 0, nickname = "  Fer ")
+        assertEquals("Fer", greeting.name)
     }
 
     @Test
@@ -454,16 +421,12 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.ReductionVsPreviousWeek(reductionPercent = 20.0),
-                title = "Reduction vs previous week",
-                targetLabel = "Target: reduce by 20%",
-                progressLabel = "5 vs 10 baseline",
-                supportingText = "Below target.",
                 status = GoalStatus.Completed,
             ),
             smokesPerDay = 3,
         )
-        assertEquals("Reduce by 20% this week", narrative.heroTitle)
-        assertEquals("Goal met", narrative.statusLabel)
+        assertEquals(HeroTitleSpec.ReduceThisWeek("20%"), narrative.heroTitle)
+        assertEquals(HomeGoalStatusLabel.GoalMet, narrative.status)
     }
 
     @Test
@@ -471,16 +434,12 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.ReductionVsPreviousMonth(reductionPercent = 15.0),
-                title = "Reduction vs previous month",
-                targetLabel = "Target: reduce by 15%",
-                progressLabel = "20 vs 30 baseline",
-                supportingText = "On pace.",
                 status = GoalStatus.OnTrack,
             ),
             smokesPerDay = 3,
         )
-        assertEquals("Reduce by 15% this month", narrative.heroTitle)
-        assertEquals("On track", narrative.statusLabel)
+        assertEquals(HeroTitleSpec.ReduceThisMonth("15%"), narrative.heroTitle)
+        assertEquals(HomeGoalStatusLabel.OnTrack, narrative.status)
     }
 
     @Test
@@ -492,11 +451,11 @@ class HomeGoalNarrativeTest {
             awakeMinutesPerDay = 960,
         )
         assertEquals(4, readout.metrics.size)
-        assertEquals("Cap", readout.metrics[0].label)
-        assertEquals("Set one", readout.metrics[0].value)
-        assertEquals("Gap", readout.metrics[1].label)
-        assertEquals("Reduce", readout.metrics[2].label)
-        assertEquals("Start", readout.metrics[3].label)
+        assertEquals(HeroMetricLabel.Cap, readout.metrics[0].label)
+        assertEquals(HeroMetricValue.SetOne, readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Gap, readout.metrics[1].label)
+        assertEquals(HeroMetricLabel.Reduce, readout.metrics[2].label)
+        assertEquals(HeroMetricLabel.Start, readout.metrics[3].label)
     }
 
     @Test
@@ -515,10 +474,6 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "7 / 5 smoked today",
-                supportingText = "Over cap",
                 status = GoalStatus.OffTrack,
             ),
             smokesPerDay = 7,
@@ -529,9 +484,9 @@ class HomeGoalNarrativeTest {
             now = noon,
             timeZone = utc,
         )
-        assertEquals("2 over today's cap", narrative.heroTitle)
-        assertEquals("Over today's cap. Hold here.", narrative.heroSupporting)
-        assertEquals("At risk", narrative.statusLabel)
+        assertEquals(HeroTitleSpec.OverCap(2), narrative.heroTitle)
+        assertEquals(HeroSupportingSpec.OverCapHold, narrative.heroSupporting)
+        assertEquals(HomeGoalStatusLabel.AtRisk, narrative.status)
     }
 
     @Test
@@ -539,10 +494,6 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "5 / 5 smoked today",
-                supportingText = "Cap reached",
                 status = GoalStatus.Completed,
             ),
             smokesPerDay = 5,
@@ -553,8 +504,8 @@ class HomeGoalNarrativeTest {
             now = noon,
             timeZone = utc,
         )
-        assertEquals("0 cigarettes left today", narrative.heroTitle)
-        assertEquals("Cap reached. Hold here.", narrative.heroSupporting)
+        assertEquals(HeroTitleSpec.CigarettesLeft(0), narrative.heroTitle)
+        assertEquals(HeroSupportingSpec.CapReachedHold, narrative.heroSupporting)
     }
 
     @Test
@@ -562,10 +513,6 @@ class HomeGoalNarrativeTest {
         val narrative = homeGoalNarrative(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "4 / 5 smoked today",
-                supportingText = "1 left",
                 status = GoalStatus.OnTrack,
             ),
             smokesPerDay = 4,
@@ -576,7 +523,7 @@ class HomeGoalNarrativeTest {
             now = noon,
             timeZone = utc,
         )
-        assertEquals("1 cigarette left today", narrative.heroTitle)
+        assertEquals(HeroTitleSpec.CigarettesLeft(1), narrative.heroTitle)
     }
 
     @Test
@@ -584,10 +531,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m",
-                progressLabel = "50m",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.55f,
             ),
@@ -604,10 +547,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m",
-                progressLabel = "20m",
-                supportingText = "Off track",
                 status = GoalStatus.OffTrack,
                 progressFraction = 0.22f,
             ),
@@ -623,10 +562,6 @@ class HomeGoalNarrativeTest {
         val progress = homeHeroProgress(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m",
-                progressLabel = "--",
-                supportingText = "Not enough data",
                 status = GoalStatus.NotEnoughData,
                 progressFraction = null,
             ),
@@ -642,21 +577,16 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.ReductionVsPreviousWeek(reductionPercent = 20.0),
-                title = "Reduction vs previous week",
-                targetLabel = "Target: reduce by 20%",
-                progressLabel = "5 vs 10 baseline",
-                supportingText = "Below target.",
                 status = GoalStatus.Completed,
                 progressFraction = 0.5f,
-                baselineLabel = "10 last week",
             ),
             smokesPerDay = 3,
             timeSinceLastCigarette = 1L to 0L,
             awakeMinutesPerDay = 960,
         )
-        assertEquals("Reduction progress", readout.meterLabel)
-        assertEquals("This week", readout.metrics[0].value)
-        assertEquals("Target", readout.metrics[2].label)
+        assertEquals(HeroMeterLabel.ReductionProgress, readout.meterLabel)
+        assertEquals(HeroMetricValue.ThisWeek, readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Target, readout.metrics[2].label)
     }
 
     @Test
@@ -664,20 +594,15 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.ReductionVsPreviousMonth(reductionPercent = 15.0),
-                title = "Reduction vs previous month",
-                targetLabel = "Target: reduce by 15%",
-                progressLabel = "20 vs 30 baseline",
-                supportingText = "On pace.",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.67f,
-                baselineLabel = "30 last month",
             ),
             smokesPerDay = 3,
             timeSinceLastCigarette = 1L to 0L,
             awakeMinutesPerDay = 960,
         )
-        assertEquals("This month", readout.metrics[0].value)
-        assertEquals("Status", readout.metrics[3].label)
+        assertEquals(HeroMetricValue.ThisMonth, readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Status, readout.metrics[3].label)
     }
 
     @Test
@@ -685,10 +610,6 @@ class HomeGoalNarrativeTest {
         val debugBlock = homeHeroDebugBlock(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 6),
-                title = "Daily cap",
-                targetLabel = "Target: at most 6 today",
-                progressLabel = "3 / 6 smoked today",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.5f,
             ),
@@ -710,10 +631,6 @@ class HomeGoalNarrativeTest {
         val debugBlock = homeHeroDebugBlock(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "7 / 5 smoked today",
-                supportingText = "Over cap",
                 status = GoalStatus.OffTrack,
                 progressFraction = 1f,
             ),
@@ -733,10 +650,6 @@ class HomeGoalNarrativeTest {
         val debugBlock = homeHeroDebugBlock(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m",
-                progressLabel = "50m",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
                 progressFraction = 0.55f,
             ),
@@ -772,10 +685,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "7 / 5 smoked today",
-                supportingText = "Over cap",
                 status = GoalStatus.OffTrack,
                 progressFraction = 1f,
             ),
@@ -788,10 +697,10 @@ class HomeGoalNarrativeTest {
             timeZone = utc,
         )
         assertEquals(2, readout.metrics.size)
-        assertEquals("Every", readout.metrics[0].label)
-        assertEquals("--", readout.metrics[0].value)
-        assertEquals("Pace", readout.metrics[1].label)
-        assertEquals("2", readout.metrics[1].value)
+        assertEquals(HeroMetricLabel.Every, readout.metrics[0].label)
+        assertEquals(HeroMetricValue.Raw("--"), readout.metrics[0].value)
+        assertEquals(HeroMetricLabel.Pace, readout.metrics[1].label)
+        assertEquals(HeroMetricValue.Raw("2"), readout.metrics[1].value)
     }
 
     @Test
@@ -799,10 +708,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
-                title = "Daily cap",
-                targetLabel = "Target: at most 5 today",
-                progressLabel = "5 / 5 smoked today",
-                supportingText = "Cap reached",
                 status = GoalStatus.Completed,
                 progressFraction = 1f,
             ),
@@ -815,11 +720,11 @@ class HomeGoalNarrativeTest {
             timeZone = utc,
         )
         assertEquals(2, readout.metrics.size)
-        assertEquals("Every", readout.metrics[0].label)
-        assertEquals("--", readout.metrics[0].value)
-        assertEquals("Cap already used", readout.metrics[0].supporting)
-        assertEquals("Pace", readout.metrics[1].label)
-        assertEquals("2", readout.metrics[1].value)
+        assertEquals(HeroMetricLabel.Every, readout.metrics[0].label)
+        assertEquals(HeroMetricValue.Raw("--"), readout.metrics[0].value)
+        assertEquals(HeroMetricSupporting.CapAlreadyUsed, readout.metrics[0].supporting)
+        assertEquals(HeroMetricLabel.Pace, readout.metrics[1].label)
+        assertEquals(HeroMetricValue.Raw("2"), readout.metrics[1].value)
     }
 
     @Test
@@ -827,10 +732,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 60),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h",
-                progressLabel = "Current gap: 1h 15m",
-                supportingText = "Met!",
                 status = GoalStatus.Completed,
                 progressFraction = 1f,
             ),
@@ -838,7 +739,7 @@ class HomeGoalNarrativeTest {
             timeSinceLastCigarette = 1L to 15L,
             awakeMinutesPerDay = 960,
         )
-        assertEquals("Ready now", readout.metrics[2].value)
+        assertEquals(HeroMetricValue.ReadyNow, readout.metrics[2].value)
     }
 
     @Test
@@ -846,10 +747,6 @@ class HomeGoalNarrativeTest {
         val readout = homeHeroReadout(
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 90),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 1h 30m",
-                progressLabel = "Unknown",
-                supportingText = "Not enough data",
                 status = GoalStatus.NotEnoughData,
                 progressFraction = null,
             ),
@@ -857,7 +754,7 @@ class HomeGoalNarrativeTest {
             timeSinceLastCigarette = null,
             awakeMinutesPerDay = 960,
         )
-        assertEquals("--", readout.metrics[0].value)
+        assertEquals(HeroMetricValue.Raw("--"), readout.metrics[0].value)
     }
 
     @Test
@@ -897,18 +794,14 @@ class HomeGoalNarrativeTest {
         val gapFocus = GapFocusSummary(
             targetMinutes = 120,
             progressFraction = 0.75f,
-            pulseSummaryText = "30m until you reach your goal gap.",
-            recoverySummaryText = "Building toward 2h.",
+            pulseSummary = GapPulseSpec.Until("30m", GapTargetKind.GoalGap),
+            recoverySummary = GapRecoverySpec.MindfulBuilding("2h"),
         )
         val debugBlock = gapFocusDebugBlock(
             elapsedMinutes = 90,
             rateSummary = rate,
             goalProgress = GoalProgress(
                 goal = SmokingGoal.MindfulGap(targetMinutes = 120),
-                title = "Mindful gap",
-                targetLabel = "Target: wait 2h",
-                progressLabel = "Current gap: 1h 30m",
-                supportingText = "Keep going.",
                 status = GoalStatus.OnTrack,
             ),
             gapFocus = gapFocus,
@@ -923,8 +816,8 @@ class HomeGoalNarrativeTest {
         val gapFocus = GapFocusSummary(
             targetMinutes = 90,
             progressFraction = null,
-            pulseSummaryText = "Log a smoke.",
-            recoverySummaryText = "Building.",
+            pulseSummary = GapPulseSpec.LogOrRefresh,
+            recoverySummary = GapRecoverySpec.EachLongerGap,
         )
         val debugBlock = gapFocusDebugBlock(
             elapsedMinutes = null,
@@ -941,18 +834,14 @@ class HomeGoalNarrativeTest {
         val gapFocus = GapFocusSummary(
             targetMinutes = 60,
             progressFraction = 0.5f,
-            pulseSummaryText = "30m left.",
-            recoverySummaryText = "Building.",
+            pulseSummary = GapPulseSpec.StayWithGap,
+            recoverySummary = GapRecoverySpec.EachLongerGap,
         )
         val debugBlock = gapFocusDebugBlock(
             elapsedMinutes = 30,
             rateSummary = null,
             goalProgress = GoalProgress(
                 goal = SmokingGoal.DailyCap(maxCigarettesPerDay = 10),
-                title = "Daily cap",
-                targetLabel = "Target: at most 10 today",
-                progressLabel = "5 / 10",
-                supportingText = "On track",
                 status = GoalStatus.OnTrack,
             ),
             gapFocus = gapFocus,

@@ -178,7 +178,7 @@ private fun ArchiveCalendarCard(
                         Text(selectedLocalDate.toUiMonthYear())
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
-                        Text("Daily average ${monthCounts.averageOrZero().formatOneDecimal()} units")
+                        Text(strings.dailyAverageUnits(monthCounts.averageOrZero().formatOneDecimal()))
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);margin-top:4px;") }) {
                         Text(strings.shiftMonthHint)

@@ -5,6 +5,8 @@ import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryRe
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.features.home.domain.toWidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentBucketDate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentDayStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
@@ -59,6 +61,7 @@ class HistoryProcessHolder constructor(
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
     private val widgetRefreshService: WidgetRefreshService,
+    private val analyticsTracker: AnalyticsTracker,
 ) : MVIProcessHolder<HistoryIntent, HistoryResult> {
 
     /**
@@ -84,6 +87,7 @@ class HistoryProcessHolder constructor(
     private fun processDeleteSmoke(intent: HistoryIntent.DeleteSmoke) = flow {
         emit(HistoryResult.DeleteSmokeInFlight(intent.id))
         deleteSmokeUseCase.invoke(intent.id)
+        analyticsTracker.smokeDeleted(AnalyticsSource.HISTORY)
         emit(HistoryResult.DeleteSmokeSuccess)
         refreshWidgetSnapshotBestEffort()
         syncWithWearBestEffort()
@@ -100,6 +104,7 @@ class HistoryProcessHolder constructor(
     private fun processEditSmoke(intent: HistoryIntent.EditSmoke) = flow {
         emit(HistoryResult.EditSmokeInFlight(intent.id))
         editSmokeUseCase.invoke(intent.id, intent.date)
+        analyticsTracker.smokeEdited(AnalyticsSource.HISTORY)
         emit(HistoryResult.EditSmokeSuccess)
         refreshWidgetSnapshotBestEffort()
         syncWithWearBestEffort()
@@ -231,6 +236,7 @@ class HistoryProcessHolder constructor(
                     null
                 }
                 addSmokeUseCase.invoke(intent.date.toVisibleAddTimestamp(timeZone), location)
+                analyticsTracker.smokeAdded(AnalyticsSource.HISTORY)
                 emit(HistoryResult.AddSmokeSuccess)
                 refreshWidgetSnapshotBestEffort()
                 syncWithWearBestEffort()

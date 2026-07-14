@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
@@ -113,12 +114,13 @@ fun SmokeRow(
             Div(attrs = { classes(SmokeWebStyles.subText) }) { Text(subtitle) }
         }
         Div {
+            val strings = LocalStrings.current
             if (onEdit != null) {
-                GhostButton(text = "Edit", onClick = onEdit)
+                GhostButton(text = strings.edit, onClick = onEdit)
                 Span { Text(" ") }
             }
             if (onDelete != null) {
-                DangerButton(text = "Delete", onClick = onDelete)
+                DangerButton(text = strings.delete, onClick = onDelete)
             }
         }
     }

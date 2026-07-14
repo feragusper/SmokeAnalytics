@@ -75,6 +75,8 @@ import com.feragusper.smokeanalytics.libraries.authentication.presentation.compo
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
@@ -106,6 +108,7 @@ data class SettingsViewState(
     ) {
         var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
         var signInErrorMessage by remember { mutableStateOf<String?>(null) }
+        val analytics = koinInject<AnalyticsTracker>()
 
         LaunchedEffect(preferences, currentEmail) {
             draftPreferences = preferences
@@ -151,8 +154,14 @@ data class SettingsViewState(
                 currentDisplayName = currentDisplayName,
                 displayLoading = displayLoading,
                 signInErrorMessage = signInErrorMessage,
-                onSignOut = { intent(SettingsIntent.SignOut) },
-                onSignInSuccess = { intent(SettingsIntent.FetchUser) },
+                onSignOut = {
+                    analytics.logout()
+                    intent(SettingsIntent.SignOut)
+                },
+                onSignInSuccess = {
+                    analytics.login()
+                    intent(SettingsIntent.FetchUser)
+                },
                 onSignInError = { signInErrorMessage = it },
             )
 
@@ -1497,6 +1506,7 @@ private fun ToggleRow(
 @Composable
 private fun AccentPicker() {
     val context = LocalContext.current
+    val analytics = koinInject<AnalyticsTracker>()
     val current = AccentHolder.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -1518,7 +1528,10 @@ private fun AccentPicker() {
                             color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
                             shape = CircleShape,
                         )
-                        .clickable { AccentHolder.set(context, accent) },
+                        .clickable {
+                            AccentHolder.set(context, accent)
+                            analytics.accentChanged(accent.id)
+                        },
                 )
             }
         }

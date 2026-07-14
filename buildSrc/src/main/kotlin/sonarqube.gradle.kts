@@ -30,6 +30,7 @@ val sonarCoverageExclusionGlobs: List<String> = listOf(
     "**/WebRoute.kt",
     "**/main.kt",
     "**/FirebaseWebInit.kt",
+    "**/FirebaseAnalyticsTracker.kt",
     "**/*Application.kt",
     "**/*Activity.kt",
     "**/theme/**",

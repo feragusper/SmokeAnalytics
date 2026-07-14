@@ -222,8 +222,8 @@ class SmokeStatsTest {
             timeZone = tz,
         )
 
-        assertEquals("Daily pace", summary.title)
-        assertEquals("Across elapsed days in the selected week", summary.supporting)
+        assertEquals(StatsSummaryTitle.DailyPace, summary.title)
+        assertEquals(StatsSummarySupporting.AcrossElapsedWeek, summary.supporting)
         assertEquals(7.0, summary.value)
     }
 
@@ -255,8 +255,8 @@ class SmokeStatsTest {
             timeZone = tz,
         )
 
-        assertEquals("Awake-hour pace", summary.title)
-        assertEquals("Average per awake hour so far", summary.supporting)
+        assertEquals(StatsSummaryTitle.AwakeHourPace, summary.title)
+        assertEquals(StatsSummarySupporting.AwakeHourSoFar, summary.supporting)
         assertEquals(0.6, summary.value)
     }
 

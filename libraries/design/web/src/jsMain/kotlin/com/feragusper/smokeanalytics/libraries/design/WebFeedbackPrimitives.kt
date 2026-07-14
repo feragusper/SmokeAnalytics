@@ -1,6 +1,7 @@
 package com.feragusper.smokeanalytics.libraries.design
 
 import androidx.compose.runtime.Composable
+import com.feragusper.smokeanalytics.libraries.design.i18n.LocalStrings
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 
@@ -116,7 +117,7 @@ fun EmptyStateCard(
 ) {
     SurfaceCard {
         Div(attrs = { classes(SmokeWebStyles.emptyState) }) {
-            Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text("Quiet state") }
+            Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text(LocalStrings.current.quietStateEyebrow) }
             Div(attrs = { classes(SmokeWebStyles.emptyStateTitle) }) { Text(title) }
             Div(attrs = { classes(SmokeWebStyles.emptyStateBody) }) { Text(message) }
             if (actionLabel != null && onAction != null) {
@@ -128,14 +129,15 @@ fun EmptyStateCard(
 
 @Composable
 fun InlineErrorCard(
-    title: String = "Something went wrong",
+    title: String? = null,
     message: String,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
+    val strings = LocalStrings.current
     SurfaceCard(SmokeWebStyles.inlineError) {
-        Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text("Needs attention") }
-        Div(attrs = { classes(SmokeWebStyles.inlineErrorTitle) }) { Text(title) }
+        Div(attrs = { classes(SmokeWebStyles.pageHeroEyebrow) }) { Text(strings.needsAttention) }
+        Div(attrs = { classes(SmokeWebStyles.inlineErrorTitle) }) { Text(title ?: strings.somethingWentWrong) }
         Div(attrs = { classes(SmokeWebStyles.inlineErrorBody) }) { Text(message) }
         if (actionLabel != null && onAction != null) {
             GhostButton(text = actionLabel, onClick = onAction)

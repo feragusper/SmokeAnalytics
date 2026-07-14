@@ -10,6 +10,7 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
+                implementation(project(":libraries:architecture:domain"))
                 implementation(project(":libraries:authentication:domain"))
                 implementation(project(":libraries:authentication:data:web"))
                 implementation(project(":libraries:authentication:presentation:web"))

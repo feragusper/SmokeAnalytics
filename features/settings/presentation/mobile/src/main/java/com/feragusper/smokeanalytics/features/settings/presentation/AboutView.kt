@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.features.settings.presentation
 import android.app.Activity
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -60,6 +62,7 @@ fun AboutView(
 @Composable
 fun AboutSection() {
     val context = LocalContext.current
+    val analytics = koinInject<AnalyticsTracker>()
     val packageName = context.packageName
     val versionName = context.versionName().orEmpty()
     val shareChooserTitle = stringResource(R.string.about_share_title)
@@ -91,6 +94,7 @@ fun AboutSection() {
                                 "Smoke Analytics helps track smokes, streaks and costs. https://github.com/feragusper/SmokeAnalytics"
                             )
                         }
+                        analytics.shareApp()
                         context.startActivity(Intent.createChooser(sendIntent, shareChooserTitle))
                     },
                 )

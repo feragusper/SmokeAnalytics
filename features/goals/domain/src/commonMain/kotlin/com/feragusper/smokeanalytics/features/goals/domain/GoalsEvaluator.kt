@@ -85,34 +85,35 @@ class EvaluateGoalProgressUseCase(
             todayCount == goal.maxCigarettesPerDay -> GoalStatus.Completed
             else -> GoalStatus.OffTrack
         }
-        val warningLabel = when {
-            todayCount == goal.maxCigarettesPerDay - 1 -> "One more cigarette breaks today's cap."
-            todayCount > goal.maxCigarettesPerDay -> "Today's cap is broken."
+        val warning = when {
+            todayCount == goal.maxCigarettesPerDay - 1 -> GoalWarningKind.OneMoreBreaksCap
+            todayCount > goal.maxCigarettesPerDay -> GoalWarningKind.CapBroken
             else -> null
         }
-        val celebrationLabel = when {
-            todayCount == goal.maxCigarettesPerDay -> "You reached today's cap without going over. Hold here to keep the win."
-            todayCount == 0 && yesterdayCompleted -> "Yesterday stayed under your cap. Strong work."
+        val celebration = when {
+            todayCount == goal.maxCigarettesPerDay -> GoalCelebrationKind.ReachedCapHold
+            todayCount == 0 && yesterdayCompleted -> GoalCelebrationKind.YesterdayUnderCap
             else -> null
         }
 
         return GoalProgress(
             goal = goal,
-            title = "Daily cap",
-            targetLabel = "Target: at most ${goal.maxCigarettesPerDay} today",
-            progressLabel = "$todayCount / ${goal.maxCigarettesPerDay} smoked today",
-            supportingText = when (status) {
-                GoalStatus.OnTrack -> warningLabel ?: "$remaining left before reaching today's cap."
-                GoalStatus.Completed -> celebrationLabel ?: "You reached today's cap. Holding here keeps the goal intact."
-                GoalStatus.OffTrack -> "Today's cap is exceeded. The next win is stopping the count from climbing further."
-                GoalStatus.NotEnoughData -> ""
+            titleKind = GoalTitleKind.DailyCap,
+            target = GoalTargetSpec.DailyCap(goal.maxCigarettesPerDay),
+            progress = GoalProgressSpec.DailyCap(todayCount, goal.maxCigarettesPerDay),
+            supporting = when (status) {
+                GoalStatus.OnTrack ->
+                    if (warning == GoalWarningKind.OneMoreBreaksCap) GoalSupportingSpec.CapOneMoreBreaks
+                    else GoalSupportingSpec.CapRemaining(remaining)
+                GoalStatus.Completed -> GoalSupportingSpec.CapReachedHold
+                GoalStatus.OffTrack -> GoalSupportingSpec.CapExceeded
+                GoalStatus.NotEnoughData -> GoalSupportingSpec.None
             },
             status = status,
             progressFraction = (todayCount.toFloat() / goal.maxCigarettesPerDay.toFloat()).coerceIn(0f, 1f),
-            warningLabel = warningLabel,
-            celebrationLabel = celebrationLabel,
+            warning = warning,
+            celebration = celebration,
             streakDays = streakDays,
-            streakLabel = streakDays.takeIf { it > 0 }?.let(::formatStreakLabel),
             isBroken = todayCount > goal.maxCigarettesPerDay,
         )
     }
@@ -138,11 +139,11 @@ class EvaluateGoalProgressUseCase(
         val previousStart = currentStart.minus(7, DateTimeUnit.DAY, timeZone)
         val previousEnd = currentStart
         return evaluateReduction(
-            title = "Reduction vs previous week",
+            titleKind = GoalTitleKind.ReductionWeek,
             goal = goal,
             currentCount = smokes.count { it.date >= currentStart && it.date < currentEnd },
             baselineCount = smokes.count { it.date >= previousStart && it.date < previousEnd },
-            baselineLabel = "Compared with the previous week",
+            baseline = GoalBaselineKind.PreviousWeek,
         )
     }
 
@@ -167,20 +168,20 @@ class EvaluateGoalProgressUseCase(
         val previousStart = currentStart.minus(1, DateTimeUnit.MONTH, timeZone)
         val previousEnd = currentStart
         return evaluateReduction(
-            title = "Reduction vs previous month",
+            titleKind = GoalTitleKind.ReductionMonth,
             goal = goal,
             currentCount = smokes.count { it.date >= currentStart && it.date < currentEnd },
             baselineCount = smokes.count { it.date >= previousStart && it.date < previousEnd },
-            baselineLabel = "Compared with the previous month",
+            baseline = GoalBaselineKind.PreviousMonth,
         )
     }
 
     private fun evaluateReduction(
-        title: String,
+        titleKind: GoalTitleKind,
         goal: SmokingGoal,
         currentCount: Int,
         baselineCount: Int,
-        baselineLabel: String,
+        baseline: GoalBaselineKind,
     ): GoalProgress {
         val reductionPercent = when (goal) {
             is SmokingGoal.ReductionVsPreviousWeek -> goal.reductionPercent
@@ -190,11 +191,11 @@ class EvaluateGoalProgressUseCase(
         if (baselineCount <= 0) {
             return GoalProgress(
                 goal = goal,
-                title = title,
-                targetLabel = "Target: reduce by ${reductionPercent.toWholeOrOneDecimal()}%",
-                progressLabel = "Waiting for a baseline",
-                baselineLabel = baselineLabel,
-                supportingText = "A previous comparison period is needed before this goal can be evaluated reliably.",
+                titleKind = titleKind,
+                target = GoalTargetSpec.ReduceByPercent(reductionPercent.toWholeOrOneDecimal()),
+                progress = GoalProgressSpec.WaitingBaseline,
+                baseline = baseline,
+                supporting = GoalSupportingSpec.ReduceNeedBaseline,
                 status = GoalStatus.NotEnoughData,
                 progressFraction = null,
             )
@@ -210,15 +211,15 @@ class EvaluateGoalProgressUseCase(
 
         return GoalProgress(
             goal = goal,
-            title = title,
-            targetLabel = "Target: ${targetCount.toWholeOrOneDecimal()} smokes or fewer",
-            progressLabel = "Current period: $currentCount vs $baselineCount baseline",
-            baselineLabel = baselineLabel,
-            supportingText = when (status) {
-                GoalStatus.Completed -> "You are already below the target pace for this comparison window."
-                GoalStatus.OnTrack -> "The current pace is below the previous period and moving in the right direction."
-                GoalStatus.OffTrack -> "The current pace is still above the planned reduction. A few fewer entries will move it back on track."
-                GoalStatus.NotEnoughData -> ""
+            titleKind = titleKind,
+            target = GoalTargetSpec.SmokesOrFewer(targetCount.toWholeOrOneDecimal()),
+            progress = GoalProgressSpec.CurrentVsBaseline(currentCount, baselineCount),
+            baseline = baseline,
+            supporting = when (status) {
+                GoalStatus.Completed -> GoalSupportingSpec.ReduceBelowTarget
+                GoalStatus.OnTrack -> GoalSupportingSpec.ReduceMovingRight
+                GoalStatus.OffTrack -> GoalSupportingSpec.ReduceStillAbove
+                GoalStatus.NotEnoughData -> GoalSupportingSpec.None
             },
             status = status,
             progressFraction = ((currentReduction / reductionPercent).coerceAtLeast(0.0).coerceIn(0.0, 1.0)).toFloat(),
@@ -246,14 +247,14 @@ class EvaluateGoalProgressUseCase(
 
         return GoalProgress(
             goal = goal,
-            title = "Mindful gap",
-            targetLabel = "Target: wait ${goal.targetMinutes.formatMinutesLabel()} between cigarettes",
-            progressLabel = "Current gap: ${elapsedMinutes.formatMinutesLabel()}",
-            supportingText = when (status) {
-                GoalStatus.Completed -> "The latest gap already meets the target."
-                GoalStatus.OnTrack -> "The current gap is building toward the target interval."
-                GoalStatus.OffTrack -> "The gap is still short of the target. The next few minutes matter most."
-                GoalStatus.NotEnoughData -> ""
+            titleKind = GoalTitleKind.MindfulGap,
+            target = GoalTargetSpec.WaitBetween(goal.targetMinutes.formatMinutesLabel()),
+            progress = GoalProgressSpec.CurrentGap(elapsedMinutes.formatMinutesLabel()),
+            supporting = when (status) {
+                GoalStatus.Completed -> GoalSupportingSpec.GapMeetsTarget
+                GoalStatus.OnTrack -> GoalSupportingSpec.GapBuilding
+                GoalStatus.OffTrack -> GoalSupportingSpec.GapStillShort
+                GoalStatus.NotEnoughData -> GoalSupportingSpec.None
             },
             status = status,
             progressFraction = (elapsedMinutes.toFloat() / goal.targetMinutes.toFloat()).coerceIn(0f, 1f),
@@ -276,9 +277,6 @@ private fun Map<LocalDate, Int>.consecutiveCompletedDays(
     }
     return streak
 }
-
-private fun formatStreakLabel(days: Int): String =
-    if (days == 1) "1 day completed in a row" else "$days days completed in a row"
 
 fun goalDataFetchStart(
     preferences: UserPreferences,

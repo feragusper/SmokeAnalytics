@@ -3,8 +3,11 @@ package com.feragusper.smokeanalytics
 import com.feragusper.smokeanalytics.map.MapMobileViewModel
 import com.feragusper.smokeanalytics.platform.AndroidLocationCaptureService
 import com.feragusper.smokeanalytics.platform.AndroidWidgetRefreshService
+import com.feragusper.smokeanalytics.platform.FirebaseAnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModelOf
@@ -18,6 +21,7 @@ import org.koin.dsl.module
 val appModule = module {
     single<LocationCaptureService> { AndroidLocationCaptureService(androidContext()) }
     single<WidgetRefreshService> { AndroidWidgetRefreshService(androidContext()) }
+    single<AnalyticsTracker> { FirebaseAnalyticsTracker(FirebaseAnalytics.getInstance(androidContext())) }
     factoryOf(::SyncWithWearUseCase)
     viewModelOf(::MapMobileViewModel)
 }

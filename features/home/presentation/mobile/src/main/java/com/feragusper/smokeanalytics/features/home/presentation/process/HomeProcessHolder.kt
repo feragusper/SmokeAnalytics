@@ -19,6 +19,8 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCr
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferStartNewDay
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.timeElapsedSinceNow
@@ -79,6 +81,7 @@ class HomeProcessHolder constructor(
     private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
     private val fetchCravingsUseCase: FetchCravingsUseCase,
     private val resolveCravingUseCase: ResolveCravingUseCase,
+    private val analyticsTracker: AnalyticsTracker,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
     private val cravingWaitCalculator: CravingWaitCalculator = CravingWaitCalculator(),
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
@@ -117,6 +120,7 @@ class HomeProcessHolder constructor(
             relationship = SmokeRelationship.Tagged(tags = intent.tags),
         )
         persistNewCustomTags(intent.tags)
+        analyticsTracker.relationshipTagged(intent.tags.size)
         emit(HomeResult.RelationshipUpdated)
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
@@ -144,6 +148,7 @@ class HomeProcessHolder constructor(
      */
     private fun processSkipRelationship(intent: HomeIntent.SkipSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
         setSmokeRelationshipUseCase(id = intent.smokeId, relationship = SmokeRelationship.Skipped)
+        analyticsTracker.relationshipSkipped()
         emit(HomeResult.RelationshipUpdated)
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
@@ -209,8 +214,8 @@ class HomeProcessHolder constructor(
                         smokeCountListResult = smokeCounts,
                         preferences = preferences,
                         greetingState = greetingState.copy(
-                            title = personalizeGreetingTitle(
-                                greetingTitle = greetingState.title,
+                            name = personalizeGreetingName(
+                                nickname = greetingState.name,
                                 displayName = session.user.displayName,
                             )
                         ),
@@ -319,6 +324,7 @@ class HomeProcessHolder constructor(
                 val now = Clock.System.now()
                 val smokeId = addSmokeUseCase.invoke(timestamp = now)
                 emit(HomeResult.AddSmokeSuccess(smokeId))
+                analyticsTracker.smokeAdded(AnalyticsSource.HOME)
                 refreshWidgetSnapshotBestEffort()
                 syncWithWearBestEffort()
                 attachLocationBestEffort(smokeId, now)
@@ -382,6 +388,7 @@ class HomeProcessHolder constructor(
                     emit(HomeResult.CravingNoWaitNeeded)
                 } else {
                     val craving = addCravingUseCase(targetAt = advice.nextAllowedAt)
+                    analyticsTracker.cravingTracked()
                     emit(HomeResult.CravingTracked(craving))
                 }
             }
@@ -409,6 +416,7 @@ class HomeProcessHolder constructor(
             }
         }
         val points = resolveCravingUseCase(intent.craving, outcome)
+        analyticsTracker.cravingResolved(intent.smoked)
         if (intent.smoked) {
             addSmokeUseCase()
         }
@@ -426,6 +434,7 @@ class HomeProcessHolder constructor(
         updateUserPreferencesUseCase(
             preferences.copy(manualDayStartEpochMillis = Clock.System.now().toEpochMilliseconds())
         )
+        analyticsTracker.newDayStarted()
         emit(HomeResult.StartNewDaySuccess)
     }.catchAndLog { e ->
         emit(HomeResult.Error.Generic(e.debugSummary()))
@@ -459,15 +468,16 @@ class HomeProcessHolder constructor(
     }
 }
 
-private fun personalizeGreetingTitle(
-    greetingTitle: String,
+/** Keeps an explicit nickname, otherwise falls back to the account's first name. */
+private fun personalizeGreetingName(
+    nickname: String,
     displayName: String?,
 ): String {
-    val firstName = displayName
+    if (nickname.isNotBlank()) return nickname
+    return displayName
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
         ?.substringBefore(" ")
         ?.takeIf { it.isNotBlank() }
-
-    return if (firstName != null) "$greetingTitle $firstName" else greetingTitle
+        .orEmpty()
 }

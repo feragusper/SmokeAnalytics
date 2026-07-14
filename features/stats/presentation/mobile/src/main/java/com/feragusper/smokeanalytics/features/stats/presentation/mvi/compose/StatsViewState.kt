@@ -63,6 +63,8 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStats
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeStatsPeriod
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.averageSummary
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummarySupporting
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.StatsSummaryTitle
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import com.valentinilk.shimmer.shimmer
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -224,8 +226,7 @@ data class StatsViewState(
                                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ) {
                                         Text(
-                                            text = period.name.lowercase()
-                                                .replaceFirstChar { it.uppercase() },
+                                            text = stringResource(period.tabLabelRes()),
                                             style = MaterialTheme.typography.labelLarge
                                         )
                                     }
@@ -315,9 +316,9 @@ data class StatsViewState(
                             Spacer(modifier = Modifier.height(8.dp))
                             when (currentPeriod) {
                                 StatsPeriod.DAY -> LineChart(stats.hourly)
-                                StatsPeriod.WEEK -> BarChart(stats.weekly)
-                                StatsPeriod.MONTH -> BarChart(stats.monthly)
-                                StatsPeriod.YEAR -> BarChart(stats.yearly)
+                                StatsPeriod.WEEK -> BarChart(stats.weekly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.MONTH -> BarChart(stats.monthly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.YEAR -> BarChart(stats.yearly.mapKeys { localizeBucketLabel(it.key) })
                             }
                         }
                     }
@@ -467,13 +468,13 @@ private fun SummaryCards(
         ) {
             SummaryCard(
                 modifier = Modifier.weight(1.6f),
-                title = if (isDay) stringResource(R.string.stats_total_frequency) else averageSummary.title,
+                title = if (isDay) stringResource(R.string.stats_total_frequency) else statsSummaryTitleText(averageSummary.title),
                 headline = if (isDay) {
                     stats.totalDay.toString()
                 } else {
                     String.format(locale, "%.1f", averageSummary.value)
                 },
-                supporting = if (isDay) stringResource(R.string.stats_cigarettes) else averageSummary.supporting,
+                supporting = if (isDay) stringResource(R.string.stats_cigarettes) else statsSummarySupportingText(averageSummary.supporting),
                 meta = selectedDate.summaryMeta(currentPeriod),
                 prominent = true,
             )
@@ -486,9 +487,9 @@ private fun SummaryCards(
                 if (isDay) {
                     SummaryCard(
                         modifier = Modifier.fillMaxWidth(),
-                        title = averageSummary.title,
+                        title = statsSummaryTitleText(averageSummary.title),
                         headline = String.format(locale, "%.1f", averageSummary.value),
-                        supporting = averageSummary.supporting,
+                        supporting = statsSummarySupportingText(averageSummary.supporting),
                         highlighted = true,
                         compact = true,
                     )
@@ -496,7 +497,7 @@ private fun SummaryCards(
                 SummaryCard(
                     modifier = Modifier.fillMaxWidth(),
                     title = stringResource(R.string.stats_peak_window),
-                    headline = peakBucketFor(currentPeriod, stats),
+                    headline = localizeBucketLabel(peakBucketFor(currentPeriod, stats)),
                     supporting = stringResource(R.string.stats_highest_activity),
                     compact = true,
                 )
@@ -619,7 +620,7 @@ fun HeaderNavigation(
         Text(
             text = when (currentPeriod) {
                 StatsViewState.StatsPeriod.DAY -> selectedDate.toString()
-                StatsViewState.StatsPeriod.WEEK -> "Week of $selectedDate"
+                StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_of, selectedDate.toString())
                 StatsViewState.StatsPeriod.MONTH -> selectedDate.month.getDisplayName(
                     java.time.format.TextStyle.FULL,
                     locale
@@ -828,4 +829,53 @@ private fun StatsViewPreview() {
     SmokeAnalyticsTheme {
         StatsViewState().Compose {}
     }
+}
+
+private fun StatsViewState.StatsPeriod.tabLabelRes(): Int = when (this) {
+    StatsViewState.StatsPeriod.DAY -> R.string.stats_period_day
+    StatsViewState.StatsPeriod.WEEK -> R.string.stats_period_week
+    StatsViewState.StatsPeriod.MONTH -> R.string.stats_period_month
+    StatsViewState.StatsPeriod.YEAR -> R.string.stats_period_year
+}
+
+@Composable
+private fun statsSummaryTitleText(title: StatsSummaryTitle): String = when (title) {
+    StatsSummaryTitle.AwakeHourPace -> stringResource(R.string.stats_summary_awake_hour_pace)
+    StatsSummaryTitle.DailyPace -> stringResource(R.string.stats_summary_daily_pace)
+}
+
+@Composable
+private fun statsSummarySupportingText(supporting: StatsSummarySupporting): String = when (supporting) {
+    StatsSummarySupporting.AwakeHourSoFar -> stringResource(R.string.stats_summary_awake_so_far)
+    StatsSummarySupporting.AwakeHour -> stringResource(R.string.stats_summary_awake)
+    StatsSummarySupporting.AcrossWeek -> stringResource(R.string.stats_summary_across_week)
+    StatsSummarySupporting.AcrossElapsedWeek -> stringResource(R.string.stats_summary_across_elapsed_week)
+    StatsSummarySupporting.AcrossMonth -> stringResource(R.string.stats_summary_across_month)
+    StatsSummarySupporting.AcrossElapsedMonth -> stringResource(R.string.stats_summary_across_elapsed_month)
+    StatsSummarySupporting.AcrossYear -> stringResource(R.string.stats_summary_across_year)
+    StatsSummarySupporting.AcrossElapsedYear -> stringResource(R.string.stats_summary_across_elapsed_year)
+}
+
+@Composable
+private fun localizeBucketLabel(key: String): String = when (key) {
+    "Mon" -> stringResource(R.string.stats_wd_mon)
+    "Tue" -> stringResource(R.string.stats_wd_tue)
+    "Wed" -> stringResource(R.string.stats_wd_wed)
+    "Thu" -> stringResource(R.string.stats_wd_thu)
+    "Fri" -> stringResource(R.string.stats_wd_fri)
+    "Sat" -> stringResource(R.string.stats_wd_sat)
+    "Sun" -> stringResource(R.string.stats_wd_sun)
+    "Jan" -> stringResource(R.string.stats_mo_jan)
+    "Feb" -> stringResource(R.string.stats_mo_feb)
+    "Mar" -> stringResource(R.string.stats_mo_mar)
+    "Apr" -> stringResource(R.string.stats_mo_apr)
+    "May" -> stringResource(R.string.stats_mo_may)
+    "Jun" -> stringResource(R.string.stats_mo_jun)
+    "Jul" -> stringResource(R.string.stats_mo_jul)
+    "Aug" -> stringResource(R.string.stats_mo_aug)
+    "Sep" -> stringResource(R.string.stats_mo_sep)
+    "Oct" -> stringResource(R.string.stats_mo_oct)
+    "Nov" -> stringResource(R.string.stats_mo_nov)
+    "Dec" -> stringResource(R.string.stats_mo_dec)
+    else -> key
 }

@@ -39,7 +39,7 @@ class GoalsEvaluatorExtendedTest {
         assertNotNull(result)
         assertEquals(GoalStatus.OnTrack, result.status)
         assertEquals(0f, result.progressFraction)
-        assertEquals("Daily cap", result.title)
+        assertEquals(GoalTitleKind.DailyCap, result.titleKind)
     }
 
     @Test
@@ -55,7 +55,7 @@ class GoalsEvaluatorExtendedTest {
         )
         assertNotNull(result)
         assertEquals(1, result.streakDays)
-        assertEquals("1 day completed in a row", result.streakLabel)
+        assertTrue(result.hasStreak)
     }
 
     @Test
@@ -78,7 +78,7 @@ class GoalsEvaluatorExtendedTest {
 
         assertNotNull(result)
         assertEquals(GoalStatus.Completed, result.status)
-        assertEquals("Reduction vs previous week", result.title)
+        assertEquals(GoalTitleKind.ReductionWeek, result.titleKind)
     }
 
     @Test

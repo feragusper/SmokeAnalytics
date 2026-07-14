@@ -162,7 +162,7 @@ private fun GoalProgressCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = goalProgress?.title ?: stringResource(R.string.goals_your_goal),
+            text = goalProgress?.titleKind?.text() ?: stringResource(R.string.goals_your_goal),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -180,7 +180,7 @@ private fun GoalProgressCard(
                 }
             }
             Text(
-                text = progress.targetLabel,
+                text = progress.target.text(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -194,24 +194,24 @@ private fun GoalProgressCard(
                 )
             }
             Text(
-                text = progress.progressLabel,
+                text = progress.progress.text(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
             )
-            progress.supportingText.takeIf { it.isNotBlank() }?.let {
+            progress.supporting.textOrNull()?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            progress.baselineLabel?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            progress.baseline?.let {
+                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            progress.warningLabel?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            progress.warning?.let {
+                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
-            progress.celebrationLabel?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            progress.celebration?.let {
+                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }
-            progress.streakLabel?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (progress.hasStreak) {
+                Text(goalStreakText(progress.streakDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Button(

@@ -140,21 +140,21 @@ private fun GoalProgressPanel(
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:10px;") }) {
             Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.activeGoal) }
             Div(attrs = { classes(SmokeWebStyles.sectionTitle) }) {
-                Text(goalProgress?.title ?: strings.yourGoal)
+                Text(goalProgress?.titleKind?.text(strings) ?: strings.yourGoal)
             }
             goalProgress?.let { progress ->
                 progress.status.label(strings)?.let { status ->
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(status) }
                 }
-                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(progress.progressLabel) }
-                progress.supportingText.takeIf { it.isNotBlank() }?.let {
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) { Text(progress.progress.text(strings)) }
+                progress.supporting.text(strings)?.let {
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
                 }
-                progress.baselineLabel?.let {
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+                progress.baseline?.let {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it.text(strings)) }
                 }
-                progress.streakLabel?.let {
-                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(it) }
+                if (progress.hasStreak) {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.consistencyStreakDays(progress.streakDays)) }
                 }
             }
             PrimaryButton(text = strings.configureGoal, onClick = onConfigure)

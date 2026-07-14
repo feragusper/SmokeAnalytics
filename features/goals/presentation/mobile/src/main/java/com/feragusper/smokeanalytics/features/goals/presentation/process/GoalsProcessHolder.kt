@@ -7,6 +7,7 @@ import com.feragusper.smokeanalytics.features.goals.presentation.mvi.GoalsResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.extensions.debugSummary
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.process.MVIProcessHolder
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
@@ -22,6 +23,7 @@ class GoalsProcessHolder constructor(
     private val fetchUserPreferencesUseCase: FetchUserPreferencesUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val fetchSmokesUseCase: FetchSmokesUseCase,
+    private val analyticsTracker: AnalyticsTracker,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
 ) : MVIProcessHolder<GoalsIntent, GoalsResult> {
 
@@ -42,6 +44,7 @@ class GoalsProcessHolder constructor(
         emit(GoalsResult.Loading)
         val currentPreferences = fetchUserPreferencesUseCase()
         updateUserPreferencesUseCase(currentPreferences.copy(activeGoal = goal))
+        if (goal != null) analyticsTracker.goalSet(goal.type.name) else analyticsTracker.goalCleared()
         emit(fetchGoalsSnapshot())
         emit(GoalsResult.GoalSaved)
     }.catch { error ->

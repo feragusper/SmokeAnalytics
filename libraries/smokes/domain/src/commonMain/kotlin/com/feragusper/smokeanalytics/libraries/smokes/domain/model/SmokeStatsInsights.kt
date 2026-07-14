@@ -17,9 +17,20 @@ enum class SmokeStatsPeriod {
     YEAR,
 }
 
+/** Localized by presentation. */
+enum class StatsSummaryTitle { AwakeHourPace, DailyPace }
+
+/** Localized by presentation. */
+enum class StatsSummarySupporting {
+    AwakeHourSoFar, AwakeHour,
+    AcrossWeek, AcrossElapsedWeek,
+    AcrossMonth, AcrossElapsedMonth,
+    AcrossYear, AcrossElapsedYear,
+}
+
 data class SmokeStatsAverageSummary(
-    val title: String,
-    val supporting: String,
+    val title: StatsSummaryTitle,
+    val supporting: StatsSummarySupporting,
     val value: Double,
 )
 
@@ -40,11 +51,11 @@ fun SmokeStats.averageSummary(
                 totalAwakeHours
             }
             SmokeStatsAverageSummary(
-                title = "Awake-hour pace",
+                title = StatsSummaryTitle.AwakeHourPace,
                 supporting = if (selectedDate == currentDate) {
-                    "Average per awake hour so far"
+                    StatsSummarySupporting.AwakeHourSoFar
                 } else {
-                    "Average per awake hour"
+                    StatsSummarySupporting.AwakeHour
                 },
                 value = totalDay / elapsedAwakeHours.toDouble(),
             )
@@ -54,11 +65,11 @@ fun SmokeStats.averageSummary(
             val fullWeek = !selectedDate.isInSameWeekAs(currentDate)
             val elapsedDays = if (fullWeek) 7 else selectedDate.daysElapsedInWeek(currentDate)
             SmokeStatsAverageSummary(
-                title = "Daily pace",
+                title = StatsSummaryTitle.DailyPace,
                 supporting = if (fullWeek) {
-                    "Across the selected week"
+                    StatsSummarySupporting.AcrossWeek
                 } else {
-                    "Across elapsed days in the selected week"
+                    StatsSummarySupporting.AcrossElapsedWeek
                 },
                 value = totalWeek / elapsedDays.toDouble(),
             )
@@ -69,11 +80,11 @@ fun SmokeStats.averageSummary(
             val fullMonth = selectedDate.year != currentDate.year || selectedDate.monthNumber != currentDate.monthNumber
             val elapsedDays = if (fullMonth) daysInMonth else currentDate.dayOfMonth.coerceAtMost(daysInMonth)
             SmokeStatsAverageSummary(
-                title = "Daily pace",
+                title = StatsSummaryTitle.DailyPace,
                 supporting = if (fullMonth) {
-                    "Across the selected month"
+                    StatsSummarySupporting.AcrossMonth
                 } else {
-                    "Across elapsed days in the selected month"
+                    StatsSummarySupporting.AcrossElapsedMonth
                 },
                 value = totalMonth / elapsedDays.toDouble(),
             )
@@ -88,11 +99,11 @@ fun SmokeStats.averageSummary(
                 currentDate.toEpochDays() - LocalDate(currentDate.year, 1, 1).toEpochDays() + 1
             }
             SmokeStatsAverageSummary(
-                title = "Daily pace",
+                title = StatsSummaryTitle.DailyPace,
                 supporting = if (fullYear) {
-                    "Across the selected year"
+                    StatsSummarySupporting.AcrossYear
                 } else {
-                    "Across elapsed days in the selected year"
+                    StatsSummarySupporting.AcrossElapsedYear
                 },
                 value = yearly.values.sum() / elapsedDays.toDouble(),
             )

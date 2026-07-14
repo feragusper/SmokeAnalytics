@@ -21,6 +21,9 @@ private data class WebFirebaseConfig(
     val projectId: String,
     val storageBucket: String,
     val appId: String,
+    // GA4 measurement id (G-XXXXXXX) from the Firebase console. Empty = analytics logs to the
+    // console only; fill in to send events to Google Analytics via gtag.
+    val measurementId: String = "",
 )
 
 private val stagingConfig = WebFirebaseConfig(
@@ -55,6 +58,7 @@ buildkonfig {
         buildConfigField(STRING, "FIREBASE_PROJECT_ID", cfg.projectId)
         buildConfigField(STRING, "FIREBASE_STORAGE_BUCKET", cfg.storageBucket)
         buildConfigField(STRING, "FIREBASE_APP_ID", cfg.appId)
+        buildConfigField(STRING, "FIREBASE_MEASUREMENT_ID", cfg.measurementId)
     }
 }
 

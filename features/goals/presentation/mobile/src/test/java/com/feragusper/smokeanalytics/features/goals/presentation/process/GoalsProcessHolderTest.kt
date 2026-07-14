@@ -1,4 +1,5 @@
 package com.feragusper.smokeanalytics.features.goals.presentation.process
+import com.feragusper.smokeanalytics.libraries.architecture.domain.NoOpAnalyticsTracker
 
 import app.cash.turbine.test
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
@@ -57,6 +58,7 @@ class GoalsProcessHolderTest {
             fetchUserPreferencesUseCase = fetchUserPreferencesUseCase,
             updateUserPreferencesUseCase = updateUserPreferencesUseCase,
             fetchSmokesUseCase = fetchSmokesUseCase,
+            analyticsTracker = NoOpAnalyticsTracker,
             evaluateGoalProgressUseCase = evaluateGoalProgressUseCase,
         )
 

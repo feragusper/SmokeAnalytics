@@ -189,6 +189,8 @@ dependencies {
     implementation(project(":features:settings:presentation:mobile"))
     implementation(project(":features:stats:presentation:mobile"))
     implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     implementation(libs.bundles.androidx.base)
     implementation(libs.bundles.compose)
     implementation(libs.material3)

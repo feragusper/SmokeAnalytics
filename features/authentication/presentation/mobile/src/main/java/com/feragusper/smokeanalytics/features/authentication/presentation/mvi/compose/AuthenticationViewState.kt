@@ -33,6 +33,9 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.Au
 import com.feragusper.smokeanalytics.features.authentication.presentation.mvi.AuthenticationResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import org.koin.compose.koinInject
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import kotlinx.coroutines.launch
@@ -46,6 +49,8 @@ data class AuthenticationViewState(
     fun Compose(intent: (AuthenticationIntent) -> Unit) {
         val snackbarHostState = remember { SnackbarHostState() }
         val scope = rememberCoroutineScope()
+        val analytics = koinInject<AnalyticsTracker>()
+        LaunchedEffect(Unit) { analytics.screenView(AnalyticsScreen.AUTHENTICATION) }
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { contentPadding ->
@@ -175,9 +180,13 @@ private fun AuthEntryCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val analytics = koinInject<AnalyticsTracker>()
             GoogleSignInComponent(
                 modifier = Modifier.padding(top = 4.dp),
-                onSignInSuccess = onRefresh,
+                onSignInSuccess = {
+                    analytics.login()
+                    onRefresh()
+                },
                 onSignInError = onSignInError,
             )
         }
