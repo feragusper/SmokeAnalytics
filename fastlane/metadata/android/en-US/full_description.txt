@@ -1,10 +1,35 @@
-Smoke Analytics helps you track your smoking habits, analyze patterns, and reduce consumption with insightful statistics. The app supports your phone and Wear OS watch, so you can log cigarettes and check your progress from either device.
+Cutting down on smoking is hard. Smoke Analytics makes it feel doable — a calm, judgment-free companion that helps you notice your patterns and take back control, one cigarette at a time.
 
-Features:
-- Mobile and Wear OS support: log and monitor smoking from your phone or smartwatch.
-- Wear OS tile: see today's status at a glance and use the quick Track action directly from the tile.
-- Daily and weekly analytics: understand smoking trends with detailed insights.
-- Reminders and goals: set personal goals and receive notifications to stay on track.
-- Cloud sync: keep your data backed up and available across devices.
+No lectures. No guilt. Just a clear picture of your day and gentle nudges that actually help.
 
-Take control of your smoking habits with Smoke Analytics on mobile, Wear OS, and the included Wear OS tile.
+WHY YOU'LL LIKE IT
+• See your day at a glance — today's count, time since your last cigarette, and how you're pacing toward your goal.
+• Beat cravings in the moment — tap "I feel like smoking," wait it out, and earn points when you let the urge pass.
+• Understand your habit — spot your peak hours, weekly trends, and the triggers behind each cigarette.
+• Set a goal that fits you — a daily cap, a mindful gap between cigarettes, or a weekly/monthly reduction target.
+• Stay motivated — streaks, milestones, and reward points keep small wins feeling good.
+
+TRACK IN ONE TAP — ANYWHERE
+• Phone: log a cigarette and check your progress instantly.
+• Wear OS watch + tile: see today's status and track right from your wrist — no phone needed.
+• Web: pick up where you left off in your browser.
+Everything stays in sync across your devices.
+
+INSIGHTS THAT MEAN SOMETHING
+• Frequency charts by day, week, month, and year.
+• Peak-time detection so you know when cravings hit hardest.
+• Trigger breakdown — tag what set each cigarette off (stress, coffee, breaks…) and watch the pattern appear.
+• Optional location map to reveal where smoking tends to cluster.
+• A full history archive you can browse and edit any day.
+
+BUILT AROUND PROGRESS, NOT PERFECTION
+Longer gaps and smoke-free stretches move your score — not a flawless record. Slip up? The app helps you steady the day and keep going.
+
+PRIVATE BY DESIGN
+Your data is yours. Location tracking is always optional, and your history syncs securely to your own account.
+
+Fully available in English and Spanish.
+
+Whether you want to quit for good or simply smoke a little less, Smoke Analytics meets you where you are — on your phone, your watch, and the web.
+
+Start today. Notice more, smoke less.

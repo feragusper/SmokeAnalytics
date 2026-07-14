@@ -1,0 +1,83 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="fgTitle fgDesc">
+  <title id="fgTitle">Smoke Analytics feature graphic</title>
+  <desc id="fgDesc">Teal banner with the app name, the tagline "Notice more, smoke less.", feature pills, and a phone card showing today's goal.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#024E4E"/>
+      <stop offset="0.55" stop-color="#006A6A"/>
+      <stop offset="1" stop-color="#0A8B87"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9DE7DF"/>
+      <stop offset="1" stop-color="#4FBFB4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#00201F" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <!-- soft decorative circles -->
+  <circle cx="940" cy="70" r="220" fill="#FFFFFF" opacity="0.05"/>
+  <circle cx="120" cy="470" r="180" fill="#FFFFFF" opacity="0.05"/>
+
+  <!-- Left: brand + tagline -->
+  <g transform="translate(72,150)">
+    <!-- monogram -->
+    <g transform="translate(0,-44)">
+      <rect x="0" y="0" width="64" height="64" rx="18" fill="#FFFFFF" opacity="0.14"/>
+      <circle cx="32" cy="32" r="18" fill="none" stroke="url(#ring)" stroke-width="6"/>
+      <path d="M24 32 h16 M32 24 v16" stroke="#9DE7DF" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <text x="0" y="70" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="62" font-weight="800" fill="#FFFFFF">Smoke Analytics</text>
+    <text x="2" y="118" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="30" font-weight="500" fill="#CFF1EC">Notice more, smoke less.</text>
+
+    <!-- feature pills -->
+    <g font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="20" font-weight="600" fill="#04413F">
+      <g transform="translate(0,158)">
+        <rect x="0" y="0" width="118" height="42" rx="21" fill="#BFEDE7"/>
+        <text x="59" y="28" text-anchor="middle">Track</text>
+      </g>
+      <g transform="translate(132,158)">
+        <rect x="0" y="0" width="128" height="42" rx="21" fill="#BFEDE7"/>
+        <text x="64" y="28" text-anchor="middle">Goals</text>
+      </g>
+      <g transform="translate(274,158)">
+        <rect x="0" y="0" width="150" height="42" rx="21" fill="#BFEDE7"/>
+        <text x="75" y="28" text-anchor="middle">Insights</text>
+      </g>
+    </g>
+    <text x="2" y="250" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="19" font-weight="500" fill="#A9E4DD">Phone · Wear OS · Web</text>
+  </g>
+
+  <!-- Right: phone card mockup -->
+  <g transform="translate(690,74)" filter="url(#shadow)">
+    <rect x="0" y="0" width="270" height="352" rx="34" fill="#FFFFFF"/>
+    <rect x="0" y="0" width="270" height="352" rx="34" fill="none" stroke="#E4EEEC" stroke-width="1.5"/>
+    <!-- header -->
+    <text x="26" y="52" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="18" font-weight="700" fill="#0F2E2C">Good afternoon</text>
+    <!-- goal card -->
+    <rect x="22" y="72" width="226" height="150" rx="22" fill="#F2F7F6"/>
+    <text x="42" y="104" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" fill="#5B6F73">Goal</text>
+    <text x="42" y="138" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="26" font-weight="800" fill="#0F2E2C">15 left today</text>
+    <g transform="translate(42,156)">
+      <rect x="0" y="0" width="80" height="30" rx="15" fill="#CFEDE8"/>
+      <text x="40" y="20" text-anchor="middle" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="700" fill="#046A5F">On track</text>
+    </g>
+    <rect x="42" y="198" width="184" height="8" rx="4" fill="#DCE7E5"/>
+    <rect x="42" y="198" width="150" height="8" rx="4" fill="#006A6A"/>
+    <!-- mini bar chart -->
+    <g transform="translate(42,244)">
+      <rect x="0" y="34" width="20" height="30" rx="5" fill="#BFE3DD"/>
+      <rect x="34" y="18" width="20" height="46" rx="5" fill="#7FCEC2"/>
+      <rect x="68" y="6" width="20" height="58" rx="5" fill="#006A6A"/>
+      <rect x="102" y="26" width="20" height="38" rx="5" fill="#9AD8CF"/>
+      <rect x="136" y="14" width="20" height="50" rx="5" fill="#4FB6AA"/>
+    </g>
+    <!-- track button -->
+    <g transform="translate(22,300)">
+      <rect x="0" y="0" width="226" height="34" rx="17" fill="#006A6A"/>
+      <text x="113" y="23" text-anchor="middle" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#FFFFFF">Track</text>
+    </g>
+  </g>
+</svg>
