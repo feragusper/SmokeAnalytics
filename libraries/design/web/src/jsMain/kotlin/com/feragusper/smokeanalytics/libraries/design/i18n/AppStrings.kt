@@ -215,6 +215,17 @@ open class AppStrings internal constructor() {
     open val statsSummaryAcrossElapsedYear: String = "Across elapsed days in the selected year"
     /** Maps a domain weekday/month abbreviation ("Mon".."Sun", "Jan".."Dec") to a localized label; other keys pass through. */
     open fun statsBucketLabel(key: String): String = key
+
+    // Calendar names. [month] is 1..12, [isoDay] is 1 (Monday)..7 (Sunday).
+    open fun monthName(month: Int): String = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    )[month - 1]
+
+    open fun monthShort(month: Int): String = monthName(month).take(3)
+
+    open fun weekdayShort(isoDay: Int): String =
+        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[isoDay - 1]
     open val needsAttention: String = "Needs attention"
     open val sessionRequired: String = "Session required"
     open val couldNotRefreshHome: String = "Could not refresh home"

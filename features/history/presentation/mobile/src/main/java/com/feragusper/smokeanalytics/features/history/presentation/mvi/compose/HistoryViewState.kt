@@ -55,6 +55,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DateP
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
 import com.valentinilk.shimmer.shimmer
+import androidx.compose.ui.platform.LocalLocale
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -547,12 +548,17 @@ private fun Instant.plusDays(days: Int, timeZone: TimeZone): Instant =
 private fun Instant.minusDays(days: Int, timeZone: TimeZone): Instant =
     plus(-days, DateTimeUnit.DAY, timeZone)
 
-private fun LocalDate.toUiMonthYear(): String {
-    val monthName = month.name.lowercase().replaceFirstChar { it.titlecase() }
-    return "$monthName $year"
+/** Month name in the user's language (e.g. "July" / "Julio"), title-cased for use as a heading. */
+@Composable
+private fun LocalDate.localizedMonthName(): String {
+    val locale = LocalLocale.current.platformLocale
+    return java.time.Month.of(monthNumber)
+        .getDisplayName(java.time.format.TextStyle.FULL, locale)
+        .replaceFirstChar { it.titlecase(locale) }
 }
 
-private fun LocalDate.toUiMonthDay(): String {
-    val monthName = month.name.lowercase().replaceFirstChar { it.titlecase() }
-    return "$monthName $dayOfMonth"
-}
+@Composable
+private fun LocalDate.toUiMonthYear(): String = "${localizedMonthName()} $year"
+
+@Composable
+private fun LocalDate.toUiMonthDay(): String = "${localizedMonthName()} $dayOfMonth"

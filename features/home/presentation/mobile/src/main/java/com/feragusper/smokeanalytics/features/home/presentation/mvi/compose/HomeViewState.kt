@@ -57,6 +57,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.home.presentation.R
@@ -174,6 +175,7 @@ data class HomeViewState(
         onFabConfigChanged: (Boolean, ElapsedTone, (() -> Unit)?) -> Unit,
         intent: (HomeIntent) -> Unit,
     ) {
+        val pendingLabelLocale = LocalLocale.current.platformLocale
         val pullToRefreshState = remember {
             object : PullToRefreshState {
                 private val anim = Animatable(0f, Float.VectorConverter)
@@ -247,7 +249,7 @@ data class HomeViewState(
                 cravingStats = cravingStats,
                 showCravingHint = showCravingHint,
                 pendingRelationshipSmokes = pendingRelationshipSmokes.map {
-                    PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel())
+                    PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel(pendingLabelLocale))
                 },
                 onOpenRelationship = { id -> intent(HomeIntent.OpenRelationshipPrompt(id)) },
                 intent = intent,
@@ -266,7 +268,7 @@ data class HomeViewState(
             val dateLabel = pendingRelationshipSmokes
                 .firstOrNull { it.id == promptSmokeId }
                 ?.date
-                ?.toPendingTriggerLabel()
+                ?.toPendingTriggerLabel(pendingLabelLocale)
             RelationshipPromptSheet(
                 availableTriggers = availableTriggers,
                 dateLabel = dateLabel,

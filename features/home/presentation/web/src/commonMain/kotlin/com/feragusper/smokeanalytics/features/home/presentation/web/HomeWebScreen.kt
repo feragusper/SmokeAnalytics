@@ -214,7 +214,7 @@ fun HomeViewState.Render(
             if (pendingRelationshipSmokes.isNotEmpty()) {
                 RelationshipReminderCardWeb(
                     pending = pendingRelationshipSmokes.map {
-                        PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel())
+                        PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel(LocalStrings.current))
                     },
                     onOpen = { id -> onIntent(HomeIntent.OpenRelationshipPrompt(id)) },
                 )
@@ -252,7 +252,7 @@ fun HomeViewState.Render(
         val dateLabel = pendingRelationshipSmokes
             .firstOrNull { it.id == promptSmokeId }
             ?.date
-            ?.toPendingTriggerLabel()
+            ?.toPendingTriggerLabel(LocalStrings.current)
         RelationshipPromptDialogWeb(
             availableTriggers = availableTriggers,
             dateLabel = dateLabel,

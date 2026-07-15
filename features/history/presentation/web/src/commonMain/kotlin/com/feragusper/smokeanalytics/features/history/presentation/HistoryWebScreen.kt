@@ -66,7 +66,7 @@ fun HistoryWebScreen(
                 state.displayLoading && state.smokes != null -> strings.refreshing
                 state.displayLoading -> strings.loading
                 state.error != null -> strings.needsAttention
-                else -> "${state.smokes?.size ?: 0} entries"
+                else -> strings.entriesCount(state.smokes?.size ?: 0)
             },
             badgeTone = when {
                 state.displayLoading -> StatusTone.Busy
@@ -175,7 +175,7 @@ private fun ArchiveCalendarCard(
             Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:flex-end;gap:16px;") }) {
                 Div {
                     Div(attrs = { attr("style", "font-size:30px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text(selectedLocalDate.toUiMonthYear())
+                        Text(selectedLocalDate.toUiMonthYear(strings))
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
                         Text(strings.dailyAverageUnits(monthCounts.averageOrZero().formatOneDecimal()))
@@ -233,7 +233,7 @@ private fun ArchiveCalendarCard(
             Div(attrs = { attr("style", "display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;") }) {
                 Div {
                     Div(attrs = { attr("style", "font-size:24px;font-weight:800;color:var(--sa-color-primary);") }) {
-                        Text(selectedLocalDate.toUiMonthDay())
+                        Text(selectedLocalDate.toUiMonthDay(strings))
                     }
                     Div(attrs = { attr("style", "font-size:13px;color:var(--sa-color-secondary);") }) {
                         Text(strings.dailyArchive)
@@ -422,15 +422,11 @@ private fun LocalDate.toUiDate(): String {
     return "$d/$m/$year"
 }
 
-private fun LocalDate.toUiMonthYear(): String {
-    val month = month.name.lowercase().replaceFirstChar { it.uppercase() }
-    return "$month $year"
-}
+private fun LocalDate.toUiMonthYear(strings: AppStrings): String =
+    "${strings.monthName(monthNumber)} $year"
 
-private fun LocalDate.toUiMonthDay(): String {
-    val month = month.name.lowercase().replaceFirstChar { it.uppercase() }
-    return "$month $dayOfMonth"
-}
+private fun LocalDate.toUiMonthDay(strings: AppStrings): String =
+    "${strings.monthName(monthNumber)} $dayOfMonth"
 
 private fun DayOfWeek.mondayBasedIndex(): Int = isoDayNumber - 1
 
