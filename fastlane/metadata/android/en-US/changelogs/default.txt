@@ -1,6 +1,7 @@
 What's new:
 • Month names and day labels now show in your language across the archive and reminders.
 • The Analytics period tabs (Day / Week / Month / Year) are now translated.
+• Web: the sidebar now stays pinned while the page scrolls.
 • Small polish for a more consistent, fully localized experience.
 
 Notice more, smoke less.
