@@ -132,11 +132,23 @@ object SmokeWebStyles : StyleSheet() {
         flexDirection(FlexDirection.Column)
         gap(20.px)
         property("transition", "width var(--sa-transition-page), flex-basis var(--sa-transition-page), gap var(--sa-transition-page)")
+        // Pin the sidebar to the viewport so it stays in view while the (often long) main
+        // content scrolls. align-self stops it from stretching to the page height, which is
+        // what pushed the footer section far down with an empty gap in the middle.
+        property("align-self", "flex-start")
+        property("position", "sticky")
+        property("top", "24px")
+        property("height", "calc(100vh - 48px)")
+        property("overflow", "hidden")
 
         media(mediaMaxWidth(900.px)) {
             self {
                 property("width", "100%")
                 property("flex", "0 0 auto")
+                // On the stacked mobile layout the sidebar is a normal block, not pinned.
+                property("position", "static")
+                property("height", "auto")
+                property("overflow", "visible")
             }
         }
     }
@@ -192,12 +204,17 @@ object SmokeWebStyles : StyleSheet() {
         display(DisplayStyle.Flex)
         flexDirection(FlexDirection.Column)
         gap(8.px)
-        property("flex", "1 1 auto")
+        // Take only the height the items need, and scroll internally if the viewport is too
+        // short — the footer stays pinned at the bottom of the fixed-height sidebar.
+        property("flex", "0 1 auto")
+        property("min-height", "0")
+        property("overflow-y", "auto")
 
         media(mediaMaxWidth(900.px)) {
             self {
                 property("flex-wrap", "wrap")
                 flexDirection(FlexDirection.Row)
+                property("overflow-y", "visible")
             }
         }
     }

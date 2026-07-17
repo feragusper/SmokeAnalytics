@@ -1,7 +1,7 @@
 What's new:
-• Full English & Spanish — every screen is now localized end to end.
-• Clearer Home: sharper goal status, craving support, and consistency streaks.
-• Analytics polish: daily-pace summaries and fully localized charts and labels.
-• Many small fixes for a calmer, more consistent experience.
+• Month names and day labels now show in your language across the archive and reminders.
+• The Analytics period tabs (Day / Week / Month / Year) are now translated.
+• Web: the sidebar now stays pinned while the page scrolls.
+• Small polish for a more consistent, fully localized experience.
 
-Thanks for helping us make cutting down a little easier. Notice more, smoke less.
+Notice more, smoke less.

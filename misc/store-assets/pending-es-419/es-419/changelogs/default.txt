@@ -1,7 +1,7 @@
 Novedades:
-• Español e inglés completos: cada pantalla ahora está traducida de punta a punta.
-• Inicio más claro: mejor estado del objetivo, apoyo ante las ganas y rachas de consistencia.
-• Analíticas pulidas: resúmenes de ritmo y gráficos y etiquetas totalmente en tu idioma.
-• Varios ajustes para una experiencia más tranquila y consistente.
+• Los nombres de meses y días ahora aparecen en tu idioma en el archivo y los recordatorios.
+• Las pestañas de período en Analíticas (Día / Semana / Mes / Año) ahora están traducidas.
+• Web: la barra lateral ahora queda fija mientras la página hace scroll.
+• Pequeños ajustes para una experiencia más consistente y totalmente localizada.
 
-Gracias por ayudarnos a hacer más fácil fumar menos.
+Notá más, fumá menos.

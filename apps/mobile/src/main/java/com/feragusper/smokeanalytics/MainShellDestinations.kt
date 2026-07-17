@@ -40,6 +40,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.navigation.S
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsView
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsViewModel
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.HeaderNavigation
+import com.feragusper.smokeanalytics.features.stats.presentation.R as StatsR
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
 import com.feragusper.smokeanalytics.map.MapMobileRoute
@@ -133,11 +134,7 @@ fun AnalyticsMobileDestination(
                     Tab(
                         selected = currentPeriod == period,
                         onClick = { currentPeriod = period },
-                        text = {
-                            Text(
-                                period.name.lowercase().replaceFirstChar { it.uppercase() },
-                            )
-                        },
+                        text = { Text(stringResource(period.tabLabelRes())) },
                     )
                 }
             }
@@ -240,4 +237,12 @@ private fun StatsMobileDestination(
 private enum class AnalyticsTab(val labelRes: Int) {
     Trends(R.string.map_tab_frequency),
     Map(R.string.map_tab_clusters),
+}
+
+/** Period tab labels for the Analytics shell; reuses the stats module's localized strings. */
+private fun StatsViewState.StatsPeriod.tabLabelRes(): Int = when (this) {
+    StatsViewState.StatsPeriod.DAY -> StatsR.string.stats_period_day
+    StatsViewState.StatsPeriod.WEEK -> StatsR.string.stats_period_week
+    StatsViewState.StatsPeriod.MONTH -> StatsR.string.stats_period_month
+    StatsViewState.StatsPeriod.YEAR -> StatsR.string.stats_period_year
 }

@@ -1,9 +1,11 @@
 package com.feragusper.smokeanalytics.features.home.presentation.web
 
+import com.feragusper.smokeanalytics.libraries.design.i18n.AppStrings
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toLocalDateTime
 
 internal fun Instant.toDateInputValue(timeZone: TimeZone): String {
@@ -21,11 +23,14 @@ internal fun Instant.toTimeInputValue(timeZone: TimeZone): String {
     return "$hour:$minute"
 }
 
-/** Human label for a pending smoke in the reminder card, e.g. "Mon Jun 24 · 14:30". */
-internal fun Instant.toPendingTriggerLabel(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+/** Human label for a pending smoke in the reminder card, e.g. "Mon Jun 24 · 14:30" / "Lun Jun 24 · 14:30". */
+internal fun Instant.toPendingTriggerLabel(
+    strings: AppStrings,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String {
     val dt = toLocalDateTime(timeZone)
-    val weekday = dt.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
-    val month = dt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val weekday = strings.weekdayShort(dt.dayOfWeek.isoDayNumber)
+    val month = strings.monthShort(dt.monthNumber)
     val hour = dt.hour.toString().padStart(2, '0')
     val minute = dt.minute.toString().padStart(2, '0')
     return "$weekday $month ${dt.dayOfMonth} · $hour:$minute"

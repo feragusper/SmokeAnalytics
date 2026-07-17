@@ -46,6 +46,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.normalizedTag
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toLocalDateTime
 
 /**
@@ -120,11 +121,16 @@ internal data class PendingTriggerSmoke(
 
 private const val MAX_PENDING_SHOWN = 8
 
-/** Human label for a pending smoke, e.g. "Mon Jun 24 · 14:30". */
-internal fun Instant.toPendingTriggerLabel(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+/** Human label for a pending smoke in the user's language, e.g. "Mon Jun 24 · 14:30" / "lun jun 24 · 14:30". */
+internal fun Instant.toPendingTriggerLabel(
+    locale: java.util.Locale,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String {
     val dt = toLocalDateTime(timeZone)
-    val weekday = dt.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
-    val month = dt.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+    val weekday = java.time.DayOfWeek.of(dt.dayOfWeek.isoDayNumber)
+        .getDisplayName(java.time.format.TextStyle.SHORT, locale)
+    val month = java.time.Month.of(dt.monthNumber)
+        .getDisplayName(java.time.format.TextStyle.SHORT, locale)
     val hour = dt.hour.toString().padStart(2, '0')
     val minute = dt.minute.toString().padStart(2, '0')
     return "$weekday $month ${dt.dayOfMonth} · $hour:$minute"

@@ -208,6 +208,19 @@ object SpanishStrings : AppStrings() {
     override val statsSummaryAcrossElapsedMonth: String = "En los días transcurridos del mes seleccionado"
     override val statsSummaryAcrossYear: String = "En el año seleccionado"
     override val statsSummaryAcrossElapsedYear: String = "En los días transcurridos del año seleccionado"
+    override fun monthName(month: Int): String = listOf(
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    )[month - 1]
+
+    override fun monthShort(month: Int): String = listOf(
+        "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+    )[month - 1]
+
+    override fun weekdayShort(isoDay: Int): String =
+        listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")[isoDay - 1]
+
     override fun statsBucketLabel(key: String): String = when (key) {
         "Mon" -> "Lun"; "Tue" -> "Mar"; "Wed" -> "Mié"; "Thu" -> "Jue"; "Fri" -> "Vie"; "Sat" -> "Sáb"; "Sun" -> "Dom"
         "Jan" -> "Ene"; "Feb" -> "Feb"; "Mar" -> "Mar"; "Apr" -> "Abr"; "May" -> "May"; "Jun" -> "Jun"
