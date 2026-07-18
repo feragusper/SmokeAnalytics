@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smoke Analytics — Kotlin Multiplatform smoking journal</title>
+<meta name="description" content="Smoke Analytics is a Kotlin Multiplatform smoking journal that makes your patterns visible — across Android, Web and Wear OS." />
+<meta property="og:title" content="Smoke Analytics" />
+<meta property="og:description" content="A Kotlin Multiplatform smoking journal that makes patterns visible without turning the product into noise." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AB%81%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#0b0d10;
+    --bg-2:#111419;
+    --panel:#151a21;
+    --panel-2:#1b222b;
+    --border:#232b36;
+    --text:#e7ecf2;
+    --muted:#95a1b2;
+    --accent:#5eead4;
+    --accent-2:#7dd3fc;
+    --accent-3:#a78bfa;
+    --glow:rgba(94,234,212,.15);
+    --maxw:1080px;
+    --r:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(125,211,252,.10), transparent 60%),
+      radial-gradient(900px 500px at 95% 0%, rgba(167,139,250,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  .accent{color:var(--accent)}
+
+  /* NAV */
+  nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(12px);
+    background:rgba(11,13,16,.72);
+    border-bottom:1px solid var(--border);
+  }
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}
+  .nav-links{display:flex;align-items:center;gap:22px}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:.92rem;transition:color .15s}
+  .nav-links a:hover{color:var(--text)}
+  .lang{
+    display:flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;font-size:.8rem
+  }
+  .lang button{
+    background:transparent;color:var(--muted);border:0;padding:6px 12px;cursor:pointer;font-weight:600;letter-spacing:.4px
+  }
+  .lang button.active{background:var(--accent);color:#04201b}
+  @media(max-width:720px){.nav-links a.section-link{display:none}}
+
+  /* HERO */
+  header.hero{padding:88px 0 64px;text-align:center;position:relative}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--border);background:var(--panel);
+    color:var(--muted);font-size:.8rem;padding:6px 14px;border-radius:999px;margin-bottom:26px
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--accent-2)}
+  h1{
+    font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.05;letter-spacing:-1.5px;font-weight:800;
+    background:linear-gradient(180deg,#fff,#aeb9c7);-webkit-background-clip:text;background-clip:text;color:transparent
+  }
+  .tagline{font-size:clamp(1.05rem,2.4vw,1.35rem);color:var(--muted);max-width:640px;margin:22px auto 0}
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:36px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-weight:600;font-size:.95rem;
+    padding:12px 22px;border-radius:12px;border:1px solid var(--border);transition:transform .15s,border-color .15s,background .15s
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn.primary{background:var(--accent);color:#04201b;border-color:transparent;box-shadow:0 8px 30px var(--glow)}
+  .btn.ghost{background:var(--panel);color:var(--text)}
+  .btn.ghost:hover{border-color:var(--accent-2)}
+
+  /* BADGES */
+  .badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:34px;opacity:.9}
+  .badges img{height:20px}
+
+  /* SECTIONS */
+  section{padding:64px 0;border-top:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+  h2{font-size:clamp(1.6rem,3.6vw,2.4rem);letter-spacing:-.6px;margin:10px 0 14px;font-weight:800}
+  .lead{color:var(--muted);max-width:760px;font-size:1.05rem}
+
+  /* CARDS */
+  .grid{display:grid;gap:18px;margin-top:36px}
+  .grid.g2{grid-template-columns:repeat(2,1fr)}
+  .grid.g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.grid.g4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.grid.g2,.grid.g4{grid-template-columns:1fr}}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    border:1px solid var(--border);border-radius:var(--r);padding:24px;
+    transition:border-color .2s,transform .2s
+  }
+  .card:hover{border-color:var(--accent-2);transform:translateY(-3px)}
+  .card .ico{font-size:1.5rem;margin-bottom:12px}
+  .card h3{font-size:1.12rem;margin-bottom:8px;letter-spacing:-.2px}
+  .card p{color:var(--muted);font-size:.94rem}
+  .card ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+  .card ul li{color:var(--muted);font-size:.9rem;padding-left:18px;position:relative}
+  .card ul li::before{content:"›";position:absolute;left:0;color:var(--accent)}
+
+  /* MOTIVATION */
+  .quote{
+    border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin-top:28px;
+    font-size:1.15rem;color:var(--text)
+  }
+
+  /* SCREENSHOTS */
+  .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+  @media(max-width:900px){.shots{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.shots{grid-template-columns:1fr}}
+  .shot{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--panel);position:relative}
+  .shot img{width:100%;display:block;aspect-ratio:9/19;object-fit:cover}
+  .shot span{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);
+    color:#fff;font-size:.8rem;padding:24px 12px 10px;font-weight:600}
+  .shot-web{margin-top:16px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .shot-web img{width:100%;display:block}
+
+  /* TECH */
+  .stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .chip{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:999px;
+    padding:8px 15px;font-size:.85rem;color:var(--text)
+  }
+  .chip b{color:var(--accent)}
+  pre{
+    margin-top:26px;background:#0a0c0f;border:1px solid var(--border);border-radius:14px;
+    padding:20px;overflow:auto;font-size:.82rem;line-height:1.5;color:#c9d4e0;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace
+  }
+  pre .c{color:var(--muted)}
+  pre .k{color:var(--accent-2)}
+
+  /* PLATFORMS */
+  .plat{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+  @media(max-width:680px){.plat{grid-template-columns:1fr}}
+
+  /* FOOTER */
+  footer{border-top:1px solid var(--border);padding:48px 0;color:var(--muted);font-size:.9rem}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;align-items:center}
+  footer a{color:var(--accent-2);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  [data-es]{display:none}
+  html[lang="es"] [data-en]{display:none}
+  html[lang="es"] [data-es]{display:inline}
+  html[lang="es"] li[data-es],html[lang="es"] p[data-es],html[lang="es"] div[data-es]{display:block}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> Smoke Analytics</div>
+    <div class="nav-links">
+      <a class="section-link" href="#about"><span data-en>About</span><span data-es>Acerca</span></a>
+      <a class="section-link" href="#features"><span data-en>Features</span><span data-es>Funciones</span></a>
+      <a class="section-link" href="#tech"><span data-en>Technical</span><span data-es>Técnico</span></a>
+      <a class="section-link" href="https://github.com/feragusper/SmokeAnalytics" target="_blank" rel="noopener">GitHub</a>
+      <div class="lang">
+        <button id="en" class="active" onclick="setLang('en')">EN</button>
+        <button id="es" onclick="setLang('es')">ES</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="pill"><span class="dot"></span> Kotlin Multiplatform · Android · Web · Wear OS</span>
+    <h1>Smoke Analytics</h1>
+    <p class="tagline">
+      <span data-en>A smoking journal focused on one thing: making your patterns visible — without turning the product into noise.</span>
+      <span data-es>Un diario de cigarrillos enfocado en una sola cosa: hacer visibles tus patrones — sin convertir el producto en ruido.</span>
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="https://smoke-analytics.web.app" target="_blank" rel="noopener">
+        <span data-en>Open web app</span><span data-es>Abrir web app</span> →
+      </a>
+      <a class="btn ghost" href="https://play.google.com/store/apps/details?id=com.feragusper.smokeanalytics" target="_blank" rel="noopener">
+        <span data-en>Get it on Play Store</span><span data-es>Descargar en Play Store</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/feragusper/SmokeAnalytics" target="_blank" rel="noopener">
+        <span data-en>View source</span><span data-es>Ver código</span>
+      </a>
+    </div>
+    <div class="badges">
+      <img src="https://github.com/feragusper/SmokeAnalytics/actions/workflows/integration.yml/badge.svg?branch=master" alt="Integration" />
+      <img src="https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=alert_status" alt="Quality Gate" />
+      <img src="https://sonarcloud.io/api/project_badges/measure?project=feragusper_SmokeAnalytics&metric=coverage" alt="Coverage" />
+    </div>
+  </div>
+</header>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="wrap">
+    <div class="eyebrow"><span data-en>What is it</span><span data-es>Qué es</span></div>
+    <h2><span data-en>One product model, three surfaces</span><span data-es>Un modelo de producto, tres superficies</span></h2>
+    <p class="lead">
+      <span data-en>Smoke Analytics is a Kotlin Multiplatform smoking journal. Log a cigarette in a tap, then see your pace, your averages, your goals and where you smoke — the same product logic running on your phone, your browser and your watch.</span>
+      <span data-es>Smoke Analytics es un diario de cigarrillos en Kotlin Multiplatform. Registrás un cigarrillo con un toque y ves tu ritmo, tus promedios, tus objetivos y dónde fumás — la misma lógica de producto corriendo en tu teléfono, tu navegador y tu reloj.</span>
+    </p>
+    <div class="grid g4">
+      <div class="card"><div class="ico">📱</div><h3>Android</h3><p><span data-en>The visual source of truth for the product.</span><span data-es>La fuente visual de verdad del producto.</span></p></div>
+      <div class="card"><div class="ico">🌐</div><h3>Web</h3><p><span data-en>Compose for Web, aligned to the same model.</span><span data-es>Compose for Web, alineado al mismo modelo.</span></p></div>
+      <div class="card"><div class="ico">⌚</div><h3>Wear OS</h3><p><span data-en>Quick status and lightweight logging on the wrist.</span><span data-es>Estado rápido y registro liviano en la muñeca.</span></p></div>
+      <div class="card"><div class="ico">🔒</div><h3><span data-en>Your data</span><span data-es>Tus datos</span></h3><p><span data-en>Firebase-backed sync across your signed-in devices.</span><span data-es>Sync con Firebase entre tus dispositivos con sesión.</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- MOTIVATION -->
+<section id="motivation">
+  <div class="wrap">
+    <div class="eyebrow"><span data-en>Motivation</span><span data-es>Motivación</span></div>
+    <h2><span data-en>Awareness, not guilt</span><span data-es>Conciencia, no culpa</span></h2>
+    <p class="lead">
+      <span data-en>Most tracking apps drown you in dashboards or nag you into quitting. Smoke Analytics takes a quieter stance: give an honest, low-friction picture of the habit and let the patterns speak. Fewer taps to log, clearer signal, no noise.</span>
+      <span data-es>La mayoría de las apps de tracking te ahogan en dashboards o te presionan para dejar de fumar. Smoke Analytics toma una postura más silenciosa: dar una imagen honesta y de baja fricción del hábito y dejar que los patrones hablen. Menos toques para registrar, señal más clara, sin ruido.</span>
+    </p>
+    <div class="quote">
+      <span data-en>“Making patterns visible without turning the product into noise.”</span>
+      <span data-es>“Hacer visibles los patrones sin convertir el producto en ruido.”</span>
+    </div>
+    <p class="lead" style="margin-top:26px">
+      <span data-en>It's also a real, evolving showcase of modern Android and Kotlin Multiplatform engineering — clean architecture, shared domain logic, and a CI/CD pipeline that ships to the Play Store and the web.</span>
+      <span data-es>También es una vitrina real y viva de ingeniería moderna en Android y Kotlin Multiplatform — arquitectura limpia, lógica de dominio compartida, y un pipeline de CI/CD que publica en Play Store y en la web.</span>
+    </p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow"><span data-en>Product surface</span><span data-es>Superficie del producto</span></div>
+    <h2><span data-en>Four core destinations</span><span data-es>Cuatro destinos principales</span></h2>
+    <p class="lead"><span data-en>The whole product is organized around four places, each with a clear job.</span><span data-es>Todo el producto se organiza en cuatro lugares, cada uno con un trabajo claro.</span></p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="ico">💓</div>
+        <h3><span data-en>The Pulse</span><span data-es>The Pulse</span></h3>
+        <p><span data-en>Your at-a-glance today view.</span><span data-es>Tu vista de hoy de un vistazo.</span></p>
+        <ul>
+          <li><span data-en>Time since the last cigarette</span><span data-es>Tiempo desde el último cigarrillo</span></li>
+          <li><span data-en>Today count and current pace</span><span data-es>Conteo de hoy y ritmo actual</span></li>
+          <li><span data-en>Weekly and monthly averages</span><span data-es>Promedios semanales y mensuales</span></li>
+          <li><span data-en>Active goal state and progress</span><span data-es>Estado y progreso del objetivo activo</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ico">📊</div>
+        <h3><span data-en>Analytics & Map</span><span data-es>Analytics & Map</span></h3>
+        <p><span data-en>Frequency trends and geography together.</span><span data-es>Tendencias de frecuencia y geografía juntas.</span></p>
+        <ul>
+          <li><span data-en>Smoking frequency trends</span><span data-es>Tendencias de frecuencia</span></li>
+          <li><span data-en>Period switching</span><span data-es>Cambio de período</span></li>
+          <li><span data-en>Map clusters for repeated areas</span><span data-es>Clusters en el mapa por zonas repetidas</span></li>
+          <li><span data-en>Handled empty, loading and error states</span><span data-es>Estados vacío, de carga y error contemplados</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ico">🗂️</div>
+        <h3><span data-en>The Archive</span><span data-es>The Archive</span></h3>
+        <p><span data-en>The detailed, editable log.</span><span data-es>El registro detallado y editable.</span></p>
+        <ul>
+          <li><span data-en>Day-based log review</span><span data-es>Revisión del registro por día</span></li>
+          <li><span data-en>List and calendar modes</span><span data-es>Modos lista y calendario</span></li>
+          <li><span data-en>Add, edit and delete entries</span><span data-es>Agregar, editar y borrar entradas</span></li>
+          <li><span data-en>Date navigation and scanning</span><span data-es>Navegación y escaneo por fecha</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ico">👤</div>
+        <h3>You</h3>
+        <p><span data-en>Account, goals and preferences in one place.</span><span data-es>Cuenta, objetivos y preferencias en un solo lugar.</span></p>
+        <ul>
+          <li><span data-en>Authentication state</span><span data-es>Estado de autenticación</span></li>
+          <li><span data-en>Goals</span><span data-es>Objetivos</span></li>
+          <li><span data-en>Custom day start, price and pack size</span><span data-es>Inicio de día, precio y tamaño de pack personalizados</span></li>
+          <li><span data-en>Share, support and bug reporting</span><span data-es>Compartir, soporte y reporte de bugs</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section id="screenshots">
+  <div class="wrap">
+    <div class="eyebrow"><span data-en>Screenshots</span><span data-es>Capturas</span></div>
+    <h2><span data-en>See it running</span><span data-es>Verlo en acción</span></h2>
+    <div class="shots">
+      <div class="shot"><img src="assets/img/mobile-pulse.png" alt="The Pulse" loading="lazy" /><span>The Pulse</span></div>
+      <div class="shot"><img src="assets/img/mobile-analytics.png" alt="Analytics & Map" loading="lazy" /><span>Analytics &amp; Map</span></div>
+      <div class="shot"><img src="assets/img/mobile-archive.png" alt="The Archive" loading="lazy" /><span>The Archive</span></div>
+      <div class="shot"><img src="assets/img/mobile-you.png" alt="You" loading="lazy" /><span>You</span></div>
+    </div>
+    <div class="shot-web"><img src="assets/img/web-home.png" alt="Web home" loading="lazy" /></div>
+  </div>
+</section>
+
+<!-- TECHNICAL -->
+<section id="tech">
+  <div class="wrap">
+    <div class="eyebrow"><span data-en>Technical</span><span data-es>Técnico</span></div>
+    <h2><span data-en>Built as a Kotlin Multiplatform product</span><span data-es>Construido como un producto Kotlin Multiplatform</span></h2>
+    <p class="lead">
+      <span data-en>Not a single Android app with extras bolted on. Every feature and library follows the same split — domain (shared logic and contracts), data (platform integration), presentation (UI, state, navigation) — so mobile, web and wear share as much as possible.</span>
+      <span data-es>No es una app Android con extras pegados encima. Cada feature y librería sigue el mismo split — domain (lógica y contratos compartidos), data (integración de plataforma), presentation (UI, estado, navegación) — para que mobile, web y wear compartan lo máximo posible.</span>
+    </p>
+
+    <div class="stack">
+      <span class="chip"><b>Kotlin</b> 2.2.20</span>
+      <span class="chip">Compose Multiplatform</span>
+      <span class="chip">Compose for Web</span>
+      <span class="chip">Hilt</span>
+      <span class="chip">Coroutines / Flow</span>
+      <span class="chip">Firebase</span>
+      <span class="chip">AGP 8.13.2</span>
+      <span class="chip">Java 17</span>
+      <span class="chip">GitHub Actions</span>
+      <span class="chip">SonarCloud</span>
+      <span class="chip">Fastlane</span>
+    </div>
+
+    <pre><span class="c"># <span data-en>Module structure</span><span data-es>Estructura de módulos</span></span>
+<span class="k">apps/</span>
+  mobile/     Android application shell
+  web/        Compose Web application shell
+  wear/       Wear OS app / tile surface
+
+<span class="k">features/</span>
+  authentication/  devtools/  goals/
+  history/  home/  settings/  stats/
+
+<span class="k">libraries/</span>
+  architecture/  authentication/  design/
+  logging/  preferences/  smokes/  wear/
+
+<span class="c"># <span data-en>each split into →</span><span data-es>cada uno dividido en →</span></span>  domain · data · presentation</pre>
+
+    <div class="grid g2" style="margin-top:22px">
+      <div class="card">
+        <div class="ico">🧱</div>
+        <h3><span data-en>Clean, layered architecture</span><span data-es>Arquitectura limpia y en capas</span></h3>
+        <p><span data-en>Unidirectional data flow, immutable UI state exposed as StateFlow, shared domain models mapped per layer.</span><span data-es>Flujo de datos unidireccional, estado de UI inmutable expuesto como StateFlow, modelos de dominio compartidos y mapeados por capa.</span></p>
+      </div>
+      <div class="card">
+        <div class="ico">🚀</div>
+        <h3><span data-en>Real CI/CD pipeline</span><span data-es>Pipeline de CI/CD real</span></h3>
+        <p><span data-en>GitHub Actions validate PRs, ship the Android + Wear release, and deploy the web app to Firebase Hosting. Quality gated by SonarCloud.</span><span data-es>GitHub Actions valida PRs, publica el release de Android + Wear, y despliega la web app en Firebase Hosting. Calidad controlada por SonarCloud.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="margin-bottom:8px"><span class="dot"></span> Smoke Analytics</div>
+      <span data-en>Kotlin Multiplatform · Apache-2.0 · © 2024–2026 feragusper</span>
+      <span data-es>Kotlin Multiplatform · Apache-2.0 · © 2024–2026 feragusper</span>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <a href="https://github.com/feragusper/SmokeAnalytics">GitHub</a>
+      <a href="https://smoke-analytics.web.app"><span data-en>Web app</span><span data-es>Web app</span></a>
+      <a href="https://play.google.com/store/apps/details?id=com.feragusper.smokeanalytics">Play Store</a>
+      <a href="https://github.com/feragusper/SmokeAnalytics/issues"><span data-en>Report a bug</span><span data-es>Reportar bug</span></a>
+      <a href="mailto:feragusper@gmail.com"><span data-en>Contact</span><span data-es>Contacto</span></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function setLang(l){
+    document.documentElement.lang = l;
+    document.getElementById('en').classList.toggle('active', l==='en');
+    document.getElementById('es').classList.toggle('active', l==='es');
+    try{ localStorage.setItem('sa_lang', l); }catch(e){}
+  }
+  (function(){
+    var saved;
+    try{ saved = localStorage.getItem('sa_lang'); }catch(e){}
+    var l = saved || ((navigator.language||'en').toLowerCase().startsWith('es') ? 'es' : 'en');
+    setLang(l);
+  })();
+</script>
+</body>
+</html>
