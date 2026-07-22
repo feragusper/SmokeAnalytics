@@ -205,6 +205,7 @@ fun HomeViewState.Render(
                         onResolve = { smoked ->
                             onIntent(HomeIntent.ResolveCraving(craving = craving, smoked = smoked))
                         },
+                        onDismiss = { onIntent(HomeIntent.DismissCraving(craving)) },
                     )
                 } else {
                     CravingPromptCard(quitReason = quitReason, onTrack = { onIntent(HomeIntent.TrackCraving) })
@@ -578,6 +579,7 @@ private fun CravingCountdownCard(
     quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     val target = craving.targetAt
     var remaining by remember(craving.id) {
@@ -593,11 +595,38 @@ private fun CravingCountdownCard(
         }
     }
     val done = remaining <= 0L
+    var confirmingDismiss by remember(craving.id) { mutableStateOf(false) }
 
     SurfaceCard {
         Div(attrs = { attr("style", "display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;") }) {
-            Div(attrs = { attr("style", "font-size:20px;font-weight:800;") }) {
-                Text(if (done) LocalStrings.current.youMadeItTitle else LocalStrings.current.holdOnTitle)
+            Div(attrs = { attr("style", "display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;") }) {
+                Div(attrs = { attr("style", "flex:1;text-align:left;font-size:20px;font-weight:800;") }) {
+                    Text(if (done) LocalStrings.current.youMadeItTitle else LocalStrings.current.holdOnTitle)
+                }
+                val dismissLabel = LocalStrings.current.dismissCraving
+                Button(
+                    attrs = {
+                        attr("aria-label", dismissLabel)
+                        attr("title", dismissLabel)
+                        attr("style", "background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--sa-color-onSurfaceVariant);padding:4px;")
+                        onClick { confirmingDismiss = true }
+                    },
+                ) {
+                    Text("✕")
+                }
+            }
+            if (confirmingDismiss) {
+                Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {
+                    Text(LocalStrings.current.dismissCravingConfirm)
+                }
+                Div(attrs = { attr("style", "display:flex;gap:12px;width:100%;justify-content:center;") }) {
+                    CravingTextButton(text = LocalStrings.current.dismissCravingKeep, onClick = { confirmingDismiss = false })
+                    PrimaryButton(text = LocalStrings.current.dismiss, onClick = {
+                        confirmingDismiss = false
+                        onDismiss()
+                    })
+                }
+                return@Div
             }
             if (done) {
                 Div(attrs = { classes(SmokeWebStyles.sectionBody) }) {

@@ -12,6 +12,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.CravingWaitCalcul
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.toCravingStats
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.DeleteCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
@@ -69,6 +70,7 @@ class HomeProcessHolder(
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
     private val locationCaptureService: LocationCaptureService,
     private val addCravingUseCase: AddCravingUseCase,
+    private val deleteCravingUseCase: DeleteCravingUseCase,
     private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
     private val fetchCravingsUseCase: FetchCravingsUseCase,
     private val resolveCravingUseCase: ResolveCravingUseCase,
@@ -102,6 +104,7 @@ class HomeProcessHolder(
         }
         HomeIntent.TrackCraving -> processTrackCraving()
         is HomeIntent.ResolveCraving -> processResolveCraving(intent)
+        is HomeIntent.DismissCraving -> processDismissCraving(intent)
         HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
         HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
         is HomeIntent.OpenRelationshipPrompt -> flow { emit(HomeResult.AddSmokeSuccess(intent.smokeId)) }
@@ -332,6 +335,15 @@ class HomeProcessHolder(
         }
         analyticsTracker.cravingResolved(smoked = intent.smoked)
         emit(HomeResult.CravingResolved(outcome = outcome, points = points))
+    }.catch {
+        emit(HomeResult.Error.Generic)
+    }
+
+    private fun processDismissCraving(intent: HomeIntent.DismissCraving): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        deleteCravingUseCase(intent.craving.id)
+        analyticsTracker.cravingDismissed()
+        emit(HomeResult.CravingDismissed)
     }.catch {
         emit(HomeResult.Error.Generic)
     }

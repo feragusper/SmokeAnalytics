@@ -72,6 +72,14 @@ sealed interface HomeIntent {
     data class ResolveCraving(val craving: Craving, val smoked: Boolean) : HomeIntent
 
     /**
+     * Discards the active craving without recording an outcome — used when it was
+     * tracked by mistake. Leaves no trace in the stats.
+     *
+     * @property craving The pending craving being dismissed.
+     */
+    data class DismissCraving(val craving: Craving) : HomeIntent
+
+    /**
      * Dismisses the transient "it's already a good time" hint.
      */
     data object DismissCravingHint : HomeIntent
