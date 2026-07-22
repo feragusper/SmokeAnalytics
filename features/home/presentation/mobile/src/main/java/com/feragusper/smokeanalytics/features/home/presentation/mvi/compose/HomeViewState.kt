@@ -406,6 +406,7 @@ private fun HomeContent(
                         onResolve = { smoked ->
                             intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
                         },
+                        onDismiss = { intent(HomeIntent.DismissCraving(activeCraving)) },
                     )
                 } else {
                     CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
@@ -632,6 +633,7 @@ private fun CravingCountdownCard(
     quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     val target = craving.targetAt
     var remainingSeconds by remember(craving.id) {
@@ -647,6 +649,40 @@ private fun CravingCountdownCard(
         }
     }
     val done = remainingSeconds <= 0L
+    var showDismissConfirm by remember { mutableStateOf(false) }
+
+    if (showDismissConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDismissConfirm = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.home_dismiss_craving_title),
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = { Text(stringResource(R.string.home_dismiss_craving_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDismissConfirm = false
+                    onDismiss()
+                }) {
+                    Text(stringResource(R.string.home_dismiss_craving_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDismissConfirm = false }) {
+                    Text(stringResource(R.string.home_dismiss_craving_cancel))
+                }
+            },
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -660,12 +696,28 @@ private fun CravingCountdownCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = if (done) stringResource(R.string.home_you_made_it) else stringResource(R.string.home_hold_on),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (done) stringResource(R.string.home_you_made_it) else stringResource(R.string.home_hold_on),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                IconButton(
+                    onClick = { showDismissConfirm = true },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.home_dismiss_craving),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             // Highlighted inner panel: countdown while waiting, message when done.
             Surface(

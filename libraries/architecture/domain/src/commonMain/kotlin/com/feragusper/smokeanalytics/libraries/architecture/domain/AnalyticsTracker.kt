@@ -34,6 +34,9 @@ interface AnalyticsTracker {
     fun cravingResolved(smoked: Boolean) =
         logEvent(AnalyticsEvent.CRAVING_RESOLVED, mapOf(AnalyticsParam.SMOKED to smoked))
 
+    /** A craving was dismissed (tracked by mistake) without recording an outcome. */
+    fun cravingDismissed() = logEvent(AnalyticsEvent.CRAVING_DISMISSED)
+
     /** The user set/updated their active goal. [goalType] is the goal kind. */
     fun goalSet(goalType: String) = logEvent(AnalyticsEvent.GOAL_SET, mapOf(AnalyticsParam.GOAL_TYPE to goalType))
 
@@ -88,6 +91,7 @@ object AnalyticsEvent {
     const val SMOKE_DELETED = "smoke_deleted"
     const val CRAVING_TRACKED = "craving_tracked"
     const val CRAVING_RESOLVED = "craving_resolved"
+    const val CRAVING_DISMISSED = "craving_dismissed"
     const val GOAL_SET = "goal_set"
     const val GOAL_CLEARED = "goal_cleared"
     const val RELATIONSHIP_TAGGED = "relationship_tagged"

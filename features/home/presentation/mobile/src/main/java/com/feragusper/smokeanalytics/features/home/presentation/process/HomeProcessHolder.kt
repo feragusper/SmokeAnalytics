@@ -13,6 +13,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.CravingWaitCalcul
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.toCravingStats
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.DeleteCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
@@ -78,6 +79,7 @@ class HomeProcessHolder constructor(
     private val locationCaptureService: LocationCaptureService,
     private val widgetRefreshService: WidgetRefreshService,
     private val addCravingUseCase: AddCravingUseCase,
+    private val deleteCravingUseCase: DeleteCravingUseCase,
     private val fetchActiveCravingUseCase: FetchActiveCravingUseCase,
     private val fetchCravingsUseCase: FetchCravingsUseCase,
     private val resolveCravingUseCase: ResolveCravingUseCase,
@@ -103,6 +105,7 @@ class HomeProcessHolder constructor(
         is HomeIntent.DeleteSmoke -> processDeleteSmoke(intent)
         HomeIntent.TrackCraving -> processTrackCraving()
         is HomeIntent.ResolveCraving -> processResolveCraving(intent)
+        is HomeIntent.DismissCraving -> processDismissCraving(intent)
         HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
         HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
         is HomeIntent.OpenRelationshipPrompt -> flow { emit(HomeResult.AddSmokeSuccess(intent.smokeId)) }
@@ -425,6 +428,20 @@ class HomeProcessHolder constructor(
         syncWithWearBestEffort()
     }.catchAndLog { e ->
         Timber.e(e, "Resolve craving failed")
+        emit(HomeResult.Error.Generic(e.debugSummary()))
+    }
+
+    /**
+     * Handles [HomeIntent.DismissCraving]. Deletes the pending craving outright so a
+     * mistaken tap leaves no outcome and no points behind.
+     */
+    private fun processDismissCraving(intent: HomeIntent.DismissCraving): Flow<HomeResult> = flow {
+        emit(HomeResult.Loading)
+        deleteCravingUseCase(intent.craving.id)
+        analyticsTracker.cravingDismissed()
+        emit(HomeResult.CravingDismissed)
+    }.catchAndLog { e ->
+        Timber.e(e, "Dismiss craving failed")
         emit(HomeResult.Error.Generic(e.debugSummary()))
     }
 
