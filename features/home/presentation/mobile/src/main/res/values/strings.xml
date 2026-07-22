@@ -39,6 +39,11 @@
     <string name="home_you_made_it">You made it! 🎉</string>
     <string name="home_wait_over">The wait is over. Smoke it now if you still want it, or let it go for the full reward.</string>
     <string name="home_hold_on_body">Until your next cigarette fits the goal. You\'ve got this.</string>
+    <string name="home_dismiss_craving">Dismiss craving</string>
+    <string name="home_dismiss_craving_title">Dismiss this craving?</string>
+    <string name="home_dismiss_craving_body">Tracked it by mistake? Dismissing removes it with no points and no record.</string>
+    <string name="home_dismiss_craving_confirm">Dismiss</string>
+    <string name="home_dismiss_craving_cancel">Keep it</string>
     <string name="home_im_good">I\'m good</string>
     <string name="home_log_the_cigarette">Log the cigarette</string>
     <string name="home_i_smoked_anyway">I smoked anyway</string>

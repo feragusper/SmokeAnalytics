@@ -28,6 +28,7 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutc
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.AddCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchActiveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.DeleteCravingUseCase
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
@@ -74,6 +75,7 @@ class HomeProcessHolderTest {
     private val locationCaptureService: LocationCaptureService = mockk()
     private val widgetRefreshService: WidgetRefreshService = mockk()
     private val addCravingUseCase: AddCravingUseCase = mockk()
+    private val deleteCravingUseCase: DeleteCravingUseCase = mockk()
     private val fetchActiveCravingUseCase: FetchActiveCravingUseCase = mockk()
     private val fetchCravingsUseCase: FetchCravingsUseCase = mockk()
     private val resolveCravingUseCase: ResolveCravingUseCase = mockk()
@@ -96,6 +98,7 @@ class HomeProcessHolderTest {
             locationCaptureService = locationCaptureService,
             widgetRefreshService = widgetRefreshService,
             addCravingUseCase = addCravingUseCase,
+            deleteCravingUseCase = deleteCravingUseCase,
             fetchActiveCravingUseCase = fetchActiveCravingUseCase,
             fetchCravingsUseCase = fetchCravingsUseCase,
             resolveCravingUseCase = resolveCravingUseCase,
@@ -187,6 +190,21 @@ class HomeProcessHolderTest {
             ).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
                 awaitItem() shouldBeEqualTo HomeResult.CravingResolved(CravingOutcome.RESISTED, 16)
+                coVerify(exactly = 0) { addSmokeUseCase.invoke() }
+                awaitComplete()
+            }
+        }
+
+        @Test
+        fun `WHEN dismissing a craving THEN it is deleted without resolving or logging a smoke`() = runTest {
+            val craving = Craving(id = "c1", createdAt = Clock.System.now() - 5.minutes)
+            coEvery { deleteCravingUseCase.invoke(craving.id) } just Runs
+
+            processHolder.processIntent(HomeIntent.DismissCraving(craving)).test {
+                awaitItem() shouldBeEqualTo HomeResult.Loading
+                awaitItem() shouldBeEqualTo HomeResult.CravingDismissed
+                coVerify(exactly = 1) { deleteCravingUseCase.invoke(craving.id) }
+                coVerify(exactly = 0) { resolveCravingUseCase.invoke(any(), any(), any()) }
                 coVerify(exactly = 0) { addSmokeUseCase.invoke() }
                 awaitComplete()
             }

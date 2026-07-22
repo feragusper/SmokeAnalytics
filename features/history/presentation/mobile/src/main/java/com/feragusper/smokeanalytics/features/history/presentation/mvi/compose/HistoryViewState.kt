@@ -36,6 +36,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,6 +89,7 @@ data class HistoryViewState(
         showNavigationIcon: Boolean = true,
         intent: (HistoryIntent) -> Unit,
     ) {
+        val analytics = koinInject<AnalyticsTracker>()
         val snackbarHostState = remember { SnackbarHostState() }
         val timeZone = remember { TimeZone.currentSystemDefault() }
         var showDatePicker by remember { mutableStateOf(false) }
@@ -117,7 +122,10 @@ data class HistoryViewState(
                 item {
                     ArchiveHeader(
                         showNavigationIcon = showNavigationIcon,
-                        onNavigateUp = { intent(HistoryIntent.NavigateUp) },
+                        onNavigateUp = {
+                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.BACK)
+                            intent(HistoryIntent.NavigateUp)
+                        },
                     )
                 }
 
@@ -128,6 +136,10 @@ data class HistoryViewState(
                         entriesCount = entriesCount,
                         displayLoading = displayLoading,
                         onShiftMonth = { amount ->
+                            analytics.buttonTap(
+                                AnalyticsScreen.HISTORY,
+                                if (amount < 0) AnalyticsTarget.SHIFT_MONTH_PREV else AnalyticsTarget.SHIFT_MONTH_NEXT,
+                            )
                             val shifted = selectedLocalDate.plus(DatePeriod(months = amount))
                             intent(
                                 HistoryIntent.FetchSmokes(
@@ -139,9 +151,18 @@ data class HistoryViewState(
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
-                        onPreviousDay = { intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone))) },
-                        onNextDay = { intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone))) },
-                        onPickDate = { showDatePicker = true },
+                        onPreviousDay = {
+                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PREV)
+                            intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
+                        },
+                        onNextDay = {
+                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.NEXT)
+                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
+                        },
+                        onPickDate = {
+                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PICK_DATE)
+                            showDatePicker = true
+                        },
                         onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                     )
                 }
@@ -175,7 +196,10 @@ data class HistoryViewState(
                                 )
                                 if (currentError != HistoryResult.Error.NotLoggedIn) {
                                     Button(
-                                        onClick = { intent(HistoryIntent.FetchSmokes(selectedDate)) },
+                                        onClick = {
+                                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.RETRY)
+                                            intent(HistoryIntent.FetchSmokes(selectedDate))
+                                        },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = MaterialTheme.colorScheme.error,
                                             contentColor = MaterialTheme.colorScheme.onError,

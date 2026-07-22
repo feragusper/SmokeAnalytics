@@ -39,6 +39,11 @@
     <string name="home_you_made_it">¡Lo lograste! 🎉</string>
     <string name="home_wait_over">Se terminó la espera. Fumalo ahora si todavía lo querés, o dejalo pasar para el premio completo.</string>
     <string name="home_hold_on_body">Hasta que tu próximo cigarrillo entre en el objetivo. Vos podés.</string>
+    <string name="home_dismiss_craving">Descartar antojo</string>
+    <string name="home_dismiss_craving_title">¿Descartar este antojo?</string>
+    <string name="home_dismiss_craving_body">¿Lo registraste por error? Al descartarlo se elimina sin puntos ni registro.</string>
+    <string name="home_dismiss_craving_confirm">Descartar</string>
+    <string name="home_dismiss_craving_cancel">Mantener</string>
     <string name="home_im_good">Estoy bien</string>
     <string name="home_log_the_cigarette">Registrar el cigarrillo</string>
     <string name="home_i_smoked_anyway">Fumé igual</string>

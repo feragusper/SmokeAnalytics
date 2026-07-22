@@ -97,6 +97,9 @@ import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
@@ -107,6 +110,7 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyti
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.TriggerOption
 import com.valentinilk.shimmer.shimmer
+import org.koin.compose.koinInject
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
 
@@ -406,6 +410,7 @@ private fun HomeContent(
                         onResolve = { smoked ->
                             intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
                         },
+                        onDismiss = { intent(HomeIntent.DismissCraving(activeCraving)) },
                     )
                 } else {
                     CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
@@ -558,6 +563,7 @@ private fun QuitReasonReminder(quitReason: String) {
 
 @Composable
 private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
+    val analytics = koinInject<AnalyticsTracker>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
@@ -581,7 +587,10 @@ private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
             )
             QuitReasonReminder(quitReason)
             Button(
-                onClick = onTrack,
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.TRACK_CRAVING)
+                    onTrack()
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
             ) {
@@ -599,6 +608,7 @@ private fun CravingPromptCard(quitReason: String, onTrack: () -> Unit) {
 
 @Composable
 private fun CravingHintBanner(onDismiss: () -> Unit) {
+    val analytics = koinInject<AnalyticsTracker>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
@@ -616,7 +626,10 @@ private fun CravingHintBanner(onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = {
+                analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.CRAVING_HINT_DISMISS)
+                onDismiss()
+            }) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = stringResource(R.string.home_dismiss),
@@ -632,6 +645,7 @@ private fun CravingCountdownCard(
     quitReason: String,
     craving: Craving,
     onResolve: (smoked: Boolean) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     val target = craving.targetAt
     var remainingSeconds by remember(craving.id) {
@@ -647,6 +661,42 @@ private fun CravingCountdownCard(
         }
     }
     val done = remainingSeconds <= 0L
+    var showDismissConfirm by remember { mutableStateOf(false) }
+    val analytics = koinInject<AnalyticsTracker>()
+
+    if (showDismissConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDismissConfirm = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.home_dismiss_craving_title),
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = { Text(stringResource(R.string.home_dismiss_craving_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDismissConfirm = false
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.CRAVING_DISMISS)
+                    onDismiss()
+                }) {
+                    Text(stringResource(R.string.home_dismiss_craving_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDismissConfirm = false }) {
+                    Text(stringResource(R.string.home_dismiss_craving_cancel))
+                }
+            },
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -660,12 +710,28 @@ private fun CravingCountdownCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = if (done) stringResource(R.string.home_you_made_it) else stringResource(R.string.home_hold_on),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (done) stringResource(R.string.home_you_made_it) else stringResource(R.string.home_hold_on),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                IconButton(
+                    onClick = { showDismissConfirm = true },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.home_dismiss_craving),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             // Highlighted inner panel: countdown while waiting, message when done.
             Surface(
@@ -720,14 +786,20 @@ private fun CravingCountdownCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     OutlinedButton(
-                        onClick = { onResolve(false) },
+                        onClick = {
+                            analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.CRAVING_IM_GOOD)
+                            onResolve(false)
+                        },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                     ) {
                         Text(stringResource(R.string.home_im_good))
                     }
                     Button(
-                        onClick = { onResolve(true) },
+                        onClick = {
+                            analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.CRAVING_LOG_CIGARETTE)
+                            onResolve(true)
+                        },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                     ) {
@@ -738,7 +810,10 @@ private fun CravingCountdownCard(
                 // While waiting the only manual action is the give-in escape hatch.
                 // Resisting is automatic: the card flips to "You made it!" when the countdown ends.
                 OutlinedButton(
-                    onClick = { onResolve(true) },
+                    onClick = {
+                        analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.CRAVING_I_SMOKED)
+                        onResolve(true)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                 ) {
@@ -922,6 +997,7 @@ private fun HomeErrorSection(
     hasLoadedContent: Boolean,
     onRetry: () -> Unit,
 ) {
+    val analytics = koinInject<AnalyticsTracker>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.errorContainer,
@@ -948,7 +1024,10 @@ private fun HomeErrorSection(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Button(
-                onClick = onRetry,
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.RETRY)
+                    onRetry()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onErrorContainer,
                     contentColor = MaterialTheme.colorScheme.errorContainer,
@@ -1785,6 +1864,7 @@ private fun EveningResetSection(
     isLoading: Boolean,
     onStartNewDay: () -> Unit,
 ) {
+    val analytics = koinInject<AnalyticsTracker>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.28f),
@@ -1815,7 +1895,10 @@ private fun EveningResetSection(
                 textAlign = TextAlign.Center,
             )
             Button(
-                onClick = onStartNewDay,
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.START_NEW_DAY)
+                    onStartNewDay()
+                },
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),

@@ -146,6 +146,11 @@ sealed interface HomeResult : MVIResult {
     ) : HomeResult
 
     /**
+     * The active craving was discarded (tracked by mistake) without an outcome.
+     */
+    data object CravingDismissed : HomeResult
+
+    /**
      * Dismisses the transient craving hint.
      */
     data object CravingHintDismissed : HomeResult

@@ -26,6 +26,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.goals.presentation.R
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +63,7 @@ fun GoalsEditorScreen(
     onSignInSuccess: () -> Unit,
     onSignInError: (String) -> Unit,
 ) {
+    val analytics = koinInject<AnalyticsTracker>()
     var selectedType by remember(preferences.activeGoal) {
         mutableStateOf(preferences.activeGoal?.type ?: GoalType.DailyCap)
     }
@@ -177,6 +182,7 @@ fun GoalsEditorScreen(
                         type = type,
                         selected = selectedType == type,
                         onClick = {
+                            analytics.buttonTap(AnalyticsScreen.GOALS_CONFIGURE, AnalyticsTarget.SELECT_GOAL_TYPE)
                             selectedType = type
                             draftValue = type.defaultDraftValue()
                         },

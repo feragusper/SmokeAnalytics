@@ -45,6 +45,10 @@ import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.stats.presentation.R
 import androidx.compose.runtime.LaunchedEffect
@@ -108,6 +112,7 @@ data class StatsViewState(
         onDateChange: (JavaLocalDate) -> Unit = {},
         intent: (StatsIntent) -> Unit,
     ) {
+        val analytics = koinInject<AnalyticsTracker>()
         LaunchedEffect(refreshNonce, currentPeriod, selectedDate) {
             intent(
                 StatsIntent.LoadStats(
@@ -221,7 +226,13 @@ data class StatsViewState(
                                     Tab(
                                         modifier = Modifier.padding(vertical = 12.dp),
                                         selected = isSelected,
-                                        onClick = { onPeriodChange(period) },
+                                        onClick = {
+                                            analytics.buttonTap(
+                                                AnalyticsScreen.ANALYTICS,
+                                                "${AnalyticsTarget.PERIOD_TAB}_${period.name.lowercase()}",
+                                            )
+                                            onPeriodChange(period)
+                                        },
                                         selectedContentColor = MaterialTheme.colorScheme.primary,
                                         unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ) {
@@ -595,6 +606,7 @@ fun HeaderNavigation(
     onDateChange: (JavaLocalDate) -> Unit
 ) {
     val locale = LocalLocale.current.platformLocale
+    val analytics = koinInject<AnalyticsTracker>()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -605,6 +617,7 @@ fun HeaderNavigation(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = {
+            analytics.buttonTap(AnalyticsScreen.ANALYTICS, AnalyticsTarget.PREV)
             onDateChange(
                 when (currentPeriod) {
                     StatsViewState.StatsPeriod.DAY -> selectedDate.minusDays(1)
@@ -633,6 +646,7 @@ fun HeaderNavigation(
         )
 
         IconButton(onClick = {
+            analytics.buttonTap(AnalyticsScreen.ANALYTICS, AnalyticsTarget.NEXT)
             onDateChange(
                 when (currentPeriod) {
                     StatsViewState.StatsPeriod.DAY -> selectedDate.plusDays(1)
