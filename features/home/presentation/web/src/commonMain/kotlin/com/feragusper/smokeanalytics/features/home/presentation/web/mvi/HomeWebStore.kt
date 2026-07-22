@@ -153,6 +153,14 @@ class HomeWebStore(
                 )
             }
 
+            HomeResult.CravingDismissed -> {
+                send(HomeIntent.FetchSmokes)
+                previous.copy(
+                    displayLoading = false,
+                    activeCraving = null,
+                )
+            }
+
             HomeResult.CravingHintDismissed -> previous.copy(showCravingHint = false)
 
             HomeResult.CravingCelebrationDismissed -> previous.copy(cravingCelebration = null)

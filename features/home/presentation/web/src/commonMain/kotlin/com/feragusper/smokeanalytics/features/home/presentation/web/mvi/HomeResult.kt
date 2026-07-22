@@ -73,6 +73,8 @@ sealed interface HomeResult {
         val points: Int,
     ) : HomeResult
 
+    data object CravingDismissed : HomeResult
+
     data object CravingHintDismissed : HomeResult
 
     data object CravingCelebrationDismissed : HomeResult
