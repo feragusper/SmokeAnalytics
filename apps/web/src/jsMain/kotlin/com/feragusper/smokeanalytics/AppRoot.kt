@@ -42,6 +42,7 @@ import kotlinx.browser.window
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.mp.KoinPlatform.getKoin
 import org.w3c.dom.events.Event
@@ -182,7 +183,10 @@ private fun AppContent(
 
     WebScaffold(
         route = route,
-        onNavigate = ::navigateTo,
+        onNavigate = { target ->
+            analytics.buttonTap(webRouteScreen(route, analyticsTab), webNavTarget(target))
+            navigateTo(target)
+        },
         language = language,
         onLanguageChange = {
             analytics.languageChanged(it.name)
@@ -197,16 +201,28 @@ private fun AppContent(
         when (route) {
             WebRoute.Home -> HomeWebScreen(
                 store = homeStore,
-                onNavigateToHistory = { navigateTo(WebRoute.History) },
-                onNavigateToGoals = { navigateTo(WebRoute.Goals) },
+                onNavigateToHistory = {
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.OPEN_HISTORY)
+                    navigateTo(WebRoute.History)
+                },
+                onNavigateToGoals = {
+                    analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.OPEN_GOALS)
+                    navigateTo(WebRoute.Goals)
+                },
             )
 
             WebRoute.Analytics -> AnalyticsWebScreen(
                 selectedTab = analyticsTab,
                 selectedPeriod = statsPeriod,
                 selectedDate = statsSelectedDate,
-                onSelectTab = { analyticsTab = it },
-                onPeriodChange = { statsPeriod = it },
+                onSelectTab = {
+                    analytics.buttonTap(AnalyticsScreen.ANALYTICS, "tab_${it.name.lowercase()}")
+                    analyticsTab = it
+                },
+                onPeriodChange = {
+                    analytics.buttonTap(AnalyticsScreen.ANALYTICS, "${AnalyticsTarget.PERIOD_TAB}_${it.name.lowercase()}")
+                    statsPeriod = it
+                },
                 onDateChange = { statsSelectedDate = it },
                 statsContent = {
                     StatsWebScreen(
@@ -236,7 +252,10 @@ private fun AppContent(
 
             WebRoute.Goals -> GoalsWebScreen(
                 deps = goalsDeps,
-                onNavigateBack = { navigateTo(WebRoute.Home) },
+                onNavigateBack = {
+                    analytics.buttonTap(AnalyticsScreen.GOALS, AnalyticsTarget.BACK)
+                    navigateTo(WebRoute.Home)
+                },
             )
 
             WebRoute.Auth -> AuthenticationWebScreen(
@@ -246,11 +265,34 @@ private fun AppContent(
 
             WebRoute.History -> HistoryWebScreen(
                 store = historyStore,
-                onNavigateUp = { navigateTo(WebRoute.Home) },
+                onNavigateUp = {
+                    analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.BACK)
+                    navigateTo(WebRoute.Home)
+                },
                 onNavigateToAuth = { navigateTo(WebRoute.Auth) },
             )
         }
     }
+}
+
+/** The [AnalyticsScreen] name for the currently displayed web route. */
+private fun webRouteScreen(route: WebRoute, analyticsTab: AnalyticsTab): String = when (route) {
+    WebRoute.Home -> AnalyticsScreen.HOME
+    WebRoute.Analytics -> if (analyticsTab == AnalyticsTab.Map) AnalyticsScreen.MAP else AnalyticsScreen.ANALYTICS
+    WebRoute.History -> AnalyticsScreen.HISTORY
+    WebRoute.Goals -> AnalyticsScreen.GOALS
+    WebRoute.Settings -> AnalyticsScreen.SETTINGS
+    WebRoute.Auth -> AnalyticsScreen.AUTHENTICATION
+}
+
+/** The sidebar [AnalyticsTarget] for a destination web route. */
+private fun webNavTarget(route: WebRoute): String = when (route) {
+    WebRoute.Analytics -> AnalyticsTarget.NAV_ANALYTICS
+    WebRoute.History -> AnalyticsTarget.NAV_HISTORY
+    WebRoute.Goals -> AnalyticsTarget.NAV_GOALS
+    WebRoute.Settings -> AnalyticsTarget.NAV_SETTINGS
+    WebRoute.Auth -> AnalyticsTarget.SIGN_IN
+    WebRoute.Home -> AnalyticsTarget.NAV_HOME
 }
 
 private fun navigateTo(route: WebRoute) {

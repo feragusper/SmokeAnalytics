@@ -75,6 +75,7 @@ import com.feragusper.smokeanalytics.features.authentication.presentation.Authen
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.design.compose.pressScaleMicroInteraction
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
@@ -306,16 +307,7 @@ private fun MainContainerScreen(
     val analytics = koinInject<AnalyticsTracker>()
 
     LaunchedEffect(activeRoute) {
-        val screen = when (activeRoute) {
-            BottomNavigationScreens.Home.route -> AnalyticsScreen.HOME
-            BottomNavigationScreens.Analytics.route -> AnalyticsScreen.ANALYTICS
-            BottomNavigationScreens.History.route -> AnalyticsScreen.HISTORY
-            BottomNavigationScreens.Goals.route -> AnalyticsScreen.GOALS
-            GOALS_CONFIGURE_ROUTE -> AnalyticsScreen.GOALS_CONFIGURE
-            BottomNavigationScreens.You.route -> AnalyticsScreen.SETTINGS
-            else -> null
-        }
-        screen?.let { analytics.screenView(it) }
+        routeToScreen(activeRoute)?.let { analytics.screenView(it) }
     }
 
     val bottomNavigationItems = listOf(
@@ -383,7 +375,7 @@ private fun MainContainerScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = { BottomNavigation(navController, bottomNavigationItems) },
+        bottomBar = { BottomNavigation(navController, bottomNavigationItems, analytics) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             AnimatedVisibility(
@@ -395,7 +387,10 @@ private fun MainContainerScreen(
                     modifier = Modifier
                         .testTag(BUTTON_ADD_SMOKE)
                         .pressScaleMicroInteraction(pressedScale = 0.95f),
-                    onClick = { runHomeTrackAction() },
+                    onClick = {
+                        analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.TRACK_SMOKE)
+                        runHomeTrackAction()
+                    },
                     containerColor = fabTone.buttonContainerColor(),
                     contentColor = fabTone.contentColor(),
                     elevation = FloatingActionButtonDefaults.elevation(
@@ -553,7 +548,8 @@ private data class InAppUpdatePrompt(
 @Composable
 private fun BottomNavigation(
     navController: NavHostController,
-    items: List<BottomNavigationScreens>
+    items: List<BottomNavigationScreens>,
+    analytics: AnalyticsTracker,
 ) {
     val route = currentRoute(navController)
     val selectedIndex = items.indexOfFirst { it.route == route }.takeIf { it >= 0 } ?: 0
@@ -588,6 +584,9 @@ private fun BottomNavigation(
                 animationSpec = tween(durationMillis = 500, easing = LinearEasing),
                 size = 24.dp,
                 onClick = {
+                    routeToScreen(route)?.let { current ->
+                        analytics.buttonTap(current, navTargetFor(screen.route))
+                    }
                     navController.navigate(screen.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
@@ -716,6 +715,26 @@ private fun ElapsedTone.buttonContainerColor() = when (this) {
 private fun currentRoute(navController: NavHostController): String? {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     return navBackStackEntry?.destination?.route
+}
+
+/** Maps a nav route to its [AnalyticsScreen] name, or null for routes we don't track. */
+private fun routeToScreen(route: String?): String? = when (route) {
+    BottomNavigationScreens.Home.route -> AnalyticsScreen.HOME
+    BottomNavigationScreens.Analytics.route -> AnalyticsScreen.ANALYTICS
+    BottomNavigationScreens.History.route -> AnalyticsScreen.HISTORY
+    BottomNavigationScreens.Goals.route -> AnalyticsScreen.GOALS
+    GOALS_CONFIGURE_ROUTE -> AnalyticsScreen.GOALS_CONFIGURE
+    BottomNavigationScreens.You.route -> AnalyticsScreen.SETTINGS
+    else -> null
+}
+
+/** The bottom-nav [AnalyticsTarget] for a destination route. */
+private fun navTargetFor(route: String): String = when (route) {
+    BottomNavigationScreens.Analytics.route -> AnalyticsTarget.NAV_ANALYTICS
+    BottomNavigationScreens.History.route -> AnalyticsTarget.NAV_HISTORY
+    BottomNavigationScreens.Goals.route -> AnalyticsTarget.NAV_GOALS
+    BottomNavigationScreens.You.route -> AnalyticsTarget.NAV_SETTINGS
+    else -> AnalyticsTarget.NAV_HOME
 }
 
 /**

@@ -1,5 +1,9 @@
 package com.feragusper.smokeanalytics.features.home.presentation.mvi.compose
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -60,6 +64,7 @@ internal fun RelationshipReminderCard(
     onOpen: (smokeId: String) -> Unit,
 ) {
     val shown = pending.take(MAX_PENDING_SHOWN)
+    val analytics = koinInject<AnalyticsTracker>()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
@@ -91,7 +96,10 @@ internal fun RelationshipReminderCard(
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    TextButton(onClick = { onOpen(item.id) }) {
+                    TextButton(onClick = {
+                        analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.RELATIONSHIP_OPEN)
+                        onOpen(item.id)
+                    }) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = null,

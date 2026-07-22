@@ -75,6 +75,8 @@ import com.feragusper.smokeanalytics.libraries.authentication.presentation.compo
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
@@ -588,6 +590,7 @@ private fun PreferencesCard(
     onSave: (UserPreferences) -> Unit,
     onReset: () -> Unit,
 ) {
+    val analytics = koinInject<AnalyticsTracker>()
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -617,7 +620,10 @@ private fun PreferencesCard(
                 value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
                 body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
-                onClick = { showDayStartPicker = true },
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_DAY_START)
+                    showDayStartPicker = true
+                },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
@@ -625,7 +631,10 @@ private fun PreferencesCard(
                 value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
                 body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
-                onClick = { showBedtimePicker = true },
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_BEDTIME)
+                    showBedtimePicker = true
+                },
             )
         }
 
@@ -640,7 +649,10 @@ private fun PreferencesCard(
                 value = preferences.currencySymbol,
                 body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
-                onClick = { showCurrencyPicker = true },
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CURRENCY)
+                    showCurrencyPicker = true
+                },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
@@ -648,7 +660,10 @@ private fun PreferencesCard(
                 value = "%.2f".format(preferences.packPrice),
                 body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
-                onClick = { showPackPricePicker = true },
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_PACK_PRICE)
+                    showPackPricePicker = true
+                },
             )
             TappableHighlightCard(
                 modifier = Modifier.weight(1f),
@@ -656,7 +671,10 @@ private fun PreferencesCard(
                 value = preferences.cigarettesPerPack.toString(),
                 body = stringResource(R.string.settings_tap_to_change),
                 enabled = enabled,
-                onClick = { showCigsPerPackPicker = true },
+                onClick = {
+                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CIGS_PER_PACK)
+                    showCigsPerPackPicker = true
+                },
             )
         }
 
@@ -665,6 +683,7 @@ private fun PreferencesCard(
             enabled = enabled,
             isTracking = preferences.locationTrackingEnabled,
             onToggle = { checked ->
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.TOGGLE_LOCATION)
                 if (!checked) {
                     val updated = preferences.copy(locationTrackingEnabled = false)
                     onPreferencesChange(updated); onSave(updated)

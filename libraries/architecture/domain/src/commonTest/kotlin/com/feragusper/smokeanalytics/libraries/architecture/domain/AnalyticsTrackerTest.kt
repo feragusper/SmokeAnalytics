@@ -79,6 +79,18 @@ class AnalyticsTrackerTest {
     }
 
     @Test
+    fun buttonTap_logsScreenAndTarget() {
+        tracker.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.TRACK_SMOKE)
+        assertEquals(
+            AnalyticsEvent.BUTTON_TAP to mapOf(
+                AnalyticsParam.SCREEN to AnalyticsScreen.HOME,
+                AnalyticsParam.TARGET to AnalyticsTarget.TRACK_SMOKE,
+            ),
+            tracker.events.single(),
+        )
+    }
+
+    @Test
     fun goalSet_logsGoalType() {
         tracker.goalSet("DAILY_LIMIT")
         assertEquals(

@@ -3,6 +3,8 @@ package com.feragusper.smokeanalytics.features.settings.presentation
 import android.app.Activity
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
 import android.content.ActivityNotFoundException
@@ -103,6 +105,7 @@ fun AboutSection() {
                     label = stringResource(R.string.about_rate),
                     icon = { Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
+                        analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.RATE_APP)
                         val fallbackToStore = {
                             val marketIntent = Intent(
                                 Intent.ACTION_VIEW,
@@ -137,6 +140,7 @@ fun AboutSection() {
                     label = stringResource(R.string.about_report),
                     icon = { Icon(Icons.Filled.BugReport, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
+                        analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.REPORT_ISSUE)
                         context.startActivity(
                             Intent(
                                 Intent.ACTION_VIEW,
@@ -150,6 +154,7 @@ fun AboutSection() {
                     label = stringResource(R.string.about_contact),
                     icon = { Icon(Icons.Filled.Mail, contentDescription = null, modifier = Modifier.size(22.dp)) },
                     onClick = {
+                        analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CONTACT)
                         context.startActivity(
                             Intent(
                                 Intent.ACTION_VIEW,

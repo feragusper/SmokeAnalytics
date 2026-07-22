@@ -25,6 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import org.koin.compose.koinInject
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.goals.presentation.R
 import androidx.compose.ui.Alignment
@@ -55,6 +59,11 @@ fun GoalsProgressScreen(
     onSignInSuccess: () -> Unit,
     onSignInError: (String) -> Unit,
 ) {
+    val analytics = koinInject<AnalyticsTracker>()
+    val onConfigureTracked = {
+        analytics.buttonTap(AnalyticsScreen.GOALS, AnalyticsTarget.CONFIGURE_GOAL)
+        onConfigure()
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -136,7 +145,7 @@ fun GoalsProgressScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(
-                    onClick = onConfigure,
+                    onClick = onConfigureTracked,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                 ) {
@@ -146,7 +155,7 @@ fun GoalsProgressScreen(
             return
         }
 
-        GoalProgressCard(goalProgress = goalProgress, onConfigure = onConfigure)
+        GoalProgressCard(goalProgress = goalProgress, onConfigure = onConfigureTracked)
     }
 }
 
