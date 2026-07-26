@@ -192,6 +192,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.bundles.androidx.base)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)

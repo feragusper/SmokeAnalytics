@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Post-splash app theme. Kept as the plain AppCompat NoActionBar shell the app has
+      always used; Compose owns the real look. Named so the splash theme can point at it.
+    -->
+    <style name="Theme.SmokeAnalytics" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <!--
+      System splash shown on cold start (Android 12+ native, backported below via
+      core-splashscreen). Brand teal background with the launcher logo, then hands off to
+      the animated Compose splash inside MainActivity. Keep the background in sync with the
+      Compose splash so the transition reads as one continuous screen.
+    -->
+    <style name="Theme.SmokeAnalytics.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/avd_splash</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="postSplashScreenTheme">@style/Theme.SmokeAnalytics</item>
+    </style>
+
+</resources>

@@ -9,13 +9,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
+import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,6 +58,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -77,6 +83,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.Home
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.AppStartupReadiness
 import com.feragusper.smokeanalytics.libraries.design.compose.pressScaleMicroInteraction
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import org.koin.compose.koinInject
@@ -95,7 +102,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The main activity that serves as the entry point of the application.
@@ -120,6 +130,14 @@ class MainActivity : ComponentActivity() {
     private var wearInstallPromptNode by mutableStateOf<Node?>(null)
     private var hasPromptedForWearInstallInSession = false
 
+    /** Flipped true once home's initial load is ready, releasing the system splash to animate out. */
+    @Volatile
+    private var allowSplashExit = false
+
+    /** Drives home's slide-in. Set true from the splash exit listener so home slides in from the
+     *  right in lockstep with the splash sliding out left (same frame → real "push"). */
+    private var homeSlideStarted by mutableStateOf(false)
+
     private val inAppUpdateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
             refreshInAppUpdateState()
@@ -130,6 +148,30 @@ class MainActivity : ComponentActivity() {
      * setting up Jetpack Compose content and configuring the theme with [SmokeAnalyticsTheme].
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Only animate/hold the splash on a real cold start, not on config change / restore.
+        val showAnimatedSplash = savedInstanceState == null
+        if (showAnimatedSplash) AppStartupReadiness.reset()
+        // On warm start / restore there's no splash, so home is in place from the start.
+        homeSlideStarted = !showAnimatedSplash
+        val splashScreen = installSplashScreen()
+        // The Android 12+ system splash IS the whole splash — its icon (avd_splash) is an equalizer
+        // that loops while we keep it on screen. Home is deliberately composed a beat late (see
+        // setContent) so the main thread is free for the animation to run instead of being starved
+        // by startKoin + home composition. Hold until home's initial load is ready — so it's
+        // revealed already populated — then animate the splash out.
+        splashScreen.setKeepOnScreenCondition { showAnimatedSplash && !allowSplashExit }
+        splashScreen.setOnExitAnimationListener { splashProvider ->
+            val view = splashProvider.view
+            // Start home's slide-in HERE, in the same callback that slides the splash out, so the
+            // two move together: splash exits left while home enters from the right, pushing it off.
+            homeSlideStarted = true
+            view.animate()
+                .translationX(-view.width.toFloat())
+                .setDuration(SPLASH_SLIDE_MS)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .withEndAction { splashProvider.remove() }
+                .start()
+        }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         handleLaunchIntent(intent)
@@ -164,24 +206,55 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainContainerScreen(
-                        widgetQuickAddRequestId = widgetQuickAddRequestId,
-                        inAppUpdatePrompt = inAppUpdatePrompt,
-                        restartUpdateReady = restartUpdateReady,
-                        wearInstallPromptNode = wearInstallPromptNode,
-                        onDismissUpdatePrompt = { inAppUpdatePrompt = null },
-                        onStartUpdate = ::startFlexibleUpdate,
-                        onDismissRestartPrompt = { restartUpdateReady = false },
-                        onCompleteDownloadedUpdate = ::completeDownloadedUpdate,
-                        onDismissWearInstallPrompt = { wearInstallPromptNode = null },
-                        onInstallWearApp = { nodeId ->
-                            wearInstallPromptNode = null
-                            wearInstallPromptManager.openPlayStoreOnWatch(nodeId)
-                        },
-                        navigateToAuthentication = {
-                            startActivity(Intent(this, AuthenticationActivity::class.java))
-                        }
+                    // Compose the heavy home tree a beat AFTER launch so the system-splash equalizer
+                    // has the main thread to itself and actually animates. Home then loads behind the
+                    // (still-shown) splash; when it's ready the splash slides out left while home
+                    // slides in from the right — no separate splash screen, no loading skeleton.
+                    var mainContentReady by remember { mutableStateOf(!showAnimatedSplash) }
+                    // 1 = fully off-screen right (hidden behind the splash), 0 = in place. Driven by
+                    // homeSlideStarted, which the splash exit listener flips at the exact frame the
+                    // splash begins sliding out — so home slides in synced with it.
+                    val homeSlideIn by animateFloatAsState(
+                        targetValue = if (homeSlideStarted) 0f else 1f,
+                        animationSpec = tween(durationMillis = SPLASH_SLIDE_MS.toInt(), easing = FastOutSlowInEasing),
+                        label = "homeSlideIn",
                     )
+                    LaunchedEffect(Unit) {
+                        if (!showAnimatedSplash) return@LaunchedEffect
+                        delay(SPLASH_ENTRANCE_MS)
+                        mainContentReady = true
+                        withTimeoutOrNull(SPLASH_MAX_WAIT_MS) {
+                            AppStartupReadiness.isReady.first { it }
+                        }
+                        delay(SPLASH_SETTLE_MS)
+                        allowSplashExit = true // releases the splash → exit listener slides both
+                    }
+                    if (mainContentReady) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { translationX = homeSlideIn * size.width },
+                        ) {
+                            MainContainerScreen(
+                                widgetQuickAddRequestId = widgetQuickAddRequestId,
+                                inAppUpdatePrompt = inAppUpdatePrompt,
+                                restartUpdateReady = restartUpdateReady,
+                                wearInstallPromptNode = wearInstallPromptNode,
+                                onDismissUpdatePrompt = { inAppUpdatePrompt = null },
+                                onStartUpdate = ::startFlexibleUpdate,
+                                onDismissRestartPrompt = { restartUpdateReady = false },
+                                onCompleteDownloadedUpdate = ::completeDownloadedUpdate,
+                                onDismissWearInstallPrompt = { wearInstallPromptNode = null },
+                                onInstallWearApp = { nodeId ->
+                                    wearInstallPromptNode = null
+                                    wearInstallPromptManager.openPlayStoreOnWatch(nodeId)
+                                },
+                                navigateToAuthentication = {
+                                    startActivity(Intent(this@MainActivity, AuthenticationActivity::class.java))
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -282,6 +355,19 @@ class MainActivity : ComponentActivity() {
         intent.action = null
     }
 }
+
+/** Time the system-splash equalizer animates on its own (main thread free) before home composes. */
+private const val SPLASH_ENTRANCE_MS = 700L
+
+/** Minimum hold after home has composed, so any brief compose jank isn't the last thing seen. */
+private const val SPLASH_SETTLE_MS = 250L
+
+/** Cap on waiting for readiness: reveal home anyway so the splash never over-holds on a slow
+ *  cold start (worst case a brief skeleton, instead of the equalizer dancing for seconds). */
+private const val SPLASH_MAX_WAIT_MS = 2500L
+
+/** Duration of the splash-out / home-in horizontal slide. Shared so both move as one. */
+private const val SPLASH_SLIDE_MS = 420L
 
 /**
  * Composable function that sets up the main screen with bottom navigation and a snackbar host.
