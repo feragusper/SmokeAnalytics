@@ -31,7 +31,8 @@
         <!-- Full-screen goal editor, launched outside the bottom-bar shell -->
         <activity
             android:name=".GoalsConfigureActivity"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SmokeAnalytics" />
 
         <receiver
             android:name=".widget.HomeStatusWidgetReceiver"
