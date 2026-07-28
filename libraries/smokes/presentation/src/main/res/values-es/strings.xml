@@ -17,5 +17,5 @@
     </plurals>
     <string name="smokes_quiet_day">Día tranquilo</string>
     <string name="smokes_no_archive_entries">Sin registros para este día</string>
-    <string name="smokes_use_add_for_date">Usá Agregar para la fecha para mantener el archivo completo sin salir de esta vista.</string>
+    <string name="smokes_use_add_for_date">Usá Registrar para cargar un cigarrillo en este día sin salir de esta vista.</string>
 </resources>

@@ -8,7 +8,7 @@
     <string name="history_archive_subtitle">Recorré el calendario, inspeccioná un día y editá el registro de fumado.</string>
     <string name="history_trend">Tendencia</string>
     <string name="history_reduction_vs_last_month">Reducción vs mes pasado</string>
-    <string name="history_add_for_date">Agregar para la fecha</string>
+    <string name="history_add_for_date">Registrar</string>
     <string name="history_retry">Reintentar</string>
     <string name="history_session_required">Se requiere sesión</string>
     <string name="history_sign_back_in">Volvé a iniciar sesión para mantener el archivo sincronizado.</string>

@@ -8,7 +8,7 @@
     <string name="history_archive_subtitle">Browse the calendar, inspect one day, and edit the smoking log.</string>
     <string name="history_trend">Trend</string>
     <string name="history_reduction_vs_last_month">Reduction vs last month</string>
-    <string name="history_add_for_date">Add for date</string>
+    <string name="history_add_for_date">Track</string>
     <string name="history_retry">Retry</string>
     <string name="history_session_required">Session required</string>
     <string name="history_sign_back_in">Sign back in to keep the archive synced.</string>

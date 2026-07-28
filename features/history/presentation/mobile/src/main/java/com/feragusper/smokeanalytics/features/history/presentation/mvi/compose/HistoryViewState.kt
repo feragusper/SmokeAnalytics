@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
@@ -55,7 +54,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
@@ -110,7 +111,12 @@ data class HistoryViewState(
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    icon = {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
+                            contentDescription = null,
+                        )
+                    },
                     text = { Text(stringResource(R.string.history_add_for_date)) },
                 )
             },

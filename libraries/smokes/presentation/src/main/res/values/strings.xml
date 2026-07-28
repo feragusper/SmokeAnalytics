@@ -17,5 +17,5 @@
     </plurals>
     <string name="smokes_quiet_day">Quiet day</string>
     <string name="smokes_no_archive_entries">No archive entries for this day</string>
-    <string name="smokes_use_add_for_date">Use Add for Date to keep the archive complete without leaving this view.</string>
+    <string name="smokes_use_add_for_date">Use Track to log a smoke for this day without leaving this view.</string>
 </resources>
