@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Full-screen goal editor, launched outside the bottom-bar shell -->
+        <activity
+            android:name=".GoalsConfigureActivity"
+            android:parentActivityName=".MainActivity" />
+
         <receiver
             android:name=".widget.HomeStatusWidgetReceiver"
             android:exported="false">

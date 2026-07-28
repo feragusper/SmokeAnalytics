@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -457,11 +458,7 @@ private fun MainContainerScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = {
-            if (activeRoute != GOALS_CONFIGURE_ROUTE) {
-                BottomNavigation(navController, bottomNavigationItems, analytics)
-            }
-        },
+        bottomBar = { BottomNavigation(navController, bottomNavigationItems, analytics) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -735,18 +732,11 @@ private fun MainScreenNavigationConfigurations(
         }
         composable(route = BottomNavigationScreens.Goals.route) {
             onFabConfigChanged(false, ElapsedTone.Urgent, null)
+            val context = LocalContext.current
             GoalsMobileDestination(
                 navigateToConfigure = {
-                    navController.navigate(GOALS_CONFIGURE_ROUTE) {
-                        launchSingleTop = true
-                    }
+                    context.startActivity(Intent(context, GoalsConfigureActivity::class.java))
                 },
-            )
-        }
-        composable(route = GOALS_CONFIGURE_ROUTE) {
-            onFabConfigChanged(false, ElapsedTone.Urgent, null)
-            GoalsConfigureMobileDestination(
-                navigateBack = { navController.popBackStack() },
             )
         }
         composable(route = BottomNavigationScreens.You.route) {
@@ -798,7 +788,6 @@ private fun routeToScreen(route: String?): String? = when (route) {
     BottomNavigationScreens.Analytics.route -> AnalyticsScreen.ANALYTICS
     BottomNavigationScreens.History.route -> AnalyticsScreen.HISTORY
     BottomNavigationScreens.Goals.route -> AnalyticsScreen.GOALS
-    GOALS_CONFIGURE_ROUTE -> AnalyticsScreen.GOALS_CONFIGURE
     BottomNavigationScreens.You.route -> AnalyticsScreen.SETTINGS
     else -> null
 }
@@ -848,7 +837,6 @@ private sealed class BottomNavigationScreens(
 }
 
 /** Goal editor route, reached from the Goals tab via "Configure goal" (not a bottom item). */
-private const val GOALS_CONFIGURE_ROUTE = "goals_configure"
 
 @Preview(showBackground = true)
 @Composable

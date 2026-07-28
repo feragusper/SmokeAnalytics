@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.R
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,11 +27,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.koin.androidx.compose.koinViewModel
 import androidx.navigation.compose.rememberNavController
-import com.feragusper.smokeanalytics.features.goals.presentation.GoalsConfigureView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsViewModel
+import com.feragusper.smokeanalytics.features.goals.presentation.mvi.GoalsIntent
 import com.feragusper.smokeanalytics.features.goals.presentation.navigation.GoalsNavigator
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryView
 import com.feragusper.smokeanalytics.features.history.presentation.HistoryViewModel
@@ -212,21 +216,22 @@ fun GoalsMobileDestination(
 ) {
     val viewModel = koinViewModel<GoalsViewModel>()
     viewModel.navigator = remember { GoalsNavigator() }
+
+    // Refetch when the tab resumes so edits made in the standalone editor Activity show up.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.intents().trySend(GoalsIntent.FetchGoals)
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
     GoalsView(
         viewModel = viewModel,
         navigateToConfigure = navigateToConfigure,
-    )
-}
-
-@Composable
-fun GoalsConfigureMobileDestination(
-    navigateBack: () -> Unit,
-) {
-    val viewModel = koinViewModel<GoalsViewModel>()
-    viewModel.navigator = remember(navigateBack) { GoalsNavigator(navigateBack) }
-    GoalsConfigureView(
-        viewModel = viewModel,
-        navigateBack = navigateBack,
     )
 }
 
