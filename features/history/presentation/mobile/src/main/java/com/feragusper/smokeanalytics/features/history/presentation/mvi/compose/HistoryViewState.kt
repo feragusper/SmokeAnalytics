@@ -5,8 +5,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,8 +56,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -113,25 +115,8 @@ data class HistoryViewState(
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             contentWindowInsets = WindowInsets(0),
-            floatingActionButton = {
-                AnimatedVisibility(
-                    visible = fabScroll.isVisible,
-                    enter = slideInVertically(initialOffsetY = { it * 2 }),
-                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
-                ) {
-                    ExtendedFloatingActionButton(
-                        onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                        icon = {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
-                                contentDescription = null,
-                            )
-                        },
-                        text = { Text(stringResource(R.string.history_add_for_date)) },
-                    )
-                }
-            },
         ) { contentPadding ->
+          Box(modifier = Modifier.fillMaxSize()) {
             if (showDatePicker) {
                 DatePickerDialog(
                     initialDate = selectedDate,
@@ -288,6 +273,29 @@ data class HistoryViewState(
                 }
 
             }
+
+            val hiddenFabOffset = with(LocalDensity.current) { 220.dp.toPx() }
+            val fabTranslationY by animateFloatAsState(
+                targetValue = if (fabScroll.isVisible) 0f else hiddenFabOffset,
+                animationSpec = tween(durationMillis = 300),
+                label = "archiveFabHide",
+            )
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(contentPadding)
+                    .padding(16.dp)
+                    .graphicsLayer { translationY = fabTranslationY },
+                onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
+                icon = {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
+                        contentDescription = null,
+                    )
+                },
+                text = { Text(stringResource(R.string.history_add_for_date)) },
+            )
+          }
         }
     }
 }

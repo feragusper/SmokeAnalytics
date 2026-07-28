@@ -11,12 +11,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -58,7 +55,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -467,14 +467,34 @@ private fun MainContainerScreen(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = { BottomNavigation(navController, bottomNavigationItems, analytics) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            AnimatedVisibility(
-                visible = showFab && fabScroll.isVisible && currentRoute(navController) == BottomNavigationScreens.Home.route,
-                enter = slideInVertically(initialOffsetY = { it * 2 }),
-                exit = slideOutVertically(targetOffsetY = { it * 2 }),
-            ) {
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            MainScreenNavigationConfigurations(
+                navController = navController,
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .nestedScroll(fabScroll.connection),
+                navigateToAuthentication = navigateToAuthentication,
+                onFabConfigChanged = { isVisible, tone, action ->
+                    showFab = isVisible
+                    fabTone = tone
+                    fabAction = action
+                },
+            )
+
+            val hiddenFabOffset = with(LocalDensity.current) { 220.dp.toPx() }
+            val fabTranslationY by animateFloatAsState(
+                targetValue = if (fabScroll.isVisible) 0f else hiddenFabOffset,
+                animationSpec = tween(durationMillis = 300),
+                label = "homeFabHide",
+            )
+            if (showFab && activeRoute == BottomNavigationScreens.Home.route) {
                 ExtendedFloatingActionButton(
                     modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(innerPadding)
+                        .padding(16.dp)
+                        .graphicsLayer { translationY = fabTranslationY }
                         .testTag(BUTTON_ADD_SMOKE)
                         .pressScaleMicroInteraction(pressedScale = 0.95f),
                     onClick = {
@@ -504,19 +524,6 @@ private fun MainContainerScreen(
                 )
             }
         }
-    ) { innerPadding ->
-        MainScreenNavigationConfigurations(
-            navController = navController,
-            modifier = Modifier
-                .padding(innerPadding)
-                .nestedScroll(fabScroll.connection),
-            navigateToAuthentication = navigateToAuthentication,
-            onFabConfigChanged = { isVisible, tone, action ->
-                showFab = isVisible
-                fabTone = tone
-                fabAction = action
-            },
-        )
     }
 }
 
@@ -651,7 +658,12 @@ private fun BottomNavigation(
         modifier = Modifier
             .padding(horizontal = 8.dp, vertical = 8.dp)
             .navigationBarsPadding()
-            .height(85.dp),
+            .height(85.dp)
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(25.dp),
+                clip = false,
+            ),
         ballColor = MaterialTheme.colorScheme.primary,
         cornerRadius = shapeCornerRadius(25.dp),
         ballAnimation = Parabolic(tween(500, easing = LinearOutSlowInEasing)),
