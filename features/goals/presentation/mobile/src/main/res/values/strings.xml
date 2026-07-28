@@ -61,8 +61,8 @@
     <string name="goals_stat_points">%1$d pts</string>
     <string name="goals_stat_days_on_goal">%1$d days on goal</string>
     <string name="goals_summary_daily_cap">Daily cap: at most %1$d cigarettes.</string>
-    <string name="goals_summary_reduce_week">Reduce the current week by %1$d%%.</string>
-    <string name="goals_summary_reduce_month">Reduce the current month by %1$d%%.</string>
+    <string name="goals_summary_reduce_week">Reduce the current week by %1$s%%.</string>
+    <string name="goals_summary_reduce_month">Reduce the current month by %1$s%%.</string>
     <string name="goals_summary_mindful_gap">Wait at least %1$d minutes between cigarettes.</string>
     <string name="goals_mindful_gap_body">Enforce a minimum gap in minutes between cigarettes.</string>
     <string name="goals_goal_setup">Goal setup</string>

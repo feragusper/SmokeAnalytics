@@ -479,9 +479,13 @@ private fun SmokingGoal.summaryLabel(): String = when (this) {
     is SmokingGoal.DailyCap ->
         stringResource(R.string.goals_summary_daily_cap, maxCigarettesPerDay)
     is SmokingGoal.ReductionVsPreviousWeek ->
-        stringResource(R.string.goals_summary_reduce_week, reductionPercent)
+        stringResource(R.string.goals_summary_reduce_week, reductionPercent.asPercentLabel())
     is SmokingGoal.ReductionVsPreviousMonth ->
-        stringResource(R.string.goals_summary_reduce_month, reductionPercent)
+        stringResource(R.string.goals_summary_reduce_month, reductionPercent.asPercentLabel())
     is SmokingGoal.MindfulGap ->
         stringResource(R.string.goals_summary_mindful_gap, targetMinutes)
 }
+
+/** Percent as a plain label: whole numbers without a decimal, otherwise one decimal. */
+private fun Double.asPercentLabel(): String =
+    if (this == toLong().toDouble()) toLong().toString() else "%.1f".format(this)
