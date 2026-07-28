@@ -5,9 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,8 +48,10 @@ import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.Hea
 import com.feragusper.smokeanalytics.features.stats.presentation.R as StatsR
 import com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose.StatsViewState
 import com.feragusper.smokeanalytics.features.stats.presentation.navigation.StatsNavigator
+import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
 import com.feragusper.smokeanalytics.map.MapMobileRoute
 import java.time.LocalDate as JavaLocalDate
+import kotlinx.datetime.LocalDate as KotlinLocalDate
 
 @Composable
 fun HomeMobileDestination(
@@ -94,6 +101,7 @@ fun HistoryMobileDestination(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsMobileDestination(
     active: Boolean,
@@ -128,37 +136,47 @@ fun AnalyticsMobileDestination(
             )
         }
 
-        if (selectedTab == AnalyticsTab.Trends) {
-            PrimaryTabRow(selectedTabIndex = currentPeriod.ordinal) {
-                StatsViewState.StatsPeriod.entries.forEach { period ->
-                    Tab(
-                        selected = currentPeriod == period,
-                        onClick = { currentPeriod = period },
-                        text = { Text(stringResource(period.tabLabelRes())) },
-                    )
-                }
-            }
-
-            HorizontalDivider()
-
-            HeaderNavigation(
-                currentPeriod = currentPeriod,
-                selectedDate = selectedDate,
-                onDateChange = { selectedDate = it },
-            )
-
-            HorizontalDivider()
-        }
-
-        PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
-            AnalyticsTab.entries.forEach { tab ->
-                Tab(
+        // Frequency / clusters — a segmented control on top of everything, kept on its own (not a
+        // tab row, so it doesn't read as the same thing as the period tabs below).
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ) {
+            AnalyticsTab.entries.forEachIndexed { index, tab ->
+                SegmentedButton(
                     selected = selectedTab == tab,
                     onClick = { selectedTab = tab },
-                    text = { Text(stringResource(tab.labelRes)) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = AnalyticsTab.entries.size,
+                    ),
+                    // No check icon on select, so the label doesn't shift when chosen.
+                    icon = {},
+                ) {
+                    Text(stringResource(tab.labelRes))
+                }
+            }
+        }
+
+        // Period switcher (day/week/month/year) + the back/forward navigator, joined as one
+        // component with no gap: the navigator has no rounded corners so it sits flush under the
+        // period tabs. Shared by both tabs, so Clusters navigates the same way as Frequency.
+        Spacer(modifier = Modifier.height(16.dp))
+        PrimaryTabRow(selectedTabIndex = currentPeriod.ordinal) {
+            StatsViewState.StatsPeriod.entries.forEach { period ->
+                Tab(
+                    selected = currentPeriod == period,
+                    onClick = { currentPeriod = period },
+                    text = { Text(stringResource(period.tabLabelRes())) },
                 )
             }
         }
+        HeaderNavigation(
+            currentPeriod = currentPeriod,
+            selectedDate = selectedDate,
+            onDateChange = { selectedDate = it },
+        )
 
         when (selectedTab) {
             AnalyticsTab.Trends -> StatsMobileDestination(
@@ -173,6 +191,8 @@ fun AnalyticsMobileDestination(
                 modifier = Modifier.fillMaxSize(),
                 refreshNonce = refreshNonce,
                 embedded = true,
+                period = currentPeriod.toSmokeMapPeriod(),
+                selectedDate = selectedDate.toKotlinLocalDate(),
             )
         }
     }
@@ -246,3 +266,14 @@ private fun StatsViewState.StatsPeriod.tabLabelRes(): Int = when (this) {
     StatsViewState.StatsPeriod.MONTH -> StatsR.string.stats_period_month
     StatsViewState.StatsPeriod.YEAR -> StatsR.string.stats_period_year
 }
+
+/** Maps the shell's period to the map module's parallel period, so Clusters shares the tabs. */
+private fun StatsViewState.StatsPeriod.toSmokeMapPeriod(): SmokeMapPeriod = when (this) {
+    StatsViewState.StatsPeriod.DAY -> SmokeMapPeriod.Day
+    StatsViewState.StatsPeriod.WEEK -> SmokeMapPeriod.Week
+    StatsViewState.StatsPeriod.MONTH -> SmokeMapPeriod.Month
+    StatsViewState.StatsPeriod.YEAR -> SmokeMapPeriod.Year
+}
+
+private fun JavaLocalDate.toKotlinLocalDate(): KotlinLocalDate =
+    KotlinLocalDate(year, monthValue, dayOfMonth)
