@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
-import com.feragusper.smokeanalytics.features.goals.domain.GoalScore
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
@@ -278,31 +275,6 @@ private fun GoalProgressContent(goalProgress: GoalProgress?) {
         StreakStatCard(days = progress.streakDays)
     }
 
-    // Weekly / monthly score cards, side by side and equal height.
-    val week = progress.weeklyScore?.takeIf { it.trackedDays > 0 }
-    val month = progress.monthlyScore?.takeIf { it.trackedDays > 0 }
-    if (week != null || month != null) {
-        Row(
-            modifier = Modifier.height(IntrinsicSize.Max),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            week?.let {
-                ScoreStatCard(
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.goals_stat_week),
-                    score = it,
-                )
-            }
-            month?.let {
-                ScoreStatCard(
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.goals_stat_month),
-                    score = it,
-                )
-            }
-        }
-    }
-
     // Baseline context, as a quiet footnote.
     progress.baseline?.let {
         Text(
@@ -330,31 +302,6 @@ private fun StreakStatCard(days: Int) {
         )
         Text(
             text = stringResource(R.string.goals_stat_streak_caption),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ScoreStatCard(
-    modifier: Modifier = Modifier,
-    label: String,
-    score: GoalScore,
-) {
-    GoalsCard(modifier = modifier.fillMaxHeight()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(R.string.goals_stat_points, score.points),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = stringResource(R.string.goals_stat_days_on_goal, score.completedDays),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
