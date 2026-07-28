@@ -34,6 +34,12 @@
             android:parentActivityName=".MainActivity"
             android:theme="@style/Theme.SmokeAnalytics" />
 
+        <!-- Full-screen settings sub-screens, launched outside the bottom-bar shell -->
+        <activity
+            android:name="com.feragusper.smokeanalytics.features.settings.presentation.SettingsDetailActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SmokeAnalytics" />
+
         <receiver
             android:name=".widget.HomeStatusWidgetReceiver"
             android:exported="false">

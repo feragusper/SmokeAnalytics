@@ -45,6 +45,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.HomeViewModel
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.settings.presentation.SettingsView
 import com.feragusper.smokeanalytics.features.settings.presentation.SettingsViewModel
+import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.features.settings.presentation.navigation.SettingsNavigator
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsView
 import com.feragusper.smokeanalytics.features.stats.presentation.StatsViewModel
@@ -207,6 +208,19 @@ fun SettingsMobileDestination() {
     val viewModel = koinViewModel<SettingsViewModel>()
     val navController = rememberNavController()
     viewModel.navigator = remember(navController) { SettingsNavigator(navController) }
+
+    // Refetch when the tab resumes so edits made in the standalone detail activities show up.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.intents().trySend(SettingsIntent.FetchUser)
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
     SettingsView(viewModel = viewModel)
 }
 

@@ -11,6 +11,7 @@
     <string name="settings_plan">Plan</string>
     <string name="settings_points">Puntos</string>
     <string name="settings_preferences">Preferencias</string>
+    <string name="settings_preferences_subtitle">Límites del día, moneda, precio del atado y ubicación.</string>
     <string name="settings_routine_model">Modelo de rutina</string>
     <string name="settings_routine_body">La interpretación diaria de la app depende de estos valores antes de calcular cualquier gráfico o mapa.</string>
     <string name="settings_awake_window">Ventana despierto</string>

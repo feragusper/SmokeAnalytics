@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,7 +33,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -44,20 +41,23 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -69,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.feragusper.smokeanalytics.features.settings.presentation.AboutSection
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.features.settings.presentation.SettingsDetailActivity
+import com.feragusper.smokeanalytics.features.settings.presentation.SettingsSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
@@ -80,7 +82,6 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarg
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
-import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.searchEmojis
@@ -108,12 +109,11 @@ data class SettingsViewState(
     fun Compose(
         intent: (SettingsIntent) -> Unit,
     ) {
-        var draftPreferences by remember(currentEmail, preferences) { mutableStateOf(preferences) }
         var signInErrorMessage by remember { mutableStateOf<String?>(null) }
         val analytics = koinInject<AnalyticsTracker>()
+        val context = LocalContext.current
 
-        LaunchedEffect(preferences, currentEmail) {
-            draftPreferences = preferences
+        LaunchedEffect(currentEmail) {
             if (currentEmail != null) {
                 signInErrorMessage = null
             }
@@ -125,14 +125,14 @@ data class SettingsViewState(
                 .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (displayLoading && currentEmail == null && errorMessage == null) {
                 SettingsShimmerContent()
                 return@Column
             }
 
-            SettingsScreenHeader(
+            SettingsProfileHeader(
                 displayLoading = displayLoading,
                 currentEmail = currentEmail,
                 currentDisplayName = currentDisplayName,
@@ -149,80 +149,51 @@ data class SettingsViewState(
                 return@Column
             }
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_account))
-
-            SessionCard(
-                currentEmail = currentEmail,
-                currentDisplayName = currentDisplayName,
-                displayLoading = displayLoading,
-                signInErrorMessage = signInErrorMessage,
-                onSignOut = {
-                    analytics.logout()
-                    intent(SettingsIntent.SignOut)
-                },
-                onSignInSuccess = {
-                    analytics.login()
-                    intent(SettingsIntent.FetchUser)
-                },
-                onSignInError = { signInErrorMessage = it },
-            )
-
-            SettingsSectionHeader(title = stringResource(R.string.settings_preferences))
-
-            PreferencesCard(
-                preferences = draftPreferences,
-                enabled = !displayLoading && currentEmail != null,
-                onPreferencesChange = { draftPreferences = it },
-                onSave = { updated -> intent(SettingsIntent.UpdatePreferences(updated)) },
-                onReset = { draftPreferences = preferences },
-            )
-
-            if (currentEmail != null) {
-                SettingsSectionHeader(title = stringResource(R.string.settings_personalization))
-
-                SettingsCard(
+            if (currentEmail == null) {
+                SettingsSignInSection(
+                    signInErrorMessage = signInErrorMessage,
+                    onSignInSuccess = {
+                        analytics.login()
+                        intent(SettingsIntent.FetchUser)
+                    },
+                    onSignInError = { signInErrorMessage = it },
+                )
+            } else {
+                SettingsNavRow(
+                    icon = Icons.Filled.Tune,
+                    title = stringResource(R.string.settings_preferences),
+                    subtitle = stringResource(R.string.settings_preferences_subtitle),
+                    onClick = { context.openSettingsDetail(SettingsSection.PREFERENCES) },
+                )
+                SettingsNavRow(
+                    icon = Icons.Filled.Palette,
                     title = stringResource(R.string.settings_make_it_yours),
                     subtitle = stringResource(R.string.settings_personalization_subtitle),
-                    initiallyExpanded = false,
-                ) {
-                    PersonalizationSection(
-                        preferences = draftPreferences,
-                        enabled = !displayLoading,
-                        onChange = { updated ->
-                            draftPreferences = updated
-                            intent(SettingsIntent.UpdatePreferences(updated))
-                        },
-                    )
-                }
-            }
-
-            if (currentEmail != null) {
-                SettingsSectionHeader(title = stringResource(R.string.settings_triggers))
-
-                SettingsCard(
+                    onClick = { context.openSettingsDetail(SettingsSection.PERSONALIZATION) },
+                )
+                SettingsNavRow(
+                    icon = Icons.Filled.Sell,
                     title = stringResource(R.string.settings_manage_triggers),
                     subtitle = stringResource(R.string.settings_manage_triggers_subtitle),
-                    initiallyExpanded = false,
-                ) {
-                    ManageTriggersSection(
-                        preferences = draftPreferences,
-                        enabled = !displayLoading,
-                        onChange = { updated ->
-                            draftPreferences = updated
-                            intent(SettingsIntent.UpdatePreferences(updated))
-                        },
-                    )
-                }
+                    onClick = { context.openSettingsDetail(SettingsSection.TRIGGERS) },
+                )
             }
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_app))
-
-            SettingsCard(
+            SettingsNavRow(
+                icon = Icons.Filled.Info,
                 title = stringResource(R.string.settings_about_support),
                 subtitle = stringResource(R.string.settings_about_subtitle),
-                initiallyExpanded = false,
-            ) {
-                AboutSection()
+                onClick = { context.openSettingsDetail(SettingsSection.ABOUT) },
+            )
+
+            if (currentEmail != null) {
+                SettingsLogoutRow(
+                    enabled = !displayLoading,
+                    onClick = {
+                        analytics.logout()
+                        intent(SettingsIntent.SignOut)
+                    },
+                )
             }
 
             infoMessage?.let { message ->
@@ -234,6 +205,10 @@ data class SettingsViewState(
             }
         }
     }
+}
+
+private fun android.content.Context.openSettingsDetail(section: SettingsSection) {
+    startActivity(SettingsDetailActivity.intent(this, section))
 }
 
 @Composable
@@ -271,324 +246,172 @@ private fun SettingsErrorCard(
     }
 }
 
+/** Profile header: avatar + name + email, merging the old session summary into the header. */
 @Composable
-private fun SettingsSectionHeader(
-    title: String,
-    subtitle: String = "",
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        HorizontalDivider(modifier = Modifier.weight(1f))
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        HorizontalDivider(modifier = Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun SettingsScreenHeader(
+private fun SettingsProfileHeader(
     displayLoading: Boolean,
     currentEmail: String?,
     currentDisplayName: String?,
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (currentDisplayName.isNullOrBlank()) stringResource(R.string.settings_you) else currentDisplayName,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = if (currentEmail == null) {
-                stringResource(R.string.settings_sign_in_subtitle)
-            } else {
-                stringResource(R.string.settings_manage_session_subtitle)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        StatusBadge(
-            text = when {
-                displayLoading -> stringResource(R.string.settings_refreshing)
-                currentEmail != null -> stringResource(R.string.settings_signed_in)
-                else -> stringResource(R.string.settings_guest_mode)
-            },
-        )
-    }
-}
-
-@Composable
-private fun HighlightsRow(
-    tier: AccountTier,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        HighlightCard(
-            modifier = Modifier.weight(1f),
-            title = stringResource(R.string.settings_plan),
-            value = tier.name,
-            body = stringResource(R.string.settings_plan_body),
-        )
-        HighlightCard(
-            modifier = Modifier.weight(1f),
-            title = stringResource(R.string.settings_points),
-            value = stringResource(R.string.settings_recovery),
-            body = stringResource(R.string.settings_points_body),
-        )
-    }
-}
-
-@Composable
-private fun HighlightCard(
-    modifier: Modifier,
-    title: String,
-    value: String,
-    body: String,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-    ) {
+        SettingsAvatar(name = currentDisplayName, email = currentEmail)
         Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
+                text = if (currentDisplayName.isNullOrBlank()) stringResource(R.string.settings_you) else currentDisplayName,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = currentEmail ?: stringResource(R.string.settings_sign_in_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+            StatusBadge(
+                text = when {
+                    displayLoading -> stringResource(R.string.settings_refreshing)
+                    currentEmail != null -> stringResource(R.string.settings_signed_in)
+                    else -> stringResource(R.string.settings_guest_mode)
+                },
             )
+        }
+    }
+}
+
+/** Circular avatar showing the account initials (Google photo is a future enhancement). */
+@Composable
+private fun SettingsAvatar(name: String?, email: String?) {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = sessionInitials(name, email),
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+}
+
+/** A tappable settings entry that opens its own screen. */
+@Composable
+private fun SettingsNavRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = body,
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
+/** Logout, styled as an error-tinted row at the bottom of the list. */
 @Composable
-private fun RoutineSnapshotCard(
-    preferences: UserPreferences,
+private fun SettingsLogoutRow(
+    enabled: Boolean,
+    onClick: () -> Unit,
 ) {
-    SettingsCard(
-        title = stringResource(R.string.settings_routine_model),
-        subtitle = stringResource(R.string.settings_routine_body),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                HighlightCard(
-                    modifier = Modifier.weight(1f),
-                    title = stringResource(R.string.settings_day_starts),
-                    value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                    body = stringResource(R.string.settings_day_boundary_body),
-                )
-                HighlightCard(
-                    modifier = Modifier.weight(1f),
-                    title = stringResource(R.string.settings_sleep_starts),
-                    value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                    body = stringResource(R.string.settings_sleep_body),
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                HighlightCard(
-                    modifier = Modifier.weight(1f),
-                    title = stringResource(R.string.settings_awake_window),
-                    value = "${preferences.awakeMinutesPerDay / 60}h",
-                    body = stringResource(R.string.settings_awake_body),
-                )
-                HighlightCard(
-                    modifier = Modifier.weight(1f),
-                    title = stringResource(R.string.settings_location),
-                    value = if (preferences.locationTrackingEnabled) "On" else stringResource(R.string.settings_off),
-                    body = stringResource(R.string.settings_location_body),
-                )
-            }
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Logout,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = stringResource(R.string.settings_logout),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
 
+/** Guest state: invite the user to sign in, right under the header. */
 @Composable
-private fun SessionCard(
-    currentEmail: String?,
-    currentDisplayName: String?,
-    displayLoading: Boolean,
+private fun SettingsSignInSection(
     signInErrorMessage: String?,
-    onSignOut: () -> Unit,
     onSignInSuccess: () -> Unit,
     onSignInError: (String) -> Unit,
 ) {
-    SettingsCard(
-        title = stringResource(R.string.settings_session),
-        subtitle = stringResource(R.string.settings_account_subtitle),
-    ) {
-        if (currentEmail != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = sessionInitials(currentDisplayName, currentEmail),
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    currentDisplayName?.takeIf { it.isNotBlank() }?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                    Text(
-                        text = currentEmail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_OUT),
-                onClick = onSignOut,
-                enabled = !displayLoading,
-            ) {
-                Text(text = stringResourceSafe(R.string.settings_logout, stringResource(R.string.settings_logout)))
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_session_guest_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    SessionBenefitCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.settings_routine),
-                        value = stringResource(R.string.settings_sync),
-                        body = stringResource(R.string.settings_preferences_card_body),
-                    )
-                    SessionBenefitCard(
-                        modifier = Modifier.weight(1f),
-                        title = stringResource(R.string.settings_history),
-                        value = stringResource(R.string.settings_archive),
-                        body = stringResource(R.string.settings_history_card_body),
-                    )
-                }
-
-                SessionBenefitCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    title = stringResource(R.string.settings_goals),
-                    value = stringResource(R.string.settings_targets),
-                    body = stringResource(R.string.settings_goals_card_body),
-                )
-
-                signInErrorMessage?.let { message ->
-                    SettingsErrorCard(
-                        title = stringResource(R.string.settings_sign_in_failed),
-                        message = message,
-                    )
-                }
-
-                GoogleSignInComponent(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-                    onSignInSuccess = onSignInSuccess,
-                    onSignInError = onSignInError,
-                )
-            }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text(
+            text = stringResource(R.string.settings_session_guest_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        signInErrorMessage?.let { message ->
+            SettingsErrorCard(
+                title = stringResource(R.string.settings_sign_in_failed),
+                message = message,
+            )
         }
+        GoogleSignInComponent(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+            onSignInSuccess = onSignInSuccess,
+            onSignInError = onSignInError,
+        )
     }
 }
 
-@Composable
-private fun SessionBenefitCard(
-    modifier: Modifier,
-    title: String,
-    value: String,
-    body: String,
-) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
 
 @Composable
-private fun PreferencesCard(
+internal fun PreferencesSection(
     preferences: UserPreferences,
     enabled: Boolean,
     onPreferencesChange: (UserPreferences) -> Unit,
     onSave: (UserPreferences) -> Unit,
-    onReset: () -> Unit,
 ) {
     val analytics = koinInject<AnalyticsTracker>()
     val context = LocalContext.current
@@ -608,7 +431,7 @@ private fun PreferencesCard(
     var showPackPricePicker by remember { mutableStateOf(false) }
     var showCigsPerPackPicker by remember { mutableStateOf(false) }
 
-    SettingsCard(title = stringResource(R.string.settings_preferences)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Row 1: Day starts + Sleep starts
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1098,70 +921,6 @@ private fun TimePreferenceRow(
 }
 
 @Composable
-private fun SettingsCard(
-    title: String,
-    subtitle: String? = null,
-    initiallyExpanded: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        label = "settingsCardChevron",
-    )
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    subtitle?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) stringResource(R.string.settings_collapse) else stringResource(R.string.settings_expand),
-                    modifier = Modifier.rotate(chevronRotation),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            AnimatedVisibility(visible = expanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    content()
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun SettingsShimmerContent() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         repeat(3) {
@@ -1230,7 +989,7 @@ private fun SettingsPreview() {
 }
 
 @Composable
-private fun ManageTriggersSection(
+internal fun ManageTriggersSection(
     preferences: UserPreferences,
     enabled: Boolean,
     onChange: (UserPreferences) -> Unit,
@@ -1433,7 +1192,7 @@ private fun UserPreferences.withTriggerLabel(key: String, label: String): UserPr
 
 /** Nickname + personal reason fields; commit when the field loses focus. */
 @Composable
-private fun PersonalizationSection(
+internal fun PersonalizationSection(
     preferences: UserPreferences,
     enabled: Boolean,
     onChange: (UserPreferences) -> Unit,

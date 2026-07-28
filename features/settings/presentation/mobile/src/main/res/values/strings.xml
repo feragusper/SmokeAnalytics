@@ -11,6 +11,7 @@
     <string name="settings_plan">Plan</string>
     <string name="settings_points">Points</string>
     <string name="settings_preferences">Preferences</string>
+    <string name="settings_preferences_subtitle">Day boundaries, currency, pack price and location tracking.</string>
     <string name="settings_routine_model">Routine model</string>
     <string name="settings_routine_body">The app\'s daily interpretation depends on these values before any chart or map is computed.</string>
     <string name="settings_awake_window">Awake window</string>
