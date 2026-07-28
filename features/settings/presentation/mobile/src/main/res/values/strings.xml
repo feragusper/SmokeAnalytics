@@ -72,6 +72,7 @@
     <string name="settings_you">You</string>
     <string name="settings_manage_session_subtitle">Manage session, preferences, and app settings.</string>
     <string name="settings_signed_in">Signed in</string>
+    <string name="settings_need_account">Sign in to sync</string>
     <string name="settings_guest_mode">Guest mode</string>
     <string name="settings_sign_in_subtitle">Sign in to sync preferences and keep goals across devices.</string>
     <string name="settings_space_unavailable">Your space is unavailable</string>

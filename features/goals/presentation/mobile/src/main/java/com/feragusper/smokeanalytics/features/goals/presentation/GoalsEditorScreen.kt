@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,7 +55,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
-import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.preferences.domain.GoalType
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
@@ -171,45 +172,14 @@ fun GoalsEditorScreen(
                 }
 
                 if (currentEmail == null) {
-                    GoalsPanelCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            Text(
-                                text = stringResource(R.string.goals_need_account),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                text = stringResource(R.string.goals_sign_in_body),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            signInErrorMessage?.let { message ->
-                                Card(
-                                    shape = RoundedCornerShape(24.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                    ),
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(18.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.goals_sign_in_failed),
-                                            style = MaterialTheme.typography.titleMedium,
-                                        )
-                                        Text(text = message, style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
-                            }
-                            GoogleSignInComponent(
-                                modifier = Modifier.fillMaxWidth(),
-                                onSignInSuccess = onSignInSuccess,
-                                onSignInError = onSignInError,
-                            )
-                        }
-                    }
+                    SignedOutState(
+                        icon = Icons.Outlined.Flag,
+                        title = stringResource(R.string.goals_need_account),
+                        message = stringResource(R.string.goals_sign_in_body),
+                        signInErrorMessage = signInErrorMessage,
+                        onSignInSuccess = onSignInSuccess,
+                        onSignInError = onSignInError,
+                    )
                 } else {
                     GoalsPanelCard {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

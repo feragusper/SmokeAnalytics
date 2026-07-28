@@ -31,6 +31,7 @@ dependencies {
 
     // Authentication modules
     implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:preferences:domain"))
 
     // Design system for consistent theming and UI components

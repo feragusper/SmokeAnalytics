@@ -45,6 +45,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Sell
@@ -73,7 +74,7 @@ import com.feragusper.smokeanalytics.features.settings.presentation.SettingsDeta
 import com.feragusper.smokeanalytics.features.settings.presentation.SettingsSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
-import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.design.compose.CombinedPreviews
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
@@ -394,33 +395,22 @@ private fun SettingsLogoutRow(
     }
 }
 
-/** Guest state: invite the user to sign in, right under the header. */
+/** Guest state: the shared signed-out placeholder, right under the header. */
 @Composable
 private fun SettingsSignInSection(
     signInErrorMessage: String?,
     onSignInSuccess: () -> Unit,
     onSignInError: (String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text(
-            text = stringResource(R.string.settings_session_guest_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        signInErrorMessage?.let { message ->
-            SettingsErrorCard(
-                title = stringResource(R.string.settings_sign_in_failed),
-                message = message,
-            )
-        }
-        GoogleSignInComponent(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-            onSignInSuccess = onSignInSuccess,
-            onSignInError = onSignInError,
-        )
-    }
+    SignedOutState(
+        icon = Icons.Filled.ManageAccounts,
+        title = stringResource(R.string.settings_need_account),
+        message = stringResource(R.string.settings_session_guest_body),
+        signInErrorMessage = signInErrorMessage,
+        onSignInSuccess = onSignInSuccess,
+        onSignInError = onSignInError,
+        modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+    )
 }
 
 

@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
-import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 
 /**
@@ -126,30 +126,15 @@ fun GoalsProgressScreen(
         }
 
         if (currentEmail == null) {
-            GoalsCard {
-                Text(
-                    text = stringResource(R.string.goals_need_account),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = stringResource(R.string.goals_sign_in_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                signInErrorMessage?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                GoogleSignInComponent(
-                    modifier = Modifier.fillMaxWidth(),
-                    onSignInSuccess = onSignInSuccess,
-                    onSignInError = onSignInError,
-                )
-            }
+            SignedOutState(
+                icon = Icons.Outlined.Flag,
+                title = stringResource(R.string.goals_need_account),
+                message = stringResource(R.string.goals_sign_in_body),
+                signInErrorMessage = signInErrorMessage,
+                onSignInSuccess = onSignInSuccess,
+                onSignInError = onSignInError,
+                modifier = Modifier.padding(top = 32.dp),
+            )
             return
         }
 

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,6 +69,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.design.compose.rememberFabScrollState
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
@@ -127,6 +129,19 @@ data class HistoryViewState(
                     onDismiss = { showDatePicker = false },
                 )
             }
+
+            if (error == HistoryResult.Error.NotLoggedIn) {
+              SignedOutState(
+                  modifier = Modifier
+                      .fillMaxSize()
+                      .padding(contentPadding),
+                  icon = Icons.Filled.CalendarMonth,
+                  title = stringResource(R.string.history_session_required),
+                  message = stringResource(R.string.history_sign_back_in),
+                  onSignInSuccess = { intent(HistoryIntent.FetchSmokes(selectedDate)) },
+                  onSignInError = {},
+              )
+            } else {
 
             LazyColumn(
                 modifier = Modifier
@@ -295,6 +310,7 @@ data class HistoryViewState(
                 },
                 text = { Text(stringResource(R.string.history_add_for_date)) },
             )
+            }
           }
         }
     }

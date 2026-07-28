@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -99,6 +100,7 @@ import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
@@ -202,10 +204,23 @@ data class HomeViewState(
                 }
             }
         }
-        LaunchedEffect(displayLoading, elapsedTone) {
-            onFabConfigChanged(!displayLoading, elapsedTone) {
+        val signedOut = error == HomeResult.Error.NotLoggedIn
+        LaunchedEffect(displayLoading, elapsedTone, signedOut) {
+            onFabConfigChanged(!displayLoading && !signedOut, elapsedTone) {
                 intent(HomeIntent.AddSmoke)
             }
+        }
+
+        if (signedOut) {
+            SignedOutState(
+                modifier = Modifier.fillMaxSize(),
+                icon = Icons.Filled.Home,
+                title = stringResource(R.string.home_session_required),
+                message = stringResource(R.string.home_session_required_body),
+                onSignInSuccess = { intent(HomeIntent.FetchSmokes) },
+                onSignInError = {},
+            )
+            return
         }
 
         val nestedScrollConnection = remember {
