@@ -69,6 +69,33 @@ fun GoalsProgressScreen(
         analytics.buttonTap(AnalyticsScreen.GOALS, AnalyticsTarget.CONFIGURE_GOAL)
         onConfigure()
     }
+
+    // Signed-out: a full-screen centered state (header on top, prompt centered in the rest),
+    // consistent with the other screens.
+    if (currentEmail == null && !displayLoading && errorMessage == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            GoalsScreenHeader(currentEmail = currentEmail, onConfigure = onConfigureTracked)
+            SignedOutState(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                icon = Icons.Outlined.Flag,
+                title = stringResource(R.string.goals_need_account),
+                message = stringResource(R.string.goals_sign_in_body),
+                signInErrorMessage = signInErrorMessage,
+                onSignInSuccess = onSignInSuccess,
+                onSignInError = onSignInError,
+            )
+        }
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -77,37 +104,7 @@ fun GoalsProgressScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.goals_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = stringResource(R.string.goals_track_how),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (currentEmail != null) {
-                FilledTonalIconButton(onClick = onConfigureTracked) {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = stringResource(R.string.goals_configure_goal),
-                    )
-                }
-            }
-        }
+        GoalsScreenHeader(currentEmail = currentEmail, onConfigure = onConfigureTracked)
 
         // Skeleton during the initial load so the sign-in / empty state never flashes.
         if (displayLoading && goalProgress == null && currentEmail == null && errorMessage == null) {
@@ -125,18 +122,6 @@ fun GoalsProgressScreen(
             }
         }
 
-        if (currentEmail == null) {
-            SignedOutState(
-                icon = Icons.Outlined.Flag,
-                title = stringResource(R.string.goals_need_account),
-                message = stringResource(R.string.goals_sign_in_body),
-                signInErrorMessage = signInErrorMessage,
-                onSignInSuccess = onSignInSuccess,
-                onSignInError = onSignInError,
-                modifier = Modifier.padding(top = 32.dp),
-            )
-            return
-        }
 
         if (activeGoal == null) {
             Column(
@@ -176,6 +161,44 @@ fun GoalsProgressScreen(
         }
 
         GoalProgressContent(goalProgress = goalProgress)
+    }
+}
+
+@Composable
+private fun GoalsScreenHeader(
+    currentEmail: String?,
+    onConfigure: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.goals_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(R.string.goals_track_how),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (currentEmail != null) {
+            FilledTonalIconButton(onClick = onConfigure) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = stringResource(R.string.goals_configure_goal),
+                )
+            }
+        }
     }
 }
 

@@ -121,6 +121,40 @@ data class SettingsViewState(
             }
         }
 
+        // Signed-out: a full-screen centered state (header on top, prompt centered in the rest),
+        // consistent with the other screens.
+        if (currentEmail == null && !displayLoading && errorMessage == null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                SettingsProfileHeader(
+                    displayLoading = displayLoading,
+                    currentEmail = currentEmail,
+                    currentDisplayName = currentDisplayName,
+                )
+                SignedOutState(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+                    icon = Icons.Filled.ManageAccounts,
+                    title = stringResource(R.string.settings_need_account),
+                    message = stringResource(R.string.settings_session_guest_body),
+                    signInErrorMessage = signInErrorMessage,
+                    onSignInSuccess = {
+                        analytics.login()
+                        intent(SettingsIntent.FetchUser)
+                    },
+                    onSignInError = { signInErrorMessage = it },
+                )
+            }
+            return
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -151,16 +185,7 @@ data class SettingsViewState(
                 return@Column
             }
 
-            if (currentEmail == null) {
-                SettingsSignInSection(
-                    signInErrorMessage = signInErrorMessage,
-                    onSignInSuccess = {
-                        analytics.login()
-                        intent(SettingsIntent.FetchUser)
-                    },
-                    onSignInError = { signInErrorMessage = it },
-                )
-            } else {
+            if (currentEmail != null) {
                 SettingsNavRow(
                     icon = Icons.Filled.Tune,
                     title = stringResource(R.string.settings_preferences),
@@ -395,23 +420,6 @@ private fun SettingsLogoutRow(
     }
 }
 
-/** Guest state: the shared signed-out placeholder, right under the header. */
-@Composable
-private fun SettingsSignInSection(
-    signInErrorMessage: String?,
-    onSignInSuccess: () -> Unit,
-    onSignInError: (String) -> Unit,
-) {
-    SignedOutState(
-        icon = Icons.Filled.ManageAccounts,
-        title = stringResource(R.string.settings_need_account),
-        message = stringResource(R.string.settings_session_guest_body),
-        signInErrorMessage = signInErrorMessage,
-        onSignInSuccess = onSignInSuccess,
-        onSignInError = onSignInError,
-        modifier = Modifier.testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-    )
-}
 
 
 @Composable

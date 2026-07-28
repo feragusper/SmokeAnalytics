@@ -50,6 +50,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScre
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +71,8 @@ import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.design.compose.rememberFabScrollState
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
@@ -115,6 +118,16 @@ data class HistoryViewState(
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
         val entriesCount = smokes?.size ?: 0
         val fabScroll = rememberFabScrollState()
+
+        // Gate on the live session, not just the last result: a stale sign-out can leave old
+        // data on screen with a generic error instead of the NotLoggedIn result.
+        val fetchSession = koinInject<FetchSessionUseCase>()
+        var signedIn by remember { mutableStateOf<Boolean?>(null) }
+        LaunchedEffect(selectedDate, error) {
+            signedIn = fetchSession() is Session.LoggedIn
+        }
+        val signedOut = signedIn == false || error == HistoryResult.Error.NotLoggedIn
+
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             contentWindowInsets = WindowInsets(0),
@@ -131,7 +144,7 @@ data class HistoryViewState(
                 )
             }
 
-            if (error == HistoryResult.Error.NotLoggedIn) {
+            if (signedOut) {
               SignedOutState(
                   modifier = Modifier
                       .fillMaxSize()
