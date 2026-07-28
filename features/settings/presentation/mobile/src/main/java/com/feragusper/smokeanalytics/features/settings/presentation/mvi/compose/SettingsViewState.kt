@@ -110,6 +110,7 @@ data class SettingsViewState(
         intent: (SettingsIntent) -> Unit,
     ) {
         var signInErrorMessage by remember { mutableStateOf<String?>(null) }
+        var showLogoutConfirm by remember { mutableStateOf(false) }
         val analytics = koinInject<AnalyticsTracker>()
         val context = LocalContext.current
 
@@ -189,9 +190,26 @@ data class SettingsViewState(
             if (currentEmail != null) {
                 SettingsLogoutRow(
                     enabled = !displayLoading,
-                    onClick = {
-                        analytics.logout()
-                        intent(SettingsIntent.SignOut)
+                    onClick = { showLogoutConfirm = true },
+                )
+            }
+
+            if (showLogoutConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutConfirm = false },
+                    title = { Text(stringResource(R.string.settings_logout_confirm_title)) },
+                    text = { Text(stringResource(R.string.settings_logout_confirm_body)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showLogoutConfirm = false
+                            analytics.logout()
+                            intent(SettingsIntent.SignOut)
+                        }) { Text(stringResource(R.string.settings_logout)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showLogoutConfirm = false }) {
+                            Text(stringResource(R.string.settings_cancel))
+                        }
                     },
                 )
             }

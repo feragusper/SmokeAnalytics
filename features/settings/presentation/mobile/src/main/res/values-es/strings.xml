@@ -1,6 +1,8 @@
 <resources>
     <string name="settings_title">Ajustes</string>
     <string name="settings_logout">Cerrar sesión</string>
+    <string name="settings_logout_confirm_title">¿Cerrar sesión?</string>
+    <string name="settings_logout_confirm_body">Vas a tener que iniciar sesión de nuevo para sincronizar tus objetivos, historial y preferencias.</string>
     <string name="settings_email">Correo</string>
 
     <string name="settings_account">Cuenta</string>
