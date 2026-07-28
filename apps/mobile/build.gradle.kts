@@ -176,6 +176,7 @@ dependencies {
     implementation(project(":libraries:cravings:data:mobile"))
     implementation(project(":libraries:smokes:data:mobile"))
     implementation(project(":libraries:authentication:data:mobile"))
+    implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:wear:data"))
     implementation(project(":libraries:wear:domain"))
     // DevTools is a debug-only feature (see debugImplementation below); it must not

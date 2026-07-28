@@ -19,6 +19,8 @@
     <string name="map_tab_frequency">Frequency</string>
     <string name="map_tab_clusters">Clusters</string>
     <string name="map_analytics_subtitle">Review smoking frequency and the places where smoking clusters show up.</string>
+    <string name="analytics_need_account">Sign in to see your analytics</string>
+    <string name="analytics_signed_out_body">Charts of your smoking frequency and the places it clusters appear once you sign in and your history syncs.</string>
     <string name="map_needs_attention">Needs attention</string>
     <string name="map_location_off">Location tracking is off</string>
     <string name="map_location_off_body">Enable location tracking in You to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.</string>

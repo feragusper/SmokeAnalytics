@@ -31,6 +31,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Insights
+import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsViewModel
@@ -116,6 +122,12 @@ fun AnalyticsMobileDestination(
     var currentPeriod by remember { mutableStateOf(StatsViewState.StatsPeriod.WEEK) }
     var selectedDate by remember { mutableStateOf(JavaLocalDate.now()) }
 
+    val fetchSession = koinInject<FetchSessionUseCase>()
+    var signedIn by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(active, refreshNonce) {
+        signedIn = fetchSession() is Session.LoggedIn
+    }
+
     LaunchedEffect(active, selectedTab) {
         if (active) refreshNonce += 1
     }
@@ -139,6 +151,18 @@ fun AnalyticsMobileDestination(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        if (signedIn == false) {
+            SignedOutState(
+                modifier = Modifier.fillMaxSize(),
+                icon = Icons.Filled.Insights,
+                title = stringResource(R.string.analytics_need_account),
+                message = stringResource(R.string.analytics_signed_out_body),
+                onSignInSuccess = { refreshNonce += 1 },
+                onSignInError = {},
+            )
+            return@Column
         }
 
         // Frequency / clusters — a segmented control on top of everything, kept on its own (not a
