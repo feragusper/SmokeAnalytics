@@ -5,6 +5,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +66,7 @@ import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.design.compose.rememberFabScrollState
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
@@ -105,20 +109,27 @@ data class HistoryViewState(
         var calendarExpanded by remember { mutableStateOf(true) }
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
         val entriesCount = smokes?.size ?: 0
+        val fabScroll = rememberFabScrollState()
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             contentWindowInsets = WindowInsets(0),
             floatingActionButton = {
-                ExtendedFloatingActionButton(
-                    onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
-                    icon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
-                            contentDescription = null,
-                        )
-                    },
-                    text = { Text(stringResource(R.string.history_add_for_date)) },
-                )
+                AnimatedVisibility(
+                    visible = fabScroll.isVisible,
+                    enter = slideInVertically(initialOffsetY = { it * 2 }),
+                    exit = slideOutVertically(targetOffsetY = { it * 2 }),
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
+                        icon = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
+                                contentDescription = null,
+                            )
+                        },
+                        text = { Text(stringResource(R.string.history_add_for_date)) },
+                    )
+                }
             },
         ) { contentPadding ->
             if (showDatePicker) {
@@ -135,6 +146,7 @@ data class HistoryViewState(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .nestedScroll(fabScroll.connection)
                     .background(MaterialTheme.colorScheme.background)
                     .padding(contentPadding)
                     .padding(horizontal = 16.dp),

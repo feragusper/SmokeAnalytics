@@ -84,7 +84,9 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScre
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.AppStartupReadiness
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.feragusper.smokeanalytics.libraries.design.compose.pressScaleMicroInteraction
+import com.feragusper.smokeanalytics.libraries.design.compose.rememberFabScrollState
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.SmokeAnalyticsTheme
 import org.koin.compose.koinInject
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -391,9 +393,11 @@ private fun MainContainerScreen(
     val navController = rememberNavController()
     val activeRoute = currentRoute(navController)
     val analytics = koinInject<AnalyticsTracker>()
+    val fabScroll = rememberFabScrollState()
 
     LaunchedEffect(activeRoute) {
         routeToScreen(activeRoute)?.let { analytics.screenView(it) }
+        fabScroll.show()
     }
 
     val bottomNavigationItems = listOf(
@@ -465,7 +469,7 @@ private fun MainContainerScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = showFab && currentRoute(navController) == BottomNavigationScreens.Home.route,
+                visible = showFab && fabScroll.isVisible && currentRoute(navController) == BottomNavigationScreens.Home.route,
                 enter = slideInVertically(initialOffsetY = { it * 2 }),
                 exit = slideOutVertically(targetOffsetY = { it * 2 }),
             ) {
@@ -503,7 +507,9 @@ private fun MainContainerScreen(
     ) { innerPadding ->
         MainScreenNavigationConfigurations(
             navController = navController,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier
+                .padding(innerPadding)
+                .nestedScroll(fabScroll.connection),
             navigateToAuthentication = navigateToAuthentication,
             onFabConfigChanged = { isVisible, tone, action ->
                 showFab = isVisible
