@@ -30,15 +30,12 @@
     <string name="map_could_not_refresh">The geographic clusters could not be refreshed right now. Keep the selected period and try again in a moment.</string>
     <string name="map_retry">Retry</string>
     <string name="map_this_does_not_affect">This does not affect the rest of your tracked history or analytics.</string>
-    <string name="map_top_clusters">Top clusters</string>
-    <string name="map_all_clusters">All clusters</string>
     <string name="map_top_area">Top area</string>
     <string name="map_second_area">Second area</string>
     <string name="map_third_area">Third area</string>
     <string name="map_area_n">Area %1$d</string>
     <string name="map_area_grouping">%1$d smokes grouped in an approximate %2$d m area.</string>
     <string name="map_smokes_in_area">%1$d smokes in this area</string>
-    <string name="map_events">%1$d events</string>
     <string name="map_view">View</string>
     <string name="map_viewing">Viewing</string>
     <string name="widget_today">Today</string>

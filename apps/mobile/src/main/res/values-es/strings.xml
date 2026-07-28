@@ -30,15 +30,12 @@
     <string name="map_could_not_refresh">No se pudieron actualizar los clusters geográficos ahora. Mantené el período seleccionado y probá de nuevo en un momento.</string>
     <string name="map_retry">Reintentar</string>
     <string name="map_this_does_not_affect">Esto no afecta el resto de tu historial ni tus analíticas.</string>
-    <string name="map_top_clusters">Principales clusters</string>
-    <string name="map_all_clusters">Todos los clusters</string>
     <string name="map_top_area">Área principal</string>
     <string name="map_second_area">Segunda área</string>
     <string name="map_third_area">Tercera área</string>
     <string name="map_area_n">Área %1$d</string>
     <string name="map_area_grouping">%1$d cigarrillos agrupados en un área de ~%2$d m.</string>
     <string name="map_smokes_in_area">%1$d cigarrillos en esta zona</string>
-    <string name="map_events">%1$d eventos</string>
     <string name="map_view">Ver</string>
     <string name="map_viewing">Viendo</string>
     <string name="widget_today">Hoy</string>

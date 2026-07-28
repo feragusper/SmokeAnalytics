@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -212,43 +211,6 @@ private fun LoadedState(
             }
         }
 
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-                shape = RoundedCornerShape(24.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.map_top_clusters),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    state.clusters.take(3).forEachIndexed { index, cluster ->
-                        ClusterLegendRow(
-                            index = index,
-                            cluster = cluster,
-                            isActive = cluster == activeCluster,
-                            onSelectCluster = onSelectCluster,
-                        )
-                        if (index < state.clusters.take(3).lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            Text(
-                text = stringResource(R.string.map_all_clusters),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
         itemsIndexed(state.clusters) { index, cluster ->
             Card(
                 colors = CardDefaults.cardColors(
@@ -290,52 +252,6 @@ private fun LoadedState(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ClusterLegendRow(
-    index: Int,
-    cluster: SmokeMapCluster,
-    isActive: Boolean,
-    onSelectCluster: (SmokeMapCluster) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Card(
-                shape = RoundedCornerShape(999.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = when (index) {
-                        0 -> MaterialTheme.colorScheme.primary
-                        1 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    }
-                ),
-            ) {
-                Spacer(modifier = Modifier.size(12.dp))
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = clusterRankLabel(index), style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = stringResource(R.string.map_events, cluster.count),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        TextButton(onClick = { onSelectCluster(cluster) }) {
-            Text(if (isActive) stringResource(R.string.map_viewing) else stringResource(R.string.map_view))
         }
     }
 }
