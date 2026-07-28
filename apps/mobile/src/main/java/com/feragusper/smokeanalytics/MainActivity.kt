@@ -457,7 +457,11 @@ private fun MainContainerScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        bottomBar = { BottomNavigation(navController, bottomNavigationItems, analytics) },
+        bottomBar = {
+            if (activeRoute != GOALS_CONFIGURE_ROUTE) {
+                BottomNavigation(navController, bottomNavigationItems, analytics)
+            }
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {

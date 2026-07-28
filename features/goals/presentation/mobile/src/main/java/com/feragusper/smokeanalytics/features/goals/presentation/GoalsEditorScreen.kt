@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -15,16 +17,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
@@ -42,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
@@ -49,6 +57,12 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.GoalType
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 
+/**
+ * Full-screen goal editor (selector + setup). Shown above the bottom bar with a back
+ * navigation, and a loading skeleton so the sign-in state never flashes before the
+ * session resolves.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsEditorScreen(
     currentEmail: String?,
@@ -76,216 +90,261 @@ fun GoalsEditorScreen(
 
     val draftGoal = selectedType.toGoalOrNull(draftValue)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.goals_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.goals_configure_goal)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.goals_back),
+                        )
+                    }
+                },
             )
-            Text(
-                text = stringResource(R.string.goals_choose_target),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        errorMessage?.let { message ->
-            Card(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
+        },
+    ) { padding ->
+        // Skeleton while the session/goal loads, so the sign-in card never flashes.
+        if (displayLoading && currentEmail == null && errorMessage == null) {
+            GoalsEditorSkeleton(modifier = Modifier.padding(padding))
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.goals_could_not_update),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-        }
+                Text(
+                    text = stringResource(R.string.goals_choose_target),
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
-        if (currentEmail == null) {
-            GoalsPanelCard {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(
-                        text = stringResource(R.string.goals_need_account),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(R.string.goals_sign_in_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    signInErrorMessage?.let { message ->
-                        Card(
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                            ),
+                errorMessage?.let { message ->
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Column(
-                                modifier = Modifier.padding(18.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.goals_sign_in_failed),
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                Text(
-                                    text = message,
-                                    style = MaterialTheme.typography.bodyMedium,
+                            Text(
+                                text = stringResource(R.string.goals_could_not_update),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(text = message, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+
+                if (currentEmail == null) {
+                    GoalsPanelCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Text(
+                                text = stringResource(R.string.goals_need_account),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = stringResource(R.string.goals_sign_in_body),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            signInErrorMessage?.let { message ->
+                                Card(
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                    ),
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.goals_sign_in_failed),
+                                            style = MaterialTheme.typography.titleMedium,
+                                        )
+                                        Text(text = message, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                            }
+                            GoogleSignInComponent(
+                                modifier = Modifier.fillMaxWidth(),
+                                onSignInSuccess = onSignInSuccess,
+                                onSignInError = onSignInError,
+                            )
+                        }
+                    }
+                } else {
+                    GoalsPanelCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = stringResource(R.string.goals_goal_type),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            GoalType.entries.forEach { type ->
+                                GoalTypeCard(
+                                    type = type,
+                                    selected = selectedType == type,
+                                    onClick = {
+                                        analytics.buttonTap(AnalyticsScreen.GOALS_CONFIGURE, AnalyticsTarget.SELECT_GOAL_TYPE)
+                                        selectedType = type
+                                        draftValue = type.defaultDraftValue()
+                                    },
                                 )
                             }
                         }
                     }
-                    GoogleSignInComponent(
-                        modifier = Modifier.fillMaxWidth(),
-                        onSignInSuccess = onSignInSuccess,
-                        onSignInError = onSignInError,
-                    )
-                }
-            }
-            return
-        }
 
-        GoalsPanelCard {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = stringResource(R.string.goals_goal_type),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                GoalType.entries.forEach { type ->
-                    GoalTypeCard(
-                        type = type,
-                        selected = selectedType == type,
-                        onClick = {
-                            analytics.buttonTap(AnalyticsScreen.GOALS_CONFIGURE, AnalyticsTarget.SELECT_GOAL_TYPE)
-                            selectedType = type
-                            draftValue = type.defaultDraftValue()
-                        },
-                    )
-                }
-            }
-        }
+                    GoalsPanelCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = stringResource(R.string.goals_goal_setup),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            OutlinedTextField(
+                                value = draftValue,
+                                onValueChange = { draftValue = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(selectedType.inputLabel()) },
+                                supportingText = { Text(selectedType.inputHelp()) },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = if (selectedType == GoalType.DailyCap || selectedType == GoalType.MindfulGap) {
+                                        KeyboardType.Number
+                                    } else {
+                                        KeyboardType.Decimal
+                                    }
+                                ),
+                                singleLine = true,
+                            )
 
-        GoalsPanelCard {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = stringResource(R.string.goals_goal_setup),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                OutlinedTextField(
-                    value = draftValue,
-                    onValueChange = { draftValue = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(selectedType.inputLabel()) },
-                    supportingText = { Text(selectedType.inputHelp()) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = if (selectedType == GoalType.DailyCap || selectedType == GoalType.MindfulGap) {
-                            KeyboardType.Number
-                        } else {
-                            KeyboardType.Decimal
+                            draftGoal?.let { goal ->
+                                Text(
+                                    text = goal.summaryLabel(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+
+                            goalProgress?.let { progress ->
+                                progress.progressFraction?.let { fraction ->
+                                    LinearProgressIndicator(
+                                        progress = { fraction },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                                Text(
+                                    text = progress.progress.text(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                progress.baseline?.let { baseline ->
+                                    Text(
+                                        text = baseline.text(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                progress.warning?.let { warning ->
+                                    Text(
+                                        text = warning.text(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    )
+                                }
+                                progress.celebration?.let { celebration ->
+                                    Text(
+                                        text = celebration.text(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                if (progress.hasStreak) {
+                                    Text(
+                                        text = goalStreakText(progress.streakDays),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                OutlinedButton(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onClearGoal,
+                                    enabled = !displayLoading && preferences.activeGoal != null,
+                                ) {
+                                    Text(stringResource(R.string.goals_clear))
+                                }
+                                Button(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { draftGoal?.let(onSaveGoal) },
+                                    enabled = !displayLoading && draftGoal != null,
+                                ) {
+                                    Text(if (preferences.activeGoal == null) stringResource(R.string.goals_save_goal) else stringResource(R.string.goals_update_goal))
+                                }
+                            }
                         }
-                    ),
-                    singleLine = true,
-                )
-
-                draftGoal?.let { goal ->
-                    Text(
-                        text = goal.summaryLabel(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                goalProgress?.let { progress ->
-                    progress.progressFraction?.let { fraction ->
-                        LinearProgressIndicator(
-                            progress = { fraction },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    Text(
-                        text = progress.progress.text(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    progress.baseline?.let { baseline ->
-                        Text(
-                            text = baseline.text(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    progress.warning?.let { warning ->
-                        Text(
-                            text = warning.text(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        )
-                    }
-                    progress.celebration?.let { celebration ->
-                        Text(
-                            text = celebration.text(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    if (progress.hasStreak) {
-                        Text(
-                            text = goalStreakText(progress.streakDays),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = onClearGoal,
-                        enabled = !displayLoading && preferences.activeGoal != null,
-                    ) {
-                        Text(stringResource(R.string.goals_clear))
-                    }
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = { draftGoal?.let(onSaveGoal) },
-                        enabled = !displayLoading && draftGoal != null,
-                    ) {
-                        Text(if (preferences.activeGoal == null) stringResource(R.string.goals_save_goal) else stringResource(R.string.goals_update_goal))
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun GoalsEditorSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        repeat(2) {
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    EditorSkeletonLine(widthFraction = 0.4f)
+                    EditorSkeletonLine(widthFraction = 0.8f, height = 26.dp)
+                    EditorSkeletonLine(widthFraction = 1f, height = 44.dp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditorSkeletonLine(widthFraction: Float, height: Dp = 14.dp) {
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth(widthFraction)
+            .height(height)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f)),
+    )
 }
 
 @Composable
@@ -337,7 +396,7 @@ private fun GoalsPanelCard(
     content: @Composable () -> Unit,
 ) {
     Card(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         ),
