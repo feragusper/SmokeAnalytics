@@ -16,7 +16,6 @@
     <string name="history_showing_last_state">Mostrando el último estado disponible mientras no se pudo actualizar el día seleccionado.</string>
     <string name="history_day_load_failed">No se pudo cargar el día seleccionado. Reintentá cuando se recupere la conexión o la cuota.</string>
     <string name="history_entries">%1$d registros</string>
-    <string name="history_daily_average">Promedio diario %1$s unidades</string>
     <string name="history_saving_edit">Guardando edición…</string>
     <string name="history_deleting">Eliminando…</string>
     <string name="history_dow_mon">LUN</string>

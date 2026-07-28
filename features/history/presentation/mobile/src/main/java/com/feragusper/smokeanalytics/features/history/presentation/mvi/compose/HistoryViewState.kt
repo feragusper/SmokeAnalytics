@@ -1,5 +1,10 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi.compose
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,12 +101,19 @@ data class HistoryViewState(
         val snackbarHostState = remember { SnackbarHostState() }
         val timeZone = remember { TimeZone.currentSystemDefault() }
         var showDatePicker by remember { mutableStateOf(false) }
+        var calendarExpanded by remember { mutableStateOf(true) }
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
-        val dateLabel = selectedLocalDate.toUiMonthDay()
         val entriesCount = smokes?.size ?: 0
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             contentWindowInsets = WindowInsets(0),
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.history_add_for_date)) },
+                )
+            },
         ) { contentPadding ->
             if (showDatePicker) {
                 DatePickerDialog(
@@ -133,8 +148,8 @@ data class HistoryViewState(
                     ArchiveCalendarCard(
                         selectedLocalDate = selectedLocalDate,
                         monthCounts = monthCounts,
-                        entriesCount = entriesCount,
-                        displayLoading = displayLoading,
+                        expanded = calendarExpanded,
+                        onToggleExpanded = { calendarExpanded = !calendarExpanded },
                         onShiftMonth = { amount ->
                             analytics.buttonTap(
                                 AnalyticsScreen.HISTORY,
@@ -151,19 +166,18 @@ data class HistoryViewState(
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
-                        onPreviousDay = {
-                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PREV)
-                            intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
-                        },
-                        onNextDay = {
-                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.NEXT)
-                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
-                        },
+                    )
+                }
+
+                item {
+                    // Selected day is the title of the list below (tap it to jump to a date).
+                    ArchiveListHeader(
+                        selectedLocalDate = selectedLocalDate,
+                        entriesCount = entriesCount,
                         onPickDate = {
                             analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PICK_DATE)
                             showDatePicker = true
                         },
-                        onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                     )
                 }
 
@@ -251,7 +265,7 @@ data class HistoryViewState(
                     }
 
                     error == null -> {
-                        item { EmptySmokes() }
+                        item { EmptySmokes(modifier = Modifier.fillParentMaxHeight(0.7f)) }
                     }
                 }
 
@@ -295,50 +309,50 @@ private fun ArchiveHeader(
 }
 
 @Composable
-private fun HistoryDateBar(
+private fun ArchiveListHeader(
     selectedLocalDate: LocalDate,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
+    entriesCount: Int,
     onPickDate: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+    val locale = LocalLocale.current.platformLocale
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp)
+            .clickable(onClick = onPickDate),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
-            text = selectedLocalDate.toUiMonthYear(),
+            text = selectedLocalDate.toFullWeekdayDate(locale),
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrevious) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-            }
-            Text(
-                text = selectedLocalDate.toUiMonthDay(),
-                modifier = Modifier.clickable(onClick = onPickDate),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            IconButton(onClick = onNext) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
-            }
-        }
+        Text(
+            text = stringResource(R.string.history_entries, entriesCount),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
+
+/** Full localized weekday + date (e.g. "Lunes, 1 de junio de 2026"), like the analytics day label. */
+private fun LocalDate.toFullWeekdayDate(locale: java.util.Locale): String =
+    java.time.LocalDate.of(year, monthNumber, dayOfMonth)
+        .format(
+            java.time.format.DateTimeFormatter
+                .ofLocalizedDate(java.time.format.FormatStyle.FULL)
+                .withLocale(locale),
+        )
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
 @Composable
 private fun ArchiveCalendarCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
-    entriesCount: Int,
-    displayLoading: Boolean,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
-    onPreviousDay: () -> Unit,
-    onNextDay: () -> Unit,
-    onPickDate: () -> Unit,
-    onAdd: () -> Unit,
 ) {
     val calendarCellWidth = 42.dp
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
@@ -355,21 +369,25 @@ private fun ArchiveCalendarCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Month header row: month/year + average + month nav
+            // Month header row: month/year (tap to collapse/expand) + month nav
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    modifier = Modifier.clickable(onClick = onToggleExpanded),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
                         text = selectedLocalDate.toUiMonthYear(),
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    Text(
-                        text = stringResource(R.string.history_daily_average, monthCounts.averageOrZero().formatOneDecimal()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Row {
@@ -382,6 +400,12 @@ private fun ArchiveCalendarCard(
                 }
             }
 
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+              Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 listOf(stringResource(R.string.history_dow_mon), stringResource(R.string.history_dow_tue), stringResource(R.string.history_dow_wed), stringResource(R.string.history_dow_thu), stringResource(R.string.history_dow_fri), stringResource(R.string.history_dow_sat), stringResource(R.string.history_dow_sun)).forEach { label ->
                     CalendarCell(width = calendarCellWidth) {
@@ -438,39 +462,7 @@ private fun ArchiveCalendarCard(
                     }
                 }
             }
-
-            // Day navigation + add button
-            HorizontalDivider()
-            HistoryDateBar(
-                selectedLocalDate = selectedLocalDate,
-                onPrevious = onPreviousDay,
-                onNext = onNextDay,
-                onPickDate = onPickDate,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(999.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.history_entries, entriesCount),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                }
-                Button(
-                    onClick = onAdd,
-                    enabled = !displayLoading,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                ) {
-                    Text(text = stringResource(R.string.history_add_for_date), style = MaterialTheme.typography.labelLarge)
-                }
+              }
             }
         }
     }
