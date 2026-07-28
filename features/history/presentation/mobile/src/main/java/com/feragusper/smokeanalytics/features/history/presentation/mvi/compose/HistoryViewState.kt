@@ -265,7 +265,7 @@ data class HistoryViewState(
                     }
 
                     error == null -> {
-                        item { EmptySmokes(modifier = Modifier.fillParentMaxHeight(0.7f)) }
+                        item { EmptySmokes(modifier = Modifier.padding(top = 48.dp)) }
                     }
                 }
 
