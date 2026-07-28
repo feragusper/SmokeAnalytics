@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.animation.OvershootInterpolator
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
@@ -11,12 +10,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.DrawableRes
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +35,8 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -55,13 +53,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,11 +69,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.exyte.animatednavbar.AnimatedNavigationBar
-import com.exyte.animatednavbar.animation.balltrajectory.Parabolic
-import com.exyte.animatednavbar.animation.indendshape.Height
-import com.exyte.animatednavbar.animation.indendshape.shapeCornerRadius
-import com.exyte.animatednavbar.items.dropletbutton.DropletButton
 import com.feragusper.smokeanalytics.features.authentication.presentation.AuthenticationActivity
 import com.feragusper.smokeanalytics.features.home.domain.ElapsedTone
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState.TestTags.Companion.BUTTON_ADD_SMOKE
@@ -651,42 +643,18 @@ private fun BottomNavigation(
     analytics: AnalyticsTracker,
 ) {
     val route = currentRoute(navController)
-    val selectedIndex = items.indexOfFirst { it.route == route }.takeIf { it >= 0 } ?: 0
 
-    AnimatedNavigationBar(
-        selectedIndex = selectedIndex,
-        modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .navigationBarsPadding()
-            .height(85.dp)
-            .shadow(
-                elevation = 12.dp,
-                shape = RoundedCornerShape(25.dp),
-                clip = false,
-            ),
-        ballColor = MaterialTheme.colorScheme.primary,
-        cornerRadius = shapeCornerRadius(25.dp),
-        ballAnimation = Parabolic(tween(500, easing = LinearOutSlowInEasing)),
-        indentAnimation = Height(
-            indentWidth = 56.dp,
-            indentHeight = 15.dp,
-            animationSpec = tween(
-                1000,
-                easing = { OvershootInterpolator().getInterpolation(it) })
-        )
-    ) {
-        items.forEachIndexed { index, screen ->
-            DropletButton(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .pressScaleMicroInteraction(pressedScale = 0.94f),
-                isSelected = selectedIndex == index,
-                icon = screen.iconId,
-                iconColor = MaterialTheme.colorScheme.onSurface,
-                dropletColor = MaterialTheme.colorScheme.primary,
-                animationSpec = tween(durationMillis = 500, easing = LinearEasing),
-                size = 24.dp,
+    NavigationBar {
+        items.forEach { screen ->
+            NavigationBarItem(
+                selected = screen.route == route,
+                icon = {
+                    Icon(
+                        painter = painterResource(screen.iconId),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                },
                 onClick = {
                     routeToScreen(route)?.let { current ->
                         analytics.buttonTap(current, navTargetFor(screen.route))
@@ -698,11 +666,10 @@ private fun BottomNavigation(
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
             )
         }
     }
-
 }
 
 /**
