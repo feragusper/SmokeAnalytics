@@ -27,5 +27,11 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     // Include Timber for logging
     implementation(libs.timber)
-    // Use Hilt's compiler for annotation processing
+
+    // Unit tests (JUnit 5)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.bundles.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
