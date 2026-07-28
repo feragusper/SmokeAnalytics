@@ -30,8 +30,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -64,6 +64,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
@@ -199,49 +200,15 @@ data class HistoryViewState(
                     )
                 }
 
-                error?.let { currentError ->
+                // A refresh that failed while data is still on screen: a quiet inline note.
+                if (error != null && !smokes.isNullOrEmpty()) {
                     item {
-                        Card(
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                            ),
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) stringResource(R.string.history_session_required) else stringResource(R.string.history_could_not_refresh),
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                Text(
-                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) {
-                                        stringResource(R.string.history_sign_back_in)
-                                    } else if (smokes == null) {
-                                        stringResource(R.string.history_day_load_failed)
-                                    } else {
-                                        stringResource(R.string.history_showing_last_state)
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                if (currentError != HistoryResult.Error.NotLoggedIn) {
-                                    Button(
-                                        onClick = {
-                                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.RETRY)
-                                            intent(HistoryIntent.FetchSmokes(selectedDate))
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError,
-                                        ),
-                                    ) {
-                                        Text(stringResource(R.string.history_retry))
-                                    }
-                                }
-                            }
-                        }
+                        Text(
+                            text = stringResource(R.string.history_showing_last_state),
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
 
@@ -255,6 +222,18 @@ data class HistoryViewState(
                                     .clip(RoundedCornerShape(20.dp))
                                     .shimmer()
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
+                            )
+                        }
+                    }
+
+                    error != null && smokes.isNullOrEmpty() -> {
+                        item {
+                            HistoryErrorState(
+                                onRetry = {
+                                    analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.RETRY)
+                                    intent(HistoryIntent.FetchSmokes(selectedDate))
+                                },
+                                modifier = Modifier.padding(top = 48.dp),
                             )
                         }
                     }
@@ -312,6 +291,43 @@ data class HistoryViewState(
             )
             }
           }
+        }
+    }
+}
+
+/** Coherent centered error state for a day/month that failed to load. */
+@Composable
+private fun HistoryErrorState(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        )
+        Text(
+            text = stringResource(R.string.history_could_not_refresh),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.history_day_load_failed),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onRetry) {
+            Text(stringResource(R.string.history_retry))
         }
     }
 }
