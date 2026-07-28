@@ -51,6 +51,14 @@
         <item quantity="one">Llevás %1$d día seguido</item>
         <item quantity="other">Llevás %1$d días seguidos</item>
     </plurals>
+    <string name="goals_score_week">Esta semana: %1$d días en objetivo · %2$d pts</string>
+    <string name="goals_score_month">Este mes: %1$d días en objetivo · %2$d pts</string>
+    <string name="goals_stat_streak">Racha</string>
+    <string name="goals_stat_streak_caption">días seguidos</string>
+    <string name="goals_stat_week">Esta semana</string>
+    <string name="goals_stat_month">Este mes</string>
+    <string name="goals_stat_points">%1$d pts</string>
+    <string name="goals_stat_days_on_goal">%1$d días en objetivo</string>
     <string name="goals_summary_daily_cap">Tope diario: como máximo %1$d cigarrillos.</string>
     <string name="goals_summary_reduce_week">Reducí la semana actual un %1$d%%.</string>
     <string name="goals_summary_reduce_month">Reducí el mes actual un %1$d%%.</string>
