@@ -20,7 +20,6 @@
     <string name="map_tab_clusters">Clusters</string>
     <string name="map_analytics_subtitle">Review smoking frequency and the places where smoking clusters show up.</string>
     <string name="map_needs_attention">Needs attention</string>
-    <string name="map_action_required">Action required</string>
     <string name="map_location_off">Location tracking is off</string>
     <string name="map_location_off_body">Enable location tracking in You to unlock repeated-area detection, cluster insights, and the geographic side of Analytics.</string>
     <string name="map_rest_works">The rest of the product still works, but this destination needs location-linked history to become useful.</string>

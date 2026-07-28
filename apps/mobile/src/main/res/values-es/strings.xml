@@ -20,7 +20,6 @@
     <string name="map_tab_clusters">Clusters</string>
     <string name="map_analytics_subtitle">Revisá la frecuencia de fumado y los lugares donde se agrupa.</string>
     <string name="map_needs_attention">Necesita atención</string>
-    <string name="map_action_required">Acción requerida</string>
     <string name="map_location_off">El seguimiento de ubicación está apagado</string>
     <string name="map_location_off_body">Activá el seguimiento de ubicación en Vos para desbloquear la detección de áreas repetidas, los insights de clusters y el lado geográfico de Analíticas.</string>
     <string name="map_rest_works">El resto del producto sigue funcionando, pero esta sección necesita historial con ubicación para ser útil.</string>
