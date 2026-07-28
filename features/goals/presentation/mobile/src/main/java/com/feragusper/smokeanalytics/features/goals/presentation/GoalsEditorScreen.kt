@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -27,11 +28,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
@@ -59,8 +61,9 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreference
 
 /**
  * Full-screen goal editor (selector + setup). Shown above the bottom bar with a back
- * navigation, and a loading skeleton so the sign-in state never flashes before the
- * session resolves.
+ * navigation and a loading skeleton so the sign-in state never flashes. The goal type list
+ * includes a "no goal" choice, and the save/remove action lives in a screen-level bottom bar
+ * rather than inside the setup card.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,8 +81,9 @@ fun GoalsEditorScreen(
     onSignInError: (String) -> Unit,
 ) {
     val analytics = koinInject<AnalyticsTracker>()
+    // null = the "no goal" choice.
     var selectedType by remember(preferences.activeGoal) {
-        mutableStateOf(preferences.activeGoal?.type ?: GoalType.DailyCap)
+        mutableStateOf<GoalType?>(preferences.activeGoal?.type ?: GoalType.DailyCap)
     }
     var draftValue by remember(preferences.activeGoal) { mutableStateOf(preferences.activeGoal.defaultDraftValue()) }
 
@@ -88,10 +92,11 @@ fun GoalsEditorScreen(
         draftValue = preferences.activeGoal.defaultDraftValue()
     }
 
-    val draftGoal = selectedType.toGoalOrNull(draftValue)
+    val draftGoal = selectedType?.toGoalOrNull(draftValue)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = backgroundColor,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.goals_configure_goal)) },
@@ -103,7 +108,26 @@ fun GoalsEditorScreen(
                         )
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor,
+                    scrolledContainerColor = backgroundColor,
+                ),
             )
+        },
+        bottomBar = {
+            // Hidden only while the initial skeleton shows (currentEmail not yet resolved).
+            if (currentEmail != null) {
+                GoalsEditorBottomAction(
+                    isNoGoal = selectedType == null,
+                    isCreating = preferences.activeGoal == null,
+                    hasActiveGoal = preferences.activeGoal != null,
+                    canSave = draftGoal != null,
+                    loading = displayLoading,
+                    onSave = { draftGoal?.let(onSaveGoal) },
+                    onRemove = onClearGoal,
+                    backgroundColor = backgroundColor,
+                )
+            }
         },
     ) { padding ->
         // Skeleton while the session/goal loads, so the sign-in card never flashes.
@@ -194,9 +218,16 @@ fun GoalsEditorScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary,
                             )
+                            GoalChoiceCard(
+                                title = stringResource(R.string.goals_no_goal_option),
+                                description = stringResource(R.string.goals_no_goal_option_body),
+                                selected = selectedType == null,
+                                onClick = { selectedType = null },
+                            )
                             GoalType.entries.forEach { type ->
-                                GoalTypeCard(
-                                    type = type,
+                                GoalChoiceCard(
+                                    title = type.label(),
+                                    description = type.description(),
                                     selected = selectedType == type,
                                     onClick = {
                                         analytics.buttonTap(AnalyticsScreen.GOALS_CONFIGURE, AnalyticsTarget.SELECT_GOAL_TYPE)
@@ -208,100 +239,126 @@ fun GoalsEditorScreen(
                         }
                     }
 
-                    GoalsPanelCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(
-                                text = stringResource(R.string.goals_goal_setup),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            OutlinedTextField(
-                                value = draftValue,
-                                onValueChange = { draftValue = it },
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text(selectedType.inputLabel()) },
-                                supportingText = { Text(selectedType.inputHelp()) },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = if (selectedType == GoalType.DailyCap || selectedType == GoalType.MindfulGap) {
-                                        KeyboardType.Number
-                                    } else {
-                                        KeyboardType.Decimal
+                    selectedType?.let { type ->
+                        GoalsPanelCard {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    text = stringResource(R.string.goals_goal_setup),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                OutlinedTextField(
+                                    value = draftValue,
+                                    onValueChange = { draftValue = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text(type.inputLabel()) },
+                                    supportingText = { Text(type.inputHelp()) },
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = if (type == GoalType.DailyCap || type == GoalType.MindfulGap) {
+                                            KeyboardType.Number
+                                        } else {
+                                            KeyboardType.Decimal
+                                        }
+                                    ),
+                                    singleLine = true,
+                                )
+
+                                draftGoal?.let { goal ->
+                                    Text(
+                                        text = goal.summaryLabel(),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                goalProgress?.let { progress ->
+                                    progress.progressFraction?.let { fraction ->
+                                        LinearProgressIndicator(
+                                            progress = { fraction },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
                                     }
-                                ),
-                                singleLine = true,
-                            )
-
-                            draftGoal?.let { goal ->
-                                Text(
-                                    text = goal.summaryLabel(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-
-                            goalProgress?.let { progress ->
-                                progress.progressFraction?.let { fraction ->
-                                    LinearProgressIndicator(
-                                        progress = { fraction },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                }
-                                Text(
-                                    text = progress.progress.text(),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                progress.baseline?.let { baseline ->
                                     Text(
-                                        text = baseline.text(),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        text = progress.progress.text(),
+                                        style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                }
-                                progress.warning?.let { warning ->
-                                    Text(
-                                        text = warning.text(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    )
-                                }
-                                progress.celebration?.let { celebration ->
-                                    Text(
-                                        text = celebration.text(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                                if (progress.hasStreak) {
-                                    Text(
-                                        text = goalStreakText(progress.streakDays),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                OutlinedButton(
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onClearGoal,
-                                    enabled = !displayLoading && preferences.activeGoal != null,
-                                ) {
-                                    Text(stringResource(R.string.goals_clear))
-                                }
-                                Button(
-                                    modifier = Modifier.weight(1f),
-                                    onClick = { draftGoal?.let(onSaveGoal) },
-                                    enabled = !displayLoading && draftGoal != null,
-                                ) {
-                                    Text(if (preferences.activeGoal == null) stringResource(R.string.goals_save_goal) else stringResource(R.string.goals_update_goal))
+                                    progress.baseline?.let { baseline ->
+                                        Text(
+                                            text = baseline.text(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    progress.warning?.let { warning ->
+                                        Text(
+                                            text = warning.text(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        )
+                                    }
+                                    progress.celebration?.let { celebration ->
+                                        Text(
+                                            text = celebration.text(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    if (progress.hasStreak) {
+                                        Text(
+                                            text = goalStreakText(progress.streakDays),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoalsEditorBottomAction(
+    isNoGoal: Boolean,
+    isCreating: Boolean,
+    hasActiveGoal: Boolean,
+    canSave: Boolean,
+    loading: Boolean,
+    onSave: () -> Unit,
+    onRemove: () -> Unit,
+    backgroundColor: androidx.compose.ui.graphics.Color,
+) {
+    Surface(color = backgroundColor) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            if (isNoGoal) {
+                Button(
+                    onClick = onRemove,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    enabled = !loading && hasActiveGoal,
+                ) {
+                    Text(stringResource(R.string.goals_remove_goal), fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    enabled = !loading && canSave,
+                ) {
+                    Text(
+                        text = if (isCreating) stringResource(R.string.goals_save_goal) else stringResource(R.string.goals_update_goal),
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }
@@ -348,8 +405,9 @@ private fun EditorSkeletonLine(widthFraction: Float, height: Dp = 14.dp) {
 }
 
 @Composable
-private fun GoalTypeCard(
-    type: GoalType,
+private fun GoalChoiceCard(
+    title: String,
+    description: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -370,12 +428,12 @@ private fun GoalTypeCard(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = type.label(),
+                text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = type.description(),
+                text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -4,6 +4,9 @@
     <string name="goals_completed">Completado</string>
     <string name="goals_configure_goal">Configurar objetivo</string>
     <string name="goals_back">Atrás</string>
+    <string name="goals_no_goal_option">Sin objetivo</string>
+    <string name="goals_no_goal_option_body">Seguí registrando sin un objetivo activo.</string>
+    <string name="goals_remove_goal">Quitar objetivo</string>
     <string name="goals_could_not_load">No se pudo cargar tu objetivo</string>
     <string name="goals_need_account">Los objetivos necesitan una cuenta</string>
     <string name="goals_no_active_goal">Todavía no hay objetivo activo</string>
