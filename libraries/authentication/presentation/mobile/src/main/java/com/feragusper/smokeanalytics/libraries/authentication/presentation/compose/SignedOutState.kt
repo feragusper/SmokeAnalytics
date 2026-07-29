@@ -63,6 +63,9 @@ fun SignedOutState(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
+            // Reserve a stable height so the sign-in button lands in the same place on every
+            // screen regardless of how many lines the message wraps to.
+            minLines = 3,
         )
         signInErrorMessage?.let { error ->
             Spacer(modifier = Modifier.height(8.dp))
