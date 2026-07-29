@@ -2,7 +2,6 @@ package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -22,7 +21,8 @@ import androidx.core.view.WindowCompat
  */
 @Composable
 fun SmokeAnalyticsTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeModeHolder.current,
+    darkTheme: Boolean = themeMode.resolveDarkTheme(),
     dynamicColor: Boolean = true,
     accent: MobileAccent = AccentHolder.current,
     content: @Composable () -> Unit

@@ -113,4 +113,14 @@
     <string name="about_back_to_settings">Back to settings</string>
     <string name="about_body">A personal smoking journal focused on visibility over guilt. It helps review the day, compare longer trends, estimate cost, and understand where or when smoking tends to cluster.</string>
     <string name="about_copyright_line">Smoke Analytics © Fernando Perez. All rights reserved.</string>
+    <string name="settings_appearance">Appearance &amp; language</string>
+    <string name="settings_appearance_subtitle">Theme and app language.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
 </resources>

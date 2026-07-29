@@ -43,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
@@ -126,22 +127,36 @@ data class SettingsViewState(
         }
 
         // Signed-out: a full-screen centered state, consistent with the other screens (no header).
+        // Appearance (theme + language) is device-local, so it's offered here too — no account needed.
         if (currentEmail == null && !displayLoading && errorMessage == null) {
-            SignedOutState(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-                icon = Icons.Filled.ManageAccounts,
-                title = stringResource(R.string.settings_need_account),
-                message = stringResource(R.string.settings_session_guest_body),
-                signInErrorMessage = signInErrorMessage,
-                onSignInSuccess = {
-                    analytics.login()
-                    intent(SettingsIntent.FetchUser)
-                },
-                onSignInError = { signInErrorMessage = it },
-            )
+                    .background(MaterialTheme.colorScheme.background),
+            ) {
+                SignedOutState(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+                    icon = Icons.Filled.ManageAccounts,
+                    title = stringResource(R.string.settings_need_account),
+                    message = stringResource(R.string.settings_session_guest_body),
+                    signInErrorMessage = signInErrorMessage,
+                    onSignInSuccess = {
+                        analytics.login()
+                        intent(SettingsIntent.FetchUser)
+                    },
+                    onSignInError = { signInErrorMessage = it },
+                )
+                SettingsNavRow(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    icon = Icons.Filled.Contrast,
+                    title = stringResource(R.string.settings_appearance),
+                    subtitle = stringResource(R.string.settings_appearance_subtitle),
+                    onClick = { context.openSettingsDetail(SettingsSection.APPEARANCE) },
+                )
+            }
             return
         }
 
@@ -195,6 +210,13 @@ data class SettingsViewState(
                     onClick = { context.openSettingsDetail(SettingsSection.TRIGGERS) },
                 )
             }
+
+            SettingsNavRow(
+                icon = Icons.Filled.Contrast,
+                title = stringResource(R.string.settings_appearance),
+                subtitle = stringResource(R.string.settings_appearance_subtitle),
+                onClick = { context.openSettingsDetail(SettingsSection.APPEARANCE) },
+            )
 
             SettingsNavRow(
                 icon = Icons.Filled.Info,
@@ -345,9 +367,10 @@ private fun SettingsNavRow(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
