@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -79,11 +79,10 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.compose.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.VicoTheme
 import androidx.compose.ui.platform.LocalLocale
@@ -353,10 +352,10 @@ data class StatsViewState(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             when (currentPeriod) {
-                                StatsPeriod.DAY -> LineChart(stats.hourly)
-                                StatsPeriod.WEEK -> BarChart(stats.weekly.mapKeys { localizeBucketLabel(it.key) })
-                                StatsPeriod.MONTH -> BarChart(stats.monthly.mapKeys { localizeBucketLabel(it.key) })
-                                StatsPeriod.YEAR -> BarChart(stats.yearly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.DAY -> TrendLineChart(stats.hourly)
+                                StatsPeriod.WEEK -> TrendLineChart(stats.weekly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.MONTH -> TrendLineChart(stats.monthly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.YEAR -> TrendLineChart(stats.yearly.mapKeys { localizeBucketLabel(it.key) })
                             }
                         }
                     }
@@ -683,88 +682,49 @@ fun HeaderNavigation(
     }
 }
 
+/**
+ * A single line chart for every period. It fits the screen width (no horizontal scroll) and,
+ * like fitness apps, only labels a handful of x points for reference instead of all of them.
+ */
 @Composable
-private fun BarChart(stats: Map<String, Int>) {
+private fun TrendLineChart(stats: Map<String, Int>) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val xAxisFormatter = rememberXAxisFormatter(stats)
-
-    LaunchedEffect(stats) {
-        modelProducer.runTransaction {
-            columnSeries {
-                series(stats.values.map { it.toFloat() })
-            }
-        }
-    }
-
-    val chartWidth = max(560, stats.size * 72).dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberColumnCartesianLayer(),
-                startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    valueFormatter = xAxisFormatter
-                ),
-            ),
-            modelProducer = modelProducer,
-            modifier = Modifier
-                .width(chartWidth)
-                .height(260.dp)
-        )
-    }
-}
-
-
-@Composable
-private fun LineChart(stats: Map<String, Int>) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-
-    val xAxisFormatter = rememberXAxisFormatter(stats)
-
-    val accumulatedValues = stats.values.runningFold(0) { sum, value -> sum + value }.drop(1)
-    val maxVisibleY = max(1.0, accumulatedValues.maxOrNull()?.toDouble() ?: 0.0)
+    val values = stats.values.map { it.toFloat() }
+    val maxVisibleY = max(1.0, (values.maxOrNull() ?: 0f).toDouble())
+    // Aim for ~6 reference labels regardless of how many buckets there are.
+    val labelSpacing = max(1, ceil(stats.size / 6.0).toInt())
 
     LaunchedEffect(stats) {
         modelProducer.runTransaction {
             lineSeries {
-                series(accumulatedValues.map { it.toFloat() })
+                series(values)
             }
         }
     }
 
-    val chartWidth = max(420, stats.size * 48).dp
-
-    Row(
+    CartesianChartHost(
+        chart = rememberCartesianChart(
+            rememberLineCartesianLayer(
+                rangeProvider = remember(maxVisibleY) {
+                    CartesianLayerRangeProvider.fixed(minY = 0.0, maxY = maxVisibleY)
+                },
+            ),
+            startAxis = VerticalAxis.rememberStart(),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                valueFormatter = xAxisFormatter,
+                itemPlacer = remember(labelSpacing) {
+                    HorizontalAxis.ItemPlacer.aligned(spacing = { labelSpacing })
+                },
+            ),
+        ),
+        modelProducer = modelProducer,
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
             .padding(16.dp)
-    ) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(
-                    pointSpacing = 48.dp,
-                    rangeProvider = remember(maxVisibleY) {
-                        CartesianLayerRangeProvider.fixed(minY = 0.0, maxY = maxVisibleY)
-                    },
-                ),
-                startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    valueFormatter = xAxisFormatter
-                ),
-            ),
-            modelProducer = modelProducer,
-            modifier = Modifier
-                .width(chartWidth)
-                .height(260.dp)
-        )
-    }
+            .height(240.dp),
+    )
 }
 
 @Composable
