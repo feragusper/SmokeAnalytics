@@ -327,9 +327,11 @@ data class StatsViewState(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                         ),
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(vertical = 12.dp)) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -347,6 +349,7 @@ data class StatsViewState(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = chartCaptionFor(currentPeriod),
+                                modifier = Modifier.padding(horizontal = 12.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -722,7 +725,7 @@ private fun TrendLineChart(stats: Map<String, Int>) {
         scrollState = rememberVicoScrollState(scrollEnabled = false),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(vertical = 8.dp)
             .height(240.dp),
     )
 }
