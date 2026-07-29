@@ -70,29 +70,19 @@ fun GoalsProgressScreen(
         onConfigure()
     }
 
-    // Signed-out: a full-screen centered state (header on top, prompt centered in the rest),
-    // consistent with the other screens.
+    // Signed-out: a full-screen centered state, consistent with the other screens (no header).
     if (currentEmail == null && !displayLoading && errorMessage == null) {
-        Column(
+        SignedOutState(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            GoalsScreenHeader(currentEmail = currentEmail, onConfigure = onConfigureTracked)
-            SignedOutState(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                icon = Icons.Outlined.Flag,
-                title = stringResource(R.string.goals_need_account),
-                message = stringResource(R.string.goals_sign_in_body),
-                signInErrorMessage = signInErrorMessage,
-                onSignInSuccess = onSignInSuccess,
-                onSignInError = onSignInError,
-            )
-        }
+                .background(MaterialTheme.colorScheme.background),
+            icon = Icons.Outlined.Flag,
+            title = stringResource(R.string.goals_need_account),
+            message = stringResource(R.string.goals_sign_in_body),
+            signInErrorMessage = signInErrorMessage,
+            onSignInSuccess = onSignInSuccess,
+            onSignInError = onSignInError,
+        )
         return
     }
 

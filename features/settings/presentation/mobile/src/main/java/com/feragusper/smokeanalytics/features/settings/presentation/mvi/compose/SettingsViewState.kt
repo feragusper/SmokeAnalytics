@@ -121,37 +121,23 @@ data class SettingsViewState(
             }
         }
 
-        // Signed-out: a full-screen centered state (header on top, prompt centered in the rest),
-        // consistent with the other screens.
+        // Signed-out: a full-screen centered state, consistent with the other screens (no header).
         if (currentEmail == null && !displayLoading && errorMessage == null) {
-            Column(
+            SignedOutState(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                SettingsProfileHeader(
-                    displayLoading = displayLoading,
-                    currentEmail = currentEmail,
-                    currentDisplayName = currentDisplayName,
-                )
-                SignedOutState(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
-                    icon = Icons.Filled.ManageAccounts,
-                    title = stringResource(R.string.settings_need_account),
-                    message = stringResource(R.string.settings_session_guest_body),
-                    signInErrorMessage = signInErrorMessage,
-                    onSignInSuccess = {
-                        analytics.login()
-                        intent(SettingsIntent.FetchUser)
-                    },
-                    onSignInError = { signInErrorMessage = it },
-                )
-            }
+                    .testTag(SettingsViewState.TestTags.BUTTON_SIGN_IN),
+                icon = Icons.Filled.ManageAccounts,
+                title = stringResource(R.string.settings_need_account),
+                message = stringResource(R.string.settings_session_guest_body),
+                signInErrorMessage = signInErrorMessage,
+                onSignInSuccess = {
+                    analytics.login()
+                    intent(SettingsIntent.FetchUser)
+                },
+                onSignInError = { signInErrorMessage = it },
+            )
             return
         }
 

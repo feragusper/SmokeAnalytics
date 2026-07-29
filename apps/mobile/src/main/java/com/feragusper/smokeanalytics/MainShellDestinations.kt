@@ -132,6 +132,18 @@ fun AnalyticsMobileDestination(
         if (active) refreshNonce += 1
     }
 
+    if (signedIn == false) {
+        SignedOutState(
+            modifier = Modifier.fillMaxSize(),
+            icon = Icons.Filled.Insights,
+            title = stringResource(R.string.analytics_need_account),
+            message = stringResource(R.string.analytics_signed_out_body),
+            onSignInSuccess = { refreshNonce += 1 },
+            onSignInError = {},
+        )
+        return
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -151,18 +163,6 @@ fun AnalyticsMobileDestination(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-
-        if (signedIn == false) {
-            SignedOutState(
-                modifier = Modifier.fillMaxSize(),
-                icon = Icons.Filled.Insights,
-                title = stringResource(R.string.analytics_need_account),
-                message = stringResource(R.string.analytics_signed_out_body),
-                onSignInSuccess = { refreshNonce += 1 },
-                onSignInError = {},
-            )
-            return@Column
         }
 
         // Frequency / clusters — a segmented control on top of everything, kept on its own (not a
