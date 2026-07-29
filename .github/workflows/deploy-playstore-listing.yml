@@ -1,0 +1,41 @@
+# Workflow to update ONLY the Play Store listing (metadata + images), no app binary
+name: Deploy Play Store Listing
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-listing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+        with:
+          ruby-version: '2.7'
+
+      - name: Install bundler and dependencies
+        run: |
+          gem install bundler:2.2.27
+          bundle config path vendor/bundle
+          bundle config set --local deployment true
+          bundle config set --local frozen true
+          bundle install --jobs 4 --retry 3 --deployment
+
+      - name: Configure Play Store credentials
+        shell: bash
+        env:
+          PLAYSTORE_CREDENTIALS_ASC: ${{ secrets.PLAYSTORE_CREDENTIALS }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "$PLAYSTORE_CREDENTIALS_ASC" > ./playstore.credentials.json.asc
+          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
+
+      - name: Upload store listing to Play Store
+        run: bundler exec fastlane android deploy_playstore_listing

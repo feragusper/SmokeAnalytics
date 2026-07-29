@@ -25,4 +25,17 @@ platform :android do
       )
     )
   end
+
+  desc "Upload only the store listing (title, descriptions, screenshots, graphics) — no app binary"
+  lane :deploy_playstore_listing do |options|
+    upload_to_play_store(
+      json_key: "playstore.credentials.json",            # Path to the service account JSON key.
+      package_name: "com.feragusper.smokeanalytics",     # The package name of the application.
+      track: "production",
+      timeout: 600,                                       # Timeout for the upload process (in seconds).
+      skip_upload_aab: true,                              # Listing-only: do not ship a binary.
+      skip_upload_apk: true,
+      skip_upload_changelogs: true                        # Changelogs bind to a release/version code.
+    )
+  end
 end
