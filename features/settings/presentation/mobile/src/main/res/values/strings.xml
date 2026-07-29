@@ -1,6 +1,8 @@
 <resources>
     <string name="settings_title">Settings</string>
     <string name="settings_logout">Logout</string>
+    <string name="settings_logout_confirm_title">Log out?</string>
+    <string name="settings_logout_confirm_body">You will need to sign in again to sync your goals, history and preferences.</string>
     <string name="settings_email">Email</string>
 
     <string name="settings_account">Account</string>
@@ -11,6 +13,7 @@
     <string name="settings_plan">Plan</string>
     <string name="settings_points">Points</string>
     <string name="settings_preferences">Preferences</string>
+    <string name="settings_preferences_subtitle">Day boundaries, currency, pack price and location tracking.</string>
     <string name="settings_routine_model">Routine model</string>
     <string name="settings_routine_body">The app\'s daily interpretation depends on these values before any chart or map is computed.</string>
     <string name="settings_awake_window">Awake window</string>
@@ -69,6 +72,7 @@
     <string name="settings_you">You</string>
     <string name="settings_manage_session_subtitle">Manage session, preferences, and app settings.</string>
     <string name="settings_signed_in">Signed in</string>
+    <string name="settings_need_account">Sign in to sync</string>
     <string name="settings_guest_mode">Guest mode</string>
     <string name="settings_sign_in_subtitle">Sign in to sync preferences and keep goals across devices.</string>
     <string name="settings_space_unavailable">Your space is unavailable</string>

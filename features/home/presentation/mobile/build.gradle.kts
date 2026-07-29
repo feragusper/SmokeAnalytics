@@ -30,6 +30,7 @@ dependencies {
 
     // Authentication modules for user session management
     implementation(project(":libraries:authentication:domain"))
+    implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:preferences:domain"))
     implementation(project(":features:goals:domain"))
 

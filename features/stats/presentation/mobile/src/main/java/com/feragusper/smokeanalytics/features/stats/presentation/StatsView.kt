@@ -16,6 +16,8 @@ fun StatsView(
     embedded: Boolean = false,
     currentPeriod: StatsViewState.StatsPeriod? = null,
     selectedDate: JavaLocalDate? = null,
+    currencySymbol: String = "",
+    cigarettePrice: Double = 0.0,
     onPeriodChange: ((StatsViewState.StatsPeriod) -> Unit)? = null,
     onDateChange: ((JavaLocalDate) -> Unit)? = null,
 ) {
@@ -32,6 +34,8 @@ fun StatsView(
         embedded = embedded,
         currentPeriod = period,
         selectedDate = date,
+        currencySymbol = currencySymbol,
+        cigarettePrice = cigarettePrice,
         onPeriodChange = onPeriodChange ?: { internalPeriod = it },
         onDateChange = onDateChange ?: { internalDate = it },
     ) { intent ->

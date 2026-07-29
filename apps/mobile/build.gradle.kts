@@ -176,6 +176,7 @@ dependencies {
     implementation(project(":libraries:cravings:data:mobile"))
     implementation(project(":libraries:smokes:data:mobile"))
     implementation(project(":libraries:authentication:data:mobile"))
+    implementation(project(":libraries:authentication:presentation:mobile"))
     implementation(project(":libraries:wear:data"))
     implementation(project(":libraries:wear:domain"))
     // DevTools is a debug-only feature (see debugImplementation below); it must not
@@ -192,6 +193,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.bundles.androidx.base)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.bundles.compose)
     implementation(libs.material3)
     implementation(libs.bundles.androidx.navigation)
@@ -199,7 +201,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.timber)
-    implementation(libs.animated.navigation.bar)
     implementation(libs.androidx.glance)
     implementation(libs.androidx.glance.material3)
     implementation(libs.play.app.update)

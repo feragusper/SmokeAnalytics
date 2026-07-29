@@ -10,15 +10,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -35,11 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgress
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
-import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.GoogleSignInComponent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 
 /**
@@ -64,6 +69,23 @@ fun GoalsProgressScreen(
         analytics.buttonTap(AnalyticsScreen.GOALS, AnalyticsTarget.CONFIGURE_GOAL)
         onConfigure()
     }
+
+    // Signed-out: a full-screen centered state, consistent with the other screens (no header).
+    if (currentEmail == null && !displayLoading && errorMessage == null) {
+        SignedOutState(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            icon = Icons.Outlined.Flag,
+            title = stringResource(R.string.goals_need_account),
+            message = stringResource(R.string.goals_sign_in_body),
+            signInErrorMessage = signInErrorMessage,
+            onSignInSuccess = onSignInSuccess,
+            onSignInError = onSignInError,
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -72,21 +94,7 @@ fun GoalsProgressScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.goals_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = stringResource(R.string.goals_track_how),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        GoalsScreenHeader(currentEmail = currentEmail, onConfigure = onConfigureTracked)
 
         // Skeleton during the initial load so the sign-in / empty state never flashes.
         if (displayLoading && goalProgress == null && currentEmail == null && errorMessage == null) {
@@ -104,49 +112,36 @@ fun GoalsProgressScreen(
             }
         }
 
-        if (currentEmail == null) {
-            GoalsCard {
-                Text(
-                    text = stringResource(R.string.goals_need_account),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    text = stringResource(R.string.goals_sign_in_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                signInErrorMessage?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                GoogleSignInComponent(
-                    modifier = Modifier.fillMaxWidth(),
-                    onSignInSuccess = onSignInSuccess,
-                    onSignInError = onSignInError,
-                )
-            }
-            return
-        }
 
         if (activeGoal == null) {
-            GoalsCard {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Flag,
+                    contentDescription = null,
+                    modifier = Modifier.size(56.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                )
                 Text(
                     text = stringResource(R.string.goals_no_active_goal),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = stringResource(R.string.goals_no_active_goal_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Button(
                     onClick = onConfigureTracked,
-                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                 ) {
                     Text(stringResource(R.string.goals_set_a_goal), fontWeight = FontWeight.Bold)
@@ -155,15 +150,55 @@ fun GoalsProgressScreen(
             return
         }
 
-        GoalProgressCard(goalProgress = goalProgress, onConfigure = onConfigureTracked)
+        GoalProgressContent(goalProgress = goalProgress)
     }
 }
 
 @Composable
-private fun GoalProgressCard(
-    goalProgress: GoalProgress?,
+private fun GoalsScreenHeader(
+    currentEmail: String?,
     onConfigure: () -> Unit,
 ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.goals_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = stringResource(R.string.goals_track_how),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (currentEmail != null) {
+            FilledTonalIconButton(onClick = onConfigure) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = stringResource(R.string.goals_configure_goal),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Renders the active goal as a small dashboard of cards — a focal "today" card plus one
+ * card per meaningful datum (streak, weekly/monthly score) and any celebration/warning note.
+ */
+@Composable
+private fun GoalProgressContent(goalProgress: GoalProgress?) {
+    // Focal card: today's progress toward the active goal.
     GoalsCard {
         Text(
             text = stringResource(R.string.goals_active_goal),
@@ -204,33 +239,87 @@ private fun GoalProgressCard(
             }
             Text(
                 text = progress.progress.text(),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
             )
             progress.supporting.textOrNull()?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            progress.baseline?.let {
-                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            progress.warning?.let {
-                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-            }
-            progress.celebration?.let {
-                Text(it.text(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-            }
-            if (progress.hasStreak) {
-                Text(goalStreakText(progress.streakDays), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Button(
-            onClick = onConfigure,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+    }
+
+    val progress = goalProgress ?: return
+
+    // Celebration / warning, each as its own note card.
+    progress.celebration?.let {
+        GoalNoteCard(
+            text = it.text(),
+            icon = Icons.Filled.Star,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+    progress.warning?.let {
+        GoalNoteCard(
+            text = it.text(),
+            icon = Icons.Filled.Warning,
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        )
+    }
+
+    // Streak as its own stat card.
+    if (progress.hasStreak) {
+        StreakStatCard(days = progress.streakDays)
+    }
+
+    // Baseline context, as a quiet footnote.
+    progress.baseline?.let {
+        Text(
+            text = it.text(),
+            modifier = Modifier.padding(horizontal = 4.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun StreakStatCard(days: Int) {
+    GoalsCard {
+        Text(
+            text = stringResource(R.string.goals_stat_streak),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = days.toString(),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(R.string.goals_stat_streak_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun GoalNoteCard(
+    text: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color,
+) {
+    GoalsCard(containerColor = containerColor, contentColor = contentColor) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.goals_configure_goal), fontWeight = FontWeight.Bold)
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Text(text, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -267,11 +356,13 @@ private fun SkeletonLine(widthFraction: Float, height: androidx.compose.ui.unit.
 
 @Composable
 private fun GoalsCard(
+    modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable () -> Unit,
 ) {
     Card(
+        modifier = modifier,
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = contentColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),

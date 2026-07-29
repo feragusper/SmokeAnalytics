@@ -8,7 +8,7 @@
     <string name="history_archive_subtitle">Browse the calendar, inspect one day, and edit the smoking log.</string>
     <string name="history_trend">Trend</string>
     <string name="history_reduction_vs_last_month">Reduction vs last month</string>
-    <string name="history_add_for_date">Add for date</string>
+    <string name="history_add_for_date">Track</string>
     <string name="history_retry">Retry</string>
     <string name="history_session_required">Session required</string>
     <string name="history_sign_back_in">Sign back in to keep the archive synced.</string>
@@ -16,7 +16,6 @@
     <string name="history_showing_last_state">Showing the last available state while the selected day could not be refreshed.</string>
     <string name="history_day_load_failed">The selected day could not be loaded. Retry when the connection or quota recovers.</string>
     <string name="history_entries">%1$d entries</string>
-    <string name="history_daily_average">Daily average %1$s units</string>
     <string name="history_saving_edit">Saving edit…</string>
     <string name="history_deleting">Deleting…</string>
     <string name="history_dow_mon">MON</string>

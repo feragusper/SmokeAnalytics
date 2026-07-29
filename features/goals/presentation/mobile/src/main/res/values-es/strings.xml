@@ -3,6 +3,10 @@
     <string name="goals_active_goal">Objetivo activo</string>
     <string name="goals_completed">Completado</string>
     <string name="goals_configure_goal">Configurar objetivo</string>
+    <string name="goals_back">Atrás</string>
+    <string name="goals_no_goal_option">Sin objetivo</string>
+    <string name="goals_no_goal_option_body">Seguí registrando sin un objetivo activo.</string>
+    <string name="goals_remove_goal">Quitar objetivo</string>
     <string name="goals_could_not_load">No se pudo cargar tu objetivo</string>
     <string name="goals_need_account">Los objetivos necesitan una cuenta</string>
     <string name="goals_no_active_goal">Todavía no hay objetivo activo</string>
@@ -51,9 +55,17 @@
         <item quantity="one">Llevás %1$d día seguido</item>
         <item quantity="other">Llevás %1$d días seguidos</item>
     </plurals>
+    <string name="goals_score_week">Esta semana: %1$d días en objetivo · %2$d pts</string>
+    <string name="goals_score_month">Este mes: %1$d días en objetivo · %2$d pts</string>
+    <string name="goals_stat_streak">Racha</string>
+    <string name="goals_stat_streak_caption">días seguidos</string>
+    <string name="goals_stat_week">Esta semana</string>
+    <string name="goals_stat_month">Este mes</string>
+    <string name="goals_stat_points">%1$d pts</string>
+    <string name="goals_stat_days_on_goal">%1$d días en objetivo</string>
     <string name="goals_summary_daily_cap">Tope diario: como máximo %1$d cigarrillos.</string>
-    <string name="goals_summary_reduce_week">Reducí la semana actual un %1$d%%.</string>
-    <string name="goals_summary_reduce_month">Reducí el mes actual un %1$d%%.</string>
+    <string name="goals_summary_reduce_week">Reducí la semana actual un %1$s%%.</string>
+    <string name="goals_summary_reduce_month">Reducí el mes actual un %1$s%%.</string>
     <string name="goals_summary_mindful_gap">Esperá al menos %1$d minutos entre cigarrillos.</string>
     <string name="goals_mindful_gap_body">Impone un intervalo mínimo en minutos entre cigarrillos.</string>
     <string name="goals_goal_setup">Configuración del objetivo</string>

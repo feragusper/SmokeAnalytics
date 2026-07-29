@@ -14,7 +14,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:theme="@style/Theme.SmokeAnalytics.Splash"
         android:usesCleartextTraffic="false">
 
         <!-- Main launcher activity -->
@@ -27,6 +27,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Full-screen goal editor, launched outside the bottom-bar shell -->
+        <activity
+            android:name=".GoalsConfigureActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SmokeAnalytics" />
+
+        <!-- Full-screen settings sub-screens, launched outside the bottom-bar shell -->
+        <activity
+            android:name="com.feragusper.smokeanalytics.features.settings.presentation.SettingsDetailActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SmokeAnalytics" />
 
         <receiver
             android:name=".widget.HomeStatusWidgetReceiver"

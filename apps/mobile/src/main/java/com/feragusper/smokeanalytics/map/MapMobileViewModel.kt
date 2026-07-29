@@ -9,6 +9,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPerio
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.clusterSmokesForMap
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.smokeMapRange
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,9 +23,12 @@ class MapMobileViewModel constructor(
     private val _state = MutableStateFlow(MapMobileState())
     val state: StateFlow<MapMobileState> = _state.asStateFlow()
 
-    fun onPeriodChange(period: SmokeMapPeriod) {
-        _state.value = _state.value.copy(period = period)
-        refresh()
+    /** Driven by the analytics shell's shared period tabs + date navigator. */
+    fun onWindowChange(period: SmokeMapPeriod, selectedDate: LocalDate) {
+        val current = _state.value
+        if (current.period == period && current.selectedDate == selectedDate && current.hasLoadedOnce) return
+        _state.value = current.copy(period = period, selectedDate = selectedDate)
+        refresh(isRefresh = current.hasLoadedOnce)
     }
 
     fun onScreenVisible() {
@@ -53,6 +57,7 @@ class MapMobileViewModel constructor(
                     period = previous.period,
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    selectedDate = previous.selectedDate,
                 )
                 val smokes = fetchSmokesUseCase(start, end)
                 val clusters = clusterSmokesForMap(smokes, previous.period)
@@ -80,6 +85,7 @@ data class MapMobileState(
     val hasLoadedOnce: Boolean = false,
     val error: Boolean = false,
     val period: SmokeMapPeriod = SmokeMapPeriod.Week,
+    val selectedDate: LocalDate? = null,
     val preferences: UserPreferences? = null,
     val clusters: List<SmokeMapCluster> = emptyList(),
     val selectedCluster: SmokeMapCluster? = null,

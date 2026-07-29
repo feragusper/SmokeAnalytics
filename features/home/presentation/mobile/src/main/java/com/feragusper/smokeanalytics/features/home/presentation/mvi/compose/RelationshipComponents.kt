@@ -70,6 +70,7 @@ internal fun RelationshipReminderCard(
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
         shape = RoundedCornerShape(24.dp),
         tonalElevation = 1.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),

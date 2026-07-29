@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,14 +25,19 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -52,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +103,7 @@ import com.feragusper.smokeanalytics.features.home.domain.homeGoalNarrative
 import com.feragusper.smokeanalytics.features.home.domain.toElapsedGapLabel
 import com.feragusper.smokeanalytics.features.home.domain.toHomeClockLabel
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScreen
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
@@ -199,10 +207,23 @@ data class HomeViewState(
                 }
             }
         }
-        LaunchedEffect(displayLoading, elapsedTone) {
-            onFabConfigChanged(!displayLoading, elapsedTone) {
+        val signedOut = error == HomeResult.Error.NotLoggedIn
+        LaunchedEffect(displayLoading, elapsedTone, signedOut) {
+            onFabConfigChanged(!displayLoading && !signedOut, elapsedTone) {
                 intent(HomeIntent.AddSmoke)
             }
+        }
+
+        if (signedOut) {
+            SignedOutState(
+                modifier = Modifier.fillMaxSize(),
+                icon = Icons.Filled.Home,
+                title = stringResource(R.string.home_session_required),
+                message = stringResource(R.string.home_session_required_body),
+                onSignInSuccess = { intent(HomeIntent.FetchSmokes) },
+                onSignInError = {},
+            )
+            return
         }
 
         val nestedScrollConnection = remember {
@@ -251,6 +272,7 @@ data class HomeViewState(
                 monthTrendDelta = monthTrendDelta,
                 activeCraving = activeCraving,
                 cravingStats = cravingStats,
+                gamificationSummary = gamificationSummary,
                 showCravingHint = showCravingHint,
                 pendingRelationshipSmokes = pendingRelationshipSmokes.map {
                     PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel(pendingLabelLocale))
@@ -310,6 +332,7 @@ private fun HomeContent(
     monthTrendDelta: Int?,
     activeCraving: Craving?,
     cravingStats: CravingStats?,
+    gamificationSummary: GamificationSummary?,
     showCravingHint: Boolean,
     pendingRelationshipSmokes: List<PendingTriggerSmoke>,
     onOpenRelationship: (String) -> Unit,
@@ -360,97 +383,176 @@ private fun HomeContent(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // Each card fades + slides up as it appears, cascading top-to-bottom via revealOrder.
+        var revealOrder = 0
         item {
-            HomeHeaderSection(
-                greeting = greeting,
-                locationTrackingAvailability = locationTrackingAvailability,
-                isLoading = isLoading,
-            )
+            RevealOnAppear(key = "header", order = revealOrder++) {
+                HomeHeaderSection(
+                    greeting = greeting,
+                    locationTrackingAvailability = locationTrackingAvailability,
+                    isLoading = isLoading,
+                )
+            }
         }
         if (error != null) {
             item {
-                HomeErrorSection(
-                    error = error,
-                    hasLoadedContent = hasLoadedContent,
-                    onRetry = { intent(HomeIntent.FetchSmokes) },
-                )
+                RevealOnAppear(key = "error", order = revealOrder++) {
+                    HomeErrorSection(
+                        error = error,
+                        hasLoadedContent = hasLoadedContent,
+                        onRetry = { intent(HomeIntent.FetchSmokes) },
+                    )
+                }
             }
         }
         if (!hasLoadedContent && error != null) {
             item { Spacer(modifier = Modifier.height(24.dp)) }
             return@LazyColumn
         }
+        // Order: Goal → Last cigarette → Craving → Points → Consistency → Evening → Trend.
         item {
-            GoalHeroSection(
-                heroTitle = heroTitleText(narrative.heroTitle),
-                heroSupporting = heroSupportingText(narrative.heroSupporting),
-                statusLabel = homeStatusText(narrative.status),
-                heroProgress = heroProgress,
-                heroReadout = heroReadout,
-                isLoading = isLoading,
-            )
+            RevealOnAppear(key = "hero", order = revealOrder++) {
+                GoalHeroSection(
+                    heroTitle = heroTitleText(narrative.heroTitle),
+                    heroSupporting = heroSupportingText(narrative.heroSupporting),
+                    statusLabel = homeStatusText(narrative.status),
+                    heroProgress = heroProgress,
+                    heroReadout = heroReadout,
+                    consistency = narrative.consistency,
+                    streakDays = narrative.streakDays,
+                    isLoading = isLoading,
+                )
+            }
+        }
+        item {
+            RevealOnAppear(key = "lastCigarette", order = revealOrder++) {
+                LastCigaretteSection(
+                    lastSmokeTimeLabel = lastSmokeTimeLabel,
+                    timeSinceLastCigarette = timeSinceLastCigarette,
+                    gapFocus = gapFocus,
+                    elapsedTone = elapsedTone,
+                    isLoading = isLoading,
+                )
+            }
         }
         if (!isLoading && hasLoadedContent) {
             if (pendingRelationshipSmokes.isNotEmpty()) {
                 item {
-                    RelationshipReminderCard(
-                        pending = pendingRelationshipSmokes,
-                        onOpen = onOpenRelationship,
-                    )
+                    RevealOnAppear(key = "relationship", order = revealOrder++) {
+                        RelationshipReminderCard(
+                            pending = pendingRelationshipSmokes,
+                            onOpen = onOpenRelationship,
+                        )
+                    }
                 }
             }
             if (showCravingHint) {
-                item { CravingHintBanner(onDismiss = { intent(HomeIntent.DismissCravingHint) }) }
+                item {
+                    RevealOnAppear(key = "cravingHint", order = revealOrder++) {
+                        CravingHintBanner(onDismiss = { intent(HomeIntent.DismissCravingHint) })
+                    }
+                }
             }
             item {
-                if (activeCraving != null) {
-                    CravingCountdownCard(
-                        quitReason = quitReason,
-                        craving = activeCraving,
-                        onResolve = { smoked ->
-                            intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
-                        },
-                        onDismiss = { intent(HomeIntent.DismissCraving(activeCraving)) },
-                    )
-                } else {
-                    CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
+                RevealOnAppear(key = "craving", order = revealOrder++) {
+                    if (activeCraving != null) {
+                        CravingCountdownCard(
+                            quitReason = quitReason,
+                            craving = activeCraving,
+                            onResolve = { smoked ->
+                                intent(HomeIntent.ResolveCraving(craving = activeCraving, smoked = smoked))
+                            },
+                            onDismiss = { intent(HomeIntent.DismissCraving(activeCraving)) },
+                        )
+                    } else {
+                        CravingPromptCard(quitReason = quitReason, onTrack = { intent(HomeIntent.TrackCraving) })
+                    }
                 }
             }
         }
-        item {
-            LastCigaretteSection(
-                lastSmokeTimeLabel = lastSmokeTimeLabel,
-                timeSinceLastCigarette = timeSinceLastCigarette,
-                gapFocus = gapFocus,
-                elapsedTone = elapsedTone,
-                isLoading = isLoading,
-            )
+        // Unified points: gaps between cigarettes + craving behaviour, one understandable total.
+        if (hasLoadedContent) {
+            val gapPoints = gamificationSummary?.points ?: 0
+            val hasCravingActivity = (cravingStats?.total ?: 0) > 0
+            if (gapPoints > 0 || hasCravingActivity) {
+                item {
+                    RevealOnAppear(key = "points", order = revealOrder++) {
+                        PointsCard(
+                            gamification = gamificationSummary,
+                            cravingStats = cravingStats,
+                        )
+                    }
+                }
+            }
         }
-        item {
-            ConsistencySection(
-                consistency = narrative.consistency,
-                streakDays = narrative.streakDays,
-                statusLabel = homeStatusText(narrative.status),
-                isLoading = isLoading,
-            )
+        if (hasLoadedContent && cigarettePrice > 0.0) {
+            item {
+                RevealOnAppear(key = "spentToday", order = revealOrder++) {
+                    HomeSpentTodayCard(
+                        spent = (smokesPerDay ?: 0) * cigarettePrice,
+                        currencySymbol = currencySymbol,
+                    )
+                }
+            }
         }
         if (canStartNewDay) {
             item {
-                EveningResetSection(
-                    isLoading = isLoading,
-                    onStartNewDay = { intent(HomeIntent.StartNewDay) },
-                )
+                RevealOnAppear(key = "eveningReset", order = revealOrder++) {
+                    EveningResetSection(
+                        isLoading = isLoading,
+                        onStartNewDay = { intent(HomeIntent.StartNewDay) },
+                    )
+                }
             }
-        }
-        cravingStats?.takeIf { it.total > 0 }?.let { stats ->
-            item { CravingStatsCard(stats = stats) }
         }
         monthTrend?.let { trend ->
             item {
-                HomeTrendCard(trendValue = trend, delta = monthTrendDelta)
+                RevealOnAppear(key = "trend", order = revealOrder++) {
+                    HomeTrendCard(trendValue = trend, delta = monthTrendDelta)
+                }
             }
         }
         item { Spacer(modifier = Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun HomeSpentTodayCard(spent: Double, currencySymbol: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Payments,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.home_meter_spent_today),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "$currencySymbol${String.format(java.util.Locale.US, "%.2f", spent)}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
     }
 }
 
@@ -484,9 +586,13 @@ private fun HomeTrendCard(trendValue: Int, delta: Int?) {
         }
     }
 
-    androidx.compose.material3.Card(
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = containerColor,
+        contentColor = contentColor,
         shape = RoundedCornerShape(24.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = containerColor),
+        tonalElevation = 1.dp,
+        border = sectionCardBorder(),
     ) {
         Row(
             modifier = Modifier
@@ -701,7 +807,7 @@ private fun CravingCountdownCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         tonalElevation = 1.dp,
         border = sectionCardBorder(),
     ) {
@@ -824,104 +930,109 @@ private fun CravingCountdownCard(
     }
 }
 
+private data class PointsLevel(
+    val level: Int,
+    val remaining: Int,
+    val fraction: Float,
+)
+
+/**
+ * Maps a running points total to a level. Each level costs a bit more than the last
+ * (L1→L2 = 100, then +50 per level), so early levels come fast and later ones feel earned.
+ */
+private fun pointsLevel(total: Int): PointsLevel {
+    var level = 1
+    var floor = 0
+    var req = 100
+    while (total >= floor + req) {
+        floor += req
+        level++
+        req = 100 + (level - 1) * 50
+    }
+    val into = total - floor
+    return PointsLevel(
+        level = level,
+        remaining = req - into,
+        fraction = (into.toFloat() / req.toFloat()).coerceIn(0f, 1f),
+    )
+}
+
+/**
+ * Unified points: one understandable total that adds up every "good behaviour toward the
+ * cigarette" — points for spacing cigarettes out (gaps/streak) plus points for handling cravings —
+ * surfaced as a level with progress to the next one.
+ */
 @Composable
-private fun CravingStatsCard(stats: CravingStats) {
+private fun PointsCard(
+    gamification: GamificationSummary?,
+    cravingStats: CravingStats?,
+) {
+    val total = (gamification?.points ?: 0) + (cravingStats?.points ?: 0)
+    val streakHours = gamification?.currentStreakHours ?: 0L
+    val level = pointsLevel(total)
+
+    // Flat card, no inner panel: level is the headline, the point count appears once (small).
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
         border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = stringResource(R.string.home_cravings),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                CravingStatCell(
-                    modifier = Modifier.weight(1f),
-                    value = "${stats.resisted}",
-                    label = stringResource(R.string.home_resisted),
-                )
-                CravingStatCell(
-                    modifier = Modifier.weight(1f),
-                    value = "${stats.postponed}",
-                    label = stringResource(R.string.home_postponed),
-                )
-                CravingStatCell(
-                    modifier = Modifier.weight(1f),
-                    value = stats.minutesWaited.toWaitedLabel(),
-                    label = stringResource(R.string.home_waited),
-                )
-            }
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = stringResource(R.string.home_reward_points),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = stringResource(R.string.home_points),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "${stats.points}",
-                        style = MaterialTheme.typography.titleLarge,
+                        text = stringResource(R.string.home_points_level, level.level),
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+                if (streakHours > 0) {
+                    StatusPill(
+                        text = stringResource(R.string.home_points_streak, streakHours),
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
             }
-        }
-    }
-}
-
-@Composable
-private fun CravingStatCell(
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = RoundedCornerShape(18.dp),
-        border = innerCardBorder(),
-    ) {
-        Column(
-            modifier = Modifier
-                .heightIn(min = 70.dp)
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            LinearProgressIndicator(
+                progress = { level.fraction },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(999.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.home_points_total, total),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(R.string.home_points_to_next, level.remaining, level.level + 1),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -980,17 +1091,6 @@ private fun Long.toCountdownLabel(): String {
     }
 }
 
-private fun Long.toWaitedLabel(): String {
-    val minutes = coerceAtLeast(0)
-    val hours = minutes / 60
-    val mins = minutes % 60
-    return when {
-        hours <= 0 -> "${mins}m"
-        mins == 0L -> "${hours}h"
-        else -> "${hours}h ${mins}m"
-    }
-}
-
 @Composable
 private fun HomeErrorSection(
     error: HomeResult.Error,
@@ -1004,6 +1104,7 @@ private fun HomeErrorSection(
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
         shape = RoundedCornerShape(24.dp),
         tonalElevation = 1.dp,
+        border = sectionCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -1322,16 +1423,19 @@ private fun GoalHeroSection(
     statusLabel: String,
     heroProgress: com.feragusper.smokeanalytics.features.home.domain.HomeHeroProgress,
     heroReadout: HomeHeroReadout,
+    consistency: ConsistencySpec,
+    streakDays: Int,
     isLoading: Boolean,
 ) {
     val progress = if (isLoading) 0f else (heroReadout.meterFraction ?: heroProgress.fraction).coerceIn(0f, 1f)
 
+    // The Goal hero is the one focal card, so it's the only one with a (small) drop shadow.
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(30.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 4.dp,
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 2.dp,
         border = sectionCardBorder(),
     ) {
         Column(
@@ -1410,193 +1514,115 @@ private fun GoalHeroSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 1.dp,
-                border = innerCardBorder(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    if (isLoading) {
+            // Readout (progress meter + metrics) sits directly in the hero — a plain Column, not a
+            // nested card — so the hero is a single card, not a card-in-a-card.
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                if (isLoading) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            SkeletonBlock(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.34f)
+                                    .height(12.dp),
+                                shape = RoundedCornerShape(8.dp),
+                            )
+                            SkeletonBlock(
+                                modifier = Modifier
+                                    .width(56.dp)
+                                    .height(20.dp),
+                                shape = RoundedCornerShape(10.dp),
+                            )
+                        }
+                        SkeletonBlock(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            shape = RoundedCornerShape(999.dp),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    ) {
+                        repeat(2) {
+                            HomeStatSkeleton(modifier = Modifier.weight(1f))
+                        }
+                    }
+                } else {
+                    heroReadout.meterLabel?.let { label ->
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                SkeletonBlock(
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.34f)
-                                        .height(12.dp),
-                                    shape = RoundedCornerShape(8.dp),
+                                Text(
+                                    text = heroMeterLabelText(label),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
-                                SkeletonBlock(
-                                    modifier = Modifier
-                                        .width(56.dp)
-                                        .height(20.dp),
-                                    shape = RoundedCornerShape(10.dp),
-                                )
+                                heroReadout.meterValue?.let { value ->
+                                    Text(
+                                        text = heroMeterValueText(value),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = heroProgress.tone.progressColor(),
+                                    )
+                                }
                             }
-                            SkeletonBlock(
+                            LinearProgressIndicator(
+                                progress = { progress },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(8.dp),
-                                shape = RoundedCornerShape(999.dp),
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(999.dp)),
+                                color = heroProgress.tone.progressColor(),
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
                         }
+                    }
+                    heroReadout.metrics.take(4).chunked(2).forEach { rowMetrics ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(20.dp),
                         ) {
-                            repeat(2) {
-                                GoalHeroMetricSkeleton(modifier = Modifier.weight(1f))
-                            }
-                        }
-                    } else {
-                        heroReadout.meterLabel?.let { label ->
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = heroMeterLabelText(label),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    heroReadout.meterValue?.let { value ->
-                                        Text(
-                                            text = heroMeterValueText(value),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = heroProgress.tone.progressColor(),
-                                        )
-                                    }
-                                }
-                                LinearProgressIndicator(
-                                    progress = { progress },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp)
-                                        .clip(RoundedCornerShape(999.dp)),
-                                    color = heroProgress.tone.progressColor(),
-                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            rowMetrics.forEach { metric ->
+                                HomeStat(
+                                    modifier = Modifier.weight(1f),
+                                    label = heroMetricLabelText(metric.label),
+                                    value = heroMetricValueText(metric.value),
+                                    supporting = metric.supporting?.let { heroMetricSupportingText(it) },
                                 )
-                            }
-                        }
-                        heroReadout.metrics.take(4).chunked(2).forEach { rowMetrics ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                rowMetrics.forEach { metric ->
-                                    GoalHeroMetricCard(
-                                        label = heroMetricLabelText(metric.label),
-                                        value = heroMetricValueText(metric.value),
-                                        supporting = metric.supporting?.let { heroMetricSupportingText(it) },
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
                             }
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun GoalHeroMetricCard(
-    label: String,
-    value: String,
-    supporting: String?,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = RoundedCornerShape(20.dp),
-        tonalElevation = 1.dp,
-        border = innerCardBorder(),
-    ) {
-        Column(
-            modifier = Modifier
-                .heightIn(min = 86.dp)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            // Consistency lives in the goal card — it's the same thing (how the goal is holding up
+            // over time), so it's merged here instead of a separate card. Status is already shown as
+            // the pill above, so it isn't repeated.
+            if (!isLoading) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f),
                 )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.home_consistency),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = consistencyText(consistency),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    ConsistencyMilestoneRow(streakDays = streakDays.takeIf { it > 0 })
+                }
             }
-            supporting?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GoalHeroMetricSkeleton(
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = RoundedCornerShape(20.dp),
-        tonalElevation = 1.dp,
-        border = innerCardBorder(),
-    ) {
-        Column(
-            modifier = Modifier
-                .heightIn(min = 86.dp)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SkeletonBlock(
-                    modifier = Modifier
-                        .fillMaxWidth(0.42f)
-                        .height(10.dp),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                SkeletonBlock(
-                    modifier = Modifier
-                        .fillMaxWidth(0.78f)
-                        .height(22.dp),
-                    shape = RoundedCornerShape(12.dp),
-                )
-            }
-            SkeletonBlock(
-                modifier = Modifier
-                    .fillMaxWidth(0.86f)
-                    .height(12.dp),
-                shape = RoundedCornerShape(8.dp),
-            )
         }
     }
 }
@@ -1612,9 +1638,8 @@ private fun LastCigaretteSection(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(28.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 1.dp,
         border = sectionCardBorder(),
     ) {
         Column(
@@ -1628,20 +1653,25 @@ private fun LastCigaretteSection(
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                LastCigaretteValueCard(
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.home_at),
-                    value = if (isLoading) "" else ((lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--"),
-                    loading = isLoading,
-                )
-                LastCigaretteValueCard(
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.home_time_since),
-                    value = if (isLoading) "" else timeSinceLastCigarette.toElapsedGapLabel(),
-                    loading = isLoading,
-                )
+                if (isLoading) {
+                    HomeStatSkeleton(modifier = Modifier.weight(1f))
+                    HomeStatSkeleton(modifier = Modifier.weight(1f))
+                } else {
+                    HomeStat(
+                        modifier = Modifier.weight(1f),
+                        label = stringResource(R.string.home_at),
+                        value = (lastSmokeTimeLabel?.let { "$it hs" }) ?: "--:--",
+                        valueColor = MaterialTheme.colorScheme.primary,
+                    )
+                    HomeStat(
+                        modifier = Modifier.weight(1f),
+                        label = stringResource(R.string.home_time_since),
+                        value = timeSinceLastCigarette.toElapsedGapLabel(),
+                        valueColor = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             Surface(
                 color = elapsedTone.containerColor(),
@@ -1663,108 +1693,6 @@ private fun LastCigaretteSection(
                         color = elapsedTone.contentColor(),
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LastCigaretteValueCard(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    loading: Boolean = false,
-) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = RoundedCornerShape(22.dp),
-        tonalElevation = 1.dp,
-        border = innerCardBorder(),
-    ) {
-        Column(
-            modifier = Modifier
-                .heightIn(min = 74.dp)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (loading) {
-                SkeletonBlock(
-                    modifier = Modifier
-                        .fillMaxWidth(0.58f)
-                        .height(24.dp),
-                    shape = RoundedCornerShape(12.dp),
-                )
-            } else {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ConsistencySection(
-    consistency: ConsistencySpec,
-    streakDays: Int,
-    statusLabel: String,
-    isLoading: Boolean,
-) {
-    val milestoneStreakDays = streakDays.takeIf { it > 0 }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(28.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
-        border = sectionCardBorder(),
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_consistency),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (isLoading) {
-                SkeletonBlock(
-                    modifier = Modifier
-                        .fillMaxWidth(0.72f)
-                        .height(24.dp),
-                    shape = RoundedCornerShape(12.dp),
-                )
-                SkeletonBlock(
-                    modifier = Modifier
-                        .fillMaxWidth(0.34f)
-                        .height(12.dp),
-                    shape = RoundedCornerShape(8.dp),
-                )
-            } else {
-                Text(
-                    text = consistencyText(consistency),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                ConsistencyMilestoneRow(streakDays = milestoneStreakDays)
-                Text(
-                    text = statusLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }
@@ -1869,8 +1797,7 @@ private fun EveningResetSection(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.28f),
         shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 4.dp,
+        tonalElevation = 1.dp,
         border = sectionCardBorder(),
     ) {
         Column(
@@ -1913,8 +1840,119 @@ private fun EveningResetSection(
     }
 }
 
+/** Per-card delay for the staggered entrance, so cards cascade in rather than popping together. */
+private const val CARD_REVEAL_STAGGER_MS = 55L
+
+/**
+ * Cards (by key) that already played their entrance this app session. Kept in memory so the
+ * "plop" only happens the first time a card appears — not every time the user returns to Home or
+ * scrolls it back into view. Resets on process death.
+ */
+private val revealedCardKeys = mutableSetOf<String>()
+
+/**
+ * Wraps a Home card with a bouncy "plop" entrance (scale-up overshoot + fade) the first time that
+ * card ([key]) appears this session; afterwards it renders instantly. [order] staggers the cascade.
+ * Conditional cards (craving, stats, trend…) first compose when their data arrives, so they plop in
+ * exactly as they appear.
+ */
 @Composable
-private fun sectionCardBorder(): BorderStroke =
+private fun RevealOnAppear(key: String, order: Int, content: @Composable () -> Unit) {
+    val playIntro = remember(key) { key !in revealedCardKeys }
+    val progress = remember(key) { Animatable(if (playIntro) 0f else 1f) }
+    LaunchedEffect(key) {
+        if (!playIntro) return@LaunchedEffect
+        revealedCardKeys.add(key)
+        // Cap the stagger so cards scrolled into view later don't wait behind a long delay.
+        delay(minOf(order, 5).toLong() * CARD_REVEAL_STAGGER_MS)
+        progress.animateTo(
+            targetValue = 1f,
+            // Low damping = overshoot bounce = "plop".
+            animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium),
+        )
+    }
+    Box(
+        modifier = Modifier.graphicsLayer {
+            val p = progress.value
+            alpha = p.coerceIn(0f, 1f)
+            val scale = 0.7f + 0.3f * p
+            scaleX = scale
+            scaleY = scale
+        },
+    ) {
+        content()
+    }
+}
+
+/**
+ * A flat statistic (label on top, value below, optional supporting line). Replaces the old nested
+ * "mini-card" tiles so cards don't stack cards — these sit directly inside their parent card.
+ */
+@Composable
+private fun HomeStat(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    supporting: String? = null,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = valueColor,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        supporting?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+/** A flat skeleton placeholder for a [HomeStat] while data loads. */
+@Composable
+private fun HomeStatSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        SkeletonBlock(
+            modifier = Modifier.fillMaxWidth(0.5f).height(12.dp),
+            shape = RoundedCornerShape(8.dp),
+        )
+        SkeletonBlock(
+            modifier = Modifier.fillMaxWidth(0.72f).height(22.dp),
+            shape = RoundedCornerShape(10.dp),
+        )
+    }
+}
+
+/**
+ * The single hairline border every top-level Home card uses to separate itself from the page.
+ * Along with a 1dp tonal tint (and no drop shadow) this is the shared "content card" treatment;
+ * only the focal Goal hero adds a small shadow. Kept `internal` so sibling files (e.g. the
+ * relationship card) share the exact same look.
+ */
+@Composable
+internal fun sectionCardBorder(): BorderStroke =
     BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f))
 
 @Composable

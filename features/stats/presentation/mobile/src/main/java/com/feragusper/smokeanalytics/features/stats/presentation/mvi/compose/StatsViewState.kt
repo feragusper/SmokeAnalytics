@@ -1,6 +1,5 @@
 package com.feragusper.smokeanalytics.features.stats.presentation.mvi.compose
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -11,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -77,11 +79,10 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.compose.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.VicoTheme
 import androidx.compose.ui.platform.LocalLocale
@@ -108,12 +109,21 @@ data class StatsViewState(
         embedded: Boolean = false,
         currentPeriod: StatsPeriod = StatsPeriod.WEEK,
         selectedDate: JavaLocalDate = JavaLocalDate.now(),
+        currencySymbol: String = "",
+        cigarettePrice: Double = 0.0,
         onPeriodChange: (StatsPeriod) -> Unit = {},
         onDateChange: (JavaLocalDate) -> Unit = {},
         intent: (StatsIntent) -> Unit,
     ) {
         val analytics = koinInject<AnalyticsTracker>()
+        // Track which window the displayed stats belong to. The moment the window changes, the old
+        // stats no longer match, so we show the skeleton immediately — before the load flag even
+        // flips — avoiding the one-frame flash of stale data for the new period.
+        val currentWindow = currentPeriod to selectedDate
+        var loadingWindow by remember { mutableStateOf<Pair<StatsPeriod, JavaLocalDate>?>(null) }
+        var settledWindow by remember { mutableStateOf<Pair<StatsPeriod, JavaLocalDate>?>(null) }
         LaunchedEffect(refreshNonce, currentPeriod, selectedDate) {
+            loadingWindow = currentWindow
             intent(
                 StatsIntent.LoadStats(
                     selectedDate.year,
@@ -123,6 +133,10 @@ data class StatsViewState(
                 )
             )
         }
+        LaunchedEffect(stats) {
+            if (stats != null) settledWindow = loadingWindow
+        }
+        val contentReady = stats != null && settledWindow == currentWindow
 
         ProvideVicoTheme(rememberSmokeAnalyticsVicoTheme()) {
             Column(
@@ -133,7 +147,10 @@ data class StatsViewState(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Card(
+                // Embedded in the analytics shell, the shell already shows the period label +
+                // navigator, so this header card would just repeat it. Only render it standalone;
+                // when embedded, show a lightweight status line only while refreshing or on error.
+                if (!embedded) Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(
@@ -188,17 +205,6 @@ data class StatsViewState(
                                     )
                                 }
                             }
-                        } else {
-                            Text(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                text = when {
-                                    displayRefreshLoading -> stringResource(R.string.stats_refreshing_trends_bg)
-                                    error != null && stats != null -> stringResource(R.string.stats_freq_refresh_failed)
-                                    else -> selectedDate.summaryMeta(currentPeriod)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
                         }
 
                         if (!embedded) {
@@ -206,6 +212,12 @@ data class StatsViewState(
                                 currentPeriod = currentPeriod,
                                 selectedDate = selectedDate,
                                 onDateChange = onDateChange,
+                                modifier = Modifier
+                                    .padding(top = 12.dp, bottom = 8.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surface,
+                                        RoundedCornerShape(24.dp),
+                                    ),
                             )
 
                             TabRow(
@@ -247,53 +259,67 @@ data class StatsViewState(
                     }
                 }
 
-                if (displayLoading && stats == null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        ),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(240.dp)
-                                .shimmer()
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        )
-                    }
-                } else if (error != null && stats == null) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                        ),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                // Until the stats for the CURRENT window are ready, show the skeleton — never the
+                // previous window's data — or the error card if the load failed.
+                if (!contentReady) {
+                    if (error != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                            ),
                         ) {
-                            Text(
-                                text = stringResource(R.string.stats_could_not_refresh),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                text = stringResource(R.string.stats_retry_rebuild),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.stats_could_not_refresh),
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                Text(
+                                    text = stringResource(R.string.stats_retry_rebuild),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                StatsSkeletonBlock(modifier = Modifier.weight(1.6f).height(120.dp))
+                                StatsSkeletonBlock(modifier = Modifier.weight(1f).height(120.dp))
+                            }
+                            StatsSkeletonBlock(modifier = Modifier.fillMaxWidth().height(280.dp))
                         }
                     }
                 }
 
-                stats?.let {
+                stats?.takeIf { contentReady }?.let {
                     SummaryCards(
                         currentPeriod = currentPeriod,
                         stats = stats,
                         selectedDate = selectedDate,
                     )
 
+                    if (cigarettePrice > 0.0) {
+                        val periodTotal = when (currentPeriod) {
+                            StatsPeriod.DAY -> stats.totalDay
+                            StatsPeriod.WEEK -> stats.totalWeek
+                            StatsPeriod.MONTH -> stats.totalMonth
+                            StatsPeriod.YEAR -> stats.yearly.values.sum()
+                        }
+                        SummaryCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = stringResource(R.string.stats_spent_period),
+                            headline = "$currencySymbol${String.format(java.util.Locale.US, "%.2f", periodTotal * cigarettePrice)}",
+                            supporting = stringResource(R.string.stats_spent_period_body),
+                        )
+                    }
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
@@ -301,9 +327,11 @@ data class StatsViewState(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
                         ),
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(vertical = 12.dp)) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -321,15 +349,16 @@ data class StatsViewState(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = chartCaptionFor(currentPeriod),
+                                modifier = Modifier.padding(horizontal = 12.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             when (currentPeriod) {
-                                StatsPeriod.DAY -> LineChart(stats.hourly)
-                                StatsPeriod.WEEK -> BarChart(stats.weekly.mapKeys { localizeBucketLabel(it.key) })
-                                StatsPeriod.MONTH -> BarChart(stats.monthly.mapKeys { localizeBucketLabel(it.key) })
-                                StatsPeriod.YEAR -> BarChart(stats.yearly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.DAY -> TrendLineChart(stats.hourly)
+                                StatsPeriod.WEEK -> TrendLineChart(stats.weekly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.MONTH -> TrendLineChart(stats.monthly.mapKeys { localizeBucketLabel(it.key) })
+                                StatsPeriod.YEAR -> TrendLineChart(stats.yearly.mapKeys { localizeBucketLabel(it.key) })
                             }
                         }
                     }
@@ -458,6 +487,17 @@ private val pieColors = listOf(
     Color(0xFF9AB0B0),
 )
 
+/** Shimmer placeholder shaped like the content, shown while stats load (never stale data). */
+@Composable
+private fun StatsSkeletonBlock(modifier: Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .shimmer(),
+    )
+}
+
 @Composable
 private fun SummaryCards(
     currentPeriod: StatsViewState.StatsPeriod,
@@ -466,53 +506,36 @@ private fun SummaryCards(
 ) {
     val averageSummary = averageSummaryFor(currentPeriod, stats, selectedDate)
     val locale = LocalLocale.current.platformLocale
-    // Only a single day shows a raw total; for week/month/year a big cumulative number
-    // (e.g. "1,000 cigarettes") is discouraging, so lead with the daily average instead.
-    val isDay = currentPeriod == StatsViewState.StatsPeriod.DAY
+    // Every period shows the same two cards: the rate (per awake-hour on a day, per day on
+    // week/month/year — averageSummary already picks the right one) and the peak window.
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SummaryCard(
-                modifier = Modifier.weight(1.6f),
-                title = if (isDay) stringResource(R.string.stats_total_frequency) else statsSummaryTitleText(averageSummary.title),
-                headline = if (isDay) {
-                    stats.totalDay.toString()
-                } else {
-                    String.format(locale, "%.1f", averageSummary.value)
-                },
-                supporting = if (isDay) stringResource(R.string.stats_cigarettes) else statsSummarySupportingText(averageSummary.supporting),
-                meta = selectedDate.summaryMeta(currentPeriod),
+                modifier = Modifier
+                    .weight(1.6f)
+                    .fillMaxHeight(),
+                title = statsSummaryTitleText(averageSummary.title),
+                headline = String.format(locale, "%.1f", averageSummary.value),
+                supporting = statsSummarySupportingText(averageSummary.supporting),
                 prominent = true,
             )
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                // On a single day, the daily average is its own metric; on longer ranges the
-                // average is already the headline above, so this slot only shows the peak.
-                if (isDay) {
-                    SummaryCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        title = statsSummaryTitleText(averageSummary.title),
-                        headline = String.format(locale, "%.1f", averageSummary.value),
-                        supporting = statsSummarySupportingText(averageSummary.supporting),
-                        highlighted = true,
-                        compact = true,
-                    )
-                }
-                SummaryCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    title = stringResource(R.string.stats_peak_window),
-                    headline = localizeBucketLabel(peakBucketFor(currentPeriod, stats)),
-                    supporting = stringResource(R.string.stats_highest_activity),
-                    compact = true,
-                )
-            }
+            SummaryCard(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                title = stringResource(R.string.stats_peak_window),
+                headline = localizeBucketLabel(peakBucketFor(currentPeriod, stats)),
+                supporting = stringResource(R.string.stats_highest_activity),
+                compact = true,
+            )
         }
     }
 }
@@ -542,13 +565,6 @@ private fun SummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    when {
-                        prominent -> Modifier.height(176.dp)
-                        compact -> Modifier.height(132.dp)
-                        else -> Modifier
-                    }
-                )
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -603,15 +619,17 @@ private fun SummaryCard(
 fun HeaderNavigation(
     currentPeriod: StatsViewState.StatsPeriod,
     selectedDate: JavaLocalDate,
-    onDateChange: (JavaLocalDate) -> Unit
+    onDateChange: (JavaLocalDate) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val locale = LocalLocale.current.platformLocale
     val analytics = koinInject<AnalyticsTracker>()
+    // Container styling (background/shape/outer spacing) is the caller's via [modifier], so the
+    // analytics shell can render this flush and square-cornered as part of a joined control.
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp, bottom = 8.dp)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(24.dp))
+            .then(modifier)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -632,12 +650,18 @@ fun HeaderNavigation(
 
         Text(
             text = when (currentPeriod) {
-                StatsViewState.StatsPeriod.DAY -> selectedDate.toString()
+                StatsViewState.StatsPeriod.DAY -> selectedDate
+                    .format(
+                        java.time.format.DateTimeFormatter
+                            .ofLocalizedDate(java.time.format.FormatStyle.FULL)
+                            .withLocale(locale),
+                    )
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
                 StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_of, selectedDate.toString())
                 StatsViewState.StatsPeriod.MONTH -> selectedDate.month.getDisplayName(
                     java.time.format.TextStyle.FULL,
                     locale
-                )
+                ).replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
                 StatsViewState.StatsPeriod.YEAR -> selectedDate.year.toString()
             },
@@ -661,88 +685,49 @@ fun HeaderNavigation(
     }
 }
 
+/**
+ * A single line chart for every period. It fits the screen width (no horizontal scroll) and,
+ * like fitness apps, only labels a handful of x points for reference instead of all of them.
+ */
 @Composable
-private fun BarChart(stats: Map<String, Int>) {
+private fun TrendLineChart(stats: Map<String, Int>) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val xAxisFormatter = rememberXAxisFormatter(stats)
-
-    LaunchedEffect(stats) {
-        modelProducer.runTransaction {
-            columnSeries {
-                series(stats.values.map { it.toFloat() })
-            }
-        }
-    }
-
-    val chartWidth = max(560, stats.size * 72).dp
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberColumnCartesianLayer(),
-                startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    valueFormatter = xAxisFormatter
-                ),
-            ),
-            modelProducer = modelProducer,
-            modifier = Modifier
-                .width(chartWidth)
-                .height(260.dp)
-        )
-    }
-}
-
-
-@Composable
-private fun LineChart(stats: Map<String, Int>) {
-    val modelProducer = remember { CartesianChartModelProducer() }
-
-    val xAxisFormatter = rememberXAxisFormatter(stats)
-
-    val accumulatedValues = stats.values.runningFold(0) { sum, value -> sum + value }.drop(1)
-    val maxVisibleY = max(1.0, accumulatedValues.maxOrNull()?.toDouble() ?: 0.0)
+    val values = stats.values.map { it.toFloat() }
+    val maxVisibleY = max(1.0, (values.maxOrNull() ?: 0f).toDouble())
+    // Aim for ~6 reference labels regardless of how many buckets there are.
+    val labelSpacing = max(1, ceil(stats.size / 6.0).toInt())
 
     LaunchedEffect(stats) {
         modelProducer.runTransaction {
             lineSeries {
-                series(accumulatedValues.map { it.toFloat() })
+                series(values)
             }
         }
     }
 
-    val chartWidth = max(420, stats.size * 48).dp
-
-    Row(
+    CartesianChartHost(
+        chart = rememberCartesianChart(
+            rememberLineCartesianLayer(
+                rangeProvider = remember(maxVisibleY) {
+                    CartesianLayerRangeProvider.fixed(minY = 0.0, maxY = maxVisibleY)
+                },
+            ),
+            startAxis = VerticalAxis.rememberStart(),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                valueFormatter = xAxisFormatter,
+                itemPlacer = remember(labelSpacing) {
+                    HorizontalAxis.ItemPlacer.aligned(spacing = { labelSpacing })
+                },
+            ),
+        ),
+        modelProducer = modelProducer,
+        scrollState = rememberVicoScrollState(scrollEnabled = false),
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(
-                    pointSpacing = 48.dp,
-                    rangeProvider = remember(maxVisibleY) {
-                        CartesianLayerRangeProvider.fixed(minY = 0.0, maxY = maxVisibleY)
-                    },
-                ),
-                startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(
-                    valueFormatter = xAxisFormatter
-                ),
-            ),
-            modelProducer = modelProducer,
-            modifier = Modifier
-                .width(chartWidth)
-                .height(260.dp)
-        )
-    }
+            .padding(vertical = 8.dp)
+            .height(240.dp),
+    )
 }
 
 @Composable
@@ -777,14 +762,21 @@ private fun chartCaptionFor(period: StatsViewState.StatsPeriod): String = when (
     StatsViewState.StatsPeriod.YEAR -> stringResource(R.string.stats_month_totals)
 }
 
-private fun JavaLocalDate.analyticsLabel(): String =
-    "${month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())} $dayOfMonth, $year"
+private fun JavaLocalDate.analyticsLabel(): String {
+    val locale = Locale.getDefault()
+    val monthName = month.getDisplayName(java.time.format.TextStyle.SHORT, locale)
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    return "$monthName $dayOfMonth, $year"
+}
 
 @Composable
 private fun JavaLocalDate.summaryMeta(period: StatsViewState.StatsPeriod): String = when (period) {
     StatsViewState.StatsPeriod.DAY -> stringResource(R.string.stats_selected_day)
     StatsViewState.StatsPeriod.WEEK -> stringResource(R.string.stats_week_of, analyticsLabel())
-    StatsViewState.StatsPeriod.MONTH -> month.getDisplayName(java.time.format.TextStyle.FULL, LocalConfiguration.current.locales[0])
+    StatsViewState.StatsPeriod.MONTH -> LocalConfiguration.current.locales[0].let { locale ->
+        month.getDisplayName(java.time.format.TextStyle.FULL, locale)
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    }
     StatsViewState.StatsPeriod.YEAR -> stringResource(R.string.stats_year_to_date)
 }
 

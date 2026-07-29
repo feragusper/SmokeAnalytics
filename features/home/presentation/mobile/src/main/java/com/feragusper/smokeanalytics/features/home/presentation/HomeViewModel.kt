@@ -19,6 +19,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.Crav
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.compose.HomeViewState
 import com.feragusper.smokeanalytics.features.home.presentation.navigation.HomeNavigator
 import com.feragusper.smokeanalytics.features.home.presentation.process.HomeProcessHolder
+import com.feragusper.smokeanalytics.libraries.architecture.presentation.AppStartupReadiness
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.MVIViewModel
 import java.util.Timer
 import java.util.concurrent.TimeUnit
@@ -72,8 +73,14 @@ class HomeViewModel constructor(
      * @param result The result of processing the intent.
      * @return The new state of the UI.
      */
-    override fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState =
+    override fun reducer(previous: HomeViewState, result: HomeResult): HomeViewState {
+        // Once the first load resolves (data, not-logged-in, or error), release the cold-start
+        // splash so home is revealed already populated instead of showing its loading skeleton.
         when (result) {
+            is FetchSmokesSuccess, NotLoggedIn, is Error -> AppStartupReadiness.markReady()
+            else -> Unit
+        }
+        return when (result) {
             Loading -> previous.copy(
                 displayLoading = true,
                 displayRefreshLoading = false,
@@ -255,4 +262,5 @@ class HomeViewModel constructor(
                 error = result,
             )
         }
+    }
 }

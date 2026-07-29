@@ -25,7 +25,6 @@
     <string name="home_last_cigarette">Last cigarette</string>
     <string name="home_consistency">Consistency</string>
     <string name="home_goal">Goal</string>
-    <string name="home_cravings">Cravings</string>
     <string name="home_vs_last_month">Vs last month</string>
     <string name="home_start_new_day">Start New Day</string>
     <string name="home_starting_early">Starting early?</string>
@@ -48,10 +47,11 @@
     <string name="home_log_the_cigarette">Log the cigarette</string>
     <string name="home_i_smoked_anyway">I smoked anyway</string>
     <string name="home_nice">Nice</string>
-    <string name="home_resisted">Resisted</string>
-    <string name="home_postponed">Postponed</string>
-    <string name="home_waited">Waited</string>
-    <string name="home_reward_points">Reward points</string>
+    <string name="home_points">Points</string>
+    <string name="home_points_level">Level %1$d</string>
+    <string name="home_points_total">%1$d points</string>
+    <string name="home_points_to_next">%1$d to level %2$d</string>
+    <string name="home_points_streak">🔥 %1$dh</string>
     <string name="home_remember_why">Remember why: %1$s</string>
     <string name="home_craving_passed">You let the craving pass without smoking. +%1$d points earned.</string>
     <string name="home_craving_waited">You waited it out before smoking. +%1$d points earned.</string>

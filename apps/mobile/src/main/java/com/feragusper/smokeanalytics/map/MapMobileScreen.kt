@@ -5,7 +5,15 @@ import android.location.Address
 import android.location.Geocoder
 import android.os.Bundle
 import android.os.Build
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,14 +23,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.LocationOff
+import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,6 +44,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -49,6 +59,7 @@ import com.feragusper.smokeanalytics.BuildConfig
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapCluster
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeMapPeriod
+import kotlinx.datetime.LocalDate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -65,17 +76,22 @@ fun MapMobileRoute(
     modifier: Modifier = Modifier,
     refreshNonce: Int = 0,
     embedded: Boolean = false,
+    period: SmokeMapPeriod = SmokeMapPeriod.Week,
+    selectedDate: LocalDate? = null,
     viewModel: MapMobileViewModel = koinViewModel(),
 ) {
     LaunchedEffect(refreshNonce) {
         if (refreshNonce > 0) viewModel.onScreenVisible()
+    }
+    // The analytics shell owns the period + date via its shared tabs/navigator.
+    LaunchedEffect(period, selectedDate) {
+        if (selectedDate != null) viewModel.onWindowChange(period, selectedDate)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     MapMobileScreen(
         modifier = modifier,
         state = state,
         embedded = embedded,
-        onPeriodChange = viewModel::onPeriodChange,
         onSelectCluster = viewModel::onSelectCluster,
         onRetry = viewModel::refresh,
     )
@@ -86,7 +102,6 @@ private fun MapMobileScreen(
     modifier: Modifier = Modifier,
     state: MapMobileState,
     embedded: Boolean,
-    onPeriodChange: (SmokeMapPeriod) -> Unit,
     onSelectCluster: (SmokeMapCluster) -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -99,7 +114,6 @@ private fun MapMobileScreen(
             modifier = modifier,
             state = state,
             embedded = embedded,
-            onPeriodChange = onPeriodChange,
             onSelectCluster = onSelectCluster,
         )
     }
@@ -110,35 +124,32 @@ private fun LoadingState(modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Card(
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ),
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                StatusChip(text = stringResource(R.string.map_refreshing))
-                CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                Text(
-                    text = stringResource(R.string.map_loading_clusters),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = stringResource(R.string.map_pulling),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        MapSkeletonBlock(modifier = Modifier.fillMaxWidth().height(360.dp))
+        MapSkeletonBlock(modifier = Modifier.fillMaxWidth().height(120.dp))
     }
+}
+
+/** Gently pulsing placeholder shown while clusters load (no shimmer dependency needed). */
+@Composable
+private fun MapSkeletonBlock(modifier: Modifier) {
+    val transition = rememberInfiniteTransition(label = "mapSkeleton")
+    val alpha by transition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "alpha",
+    )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)),
+    )
 }
 
 @Composable
@@ -146,7 +157,6 @@ private fun LoadedState(
     modifier: Modifier,
     state: MapMobileState,
     embedded: Boolean,
-    onPeriodChange: (SmokeMapPeriod) -> Unit,
     onSelectCluster: (SmokeMapCluster) -> Unit,
 ) {
     val activeCluster = state.selectedCluster ?: state.clusters.first()
@@ -154,75 +164,9 @@ private fun LoadedState(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 20.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Card(
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (!embedded) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = stringResource(R.string.map_locations),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                text = stringResource(R.string.map_geographic_clusters),
-                                style = MaterialTheme.typography.headlineSmall,
-                            )
-                            Text(
-                                text = stringResource(R.string.map_see_where),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = if (state.isRefreshing) {
-                                stringResource(R.string.map_refreshing_clusters_bg)
-                            } else {
-                                "${state.clusters.sumOf { it.count }} mapped smokes in the selected period"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SmokeMapPeriod.entries.forEach { period ->
-                            AssistChip(
-                                onClick = { onPeriodChange(period) },
-                                label = { Text(period.name) },
-                                colors = if (period == state.period) {
-                                    AssistChipDefaults.assistChipColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                } else {
-                                    AssistChipDefaults.assistChipColors()
-                                }
-                            )
-                        }
-                    }
-                    if (state.isRefreshing && !embedded) {
-                        Text(
-                            text = stringResource(R.string.map_refreshing_clusters_bg),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        }
-
         item {
             Card(
                 colors = CardDefaults.cardColors(
@@ -235,7 +179,7 @@ private fun LoadedState(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = activeCluster.label,
+                        text = clusterRankLabel(state.clusters.indexOf(activeCluster).coerceAtLeast(0)),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     areaName?.let { name ->
@@ -246,14 +190,13 @@ private fun LoadedState(
                         )
                     }
                     Text(
-                        text = "${activeCluster.count} smokes grouped in an approximate ${activeCluster.radiusMeters} m area.",
+                        text = stringResource(
+                            R.string.map_area_grouping,
+                            activeCluster.count,
+                            activeCluster.radiusMeters,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = stringResource(R.string.map_most_frequent),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.tertiary,
                     )
                     if (BuildConfig.GOOGLE_MAPS_API_KEY.isBlank()) {
                         Text(
@@ -268,69 +211,7 @@ private fun LoadedState(
             }
         }
 
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-                shape = RoundedCornerShape(24.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.map_top_clusters),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    state.clusters.take(3).forEachIndexed { index, cluster ->
-                        ClusterLegendRow(
-                            index = index,
-                            cluster = cluster,
-                            isActive = cluster == activeCluster,
-                            onSelectCluster = onSelectCluster,
-                        )
-                        if (index < state.clusters.take(3).lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f)
-                ),
-                shape = RoundedCornerShape(24.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.map_observation),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                            text = stringResource(R.string.map_observation_body),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                }
-            }
-        }
-
-        item {
-            Text(
-                text = stringResource(R.string.map_all_clusters),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
-        items(state.clusters) { cluster ->
+        itemsIndexed(state.clusters) { index, cluster ->
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = if (cluster == activeCluster) {
@@ -351,11 +232,11 @@ private fun LoadedState(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = cluster.label,
+                            text = clusterRankLabel(index),
                             style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
-                            text = "${cluster.count} smokes in this area",
+                            text = stringResource(R.string.map_smokes_in_area, cluster.count),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -376,87 +257,50 @@ private fun LoadedState(
 }
 
 @Composable
-private fun ClusterLegendRow(
-    index: Int,
-    cluster: SmokeMapCluster,
-    isActive: Boolean,
-    onSelectCluster: (SmokeMapCluster) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Card(
-                shape = RoundedCornerShape(999.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = when (index) {
-                        0 -> MaterialTheme.colorScheme.primary
-                        1 -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                    }
-                ),
-            ) {
-                Spacer(modifier = Modifier.size(12.dp))
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = cluster.label, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "${cluster.count} events",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        TextButton(onClick = { onSelectCluster(cluster) }) {
-            Text(if (isActive) stringResource(R.string.map_viewing) else stringResource(R.string.map_view))
-        }
-    }
-}
-
-@Composable
 private fun DisabledState(modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(32.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Card(
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ),
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                StatusChip(text = stringResource(R.string.map_action_required))
-                Text(
-                    text = stringResource(R.string.map_location_off),
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = stringResource(R.string.map_location_off_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = stringResource(R.string.map_rest_works),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Icon(
+            imageVector = Icons.Outlined.LocationOff,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.map_location_off),
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.map_location_off_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.map_rest_works),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
+}
+
+/** Localized rank label for a cluster by its position (0 = most frequent). */
+@Composable
+private fun clusterRankLabel(rank: Int): String = when (rank) {
+    0 -> stringResource(R.string.map_top_area)
+    1 -> stringResource(R.string.map_second_area)
+    2 -> stringResource(R.string.map_third_area)
+    else -> stringResource(R.string.map_area_n, rank + 1)
 }
 
 @Composable
@@ -464,36 +308,36 @@ private fun EmptyState(modifier: Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(32.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Card(
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ),
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                StatusChip(text = stringResource(R.string.map_quiet))
-                Text(
-                    text = stringResource(R.string.map_no_mapped),
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = stringResource(R.string.map_no_mapped_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = stringResource(R.string.map_once_enough),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Icon(
+            imageVector = Icons.Outlined.Map,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.map_no_mapped),
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.map_no_mapped_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.map_once_enough),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -571,7 +415,7 @@ private fun GoogleMapPreview(cluster: SmokeMapCluster) {
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(176.dp),
+            .height(300.dp),
     )
 }
 

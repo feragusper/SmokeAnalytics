@@ -3,6 +3,10 @@
     <string name="goals_active_goal">Active goal</string>
     <string name="goals_completed">Completed</string>
     <string name="goals_configure_goal">Configure goal</string>
+    <string name="goals_back">Back</string>
+    <string name="goals_no_goal_option">No goal</string>
+    <string name="goals_no_goal_option_body">Keep tracking without an active goal.</string>
+    <string name="goals_remove_goal">Remove goal</string>
     <string name="goals_could_not_load">Could not load your goal</string>
     <string name="goals_need_account">Goals need an account</string>
     <string name="goals_no_active_goal">No active goal yet</string>
@@ -51,9 +55,17 @@
         <item quantity="one">%1$d day completed in a row</item>
         <item quantity="other">%1$d days completed in a row</item>
     </plurals>
+    <string name="goals_score_week">This week: %1$d days on goal · %2$d pts</string>
+    <string name="goals_score_month">This month: %1$d days on goal · %2$d pts</string>
+    <string name="goals_stat_streak">Streak</string>
+    <string name="goals_stat_streak_caption">day streak</string>
+    <string name="goals_stat_week">This week</string>
+    <string name="goals_stat_month">This month</string>
+    <string name="goals_stat_points">%1$d pts</string>
+    <string name="goals_stat_days_on_goal">%1$d days on goal</string>
     <string name="goals_summary_daily_cap">Daily cap: at most %1$d cigarettes.</string>
-    <string name="goals_summary_reduce_week">Reduce the current week by %1$d%%.</string>
-    <string name="goals_summary_reduce_month">Reduce the current month by %1$d%%.</string>
+    <string name="goals_summary_reduce_week">Reduce the current week by %1$s%%.</string>
+    <string name="goals_summary_reduce_month">Reduce the current month by %1$s%%.</string>
     <string name="goals_summary_mindful_gap">Wait at least %1$d minutes between cigarettes.</string>
     <string name="goals_mindful_gap_body">Enforce a minimum gap in minutes between cigarettes.</string>
     <string name="goals_goal_setup">Goal setup</string>

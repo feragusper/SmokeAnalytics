@@ -1,5 +1,12 @@
 package com.feragusper.smokeanalytics.features.history.presentation.mvi.compose
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +27,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +50,7 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScre
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,13 +58,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.history.presentation.R
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
 import com.feragusper.smokeanalytics.libraries.architecture.presentation.mvi.MVIViewState
+import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
+import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
+import com.feragusper.smokeanalytics.libraries.design.compose.rememberFabScrollState
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
@@ -93,13 +114,31 @@ data class HistoryViewState(
         val snackbarHostState = remember { SnackbarHostState() }
         val timeZone = remember { TimeZone.currentSystemDefault() }
         var showDatePicker by remember { mutableStateOf(false) }
+        var calendarExpanded by remember { mutableStateOf(true) }
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
-        val dateLabel = selectedLocalDate.toUiMonthDay()
         val entriesCount = smokes?.size ?: 0
+        val fabScroll = rememberFabScrollState()
+
+        // Gate on the live session, not just the last result: a stale sign-out can leave old
+        // data on screen with a generic error instead of the NotLoggedIn result.
+        val fetchSession = koinInject<FetchSessionUseCase>()
+        var signedIn by remember { mutableStateOf<Boolean?>(null) }
+        LaunchedEffect(selectedDate, error) {
+            try {
+                signedIn = fetchSession() is Session.LoggedIn
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Leaving the composition or a transient failure — keep the last known value.
+            }
+        }
+        val signedOut = signedIn == false || error == HistoryResult.Error.NotLoggedIn
+
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             contentWindowInsets = WindowInsets(0),
         ) { contentPadding ->
+          Box(modifier = Modifier.fillMaxSize()) {
             if (showDatePicker) {
                 DatePickerDialog(
                     initialDate = selectedDate,
@@ -111,9 +150,23 @@ data class HistoryViewState(
                 )
             }
 
+            if (signedOut) {
+              SignedOutState(
+                  modifier = Modifier
+                      .fillMaxSize()
+                      .padding(contentPadding),
+                  icon = Icons.Filled.CalendarMonth,
+                  title = stringResource(R.string.history_session_required),
+                  message = stringResource(R.string.history_sign_back_in),
+                  onSignInSuccess = { intent(HistoryIntent.FetchSmokes(selectedDate)) },
+                  onSignInError = {},
+              )
+            } else {
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
+                    .nestedScroll(fabScroll.connection)
                     .background(MaterialTheme.colorScheme.background)
                     .padding(contentPadding)
                     .padding(horizontal = 16.dp),
@@ -133,8 +186,8 @@ data class HistoryViewState(
                     ArchiveCalendarCard(
                         selectedLocalDate = selectedLocalDate,
                         monthCounts = monthCounts,
-                        entriesCount = entriesCount,
-                        displayLoading = displayLoading,
+                        expanded = calendarExpanded,
+                        onToggleExpanded = { calendarExpanded = !calendarExpanded },
                         onShiftMonth = { amount ->
                             analytics.buttonTap(
                                 AnalyticsScreen.HISTORY,
@@ -151,65 +204,30 @@ data class HistoryViewState(
                         onPickDay = { picked ->
                             intent(HistoryIntent.FetchSmokes(picked.atStartOfDayIn(timeZone)))
                         },
-                        onPreviousDay = {
-                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PREV)
-                            intent(HistoryIntent.FetchSmokes(selectedDate.minusDays(1, timeZone)))
-                        },
-                        onNextDay = {
-                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.NEXT)
-                            intent(HistoryIntent.FetchSmokes(selectedDate.plusDays(1, timeZone)))
-                        },
+                    )
+                }
+
+                item {
+                    // Selected day is the title of the list below (tap it to jump to a date).
+                    ArchiveListHeader(
+                        selectedLocalDate = selectedLocalDate,
+                        entriesCount = entriesCount,
                         onPickDate = {
                             analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.PICK_DATE)
                             showDatePicker = true
                         },
-                        onAdd = { intent(HistoryIntent.AddSmoke(selectedDate)) },
                     )
                 }
 
-                error?.let { currentError ->
+                // A refresh that failed while data is still on screen: a quiet inline note.
+                if (error != null && !smokes.isNullOrEmpty()) {
                     item {
-                        Card(
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                            ),
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) stringResource(R.string.history_session_required) else stringResource(R.string.history_could_not_refresh),
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                Text(
-                                    text = if (currentError == HistoryResult.Error.NotLoggedIn) {
-                                        stringResource(R.string.history_sign_back_in)
-                                    } else if (smokes == null) {
-                                        stringResource(R.string.history_day_load_failed)
-                                    } else {
-                                        stringResource(R.string.history_showing_last_state)
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                if (currentError != HistoryResult.Error.NotLoggedIn) {
-                                    Button(
-                                        onClick = {
-                                            analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.RETRY)
-                                            intent(HistoryIntent.FetchSmokes(selectedDate))
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError,
-                                        ),
-                                    ) {
-                                        Text(stringResource(R.string.history_retry))
-                                    }
-                                }
-                            }
-                        }
+                        Text(
+                            text = stringResource(R.string.history_showing_last_state),
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
 
@@ -223,6 +241,18 @@ data class HistoryViewState(
                                     .clip(RoundedCornerShape(20.dp))
                                     .shimmer()
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
+                            )
+                        }
+                    }
+
+                    error != null && smokes.isNullOrEmpty() -> {
+                        item {
+                            HistoryErrorState(
+                                onRetry = {
+                                    analytics.buttonTap(AnalyticsScreen.HISTORY, AnalyticsTarget.RETRY)
+                                    intent(HistoryIntent.FetchSmokes(selectedDate))
+                                },
+                                modifier = Modifier.padding(top = 48.dp),
                             )
                         }
                     }
@@ -251,11 +281,72 @@ data class HistoryViewState(
                     }
 
                     error == null -> {
-                        item { EmptySmokes() }
+                        item { EmptySmokes(modifier = Modifier.padding(top = 48.dp)) }
                     }
                 }
 
             }
+
+            val hiddenFabOffset = with(LocalDensity.current) { 220.dp.toPx() }
+            val fabTranslationY by animateFloatAsState(
+                targetValue = if (fabScroll.isVisible) 0f else hiddenFabOffset,
+                animationSpec = tween(durationMillis = 300),
+                label = "archiveFabHide",
+            )
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(contentPadding)
+                    .padding(16.dp)
+                    .graphicsLayer { translationY = fabTranslationY },
+                onClick = { intent(HistoryIntent.AddSmoke(selectedDate)) },
+                icon = {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_cigarette),
+                        contentDescription = null,
+                    )
+                },
+                text = { Text(stringResource(R.string.history_add_for_date)) },
+            )
+            }
+          }
+        }
+    }
+}
+
+/** Coherent centered error state for a day/month that failed to load. */
+@Composable
+private fun HistoryErrorState(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        )
+        Text(
+            text = stringResource(R.string.history_could_not_refresh),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.history_day_load_failed),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onRetry) {
+            Text(stringResource(R.string.history_retry))
         }
     }
 }
@@ -295,50 +386,50 @@ private fun ArchiveHeader(
 }
 
 @Composable
-private fun HistoryDateBar(
+private fun ArchiveListHeader(
     selectedLocalDate: LocalDate,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
+    entriesCount: Int,
     onPickDate: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+    val locale = LocalLocale.current.platformLocale
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp)
+            .clickable(onClick = onPickDate),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
-            text = selectedLocalDate.toUiMonthYear(),
+            text = selectedLocalDate.toFullWeekdayDate(locale),
             style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrevious) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-            }
-            Text(
-                text = selectedLocalDate.toUiMonthDay(),
-                modifier = Modifier.clickable(onClick = onPickDate),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            IconButton(onClick = onNext) {
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
-            }
-        }
+        Text(
+            text = stringResource(R.string.history_entries, entriesCount),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
+
+/** Full localized weekday + date (e.g. "Lunes, 1 de junio de 2026"), like the analytics day label. */
+private fun LocalDate.toFullWeekdayDate(locale: java.util.Locale): String =
+    java.time.LocalDate.of(year, monthNumber, dayOfMonth)
+        .format(
+            java.time.format.DateTimeFormatter
+                .ofLocalizedDate(java.time.format.FormatStyle.FULL)
+                .withLocale(locale),
+        )
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
 @Composable
 private fun ArchiveCalendarCard(
     selectedLocalDate: LocalDate,
     monthCounts: Map<Int, Int>,
-    entriesCount: Int,
-    displayLoading: Boolean,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onShiftMonth: (Int) -> Unit,
     onPickDay: (LocalDate) -> Unit,
-    onPreviousDay: () -> Unit,
-    onNextDay: () -> Unit,
-    onPickDate: () -> Unit,
-    onAdd: () -> Unit,
 ) {
     val calendarCellWidth = 42.dp
     val monthStart = LocalDate(selectedLocalDate.year, selectedLocalDate.monthNumber, 1)
@@ -355,21 +446,25 @@ private fun ArchiveCalendarCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Month header row: month/year + average + month nav
+            // Month header row: month/year (tap to collapse/expand) + month nav
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    modifier = Modifier.clickable(onClick = onToggleExpanded),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text(
                         text = selectedLocalDate.toUiMonthYear(),
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    Text(
-                        text = stringResource(R.string.history_daily_average, monthCounts.averageOrZero().formatOneDecimal()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Row {
@@ -382,6 +477,12 @@ private fun ArchiveCalendarCard(
                 }
             }
 
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+              Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 listOf(stringResource(R.string.history_dow_mon), stringResource(R.string.history_dow_tue), stringResource(R.string.history_dow_wed), stringResource(R.string.history_dow_thu), stringResource(R.string.history_dow_fri), stringResource(R.string.history_dow_sat), stringResource(R.string.history_dow_sun)).forEach { label ->
                     CalendarCell(width = calendarCellWidth) {
@@ -438,39 +539,7 @@ private fun ArchiveCalendarCard(
                     }
                 }
             }
-
-            // Day navigation + add button
-            HorizontalDivider()
-            HistoryDateBar(
-                selectedLocalDate = selectedLocalDate,
-                onPrevious = onPreviousDay,
-                onNext = onNextDay,
-                onPickDate = onPickDate,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(999.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.history_entries, entriesCount),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    )
-                }
-                Button(
-                    onClick = onAdd,
-                    enabled = !displayLoading,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                ) {
-                    Text(text = stringResource(R.string.history_add_for_date), style = MaterialTheme.typography.labelLarge)
-                }
+              }
             }
         }
     }
