@@ -43,11 +43,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
@@ -433,80 +438,62 @@ internal fun PreferencesSection(
     var showPackPricePicker by remember { mutableStateOf(false) }
     var showCigsPerPackPicker by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Row 1: Day starts + Sleep starts
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            TappableHighlightCard(
-                modifier = Modifier.weight(1f),
-                title = stringResource(R.string.settings_day_starts),
-                value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
-                body = stringResource(R.string.settings_tap_to_change),
-                enabled = enabled,
-                onClick = {
-                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_DAY_START)
-                    showDayStartPicker = true
-                },
-            )
-            TappableHighlightCard(
-                modifier = Modifier.weight(1f),
-                title = stringResource(R.string.settings_sleep_starts),
-                value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
-                body = stringResource(R.string.settings_tap_to_change),
-                enabled = enabled,
-                onClick = {
-                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_BEDTIME)
-                    showBedtimePicker = true
-                },
-            )
-        }
-
-        // Row 2: Currency + Pack price + Cigs per pack
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            TappableHighlightCard(
-                modifier = Modifier.weight(1f),
-                title = stringResource(R.string.settings_currency),
-                value = preferences.currencySymbol,
-                body = stringResource(R.string.settings_tap_to_change),
-                enabled = enabled,
-                onClick = {
-                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CURRENCY)
-                    showCurrencyPicker = true
-                },
-            )
-            TappableHighlightCard(
-                modifier = Modifier.weight(1f),
-                title = stringResource(R.string.settings_pack_price),
-                value = "%.2f".format(preferences.packPrice),
-                body = stringResource(R.string.settings_tap_to_change),
-                enabled = enabled,
-                onClick = {
-                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_PACK_PRICE)
-                    showPackPricePicker = true
-                },
-            )
-            TappableHighlightCard(
-                modifier = Modifier.weight(1f),
-                title = stringResource(R.string.settings_cigs_pack_short),
-                value = preferences.cigarettesPerPack.toString(),
-                body = stringResource(R.string.settings_tap_to_change),
-                enabled = enabled,
-                onClick = {
-                    analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CIGS_PER_PACK)
-                    showCigsPerPackPicker = true
-                },
-            )
-        }
-
-        // Location toggle card
-        LocationPreferenceCard(
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PreferenceValueRow(
+            icon = Icons.Filled.Schedule,
+            title = stringResource(R.string.settings_day_starts),
+            value = "${preferences.dayStartHour.toString().padStart(2, '0')}:00",
             enabled = enabled,
-            isTracking = preferences.locationTrackingEnabled,
+            onClick = {
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_DAY_START)
+                showDayStartPicker = true
+            },
+        )
+        PreferenceValueRow(
+            icon = Icons.Filled.Bedtime,
+            title = stringResource(R.string.settings_sleep_starts),
+            value = "${preferences.bedtimeHour.toString().padStart(2, '0')}:00",
+            enabled = enabled,
+            onClick = {
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_BEDTIME)
+                showBedtimePicker = true
+            },
+        )
+        PreferenceValueRow(
+            icon = Icons.Filled.Payments,
+            title = stringResource(R.string.settings_currency),
+            value = preferences.currencySymbol,
+            enabled = enabled,
+            onClick = {
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CURRENCY)
+                showCurrencyPicker = true
+            },
+        )
+        PreferenceValueRow(
+            icon = Icons.Filled.LocalOffer,
+            title = stringResource(R.string.settings_pack_price),
+            value = "${preferences.currencySymbol}${"%.2f".format(preferences.packPrice)}",
+            enabled = enabled,
+            onClick = {
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_PACK_PRICE)
+                showPackPricePicker = true
+            },
+        )
+        PreferenceValueRow(
+            icon = Icons.Filled.Numbers,
+            title = stringResource(R.string.settings_cigs_per_pack),
+            value = preferences.cigarettesPerPack.toString(),
+            enabled = enabled,
+            onClick = {
+                analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.CHANGE_CIGS_PER_PACK)
+                showCigsPerPackPicker = true
+            },
+        )
+        PreferenceToggleRow(
+            icon = if (preferences.locationTrackingEnabled) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
+            title = stringResource(R.string.settings_location_tracking),
+            checked = preferences.locationTrackingEnabled,
+            enabled = enabled,
             onToggle = { checked ->
                 analytics.buttonTap(AnalyticsScreen.SETTINGS, AnalyticsTarget.TOGGLE_LOCATION)
                 if (!checked) {
@@ -654,89 +641,69 @@ internal fun PreferencesSection(
     }
 }
 
+/** A preference shown as a row: icon + label on the left, current value + chevron on the right. */
 @Composable
-private fun TappableHighlightCard(
-    modifier: Modifier = Modifier,
+private fun PreferenceValueRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     value: String,
-    body: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
+/** A preference shown as a row with a trailing switch. */
 @Composable
-private fun LocationPreferenceCard(
+private fun PreferenceToggleRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    checked: Boolean,
     enabled: Boolean,
-    isTracking: Boolean,
     onToggle: (Boolean) -> Unit,
 ) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = if (isTracking) Icons.Filled.LocationOn else Icons.Filled.LocationOff,
-                contentDescription = null,
-                tint = if (isTracking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_location_tracking),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = if (isTracking) stringResource(R.string.settings_location_on) else stringResource(R.string.settings_off),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Switch(
-                checked = isTracking,
-                onCheckedChange = onToggle,
-                enabled = enabled,
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onToggle, enabled = enabled)
     }
 }
 
