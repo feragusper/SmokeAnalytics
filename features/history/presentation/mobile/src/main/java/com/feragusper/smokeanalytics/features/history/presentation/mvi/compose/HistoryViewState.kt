@@ -124,7 +124,13 @@ data class HistoryViewState(
         val fetchSession = koinInject<FetchSessionUseCase>()
         var signedIn by remember { mutableStateOf<Boolean?>(null) }
         LaunchedEffect(selectedDate, error) {
-            signedIn = fetchSession() is Session.LoggedIn
+            try {
+                signedIn = fetchSession() is Session.LoggedIn
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Leaving the composition or a transient failure — keep the last known value.
+            }
         }
         val signedOut = signedIn == false || error == HistoryResult.Error.NotLoggedIn
 

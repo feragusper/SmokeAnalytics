@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Insights
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import kotlinx.coroutines.CancellationException
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
@@ -126,17 +127,29 @@ fun AnalyticsMobileDestination(
     val fetchSession = koinInject<FetchSessionUseCase>()
     var signedIn by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(active, refreshNonce) {
-        signedIn = fetchSession() is Session.LoggedIn
+        try {
+            signedIn = fetchSession() is Session.LoggedIn
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Leaving the composition or a transient fetch failure — keep the last known value.
+        }
     }
 
     // Pack price → per-cigarette price, so Analytics can show what the period cost.
     val fetchPreferences = koinInject<FetchUserPreferencesUseCase>()
     var currencySymbol by remember { mutableStateOf("") }
     var cigarettePrice by remember { mutableStateOf(0.0) }
-    LaunchedEffect(active, refreshNonce) {
-        val prefs = fetchPreferences()
-        currencySymbol = prefs.currencySymbol
-        cigarettePrice = if (prefs.cigarettesPerPack > 0) prefs.packPrice / prefs.cigarettesPerPack else 0.0
+    LaunchedEffect(active) {
+        try {
+            val prefs = fetchPreferences()
+            currencySymbol = prefs.currencySymbol
+            cigarettePrice = if (prefs.cigarettesPerPack > 0) prefs.packPrice / prefs.cigarettesPerPack else 0.0
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Leaving the composition or a transient fetch failure — leave price unset.
+        }
     }
 
     LaunchedEffect(active, selectedTab) {
