@@ -1,0 +1,7 @@
+Novedades:
+• Los nombres de los meses y las etiquetas de los días ahora aparecen en tu idioma en todo el archivo y los recordatorios.
+• Las pestañas de período en Analíticas (Día / Semana / Mes / Año) ya están traducidas.
+• Web: la barra lateral ahora queda fija mientras se desplaza la página.
+• Pequeños ajustes para una experiencia más consistente y totalmente localizada.
+
+Nota más, fuma menos.
