@@ -41,6 +41,8 @@
     <string name="stats_retry_rebuild">Reintentá para reconstruir la vista de frecuencia del rango seleccionado.</string>
     <string name="stats_peak_window">Ventana pico</string>
     <string name="stats_highest_activity">Mayor actividad</string>
+    <string name="stats_spent_period">Gastado en el período</string>
+    <string name="stats_spent_period_body">Según el precio de tu atado</string>
     <string name="stats_smoking_frequency">Frecuencia de fumado</string>
     <string name="stats_by_trigger">Por disparador</string>
     <string name="stats_by_trigger_empty">Todavía no hay cigarrillos etiquetados en este período. Etiquetá con qué se relacionó cada uno y el desglose aparece acá.</string>

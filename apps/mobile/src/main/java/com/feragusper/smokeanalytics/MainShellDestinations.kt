@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Insights
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
+import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.presentation.compose.SignedOutState
 import androidx.navigation.compose.rememberNavController
 import com.feragusper.smokeanalytics.features.goals.presentation.GoalsView
@@ -128,6 +129,16 @@ fun AnalyticsMobileDestination(
         signedIn = fetchSession() is Session.LoggedIn
     }
 
+    // Pack price → per-cigarette price, so Analytics can show what the period cost.
+    val fetchPreferences = koinInject<FetchUserPreferencesUseCase>()
+    var currencySymbol by remember { mutableStateOf("") }
+    var cigarettePrice by remember { mutableStateOf(0.0) }
+    LaunchedEffect(active, refreshNonce) {
+        val prefs = fetchPreferences()
+        currencySymbol = prefs.currencySymbol
+        cigarettePrice = if (prefs.cigarettesPerPack > 0) prefs.packPrice / prefs.cigarettesPerPack else 0.0
+    }
+
     LaunchedEffect(active, selectedTab) {
         if (active) refreshNonce += 1
     }
@@ -213,6 +224,8 @@ fun AnalyticsMobileDestination(
                 refreshNonce = refreshNonce,
                 currentPeriod = currentPeriod,
                 selectedDate = selectedDate,
+                currencySymbol = currencySymbol,
+                cigarettePrice = cigarettePrice,
                 onPeriodChange = { currentPeriod = it },
                 onDateChange = { selectedDate = it },
             )
@@ -279,6 +292,8 @@ private fun StatsMobileDestination(
     refreshNonce: Int = 0,
     currentPeriod: StatsViewState.StatsPeriod = StatsViewState.StatsPeriod.WEEK,
     selectedDate: JavaLocalDate = JavaLocalDate.now(),
+    currencySymbol: String = "",
+    cigarettePrice: Double = 0.0,
     onPeriodChange: (StatsViewState.StatsPeriod) -> Unit = {},
     onDateChange: (JavaLocalDate) -> Unit = {},
 ) {
@@ -291,6 +306,8 @@ private fun StatsMobileDestination(
             embedded = true,
             currentPeriod = currentPeriod,
             selectedDate = selectedDate,
+            currencySymbol = currencySymbol,
+            cigarettePrice = cigarettePrice,
             onPeriodChange = onPeriodChange,
             onDateChange = onDateChange,
         )

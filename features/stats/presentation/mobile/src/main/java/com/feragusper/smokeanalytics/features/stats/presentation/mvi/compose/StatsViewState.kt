@@ -110,6 +110,8 @@ data class StatsViewState(
         embedded: Boolean = false,
         currentPeriod: StatsPeriod = StatsPeriod.WEEK,
         selectedDate: JavaLocalDate = JavaLocalDate.now(),
+        currencySymbol: String = "",
+        cigarettePrice: Double = 0.0,
         onPeriodChange: (StatsPeriod) -> Unit = {},
         onDateChange: (JavaLocalDate) -> Unit = {},
         intent: (StatsIntent) -> Unit,
@@ -303,6 +305,21 @@ data class StatsViewState(
                         stats = stats,
                         selectedDate = selectedDate,
                     )
+
+                    if (cigarettePrice > 0.0) {
+                        val periodTotal = when (currentPeriod) {
+                            StatsPeriod.DAY -> stats.totalDay
+                            StatsPeriod.WEEK -> stats.totalWeek
+                            StatsPeriod.MONTH -> stats.totalMonth
+                            StatsPeriod.YEAR -> stats.yearly.values.sum()
+                        }
+                        SummaryCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            title = stringResource(R.string.stats_spent_period),
+                            headline = "$currencySymbol${String.format(java.util.Locale.US, "%.2f", periodTotal * cigarettePrice)}",
+                            supporting = stringResource(R.string.stats_spent_period_body),
+                        )
+                    }
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),

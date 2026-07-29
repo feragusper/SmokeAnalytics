@@ -41,6 +41,8 @@
     <string name="stats_retry_rebuild">Retry to rebuild the frequency view for the selected range.</string>
     <string name="stats_peak_window">Peak Window</string>
     <string name="stats_highest_activity">Highest activity</string>
+    <string name="stats_spent_period">Spent this period</string>
+    <string name="stats_spent_period_body">Based on your pack price</string>
     <string name="stats_smoking_frequency">Smoking Frequency</string>
     <string name="stats_by_trigger">By trigger</string>
     <string name="stats_by_trigger_empty">No tagged cigarettes in this period yet. Tag what each one was related to and the breakdown shows up here.</string>
