@@ -36,8 +36,9 @@ platform :android do
       skip_upload_aab: true,                              # Listing-only: do not ship a binary.
       skip_upload_apk: true,
       skip_upload_changelogs: true,                       # Changelogs bind to a release/version code.
-      overwrite_screenshots: true                         # Clear existing Play screenshots first, so removed
-                                                          # sets (e.g. tablet) are deleted, not appended to.
+      sync_image_upload: true                             # Sync images: uploads changed ones and deletes remote
+                                                          # images missing locally, so removed sets (e.g. tablet)
+                                                          # are cleared on Play instead of left behind.
     )
   end
 end
