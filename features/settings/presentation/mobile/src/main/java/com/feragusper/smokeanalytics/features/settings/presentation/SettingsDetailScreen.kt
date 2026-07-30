@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.SettingsIntent
+import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.AppearanceSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.ManageTriggersSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.PersonalizationSection
 import com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose.PreferencesSection
@@ -100,6 +101,8 @@ internal fun SettingsDetailScreen(
                         intent(SettingsIntent.UpdatePreferences(updated))
                     },
                 )
+
+                SettingsSection.APPEARANCE -> AppearanceSection()
 
                 SettingsSection.ABOUT -> AboutSection()
             }
