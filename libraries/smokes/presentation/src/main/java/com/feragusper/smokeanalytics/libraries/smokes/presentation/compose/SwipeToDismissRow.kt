@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,15 +33,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.R
+import com.valentinilk.shimmer.shimmer
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -73,7 +76,11 @@ fun SwipeToDismissRow(
         ),
         onClick = { if (!isPending) showDatePicker = true },
     ) {
-        Column {
+        if (isPending) {
+            // The row's edit/delete is committing: skeletonize it in place until the refetch
+            // drops it (delete) or brings it back updated (edit) — same language as the other loadings.
+            SmokeRowSkeleton(contentDescription = pendingLabel)
+        } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -94,23 +101,6 @@ fun SwipeToDismissRow(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-            if (isPending) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.width(18.dp).height(18.dp), strokeWidth = 2.dp)
-                    Text(
-                        text = pendingLabel ?: "Updating…",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -164,6 +154,70 @@ fun SwipeToDismissRow(
     }
 }
 
+/**
+ * A standalone skeleton row for a smoke that's being added but hasn't come back from the refetch
+ * yet — a placeholder that previews the item about to appear. Same card footprint as a real row.
+ */
+@Composable
+fun SmokeSkeletonRow(
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        SmokeRowSkeleton(contentDescription = contentDescription)
+    }
+}
+
+/** Shimmering placeholder shaped like [SmokeItem] — two text lines and a trailing action. */
+@Composable
+private fun SmokeRowSkeleton(contentDescription: String? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .then(
+                if (contentDescription != null) {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                } else {
+                    Modifier
+                }
+            )
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SkeletonBar(Modifier.fillMaxWidth(0.32f).height(16.dp))
+            SkeletonBar(Modifier.fillMaxWidth(0.60f).height(12.dp))
+        }
+        SkeletonBar(Modifier.size(24.dp), shape = CircleShape)
+    }
+}
+
+@Composable
+private fun SkeletonBar(
+    modifier: Modifier,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(8.dp),
+) {
+    Spacer(
+        modifier = modifier
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+            .shimmer(),
+    )
+}
+
 @Composable
 private fun SmokeItem(
     modifier: Modifier = Modifier,
@@ -206,7 +260,7 @@ private fun SmokeItem(
                             minutes.toInt(),
                             minutes.toInt()
                         )
-                    ).joinToString(" and ")
+                    ).joinToString(stringResource(id = R.string.smokes_smoked_after_join))
                 }",
                 style = MaterialTheme.typography.bodyMedium,
                 color = tone.rowContentColor()
