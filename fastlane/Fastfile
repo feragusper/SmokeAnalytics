@@ -21,7 +21,7 @@ platform :android do
     upload_to_play_store(
       common_upload_options.merge(
         track: "production",
-        aab: "apps/mobile/build/outputs/bundle/productionRelease/mobile-production-release.aab"
+        aab: "apps/android/build/outputs/bundle/productionRelease/android-production-release.aab"
       )
     )
   end

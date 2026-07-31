@@ -8,7 +8,7 @@
 ## Repository Layout For Codex
 - `AGENTS.md`
   - durable repository expectations
-- `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`, `.github/workflows/AGENTS.md`
+- `apps/web/AGENTS.md`, `apps/android/AGENTS.md`, `.github/workflows/AGENTS.md`
   - subtree-specific overrides for specialized work
 - `.agents/skills/`
   - repository-scoped skills discoverable by Codex

@@ -36,15 +36,15 @@ jobs:
 
           echo "✅ local.properties configured for production."
 
-          mkdir -p ./apps/mobile/src/production/
-          echo "$GOOGLE_SERVICES_JSON" > ./apps/mobile/src/production/google-services.json.input
-          if grep -q '"project_info"' ./apps/mobile/src/production/google-services.json.input; then
-            cp ./apps/mobile/src/production/google-services.json.input ./apps/mobile/src/production/google-services.json
+          mkdir -p ./apps/android/src/production/
+          echo "$GOOGLE_SERVICES_JSON" > ./apps/android/src/production/google-services.json.input
+          if grep -q '"project_info"' ./apps/android/src/production/google-services.json.input; then
+            cp ./apps/android/src/production/google-services.json.input ./apps/android/src/production/google-services.json
           else
-            gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/production/google-services.json.input > ./apps/mobile/src/production/google-services.json
+            gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/android/src/production/google-services.json.input > ./apps/android/src/production/google-services.json
           fi
 
-          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
+          if [ ! -s ./apps/android/src/production/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (production)!"
             exit 1
           fi
@@ -82,7 +82,7 @@ jobs:
           gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./playstore.credentials.json.asc > ./playstore.credentials.json
 
       - name: Build Android App Bundle
-        run: ./gradlew :apps:mobile:bundleProductionRelease --stacktrace
+        run: ./gradlew :apps:android:bundleProductionRelease --stacktrace
 
       - name: Build Wear OS App Bundle
         run: ./gradlew :apps:wear:bundleProductionRelease --stacktrace
@@ -93,8 +93,8 @@ jobs:
       - name: Retrieve release metadata
         id: android_version
         run: |
-          echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
-          echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:mobile:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
+          echo "version_name=$(${{ github.workspace }}/gradlew -q :apps:android:printAndroidVersionName)" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$(${{ github.workspace }}/gradlew -q :apps:android:printAndroidReleaseTag)" >> "$GITHUB_OUTPUT"
           echo "wear_version_name=$(${{ github.workspace }}/gradlew -q :apps:wear:printWearVersionName)" >> "$GITHUB_OUTPUT"
           echo "wear_version_code=$(${{ github.workspace }}/gradlew -q :apps:wear:printWearVersionCode)" >> "$GITHUB_OUTPUT"
 

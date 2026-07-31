@@ -11,4 +11,4 @@
 
 ## Verification
 - Run the nearest feature compile/test task for local changes here.
-- When shell, manifest, map, widget, or release-sensitive wiring changes, also run `./gradlew :apps:mobile:assembleStagingDebug`.
+- When shell, manifest, map, widget, or release-sensitive wiring changes, also run `./gradlew :apps:android:assembleStagingDebug`.

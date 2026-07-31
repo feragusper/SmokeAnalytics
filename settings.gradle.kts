@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 rootProject.name = "SmokeAnalytics"
 
 // Include application modules
-include(":apps:mobile")
+include(":apps:android")
 include(":apps:wear")
 include(":apps:web")
 
