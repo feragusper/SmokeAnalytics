@@ -78,14 +78,6 @@ struct HomeView: View {
             }
             .navigationTitle(auth.displayName.map { "Hi, \($0)" } ?? "Home")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { auth.signOut() } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                    }
-                    .tint(SA.primary)
-                }
-            }
             .task { await viewModel.load() }
         }
         .tint(SA.primary)
