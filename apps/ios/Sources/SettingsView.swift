@@ -70,8 +70,12 @@ final class SettingsViewModel: ObservableObject {
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @StateObject private var viewModel = SettingsViewModel()
+    @AppStorage("themeMode") private var themeMode = "system"
 
     private let hours = Array(0..<24)
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
 
     var body: some View {
         NavigationStack {
@@ -124,8 +128,30 @@ struct SettingsView: View {
                     Toggle("24-hour clock", isOn: $viewModel.use24HourClock)
                 }
 
+                Section("Appearance") {
+                    Picker("Theme", selection: $themeMode) {
+                        Text("System").tag("system")
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                    }
+                }
+
                 Section("Privacy") {
                     Toggle("Track location of cigarettes", isOn: $viewModel.locationTrackingEnabled)
+                }
+
+                Section("About") {
+                    ShareLink(item: URL(string: "https://feragusper.github.io/SmokeAnalytics/")!) {
+                        Label("Share the app", systemImage: "square.and.arrow.up")
+                    }
+                    Link(destination: URL(string: "https://feragusper.github.io/SmokeAnalytics/")!) {
+                        Label("About", systemImage: "info.circle")
+                    }
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text(appVersion).foregroundStyle(SA.onSurfaceVariant)
+                    }
                 }
 
                 if let error = viewModel.errorText {

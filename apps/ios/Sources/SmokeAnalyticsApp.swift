@@ -18,14 +18,25 @@ enum AppBootstrap {
 @main
 struct SmokeAnalyticsApp: App {
     @StateObject private var auth = AuthManager()
+    @State private var showSplash = true
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environmentObject(auth)
-                .onOpenURL { url in
-                    GIDSignIn.sharedInstance.handle(url)
+            ZStack {
+                RootView()
+                    .environmentObject(auth)
+                    .onOpenURL { url in
+                        GIDSignIn.sharedInstance.handle(url)
+                    }
+                if showSplash {
+                    SplashView()
+                        .transition(.opacity)
+                        .task {
+                            try? await Task.sleep(nanoseconds: 1_200_000_000)
+                            withAnimation(.easeOut(duration: 0.35)) { showSplash = false }
+                        }
                 }
+            }
         }
     }
 }
