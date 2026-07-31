@@ -13,12 +13,19 @@ data class StatsBar(val label: String, val count: Int)
 /** A trigger/tag and how many cigarettes in the period carried it. */
 data class StatsTrigger(val label: String, val count: Int)
 
-/** Swift-friendly Analytics snapshot for the current month. */
+/** Period keys shared with the Swift segmented control. */
+object StatsPeriodKeys {
+    const val DAY = "day"
+    const val WEEK = "week"
+    const val MONTH = "month"
+    const val YEAR = "year"
+}
+
+/** Swift-friendly Analytics snapshot for a selected period. */
 data class StatsSnapshot(
-    val totalMonth: Int,
-    val totalWeek: Int,
+    val periodTotal: Int,
     val dailyAverage: Double,
-    val dailyBars: List<StatsBar>,
+    val bars: List<StatsBar>,
     val triggers: List<StatsTrigger>,
 )
 
@@ -28,21 +35,33 @@ class StatsFacade : KoinComponent {
     private val fetchStats: FetchSmokeStatsUseCase by inject()
 
     @Throws(Throwable::class)
-    suspend fun loadCurrentMonth(): StatsSnapshot {
+    suspend fun load(periodKey: String): StatsSnapshot {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val periodType = when (periodKey) {
+            StatsPeriodKeys.DAY -> FetchSmokeStatsUseCase.PeriodType.DAY
+            StatsPeriodKeys.WEEK -> FetchSmokeStatsUseCase.PeriodType.WEEK
+            StatsPeriodKeys.YEAR -> FetchSmokeStatsUseCase.PeriodType.YEAR
+            else -> FetchSmokeStatsUseCase.PeriodType.MONTH
+        }
         val stats = fetchStats(
             year = now.year,
             month = now.monthNumber,
             day = now.dayOfMonth,
-            periodType = FetchSmokeStatsUseCase.PeriodType.MONTH,
+            periodType = periodType,
         )
+        // The chart's buckets depend on the period; entries are already in display order except the
+        // day-of-month map which is keyed by number.
+        // Buckets match the Android chart: hourly / day-of-week / week-of-month / month-of-year.
+        val bars = when (periodKey) {
+            StatsPeriodKeys.DAY -> stats.hourly.entries.map { StatsBar(it.key, it.value) }
+            StatsPeriodKeys.WEEK -> stats.weekly.entries.map { StatsBar(it.key, it.value) }
+            StatsPeriodKeys.YEAR -> stats.yearly.entries.map { StatsBar(it.key, it.value) }
+            else -> stats.monthly.entries.map { StatsBar(it.key, it.value) }
+        }
         return StatsSnapshot(
-            totalMonth = stats.totalMonth,
-            totalWeek = stats.totalWeek,
+            periodTotal = bars.sumOf { it.count },
             dailyAverage = stats.dailyAverage.toDouble(),
-            dailyBars = stats.daily.entries
-                .sortedBy { it.key.toIntOrNull() ?: 0 }
-                .map { StatsBar(label = it.key, count = it.value) },
+            bars = bars,
             triggers = stats.triggerBreakdown.map { StatsTrigger(label = it.label, count = it.count) },
         )
     }
