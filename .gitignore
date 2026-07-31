@@ -43,8 +43,10 @@ coverage_report.py
 # Gradle Lighthouse history (build-local trend data)
 
 # Firebase config (secrets) — provide locally, never commit
-apps/ios/Sources/GoogleService-Info.plist
 
 # XcodeGen-generated (reproduce with `xcodegen generate`)
 apps/ios/SmokeAnalytics.xcodeproj/
 apps/ios/Sources/Info.plist
+
+# Firebase config per environment (secrets) — provide locally, never commit
+apps/ios/Firebase/**/GoogleService-Info.plist
