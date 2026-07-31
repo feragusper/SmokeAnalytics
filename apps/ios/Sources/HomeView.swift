@@ -9,26 +9,46 @@ final class HomeViewModel: ObservableObject {
     @Published var lastSmokeEpochMillis: Int64 = -1
     @Published var isLoading = false
     @Published var errorText: String?
+    @Published var triggerOptions: [TriggerChipItem] = []
 
     private let facade = HomeFacade()
 
     func load() async {
-        await run { try await self.facade.load() }
-    }
-
-    func addSmoke() async {
-        await run { try await self.facade.addSmokeNow() }
-    }
-
-    private func run(_ work: @escaping () async throws -> HomeSnapshot) async {
         isLoading = true
         errorText = nil
         do {
-            apply(try await work())
+            apply(try await facade.load())
         } catch {
             errorText = String(describing: error)
         }
         isLoading = false
+        if triggerOptions.isEmpty {
+            triggerOptions = (try? await facade.triggerOptions())?
+                .map { TriggerChipItem(id: $0.key, display: $0.display) } ?? []
+        }
+    }
+
+    /// Logs a smoke and returns its id so Home can prompt for the trigger; nil on failure.
+    func logSmoke() async -> String? {
+        isLoading = true
+        errorText = nil
+        defer { isLoading = false }
+        do {
+            return try await facade.logSmoke()
+        } catch {
+            errorText = String(describing: error)
+            return nil
+        }
+    }
+
+    func setRelationship(id: String, tags: [String]) async {
+        if id == "__preview__" { return } // debug -previewTriggers: no write
+        do {
+            try await facade.setRelationship(id: id, tags: tags)
+            await load()
+        } catch {
+            errorText = String(describing: error)
+        }
     }
 
     private func apply(_ s: HomeSnapshot) {
@@ -47,9 +67,14 @@ final class HomeViewModel: ObservableObject {
     }
 }
 
+private struct PendingSmoke: Identifiable {
+    let id: String
+}
+
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var auth: AuthManager
+    @State private var pendingSmoke: PendingSmoke?
 
     var body: some View {
         NavigationStack {
@@ -78,7 +103,21 @@ struct HomeView: View {
             }
             .navigationTitle(auth.displayName.map { "Hi, \($0)" } ?? "Home")
             .navigationBarTitleDisplayMode(.inline)
-            .task { await viewModel.load() }
+            .task {
+                await viewModel.load()
+                // Debug: `-previewTriggers` opens the trigger sheet on launch (no smoke written).
+                if UserDefaults.standard.bool(forKey: "previewTriggers") {
+                    pendingSmoke = PendingSmoke(id: "__preview__")
+                }
+            }
+            .sheet(item: $pendingSmoke) { pending in
+                RelationshipSheet(
+                    options: viewModel.triggerOptions,
+                    onSave: { tags in Task { await viewModel.setRelationship(id: pending.id, tags: tags) } },
+                    onSkip: { Task { await viewModel.setRelationship(id: pending.id, tags: []) } }
+                )
+                .presentationDetents([.medium, .large])
+            }
         }
         .tint(SA.primary)
     }
@@ -120,7 +159,11 @@ struct HomeView: View {
 
     private var smokeButton: some View {
         Button {
-            Task { await viewModel.addSmoke() }
+            Task {
+                if let id = await viewModel.logSmoke() {
+                    pendingSmoke = PendingSmoke(id: id)
+                }
+            }
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "plus.circle.fill")
