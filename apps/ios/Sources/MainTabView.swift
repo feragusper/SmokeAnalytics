@@ -17,7 +17,7 @@ struct MainTabView: View {
                 .tag(1)
 
             HistoryView()
-                .tabItem { Label("History", systemImage: "clock.fill") }
+                .tabItem { Label("Archive", systemImage: "calendar") }
                 .tag(2)
 
             GoalsView()
