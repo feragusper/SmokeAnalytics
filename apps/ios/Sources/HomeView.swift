@@ -7,6 +7,14 @@ final class HomeViewModel: ObservableObject {
     @Published var weekCount = 0
     @Published var monthCount = 0
     @Published var lastSmokeEpochMillis: Int64 = -1
+    @Published var nickname = ""
+    @Published var quitReason = ""
+    @Published var currencySymbol = "€"
+    @Published var cigarettePrice = 0.0
+    @Published var hasGoal = false
+    @Published var goalTitle = ""
+    @Published var goalStatus = ""
+    @Published var goalFraction = -1.0
     @Published var isLoading = false
     @Published var errorText: String?
     @Published var triggerOptions: [TriggerChipItem] = []
@@ -14,6 +22,9 @@ final class HomeViewModel: ObservableObject {
 
     private let facade = HomeFacade()
     private let cravingFacade = CravingFacade()
+    private let goalsFacade = GoalsFacade()
+
+    var spentToday: Double { Double(todayCount) * cigarettePrice }
 
     func load() async {
         isLoading = true
@@ -22,6 +33,12 @@ final class HomeViewModel: ObservableObject {
             apply(try await facade.load())
             let craving = try await cravingFacade.active()
             activeCravingSince = craving.map { Date(timeIntervalSince1970: Double($0.createdAtEpochMillis) / 1000.0) }
+            if let g = try? await goalsFacade.load() {
+                hasGoal = g.hasGoal
+                goalTitle = g.title
+                goalStatus = g.statusLabel
+                goalFraction = g.progressFraction
+            }
         } catch {
             errorText = String(describing: error)
         }
@@ -75,6 +92,23 @@ final class HomeViewModel: ObservableObject {
         weekCount = Int(s.weekCount)
         monthCount = Int(s.monthCount)
         lastSmokeEpochMillis = s.lastSmokeEpochMillis
+        nickname = s.nickname
+        quitReason = s.quitReason
+        currencySymbol = s.currencySymbol
+        cigarettePrice = s.cigarettePrice
+    }
+
+    var greeting: String {
+        let name = nickname.isEmpty ? nil : nickname
+        let hour = Calendar.current.component(.hour, from: Date())
+        let part: String
+        switch hour {
+        case 5..<12: part = "Good morning"
+        case 12..<18: part = "Good afternoon"
+        case 18..<22: part = "Good evening"
+        default: part = "Good night"
+        }
+        return name.map { "\(part), \($0)" } ?? part
     }
 
     var lastSmokeText: String {
@@ -103,12 +137,15 @@ struct HomeView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         heroCard
+                        if viewModel.hasGoal { goalCard }
                         HStack(spacing: 16) {
                             statCard("This week", viewModel.weekCount)
                             statCard("This month", viewModel.monthCount)
                         }
+                        if viewModel.cigarettePrice > 0 { spentTodayCard }
                         smokeButton
                         cravingSection
+                        if !viewModel.quitReason.isEmpty { quitReasonCard }
 
                         if let error = viewModel.errorText {
                             Text(error)
@@ -121,7 +158,7 @@ struct HomeView: View {
                     .padding(16)
                 }
             }
-            .navigationTitle(auth.displayName.map { "Hi, \($0)" } ?? "Home")
+            .navigationTitle(viewModel.greeting)
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 await viewModel.load()
@@ -173,6 +210,56 @@ struct HomeView: View {
                 Text("\(value)")
                     .font(.saHeadlineSmall)
                     .foregroundStyle(SA.onSurface)
+            }
+        }
+    }
+
+    private var goalCard: some View {
+        SACard {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().stroke(SA.surfaceVariant, lineWidth: 6)
+                    if viewModel.goalFraction >= 0 {
+                        Circle()
+                            .trim(from: 0, to: min(max(viewModel.goalFraction, 0), 1))
+                            .stroke(SA.primary, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    Image(systemName: "target").font(.system(size: 16)).foregroundStyle(SA.primary)
+                }
+                .frame(width: 44, height: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.goalTitle).font(.saTitleMedium).foregroundStyle(SA.onSurface)
+                    Text(viewModel.goalStatus).font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var spentTodayCard: some View {
+        SACard {
+            HStack(spacing: 14) {
+                Image(systemName: "creditcard.fill").font(.system(size: 22)).foregroundStyle(SA.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Spent today").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text("\(viewModel.currencySymbol)\(viewModel.spentToday, specifier: "%.2f")")
+                        .font(.saHeadlineSmall).foregroundStyle(SA.onSurface)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var quitReasonCard: some View {
+        SACard {
+            HStack(spacing: 14) {
+                Image(systemName: "quote.opening").font(.system(size: 20)).foregroundStyle(SA.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your reason to quit").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text(viewModel.quitReason).font(.saBodyLarge).foregroundStyle(SA.onSurface)
+                }
+                Spacer()
             }
         }
     }

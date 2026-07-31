@@ -19,6 +19,10 @@ data class HomeSnapshot(
     val weekCount: Int,
     val monthCount: Int,
     val lastSmokeEpochMillis: Long,
+    val nickname: String,
+    val quitReason: String,
+    val currencySymbol: String,
+    val cigarettePrice: Double,
 )
 
 /** A selectable trigger tag with its display text ("☕ Coffee") for the relationship prompt. */
@@ -36,15 +40,20 @@ class HomeFacade : KoinComponent {
     private val setSmokeRelationship: SetSmokeRelationshipUseCase by inject()
     private val fetchPreferences: FetchUserPreferencesUseCase by inject()
 
-    /** Returns the current aggregated counts for the signed-in user. */
+    /** Returns the current aggregated counts + the profile/cost bits Home shows, like Android. */
     @Throws(Throwable::class)
     suspend fun load(): HomeSnapshot {
         val result = fetchCounts()
+        val preferences = fetchPreferences()
         return HomeSnapshot(
             todayCount = result.todaysSmokes.size,
             weekCount = result.countByWeek,
             monthCount = result.countByMonth,
             lastSmokeEpochMillis = result.lastSmoke?.date?.toEpochMilliseconds() ?: -1L,
+            nickname = preferences.nickname,
+            quitReason = preferences.quitReason,
+            currencySymbol = preferences.currencySymbol,
+            cigarettePrice = preferences.cigarettePrice,
         )
     }
 
