@@ -9,6 +9,8 @@ final class GoalsViewModel: ObservableObject {
     @Published var statusLabel = ""
     @Published var progressFraction = -1.0
     @Published var streakDays = 0
+    @Published var goalTypeKey = ""
+    @Published var goalValue = 0
     @Published var isLoading = false
     @Published var errorText: String?
 
@@ -25,15 +27,36 @@ final class GoalsViewModel: ObservableObject {
             statusLabel = s.statusLabel
             progressFraction = s.progressFraction
             streakDays = Int(s.streakDays)
+            goalTypeKey = s.goalTypeKey
+            goalValue = Int(s.goalValue)
         } catch {
             errorText = String(describing: error)
         }
         isLoading = false
     }
+
+    func saveGoal(_ typeKey: String, _ value: Int) async {
+        do {
+            try await facade.saveGoal(typeKey: typeKey, value: Int32(value))
+            await load()
+        } catch {
+            errorText = String(describing: error)
+        }
+    }
+
+    func clearGoal() async {
+        do {
+            try await facade.clearGoal()
+            await load()
+        } catch {
+            errorText = String(describing: error)
+        }
+    }
 }
 
 struct GoalsView: View {
     @StateObject private var viewModel = GoalsViewModel()
+    @State private var showEditor = false
 
     var body: some View {
         NavigationStack {
@@ -55,9 +78,29 @@ struct GoalsView: View {
                 }
             }
             .navigationTitle("Goals")
-            .task { await viewModel.load() }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(viewModel.hasGoal ? "Edit" : "Set") { showEditor = true }
+                        .tint(SA.primary)
+                }
+            }
+            .task {
+                await viewModel.load()
+                // Debug: `-showGoalEditor` opens the editor on launch (no write until Save).
+                if UserDefaults.standard.bool(forKey: "showGoalEditor") { showEditor = true }
+            }
             .refreshable { await viewModel.load() }
             .overlay { if viewModel.isLoading { ProgressView().tint(SA.primary) } }
+            .sheet(isPresented: $showEditor) {
+                GoalEditorSheet(
+                    prefillTypeKey: viewModel.goalTypeKey,
+                    prefillValue: viewModel.goalValue,
+                    isEditing: viewModel.hasGoal,
+                    onSave: { key, value in Task { await viewModel.saveGoal(key, value) } },
+                    onClear: { Task { await viewModel.clearGoal() } }
+                )
+                .presentationDetents([.large])
+            }
         }
     }
 
@@ -136,11 +179,15 @@ struct GoalsView: View {
             Text("No active goal")
                 .font(.saTitleMedium)
                 .foregroundStyle(SA.onSurface)
-            Text("Set a goal on Android or the web app and your progress will show up here.")
+            Text("Tap \u{201C}Set\u{201D} to choose a goal and track your progress here.")
                 .font(.saBodyLarge)
                 .foregroundStyle(SA.onSurfaceVariant)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+            Button("Set a goal") { showEditor = true }
+                .buttonStyle(SAPrimaryButtonStyle())
+                .padding(.horizontal, 40)
+                .padding(.top, 8)
         }
         .padding(.top, 60)
     }

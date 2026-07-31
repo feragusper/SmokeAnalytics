@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressU
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -12,7 +13,8 @@ import org.koin.core.component.inject
 
 /**
  * Swift-friendly view of the active goal's progress. [progressFraction] is -1 when unknown;
- * [hasGoal] is false when no goal is set (the user sets one on Android/web for now).
+ * [hasGoal] is false when no goal is set. [goalTypeKey]/[goalValue] prefill the editor
+ * (empty / 0 when there is no goal).
  */
 data class GoalSnapshot(
     val hasGoal: Boolean,
@@ -21,12 +23,23 @@ data class GoalSnapshot(
     val statusLabel: String,
     val progressFraction: Double,
     val streakDays: Int,
+    val goalTypeKey: String,
+    val goalValue: Int,
 )
 
-/** Read-only Goals entry point: reads the active goal + preferences and evaluates progress. */
+/** Goal type keys shared with the Swift editor. */
+object GoalTypeKeys {
+    const val DAILY_CAP = "daily_cap"
+    const val REDUCTION_WEEK = "reduction_week"
+    const val REDUCTION_MONTH = "reduction_month"
+    const val MINDFUL_GAP = "mindful_gap"
+}
+
+/** Goals entry point: reads/evaluates the active goal and creates/clears it. */
 class GoalsFacade : KoinComponent {
 
     private val fetchPreferences: FetchUserPreferencesUseCase by inject()
+    private val updatePreferences: UpdateUserPreferencesUseCase by inject()
     private val fetchSmokes: FetchSmokesUseCase by inject()
     private val evaluate: EvaluateGoalProgressUseCase by inject()
 
@@ -34,21 +47,54 @@ class GoalsFacade : KoinComponent {
     suspend fun load(): GoalSnapshot {
         val preferences = fetchPreferences()
         val goal = preferences.activeGoal
-            ?: return GoalSnapshot(false, "", "", "", -1.0, 0)
+            ?: return GoalSnapshot(false, "", "", "", -1.0, 0, "", 0)
 
         // Reduction goals compare against the previous week/month, so pull a wider window.
         val smokes = fetchSmokes(Clock.System.now().minus(60.days), null)
         val progress = evaluate(goal, smokes, preferences)
-            ?: return GoalSnapshot(true, goal.title(), goal.detail(), "Not enough data yet", -1.0, 0)
-
         return GoalSnapshot(
             hasGoal = true,
             title = goal.title(),
             detail = goal.detail(),
-            statusLabel = progress.status.label(),
-            progressFraction = progress.progressFraction?.toDouble() ?: -1.0,
-            streakDays = progress.streakDays,
+            statusLabel = progress?.status?.label() ?: "Not enough data yet",
+            progressFraction = progress?.progressFraction?.toDouble() ?: -1.0,
+            streakDays = progress?.streakDays ?: 0,
+            goalTypeKey = goal.typeKey(),
+            goalValue = goal.editorValue(),
         )
+    }
+
+    /** Creates/replaces the active goal from the editor's type key + value. */
+    @Throws(Throwable::class)
+    suspend fun saveGoal(typeKey: String, value: Int) {
+        val goal = when (typeKey) {
+            GoalTypeKeys.DAILY_CAP -> SmokingGoal.DailyCap(value)
+            GoalTypeKeys.REDUCTION_WEEK -> SmokingGoal.ReductionVsPreviousWeek(value.toDouble())
+            GoalTypeKeys.REDUCTION_MONTH -> SmokingGoal.ReductionVsPreviousMonth(value.toDouble())
+            GoalTypeKeys.MINDFUL_GAP -> SmokingGoal.MindfulGap(value)
+            else -> return
+        }
+        updatePreferences(fetchPreferences().copy(activeGoal = goal))
+    }
+
+    /** Removes the active goal. */
+    @Throws(Throwable::class)
+    suspend fun clearGoal() {
+        updatePreferences(fetchPreferences().copy(activeGoal = null))
+    }
+
+    private fun SmokingGoal.typeKey(): String = when (this) {
+        is SmokingGoal.DailyCap -> GoalTypeKeys.DAILY_CAP
+        is SmokingGoal.ReductionVsPreviousWeek -> GoalTypeKeys.REDUCTION_WEEK
+        is SmokingGoal.ReductionVsPreviousMonth -> GoalTypeKeys.REDUCTION_MONTH
+        is SmokingGoal.MindfulGap -> GoalTypeKeys.MINDFUL_GAP
+    }
+
+    private fun SmokingGoal.editorValue(): Int = when (this) {
+        is SmokingGoal.DailyCap -> maxCigarettesPerDay
+        is SmokingGoal.ReductionVsPreviousWeek -> reductionPercent.toInt()
+        is SmokingGoal.ReductionVsPreviousMonth -> reductionPercent.toInt()
+        is SmokingGoal.MindfulGap -> targetMinutes
     }
 
     private fun SmokingGoal.title(): String = when (this) {
