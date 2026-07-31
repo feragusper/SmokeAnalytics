@@ -122,22 +122,51 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                SA.background.ignoresSafeArea()
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Browse the calendar and inspect any day.")
-                            .font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
-                        calendarCard
-                        dayHeader
-                        dayList
+            List {
+                Section {
+                    calendarCard
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+
+                Section {
+                    if viewModel.dayEntries.isEmpty {
+                        Text("No cigarettes logged this day.")
+                            .font(.saBodyLarge).foregroundStyle(SA.onSurfaceVariant)
+                    } else {
+                        ForEach(viewModel.dayEntries) { entry in
+                            entryRow(entry)
+                                .swipeActions {
+                                    Button(role: .destructive) {
+                                        Task { await viewModel.delete(entry.id) }
+                                    } label: { Label("Delete", systemImage: "trash") }
+                                }
+                        }
                     }
-                    .padding(16)
+                } header: {
+                    dayHeader
                 }
             }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(SA.background)
             .navigationTitle("The Archive")
             .task { await viewModel.loadMonth() }
             .overlay { if viewModel.isLoading { ProgressView().tint(SA.primary) } }
+        }
+    }
+
+    private func entryRow(_ entry: DayEntry) -> some View {
+        HStack {
+            Image(systemName: "smoke.fill").foregroundStyle(SA.primary)
+            Text(Self.timeFormatter.string(from: entry.date))
+                .font(.saBodyLarge).foregroundStyle(SA.onSurface)
+            Spacer()
+            if entry.minutesSincePrevious >= 0 {
+                Text(gapText(entry.minutesSincePrevious))
+                    .font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+            }
         }
     }
 
@@ -177,16 +206,16 @@ struct HistoryView: View {
         let isSelected = day == viewModel.selectedDay
         let intensity = viewModel.maxCount > 0 ? Double(count) / Double(viewModel.maxCount) : 0
         return Button { viewModel.select(day: day) } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 Text("\(day)")
                     .font(.saBodyMedium)
                     .foregroundStyle(isSelected ? SA.onPrimary : SA.onSurface)
-                Circle()
-                    .fill(count > 0 ? SA.primary : Color.clear)
-                    .frame(width: 5, height: 5)
+                Text(count > 0 ? "\(count)" : " ")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isSelected ? SA.onPrimary.opacity(0.9) : SA.primary)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 40)
+            .frame(height: 42)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(isSelected ? SA.primary : SA.primary.opacity(count > 0 ? 0.10 + 0.18 * intensity : 0))
@@ -201,37 +230,6 @@ struct HistoryView: View {
                 .font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
         }
         .padding(.top, 4)
-    }
-
-    @ViewBuilder
-    private var dayList: some View {
-        if viewModel.dayEntries.isEmpty {
-            Text("No cigarettes logged this day.")
-                .font(.saBodyLarge).foregroundStyle(SA.onSurfaceVariant)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 24)
-        } else {
-            VStack(spacing: 0) {
-                ForEach(viewModel.dayEntries) { entry in
-                    HStack {
-                        Image(systemName: "smoke.fill").foregroundStyle(SA.primary)
-                        Text(Self.timeFormatter.string(from: entry.date))
-                            .font(.saBodyLarge).foregroundStyle(SA.onSurface)
-                        Spacer()
-                        if entry.minutesSincePrevious >= 0 {
-                            Text(gapText(entry.minutesSincePrevious))
-                                .font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
-                        }
-                        Button(role: .destructive) {
-                            Task { await viewModel.delete(entry.id) }
-                        } label: { Image(systemName: "trash").foregroundStyle(SA.error) }
-                            .padding(.leading, 8)
-                    }
-                    .padding(.vertical, 12)
-                    Divider()
-                }
-            }
-        }
     }
 
     private func gapText(_ minutes: Int64) -> String {
