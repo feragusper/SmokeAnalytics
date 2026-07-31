@@ -13,8 +13,13 @@ brew install xcodegen
 xcodebuild -downloadPlatform iOS
 ```
 
-Then add your **`GoogleService-Info.plist`** (Firebase console → your iOS app) into `apps/ios/Sources/`.
-Create the iOS app in Firebase with bundle id `com.feragusper.smokeanalytics`.
+Then add your **Firebase configs** (gitignored — they hold secrets):
+
+- `apps/ios/Firebase/Staging/GoogleService-Info.plist` — bundle `com.feragusper.smokeanalytics.staging` (Debug)
+- `apps/ios/Firebase/Production/GoogleService-Info.plist` — bundle `com.feragusper.smokeanalytics` (Release)
+
+Debug builds use staging, Release builds use prod (bundle id, Firebase project and the
+Google Sign-In URL scheme are all selected per build config in `project.yml`).
 
 ## Build & run
 
