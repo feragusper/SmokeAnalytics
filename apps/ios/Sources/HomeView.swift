@@ -10,14 +10,18 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorText: String?
     @Published var triggerOptions: [TriggerChipItem] = []
+    @Published var activeCravingSince: Date?
 
     private let facade = HomeFacade()
+    private let cravingFacade = CravingFacade()
 
     func load() async {
         isLoading = true
         errorText = nil
         do {
             apply(try await facade.load())
+            let craving = try await cravingFacade.active()
+            activeCravingSince = craving.map { Date(timeIntervalSince1970: Double($0.createdAtEpochMillis) / 1000.0) }
         } catch {
             errorText = String(describing: error)
         }
@@ -26,6 +30,21 @@ final class HomeViewModel: ObservableObject {
             triggerOptions = (try? await facade.triggerOptions())?
                 .map { TriggerChipItem(id: $0.key, display: $0.display) } ?? []
         }
+    }
+
+    func startCraving() async {
+        do { try await cravingFacade.start(); await load() }
+        catch { errorText = String(describing: error) }
+    }
+
+    func resolveCravingResisted() async {
+        do { try await cravingFacade.resolveResisted(); await load() }
+        catch { errorText = String(describing: error) }
+    }
+
+    func resolveCravingGaveIn() async {
+        do { try await cravingFacade.resolveGaveIn(); await load() }
+        catch { errorText = String(describing: error) }
     }
 
     /// Logs a smoke and returns its id so Home can prompt for the trigger; nil on failure.
@@ -89,6 +108,7 @@ struct HomeView: View {
                             statCard("This month", viewModel.monthCount)
                         }
                         smokeButton
+                        cravingSection
 
                         if let error = viewModel.errorText {
                             Text(error)
@@ -173,5 +193,64 @@ struct HomeView: View {
         .buttonStyle(SAPrimaryButtonStyle())
         .disabled(viewModel.isLoading)
         .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var cravingSection: some View {
+        if let since = viewModel.activeCravingSince {
+            cravingActiveCard(since)
+        } else {
+            Button {
+                Task { await viewModel.startCraving() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "hand.raised.fill")
+                    Text("Track a craving")
+                }
+                .font(.saTitleMedium)
+                .foregroundStyle(SA.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .strokeBorder(SA.primary, lineWidth: 1.5)
+                )
+            }
+            .disabled(viewModel.isLoading)
+        }
+    }
+
+    private func cravingActiveCard(_ since: Date) -> some View {
+        SACard(cornerRadius: 24) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    Image(systemName: "hand.raised.fill").foregroundStyle(SA.primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Resisting a craving").font(.saTitleMedium).foregroundStyle(SA.onSurface)
+                        Text("Started \(RelativeDateTimeFormatter().localizedString(for: since, relativeTo: Date()))")
+                            .font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+                    }
+                    Spacer()
+                }
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await viewModel.resolveCravingResisted() }
+                    } label: {
+                        Text("I'm good")
+                            .font(.saTitleMedium).foregroundStyle(SA.onPrimary)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .background(SA.primary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    Button {
+                        Task { await viewModel.resolveCravingGaveIn() }
+                    } label: {
+                        Text("I smoked")
+                            .font(.saTitleMedium).foregroundStyle(SA.primary)
+                            .frame(maxWidth: .infinity).padding(.vertical, 12)
+                            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(SA.primary, lineWidth: 1.5))
+                    }
+                }
+            }
+        }
     }
 }
