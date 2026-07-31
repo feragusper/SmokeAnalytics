@@ -55,7 +55,7 @@ struct AnalyticsView: View {
                         HStack(spacing: 16) {
                             summary("This month", "\(viewModel.totalMonth)")
                             summary("This week", "\(viewModel.totalWeek)")
-                            summary("Daily avg", String(format: "%.1f", viewModel.dailyAverage))
+                            summary("Daily avg", dailyAverage.formatted(.number.precision(.fractionLength(1))))
                         }
                         chartCard
                         if !viewModel.triggers.isEmpty { triggerCard }
@@ -71,6 +71,14 @@ struct AnalyticsView: View {
             .refreshable { await viewModel.load() }
             .overlay { if viewModel.isLoading { ProgressView().tint(SA.primary) } }
         }
+    }
+
+    /// Cigarettes-per-day this month, using the same total/daysInMonth formula as the shared domain
+    /// (the domain's own Float value doesn't survive the KMP bridge — comes across as 0).
+    private var dailyAverage: Double {
+        let cal = Calendar.current
+        let days = cal.range(of: .day, in: .month, for: Date())?.count ?? 30
+        return days > 0 ? Double(viewModel.totalMonth) / Double(days) : 0
     }
 
     private func summary(_ title: String, _ value: String) -> some View {
