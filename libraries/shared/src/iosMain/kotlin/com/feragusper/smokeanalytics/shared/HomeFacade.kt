@@ -5,7 +5,15 @@ import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPrefe
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SetSmokeRelationshipUseCase
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -23,6 +31,9 @@ data class HomeSnapshot(
     val quitReason: String,
     val currencySymbol: String,
     val cigarettePrice: Double,
+    val lastMonthCount: Int,
+    val untaggedTodayCount: Int,
+    val oldestUntaggedTodayId: String,
 )
 
 /** A selectable trigger tag with its display text ("☕ Coffee") for the relationship prompt. */
@@ -36,6 +47,7 @@ data class TriggerOptionDTO(val key: String, val display: String)
 class HomeFacade : KoinComponent {
 
     private val fetchCounts: FetchSmokeCountListUseCase by inject()
+    private val fetchSmokes: FetchSmokesUseCase by inject()
     private val addSmoke: AddSmokeUseCase by inject()
     private val setSmokeRelationship: SetSmokeRelationshipUseCase by inject()
     private val fetchPreferences: FetchUserPreferencesUseCase by inject()
@@ -45,6 +57,19 @@ class HomeFacade : KoinComponent {
     suspend fun load(): HomeSnapshot {
         val result = fetchCounts()
         val preferences = fetchPreferences()
+
+        val untagged = result.todaysSmokes.filter { it.relationship.isPending }
+        val oldestUntagged = untagged.minByOrNull { it.date }
+
+        val tz = TimeZone.currentSystemDefault()
+        val now = Clock.System.now().toLocalDateTime(tz)
+        val thisMonthStart = LocalDate(now.year, now.monthNumber, 1)
+        val prevMonthStart = thisMonthStart.plus(DatePeriod(months = -1))
+        val lastMonthCount = fetchSmokes(
+            prevMonthStart.atStartOfDayIn(tz),
+            thisMonthStart.atStartOfDayIn(tz),
+        ).size
+
         return HomeSnapshot(
             todayCount = result.todaysSmokes.size,
             weekCount = result.countByWeek,
@@ -54,6 +79,9 @@ class HomeFacade : KoinComponent {
             quitReason = preferences.quitReason,
             currencySymbol = preferences.currencySymbol,
             cigarettePrice = preferences.cigarettePrice,
+            lastMonthCount = lastMonthCount,
+            untaggedTodayCount = untagged.size,
+            oldestUntaggedTodayId = oldestUntagged?.id ?: "",
         )
     }
 

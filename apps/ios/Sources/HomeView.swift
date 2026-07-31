@@ -11,6 +11,9 @@ final class HomeViewModel: ObservableObject {
     @Published var quitReason = ""
     @Published var currencySymbol = "€"
     @Published var cigarettePrice = 0.0
+    @Published var lastMonthCount = 0
+    @Published var untaggedTodayCount = 0
+    @Published var oldestUntaggedTodayId = ""
     @Published var hasGoal = false
     @Published var goalTitle = ""
     @Published var goalStatus = ""
@@ -96,7 +99,12 @@ final class HomeViewModel: ObservableObject {
         quitReason = s.quitReason
         currencySymbol = s.currencySymbol
         cigarettePrice = s.cigarettePrice
+        lastMonthCount = Int(s.lastMonthCount)
+        untaggedTodayCount = Int(s.untaggedTodayCount)
+        oldestUntaggedTodayId = s.oldestUntaggedTodayId
     }
+
+    var monthTrendDelta: Int { monthCount - lastMonthCount }
 
     var greeting: String {
         let name = nickname.isEmpty ? nil : nickname
@@ -137,11 +145,13 @@ struct HomeView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         heroCard
+                        if viewModel.untaggedTodayCount > 0 { relationshipReminderCard }
                         if viewModel.hasGoal { goalCard }
                         HStack(spacing: 16) {
                             statCard("This week", viewModel.weekCount)
                             statCard("This month", viewModel.monthCount)
                         }
+                        if viewModel.lastMonthCount > 0 || viewModel.monthCount > 0 { trendCard }
                         if viewModel.cigarettePrice > 0 { spentTodayCard }
                         smokeButton
                         cravingSection
@@ -231,6 +241,47 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(viewModel.goalTitle).font(.saTitleMedium).foregroundStyle(SA.onSurface)
                     Text(viewModel.goalStatus).font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var relationshipReminderCard: some View {
+        Button {
+            if !viewModel.oldestUntaggedTodayId.isEmpty {
+                pendingSmoke = PendingSmoke(id: viewModel.oldestUntaggedTodayId)
+            }
+        } label: {
+            SACard {
+                HStack(spacing: 14) {
+                    Image(systemName: "tag.fill").font(.system(size: 20)).foregroundStyle(SA.primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(viewModel.untaggedTodayCount) \(viewModel.untaggedTodayCount == 1 ? "cigarette needs" : "cigarettes need") a tag")
+                            .font(.saTitleMedium).foregroundStyle(SA.onSurface)
+                        Text("Tap to add what triggered it").font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(SA.onSurfaceVariant)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var trendCard: some View {
+        let delta = viewModel.monthTrendDelta
+        let improving = delta < 0
+        return SACard {
+            HStack(spacing: 14) {
+                Image(systemName: improving ? "arrow.down.right" : (delta > 0 ? "arrow.up.right" : "equal"))
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(delta == 0 ? SA.onSurfaceVariant : (improving ? SA.primary : SA.error))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("This month vs last").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text(delta == 0 ? "Same as last month"
+                         : "\(abs(delta)) \(abs(delta) == 1 ? "cigarette" : "cigarettes") \(improving ? "fewer" : "more")")
+                        .font(.saTitleMedium).foregroundStyle(SA.onSurface)
                 }
                 Spacer()
             }
