@@ -1,7 +1,10 @@
 package com.feragusper.smokeanalytics.shared
 
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.DeleteSmokeUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.EditSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import kotlin.time.Instant
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -30,6 +33,8 @@ class HistoryFacade : KoinComponent {
 
     private val fetchSmokes: FetchSmokesUseCase by inject()
     private val deleteSmoke: DeleteSmokeUseCase by inject()
+    private val addSmoke: AddSmokeUseCase by inject()
+    private val editSmoke: EditSmokeUseCase by inject()
 
     private val timeZone get() = TimeZone.currentSystemDefault()
 
@@ -62,5 +67,17 @@ class HistoryFacade : KoinComponent {
     @Throws(Throwable::class)
     suspend fun delete(id: String) {
         deleteSmoke(id)
+    }
+
+    /** Moves a logged cigarette to a new timestamp. */
+    @Throws(Throwable::class)
+    suspend fun editSmoke(id: String, epochMillis: Long) {
+        editSmoke(id, Instant.fromEpochMilliseconds(epochMillis))
+    }
+
+    /** Logs a cigarette at an arbitrary time (e.g. a missed one, from the Archive). */
+    @Throws(Throwable::class)
+    suspend fun addSmokeAt(epochMillis: Long) {
+        addSmoke(Instant.fromEpochMilliseconds(epochMillis))
     }
 }

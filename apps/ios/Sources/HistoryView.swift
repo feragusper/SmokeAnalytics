@@ -78,6 +78,28 @@ final class ArchiveViewModel: ObservableObject {
         } catch { errorText = String(describing: error) }
     }
 
+    func editSmoke(_ id: String, to date: Date) async {
+        do {
+            try await facade.editSmoke(id: id, epochMillis: Int64(date.timeIntervalSince1970 * 1000))
+            await loadMonth()
+        } catch { errorText = String(describing: error) }
+    }
+
+    func addSmoke(at date: Date) async {
+        do {
+            try await facade.addSmokeAt(epochMillis: Int64(date.timeIntervalSince1970 * 1000))
+            await loadMonth()
+        } catch { errorText = String(describing: error) }
+    }
+
+    /// The selected day at the current time — the default when adding a cigarette manually.
+    var selectedDayNow: Date {
+        var comps = DateComponents(year: year, month: month, day: selectedDay)
+        let t = Calendar.current.dateComponents([.hour, .minute], from: Date())
+        comps.hour = t.hour; comps.minute = t.minute
+        return Calendar.current.date(from: comps) ?? Date()
+    }
+
     // MARK: calendar geometry (Monday-first, like Android)
 
     var daysInMonth: Int {
@@ -112,6 +134,8 @@ final class ArchiveViewModel: ObservableObject {
 /// "The Archive": a month calendar with per-day counts, and the selected day's log.
 struct HistoryView: View {
     @StateObject private var viewModel = ArchiveViewModel()
+    @State private var showAdd = false
+    @State private var editingEntry: DayEntry?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
     private let weekdays = ["M", "T", "W", "T", "F", "S", "S"]
@@ -136,7 +160,8 @@ struct HistoryView: View {
                             .font(.saBodyLarge).foregroundStyle(SA.onSurfaceVariant)
                     } else {
                         ForEach(viewModel.dayEntries) { entry in
-                            entryRow(entry)
+                            Button { editingEntry = entry } label: { entryRow(entry) }
+                                .tint(SA.onSurface)
                                 .swipeActions {
                                     Button(role: .destructive) {
                                         Task { await viewModel.delete(entry.id) }
@@ -152,8 +177,24 @@ struct HistoryView: View {
             .scrollContentBackground(.hidden)
             .background(SA.background)
             .navigationTitle("The Archive")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showAdd = true } label: { Image(systemName: "plus") }
+                        .tint(SA.primary)
+                }
+            }
             .task { await viewModel.loadMonth() }
             .overlay { if viewModel.isLoading { ProgressView().tint(SA.primary) } }
+            .sheet(isPresented: $showAdd) {
+                TimePickerSheet(title: "Add a cigarette", initial: viewModel.selectedDayNow) { date in
+                    Task { await viewModel.addSmoke(at: date) }
+                }
+            }
+            .sheet(item: $editingEntry) { entry in
+                TimePickerSheet(title: "Edit time", initial: entry.date) { date in
+                    Task { await viewModel.editSmoke(entry.id, to: date) }
+                }
+            }
         }
     }
 
@@ -235,5 +276,40 @@ struct HistoryView: View {
     private func gapText(_ minutes: Int64) -> String {
         let h = minutes / 60, m = minutes % 60
         return h > 0 ? "\(h)h \(m)m" : "\(m)m"
+    }
+}
+
+/// Date+time picker sheet used to add a cigarette at a time or edit an existing one's time.
+struct TimePickerSheet: View {
+    let title: String
+    let onSave: (Date) -> Void
+    @State private var date: Date
+    @Environment(\.dismiss) private var dismiss
+
+    init(title: String, initial: Date, onSave: @escaping (Date) -> Void) {
+        self.title = title
+        self.onSave = onSave
+        _date = State(initialValue: initial)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                SA.background.ignoresSafeArea()
+                DatePicker("When", selection: $date, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                    .datePickerStyle(.graphical)
+                    .tint(SA.primary)
+                    .padding()
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { onSave(date); dismiss() }
+                }
+            }
+            .tint(SA.primary)
+        }
     }
 }
