@@ -161,7 +161,12 @@ struct SettingsView: View {
                     .tint(SA.onSurface)
                 }
 
-                Section("Privacy") {
+                Section("Tracking") {
+                    NavigationLink {
+                        TagsView()
+                    } label: {
+                        Label("Manage tags", systemImage: "tag")
+                    }
                     Toggle("Track location of cigarettes", isOn: $viewModel.locationTrackingEnabled)
                 }
 
