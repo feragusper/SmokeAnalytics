@@ -3,12 +3,58 @@ import SwiftUI
 /// SwiftUI mirror of the shared design system (Android `PaletteTokens` / M3 scheme, web tokens).
 /// Colors adapt to light/dark automatically via a dynamic `UIColor`, matching the Android
 /// `lightColorScheme` / `darkColorScheme` value-for-value so the three platforms read as one app.
+/// User-selectable accent, mirroring the Android `MobileAccent` options (light/dark primary +
+/// onPrimary). `default` keeps the built-in teal scheme. Stored device-local in UserDefaults.
+enum SAAccent: String, CaseIterable, Identifiable {
+    case `default`, teal, indigo, rose, amber, forest
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .default: return "Default"
+        case .teal: return "Teal"
+        case .indigo: return "Indigo"
+        case .rose: return "Rose"
+        case .amber: return "Amber"
+        case .forest: return "Forest"
+        }
+    }
+
+    // (lightPrimary, darkPrimary, lightOnPrimary, darkOnPrimary)
+    var colors: (Int, Int, Int, Int) {
+        switch self {
+        case .default: return (0x2E7A84, 0x97D7DE, 0xFFFFFF, 0x19444A)
+        case .teal:    return (0x006A6A, 0x4FD8D8, 0xFFFFFF, 0x003737)
+        case .indigo:  return (0x4C56C0, 0xBBC3FF, 0xFFFFFF, 0x1B2678)
+        case .rose:    return (0xB23A6B, 0xFFB0CC, 0xFFFFFF, 0x66052E)
+        case .amber:   return (0x9A6400, 0xFFB951, 0xFFFFFF, 0x522300)
+        case .forest:  return (0x2E7D46, 0x7EDB94, 0xFFFFFF, 0x00391B)
+        }
+    }
+
+    static var current: SAAccent {
+        SAAccent(rawValue: UserDefaults.standard.string(forKey: "accent") ?? "") ?? .default
+    }
+
+    /// A representative swatch color (light primary) for the settings picker.
+    var accentSwatch: Color {
+        Color(uiColor: UIColor(rgb: colors.0))
+    }
+}
+
 enum SA {
 
     // MARK: Colors (light / dark)
 
-    static let primary            = dyn(0x2E7A84, 0x97D7DE)
-    static let onPrimary          = dyn(0xFFFFFF, 0x19444A)
+    /// Accent-driven; reads the stored accent so changing it re-tints the whole app.
+    static var primary: Color {
+        let c = SAAccent.current.colors
+        return dyn(c.0, c.1)
+    }
+    static var onPrimary: Color {
+        let c = SAAccent.current.colors
+        return dyn(c.2, c.3)
+    }
     static let primaryContainer   = dyn(0xD0EFF3, 0x255F67)
     static let onPrimaryContainer = dyn(0x0F2D31, 0xD0EFF3)
 

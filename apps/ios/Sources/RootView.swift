@@ -5,6 +5,8 @@ struct RootView: View {
     @EnvironmentObject private var auth: AuthManager
     // Device-local theme override, like the Android appearance setting.
     @AppStorage("themeMode") private var themeMode = "system"
+    // Observed so changing the accent re-renders and re-tints via SA.primary.
+    @AppStorage("accent") private var accent = "default"
 
     var body: some View {
         Group {

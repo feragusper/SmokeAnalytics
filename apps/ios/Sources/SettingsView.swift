@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import Shared
 
 @MainActor
@@ -71,8 +72,11 @@ struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @StateObject private var viewModel = SettingsViewModel()
     @AppStorage("themeMode") private var themeMode = "system"
+    @AppStorage("accent") private var accent = "default"
+    @Environment(\.requestReview) private var requestReview
 
     private let hours = Array(0..<24)
+    private let websiteURL = URL(string: "https://feragusper.github.io/SmokeAnalytics/")!
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
@@ -134,6 +138,27 @@ struct SettingsView: View {
                         Text("Light").tag("light")
                         Text("Dark").tag("dark")
                     }
+                    Picker("Accent", selection: $accent) {
+                        ForEach(SAAccent.allCases) { a in
+                            HStack {
+                                Circle().fill(a.accentSwatch).frame(width: 16, height: 16)
+                                Text(a.label)
+                            }.tag(a.rawValue)
+                        }
+                    }
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Text("Language")
+                            Spacer()
+                            Text("System settings").foregroundStyle(SA.onSurfaceVariant)
+                            Image(systemName: "arrow.up.forward.app").foregroundStyle(SA.onSurfaceVariant)
+                        }
+                    }
+                    .tint(SA.onSurface)
                 }
 
                 Section("Privacy") {
@@ -141,10 +166,19 @@ struct SettingsView: View {
                 }
 
                 Section("About") {
-                    ShareLink(item: URL(string: "https://feragusper.github.io/SmokeAnalytics/")!) {
+                    ShareLink(item: websiteURL) {
                         Label("Share the app", systemImage: "square.and.arrow.up")
                     }
-                    Link(destination: URL(string: "https://feragusper.github.io/SmokeAnalytics/")!) {
+                    Button {
+                        requestReview()
+                    } label: {
+                        Label("Rate the app", systemImage: "star")
+                    }
+                    .tint(SA.onSurface)
+                    Link(destination: URL(string: "mailto:feragusper@gmail.com?subject=Smoke%20Analytics%20iOS")!) {
+                        Label("Report an issue", systemImage: "exclamationmark.bubble")
+                    }
+                    Link(destination: websiteURL) {
                         Label("About", systemImage: "info.circle")
                     }
                     HStack {
