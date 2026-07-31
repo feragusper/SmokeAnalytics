@@ -82,12 +82,22 @@ struct SACard<Content: View>: View {
 
 struct SAPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.saTitleMedium)
-            .foregroundStyle(SA.onPrimary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(SA.primary, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .opacity(configuration.isPressed ? 0.85 : 1)
+        SAPrimaryButtonBody(configuration: configuration)
+    }
+
+    private struct SAPrimaryButtonBody: View {
+        let configuration: Configuration
+        // isEnabled is only readable from a View, not from makeBody directly.
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .font(.saTitleMedium)
+                .foregroundStyle(SA.onPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(SA.primary, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .opacity(!isEnabled ? 0.4 : (configuration.isPressed ? 0.85 : 1))
+        }
     }
 }
