@@ -20,13 +20,9 @@ struct MainTabView: View {
                 .tabItem { Label("History", systemImage: "clock.fill") }
                 .tag(2)
 
-            PlaceholderView(
-                title: "Goals",
-                systemImage: "target",
-                message: "Set and track your goals soon."
-            )
-            .tabItem { Label("Goals", systemImage: "target") }
-            .tag(3)
+            GoalsView()
+                .tabItem { Label("Goals", systemImage: "target") }
+                .tag(3)
 
             SettingsView()
                 .tabItem { Label("You", systemImage: "person.crop.circle") }
