@@ -7,12 +7,8 @@ struct MainTabView: View {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
 
-            PlaceholderView(
-                title: "Analytics",
-                systemImage: "chart.bar.fill",
-                message: "Charts and trends land here next."
-            )
-            .tabItem { Label("Analytics", systemImage: "chart.bar.fill") }
+            AnalyticsView()
+                .tabItem { Label("Analytics", systemImage: "chart.bar.fill") }
 
             HistoryView()
                 .tabItem { Label("History", systemImage: "clock.fill") }
