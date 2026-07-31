@@ -1,0 +1,64 @@
+# XcodeGen spec for the iOS app. Regenerate the .xcodeproj with:  xcodegen generate
+# (install once with:  brew install xcodegen)
+#
+# Prerequisites before the project builds/runs:
+#   1. Assemble the shared framework:  ./gradlew :libraries:shared:assembleSharedDebugXCFramework
+#   2. Drop your GoogleService-Info.plist (from the Firebase console iOS app) into apps/ios/Sources/
+#   3. Install the iOS simulator runtime:  xcodebuild -downloadPlatform iOS
+name: SmokeAnalytics
+options:
+  bundleIdPrefix: com.feragusper.smokeanalytics
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  # GitLive's iOS klibs link against the native Firebase Apple SDK, which the app provides via SPM.
+  # NOTE: pin the version GitLive firebase-kotlin-sdk 2.5.0 was built against; verify in Phase 1 if
+  # the linker complains about missing/duplicate Firebase symbols.
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: "11.6.0"
+  # Native Google Sign-In flow; the resulting token becomes a FirebaseAuth Google credential.
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "7.1.0"
+
+targets:
+  SmokeAnalytics:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    dependencies:
+      # Static XCFramework produced by :libraries:shared. Debug slice for local dev.
+      - framework: ../../libraries/shared/build/XCFrameworks/debug/Shared.xcframework
+        embed: false
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: GoogleSignIn
+        product: GoogleSignIn
+    info:
+      path: Sources/Info.plist
+      properties:
+        UILaunchScreen: {}
+        # Google Sign-In redirects back via this URL scheme (REVERSED_CLIENT_ID from the STAGING
+        # GoogleService-Info.plist). Prod uses a different value — part of the build-config split TODO.
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - com.googleusercontent.apps.1016019974225-p3juqn3f719ce6aepj5ovm3b2o3or1o9
+    settings:
+      base:
+        # Staging bundle id for local/dev builds — matches the staging GoogleService-Info.plist.
+        # Prod (com.feragusper.smokeanalytics) is wired via a build-config split in a later phase.
+        PRODUCT_BUNDLE_IDENTIFIER: com.feragusper.smokeanalytics.staging
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        # The shared framework ships arm64 slices only (device + Apple-Silicon simulator).
+        # Exclude the legacy x86_64 simulator arch so the linker picks the arm64 sim slice.
+        # Tradeoff: won't run on an Intel Mac's simulator — add an iosX64 target if that's needed.
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
+        ONLY_ACTIVE_ARCH: YES

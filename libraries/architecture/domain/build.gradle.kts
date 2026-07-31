@@ -9,6 +9,10 @@ plugins {
 extensions.configure<KoverProjectExtension>("kover", KoverConfig(layout).configure)
 
 kotlin {
+    // Pin to 17 like the kmp-lib convention: without this the jvm target compiles with the
+    // Gradle daemon's JDK, and a newer daemon emits bytecode the Java-17 consumers can't load.
+    jvmToolchain(17)
+
     jvm()
 
     js(IR) {
@@ -21,6 +25,9 @@ kotlin {
         browser()
         binaries.library()
     }
+
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         val commonMain by getting {

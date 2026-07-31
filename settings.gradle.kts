@@ -45,6 +45,7 @@ include(":features:stats:presentation:mobile")
 include(":features:stats:presentation:web")
 
 // Include library modules
+include(":libraries:shared")
 include(":libraries:architecture:common")
 include(":libraries:architecture:domain")
 include(":libraries:architecture:presentation:mobile")
