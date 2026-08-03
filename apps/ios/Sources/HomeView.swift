@@ -14,6 +14,8 @@ final class HomeViewModel: ObservableObject {
     @Published var lastMonthCount = 0
     @Published var untaggedTodayCount = 0
     @Published var oldestUntaggedTodayId = ""
+    @Published var points = 0
+    @Published var streakHours = 0
     @Published var hasGoal = false
     @Published var goalTitle = ""
     @Published var goalStatus = ""
@@ -102,9 +104,16 @@ final class HomeViewModel: ObservableObject {
         lastMonthCount = Int(s.lastMonthCount)
         untaggedTodayCount = Int(s.untaggedTodayCount)
         oldestUntaggedTodayId = s.oldestUntaggedTodayId
+        points = Int(s.points)
+        streakHours = Int(s.streakHours)
     }
 
     var monthTrendDelta: Int { monthCount - lastMonthCount }
+
+    func startNewDay() async {
+        do { try await facade.startNewDay(); await load() }
+        catch { errorText = String(describing: error) }
+    }
 
     var greeting: String {
         let name = nickname.isEmpty ? nil : nickname
@@ -152,10 +161,12 @@ struct HomeView: View {
                             statCard("This month", viewModel.monthCount)
                         }
                         if viewModel.lastMonthCount > 0 || viewModel.monthCount > 0 { trendCard }
+                        if viewModel.points > 0 { pointsCard }
                         if viewModel.cigarettePrice > 0 { spentTodayCard }
                         smokeButton
                         cravingSection
                         if !viewModel.quitReason.isEmpty { quitReasonCard }
+                        startNewDayButton
 
                         if let error = viewModel.errorText {
                             Text(error)
@@ -286,6 +297,39 @@ struct HomeView: View {
                 Spacer()
             }
         }
+    }
+
+    private var pointsCard: some View {
+        SACard {
+            HStack(spacing: 14) {
+                Image(systemName: "trophy.fill").font(.system(size: 22)).foregroundStyle(SA.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Points").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text("\(viewModel.points)").font(.saHeadlineSmall).foregroundStyle(SA.onSurface)
+                }
+                Spacer()
+                if viewModel.streakHours > 0 {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Streak").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                        Text("\(viewModel.streakHours)h").font(.saTitleMedium).foregroundStyle(SA.primary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var startNewDayButton: some View {
+        Button {
+            Task { await viewModel.startNewDay() }
+        } label: {
+            Text("Start a new day")
+                .font(.saBodyLarge)
+                .foregroundStyle(SA.onSurfaceVariant)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .disabled(viewModel.isLoading)
+        .padding(.top, 4)
     }
 
     private var spentTodayCard: some View {

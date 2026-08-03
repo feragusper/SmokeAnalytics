@@ -1,7 +1,11 @@
 package com.feragusper.smokeanalytics.shared
 
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
+import com.feragusper.smokeanalytics.features.home.domain.gamificationSummary
+import com.feragusper.smokeanalytics.libraries.cravings.domain.model.toCravingStats
+import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCravingsUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeTrigger
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
@@ -14,6 +18,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -34,6 +39,8 @@ data class HomeSnapshot(
     val lastMonthCount: Int,
     val untaggedTodayCount: Int,
     val oldestUntaggedTodayId: String,
+    val points: Int,
+    val streakHours: Long,
 )
 
 /** A selectable trigger tag with its display text ("☕ Coffee") for the relationship prompt. */
@@ -48,27 +55,35 @@ class HomeFacade : KoinComponent {
 
     private val fetchCounts: FetchSmokeCountListUseCase by inject()
     private val fetchSmokes: FetchSmokesUseCase by inject()
+    private val fetchCravings: FetchCravingsUseCase by inject()
     private val addSmoke: AddSmokeUseCase by inject()
     private val setSmokeRelationship: SetSmokeRelationshipUseCase by inject()
     private val fetchPreferences: FetchUserPreferencesUseCase by inject()
+    private val updatePreferences: UpdateUserPreferencesUseCase by inject()
 
     /** Returns the current aggregated counts + the profile/cost bits Home shows, like Android. */
     @Throws(Throwable::class)
     suspend fun load(): HomeSnapshot {
-        val result = fetchCounts()
         val preferences = fetchPreferences()
+        val result = fetchCounts(
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
 
         val untagged = result.todaysSmokes.filter { it.relationship.isPending }
         val oldestUntagged = untagged.minByOrNull { it.date }
 
         val tz = TimeZone.currentSystemDefault()
-        val now = Clock.System.now().toLocalDateTime(tz)
-        val thisMonthStart = LocalDate(now.year, now.monthNumber, 1)
-        val prevMonthStart = thisMonthStart.plus(DatePeriod(months = -1))
-        val lastMonthCount = fetchSmokes(
-            prevMonthStart.atStartOfDayIn(tz),
-            thisMonthStart.atStartOfDayIn(tz),
-        ).size
+        val now = Clock.System.now()
+        val today = now.toLocalDateTime(tz)
+        val thisMonthStart = LocalDate(today.year, today.monthNumber, 1).atStartOfDayIn(tz)
+        val prevMonthStart = LocalDate(today.year, today.monthNumber, 1).plus(DatePeriod(months = -1)).atStartOfDayIn(tz)
+
+        // One wider fetch drives both the trend and the gamification streak/points.
+        val recentSmokes = fetchSmokes(prevMonthStart, null)
+        val lastMonthCount = recentSmokes.count { it.date >= prevMonthStart && it.date < thisMonthStart }
+        val gamification = gamificationSummary(recentSmokes)
+        val cravingPoints = fetchCravings(now.minus(30.days), null).toCravingStats().points
 
         return HomeSnapshot(
             todayCount = result.todaysSmokes.size,
@@ -82,6 +97,16 @@ class HomeFacade : KoinComponent {
             lastMonthCount = lastMonthCount,
             untaggedTodayCount = untagged.size,
             oldestUntaggedTodayId = oldestUntagged?.id ?: "",
+            points = gamification.points + cravingPoints,
+            streakHours = gamification.currentStreakHours,
+        )
+    }
+
+    /** Resets the "today" boundary to now, so Home starts a fresh day early (evening reset). */
+    @Throws(Throwable::class)
+    suspend fun startNewDay() {
+        updatePreferences(
+            fetchPreferences().copy(manualDayStartEpochMillis = Clock.System.now().toEpochMilliseconds()),
         )
     }
 
