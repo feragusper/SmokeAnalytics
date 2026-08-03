@@ -1,7 +1,9 @@
 package com.feragusper.smokeanalytics.shared
 
 import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressUseCase
+import com.feragusper.smokeanalytics.features.goals.domain.GoalCelebrationKind
 import com.feragusper.smokeanalytics.features.goals.domain.GoalStatus
+import com.feragusper.smokeanalytics.features.goals.domain.GoalWarningKind
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UpdateUserPreferencesUseCase
@@ -25,6 +27,11 @@ data class GoalSnapshot(
     val streakDays: Int,
     val goalTypeKey: String,
     val goalValue: Int,
+    val warning: String,
+    val celebration: String,
+    val weeklyPoints: Int,
+    val weeklyCompletedDays: Int,
+    val weeklyTrackedDays: Int,
 )
 
 /** Goal type keys shared with the Swift editor. */
@@ -47,11 +54,12 @@ class GoalsFacade : KoinComponent {
     suspend fun load(): GoalSnapshot {
         val preferences = fetchPreferences()
         val goal = preferences.activeGoal
-            ?: return GoalSnapshot(false, "", "", "", -1.0, 0, "", 0)
+            ?: return GoalSnapshot(false, "", "", "", -1.0, 0, "", 0, "", "", 0, 0, 0)
 
         // Reduction goals compare against the previous week/month, so pull a wider window.
         val smokes = fetchSmokes(Clock.System.now().minus(60.days), null)
         val progress = evaluate(goal, smokes, preferences)
+        val week = progress?.weeklyScore
         return GoalSnapshot(
             hasGoal = true,
             title = goal.title(),
@@ -61,7 +69,22 @@ class GoalsFacade : KoinComponent {
             streakDays = progress?.streakDays ?: 0,
             goalTypeKey = goal.typeKey(),
             goalValue = goal.editorValue(),
+            warning = progress?.warning?.label() ?: "",
+            celebration = progress?.celebration?.label() ?: "",
+            weeklyPoints = week?.points ?: 0,
+            weeklyCompletedDays = week?.completedDays ?: 0,
+            weeklyTrackedDays = week?.trackedDays ?: 0,
         )
+    }
+
+    private fun GoalWarningKind.label(): String = when (this) {
+        GoalWarningKind.OneMoreBreaksCap -> "One more breaks your cap"
+        GoalWarningKind.CapBroken -> "You went over your cap today"
+    }
+
+    private fun GoalCelebrationKind.label(): String = when (this) {
+        GoalCelebrationKind.ReachedCapHold -> "You've hit your cap — hold here"
+        GoalCelebrationKind.YesterdayUnderCap -> "You stayed under yesterday 🎉"
     }
 
     /** Creates/replaces the active goal from the editor's type key + value. */

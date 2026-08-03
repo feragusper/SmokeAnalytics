@@ -11,6 +11,11 @@ final class GoalsViewModel: ObservableObject {
     @Published var streakDays = 0
     @Published var goalTypeKey = ""
     @Published var goalValue = 0
+    @Published var warning = ""
+    @Published var celebration = ""
+    @Published var weeklyPoints = 0
+    @Published var weeklyCompletedDays = 0
+    @Published var weeklyTrackedDays = 0
     @Published var isLoading = false
     @Published var errorText: String?
 
@@ -29,6 +34,11 @@ final class GoalsViewModel: ObservableObject {
             streakDays = Int(s.streakDays)
             goalTypeKey = s.goalTypeKey
             goalValue = Int(s.goalValue)
+            warning = s.warning
+            celebration = s.celebration
+            weeklyPoints = Int(s.weeklyPoints)
+            weeklyCompletedDays = Int(s.weeklyCompletedDays)
+            weeklyTrackedDays = Int(s.weeklyTrackedDays)
         } catch {
             errorText = String(describing: error)
         }
@@ -65,7 +75,10 @@ struct GoalsView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         if viewModel.hasGoal {
+                            if !viewModel.celebration.isEmpty { banner(viewModel.celebration, icon: "party.popper.fill", tint: SA.primary) }
+                            if !viewModel.warning.isEmpty { banner(viewModel.warning, icon: "exclamationmark.triangle.fill", tint: SA.error) }
                             goalCard
+                            if viewModel.weeklyTrackedDays > 0 { weeklyScoreCard }
                             if viewModel.streakDays > 0 { streakCard }
                         } else if !viewModel.isLoading {
                             emptyState
@@ -150,6 +163,33 @@ struct GoalsView: View {
         }
         .frame(width: 160, height: 160)
         .padding(.vertical, 8)
+    }
+
+    private func banner(_ text: String, icon: String, tint: Color) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon).foregroundStyle(tint)
+            Text(text).font(.saBodyLarge).foregroundStyle(SA.onSurface)
+            Spacer()
+        }
+        .padding(14)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var weeklyScoreCard: some View {
+        SACard {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("This week").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text("\(viewModel.weeklyPoints) pts").font(.saHeadlineSmall).foregroundStyle(SA.primary)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Within goal").font(.saLabelMedium).foregroundStyle(SA.onSurfaceVariant)
+                    Text("\(viewModel.weeklyCompletedDays)/\(viewModel.weeklyTrackedDays) days")
+                        .font(.saTitleMedium).foregroundStyle(SA.onSurface)
+                }
+            }
+        }
     }
 
     private var streakCard: some View {
