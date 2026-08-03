@@ -73,6 +73,12 @@ struct AnalyticsView: View {
                 }
             }
             .navigationTitle("Analytics")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { MapView() } label: { Image(systemName: "map") }
+                        .tint(SA.primary)
+                }
+            }
             .task { await viewModel.load() }
             .refreshable { await viewModel.load() }
             .overlay { if viewModel.isLoading { ProgressView().tint(SA.primary) } }
