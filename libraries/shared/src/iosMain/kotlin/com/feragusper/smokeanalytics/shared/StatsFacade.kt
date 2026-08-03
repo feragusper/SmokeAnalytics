@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.shared
 
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import org.koin.core.component.KoinComponent
@@ -52,11 +53,20 @@ class StatsFacade : KoinComponent {
         // The chart's buckets depend on the period; entries are already in display order except the
         // day-of-month map which is keyed by number.
         // Buckets match the Android chart: hourly / day-of-week / week-of-month / month-of-year.
-        val bars = when (periodKey) {
+        val allBars = when (periodKey) {
             StatsPeriodKeys.DAY -> stats.hourly.entries.map { StatsBar(it.key, it.value) }
             StatsPeriodKeys.WEEK -> stats.weekly.entries.map { StatsBar(it.key, it.value) }
             StatsPeriodKeys.YEAR -> stats.yearly.entries.map { StatsBar(it.key, it.value) }
             else -> stats.monthly.entries.map { StatsBar(it.key, it.value) }
+        }
+        // Only show elapsed buckets — future hours/days/weeks/months would just drop the line to 0.
+        val bars = when (periodKey) {
+            StatsPeriodKeys.DAY -> allBars.filter {
+                (it.label.substringBefore(":").toIntOrNull() ?: 0) <= now.hour
+            }
+            StatsPeriodKeys.WEEK -> allBars.take(now.dayOfWeek.isoDayNumber)
+            StatsPeriodKeys.YEAR -> allBars.take(now.monthNumber)
+            else -> allBars.take(((now.dayOfMonth - 1) / 7) + 1)
         }
         return StatsSnapshot(
             periodTotal = bars.sumOf { it.count },

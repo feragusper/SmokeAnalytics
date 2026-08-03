@@ -128,6 +128,14 @@ final class HomeViewModel: ObservableObject {
         return name.map { "\(part), \($0)" } ?? part
     }
 
+    /// Mirrors the Android greeting message (StrongPace / KeepFirstAway / HoldingLine / OneLessCounts).
+    var greetingMessage: String {
+        if todayCount == 0 { return "Keep the first one away." }
+        if monthTrendDelta < 0 { return "Strong pace today." }
+        if monthTrendDelta > 0 { return "One less still counts." }
+        return "You are holding the line."
+    }
+
     var lastSmokeText: String {
         guard lastSmokeEpochMillis >= 0 else { return "No smokes logged yet" }
         let date = Date(timeIntervalSince1970: Double(lastSmokeEpochMillis) / 1000.0)
@@ -153,6 +161,11 @@ struct HomeView: View {
 
                 ScrollView {
                     VStack(spacing: 16) {
+                        if viewModel.errorText != nil { errorCard }
+                        Text(viewModel.greetingMessage)
+                            .font(.saBodyMedium)
+                            .foregroundStyle(SA.onSurfaceVariant)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         heroCard
                         if viewModel.untaggedTodayCount > 0 { relationshipReminderCard }
                         if viewModel.hasGoal { goalCard }
@@ -167,17 +180,10 @@ struct HomeView: View {
                         cravingSection
                         if !viewModel.quitReason.isEmpty { quitReasonCard }
                         startNewDayButton
-
-                        if let error = viewModel.errorText {
-                            Text(error)
-                                .font(.saBodyMedium)
-                                .foregroundStyle(SA.error)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, 4)
-                        }
                     }
                     .padding(16)
                 }
+                .refreshable { await viewModel.load() }
             }
             .navigationTitle(viewModel.greeting)
             .navigationBarTitleDisplayMode(.inline)
@@ -198,6 +204,24 @@ struct HomeView: View {
             }
         }
         .tint(SA.primary)
+    }
+
+    private var errorCard: some View {
+        SACard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SA.error)
+                    Text("Could not complete action")
+                        .font(.saTitleMedium).foregroundStyle(SA.onSurface)
+                }
+                if let error = viewModel.errorText {
+                    Text(error).font(.saBodyMedium).foregroundStyle(SA.onSurfaceVariant)
+                        .lineLimit(3)
+                }
+                Button { Task { await viewModel.load() } } label: { Text("Retry") }
+                    .buttonStyle(SAPrimaryButtonStyle())
+            }
+        }
     }
 
     private var heroCard: some View {
