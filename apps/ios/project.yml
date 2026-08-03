@@ -45,7 +45,12 @@ targets:
     info:
       path: Sources/Info.plist
       properties:
-        UILaunchScreen: {}
+        # Teal launch screen (#249898) matching the animated splash, so a cold start / widget
+        # deep link shows continuous brand teal instead of a white or static flash.
+        UILaunchScreen:
+          UIColorName: LaunchTeal
+          UIImageName: SplashBars
+          UIImageRespectsSafeAreaInsets: false
         # Google Sign-In redirects back via the env's REVERSED_CLIENT_ID, injected per build config.
         CFBundleURLTypes:
           - CFBundleURLSchemes:
