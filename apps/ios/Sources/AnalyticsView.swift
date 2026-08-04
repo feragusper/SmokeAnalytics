@@ -8,6 +8,14 @@ struct DayBar: Identifiable {
     let count: Int
 }
 
+/// A chart point tagged as already elapsed or still in the future (drawn dashed/light).
+struct ChartPoint: Identifiable {
+    let id = UUID()
+    let label: String
+    let count: Int
+    let part: String // "elapsed" | "future"
+}
+
 struct TriggerRow: Identifiable {
     let id = UUID()
     let label: String
@@ -16,9 +24,11 @@ struct TriggerRow: Identifiable {
 
 @MainActor
 final class AnalyticsViewModel: ObservableObject {
-    @Published var period = "month"
+    // Debug `-statsPeriod day|week|month|year` preselects a period for screenshots.
+    @Published var period = UserDefaults.standard.string(forKey: "statsPeriod") ?? "month"
     @Published var periodTotal = 0
     @Published var bars: [DayBar] = []
+    @Published var elapsedCount = 0
     @Published var triggers: [TriggerRow] = []
     @Published var isLoading = false
     @Published var errorText: String?
@@ -32,11 +42,22 @@ final class AnalyticsViewModel: ObservableObject {
             let s = try await facade.load(periodKey: period)
             periodTotal = Int(s.periodTotal)
             bars = s.bars.map { DayBar(label: $0.label, count: Int($0.count)) }
+            elapsedCount = Int(s.elapsedCount)
             triggers = s.triggers.map { TriggerRow(label: $0.label, count: Int($0.count)) }
         } catch {
             errorText = String(describing: error)
         }
         isLoading = false
+    }
+
+    /// Full-period points split into elapsed vs future; the boundary bucket is in both so the solid
+    /// and dashed lines join without a gap.
+    var elapsedPoints: [ChartPoint] {
+        bars.prefix(elapsedCount).map { ChartPoint(label: $0.label, count: $0.count, part: "elapsed") }
+    }
+    var futurePoints: [ChartPoint] {
+        guard elapsedCount >= 1, elapsedCount < bars.count else { return [] }
+        return bars.suffix(from: elapsedCount - 1).map { ChartPoint(label: $0.label, count: $0.count, part: "future") }
     }
 }
 
@@ -123,24 +144,34 @@ struct AnalyticsView: View {
                 Text(chartTitle)
                     .font(.saTitleMedium)
                     .foregroundStyle(SA.onSurface)
-                Chart(viewModel.bars) { bar in
-                    AreaMark(
-                        x: .value("Bucket", bar.label),
-                        y: .value("Count", bar.count)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(LinearGradient(
-                        colors: [SA.primary.opacity(0.25), SA.primary.opacity(0.02)],
-                        startPoint: .top, endPoint: .bottom
-                    ))
-                    LineMark(
-                        x: .value("Bucket", bar.label),
-                        y: .value("Count", bar.count)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(SA.primary)
-                    .lineStyle(StrokeStyle(lineWidth: 2.5))
+                Chart {
+                    ForEach(viewModel.elapsedPoints) { p in
+                        AreaMark(x: .value("Bucket", p.label), y: .value("Count", p.count))
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(LinearGradient(
+                                colors: [SA.primary.opacity(0.25), SA.primary.opacity(0.02)],
+                                startPoint: .top, endPoint: .bottom
+                            ))
+                    }
+                    ForEach(viewModel.elapsedPoints) { p in
+                        LineMark(x: .value("Bucket", p.label), y: .value("Count", p.count))
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(by: .value("part", "elapsed"))
+                            .lineStyle(by: .value("part", "elapsed"))
+                    }
+                    ForEach(viewModel.futurePoints) { p in
+                        LineMark(x: .value("Bucket", p.label), y: .value("Count", p.count))
+                            .interpolationMethod(.catmullRom)
+                            .foregroundStyle(by: .value("part", "future"))
+                            .lineStyle(by: .value("part", "future"))
+                    }
                 }
+                .chartForegroundStyleScale(["elapsed": SA.primary, "future": SA.primary.opacity(0.3)])
+                .chartLineStyleScale([
+                    "elapsed": StrokeStyle(lineWidth: 2.5),
+                    "future": StrokeStyle(lineWidth: 2, dash: [5, 4]),
+                ])
+                .chartLegend(.hidden)
                 .frame(height: 200)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 6)) { AxisValueLabel() }

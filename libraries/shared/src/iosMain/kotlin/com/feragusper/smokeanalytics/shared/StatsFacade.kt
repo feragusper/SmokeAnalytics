@@ -22,11 +22,13 @@ object StatsPeriodKeys {
     const val YEAR = "year"
 }
 
-/** Swift-friendly Analytics snapshot for a selected period. */
+/** Swift-friendly Analytics snapshot for a selected period. [elapsedCount] is how many leading
+ * buckets have already happened — the rest are the future part of the period (drawn dashed). */
 data class StatsSnapshot(
     val periodTotal: Int,
     val dailyAverage: Double,
     val bars: List<StatsBar>,
+    val elapsedCount: Int,
     val triggers: List<StatsTrigger>,
 )
 
@@ -53,25 +55,25 @@ class StatsFacade : KoinComponent {
         // The chart's buckets depend on the period; entries are already in display order except the
         // day-of-month map which is keyed by number.
         // Buckets match the Android chart: hourly / day-of-week / week-of-month / month-of-year.
-        val allBars = when (periodKey) {
+        // The full period is kept; the caller draws the elapsed part solid and the rest dashed.
+        val bars = when (periodKey) {
             StatsPeriodKeys.DAY -> stats.hourly.entries.map { StatsBar(it.key, it.value) }
             StatsPeriodKeys.WEEK -> stats.weekly.entries.map { StatsBar(it.key, it.value) }
             StatsPeriodKeys.YEAR -> stats.yearly.entries.map { StatsBar(it.key, it.value) }
             else -> stats.monthly.entries.map { StatsBar(it.key, it.value) }
         }
-        // Only show elapsed buckets — future hours/days/weeks/months would just drop the line to 0.
-        val bars = when (periodKey) {
-            StatsPeriodKeys.DAY -> allBars.filter {
-                (it.label.substringBefore(":").toIntOrNull() ?: 0) <= now.hour
-            }
-            StatsPeriodKeys.WEEK -> allBars.take(now.dayOfWeek.isoDayNumber)
-            StatsPeriodKeys.YEAR -> allBars.take(now.monthNumber)
-            else -> allBars.take(((now.dayOfMonth - 1) / 7) + 1)
-        }
+        val elapsedCount = when (periodKey) {
+            StatsPeriodKeys.DAY -> bars.count { (it.label.substringBefore(":").toIntOrNull() ?: 0) <= now.hour }
+            StatsPeriodKeys.WEEK -> now.dayOfWeek.isoDayNumber
+            StatsPeriodKeys.YEAR -> now.monthNumber
+            else -> ((now.dayOfMonth - 1) / 7) + 1
+        }.coerceIn(1, bars.size)
+
         return StatsSnapshot(
-            periodTotal = bars.sumOf { it.count },
+            periodTotal = bars.take(elapsedCount).sumOf { it.count },
             dailyAverage = stats.dailyAverage.toDouble(),
             bars = bars,
+            elapsedCount = elapsedCount,
             triggers = stats.triggerBreakdown.map { StatsTrigger(label = it.label, count = it.count) },
         )
     }
