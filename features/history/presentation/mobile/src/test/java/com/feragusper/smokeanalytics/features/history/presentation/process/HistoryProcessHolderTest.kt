@@ -119,7 +119,7 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeInFlight
                 awaitItem() shouldBe HistoryResult.AddSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()
@@ -139,7 +139,7 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.AddSmoke(selectedDate))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeInFlight
                 awaitItem() shouldBe HistoryResult.AddSmokeSuccess
                 addedAt?.toLocalDateTime(timeZone)?.date shouldBeEqualTo selectedDate.toLocalDateTime(timeZone).date
                 cancelAndIgnoreRemainingEvents()
@@ -154,7 +154,7 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeInFlight
                 awaitItem() shouldBe HistoryResult.Error.Generic
                 coVerify(exactly = 0) { addSmokeUseCase(any()) }
                 coVerify(exactly = 0) { syncWithWearUseCase.invoke() }
@@ -171,7 +171,7 @@ class HistoryProcessHolderTest {
             results = processHolder.processIntent(HistoryIntent.AddSmoke(date))
 
             results.test {
-                awaitItem() shouldBe HistoryResult.Loading
+                awaitItem() shouldBe HistoryResult.AddSmokeInFlight
                 awaitItem() shouldBe HistoryResult.AddSmokeSuccess
                 coVerify(exactly = 1) { syncWithWearUseCase.invoke() }
                 cancelAndIgnoreRemainingEvents()

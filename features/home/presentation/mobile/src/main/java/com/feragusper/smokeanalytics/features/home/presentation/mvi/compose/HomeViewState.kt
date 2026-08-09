@@ -167,7 +167,13 @@ data class HomeViewState(
     internal val showCravingHint: Boolean = false,
     internal val cravingCelebration: CravingCelebration? = null,
     internal val pendingRelationshipSmokes: List<Smoke> = emptyList(),
+    /** Pending smoke ids whose relationship save/skip is in flight — shown as a skeleton row. */
+    internal val savingRelationshipSmokeIds: Set<String> = emptySet(),
     internal val relationshipPromptSmokeId: String? = null,
+    /** Ordered pending ids still to walk in the "tag all" wizard; empty when not running. */
+    internal val relationshipWizardQueue: List<String> = emptyList(),
+    /** How many smokes the wizard started with, for the "X of N" step label. */
+    internal val relationshipWizardTotal: Int = 0,
     /** Null until the first fetch resolves — the prompt shows a loading state meanwhile. */
     internal val availableTriggers: List<TriggerOption>? = null,
 ) : MVIViewState<HomeIntent> {
@@ -275,9 +281,14 @@ data class HomeViewState(
                 gamificationSummary = gamificationSummary,
                 showCravingHint = showCravingHint,
                 pendingRelationshipSmokes = pendingRelationshipSmokes.map {
-                    PendingTriggerSmoke(id = it.id, label = it.date.toPendingTriggerLabel(pendingLabelLocale))
+                    PendingTriggerSmoke(
+                        id = it.id,
+                        label = it.date.toPendingTriggerLabel(pendingLabelLocale),
+                        saving = it.id in savingRelationshipSmokeIds,
+                    )
                 },
                 onOpenRelationship = { id -> intent(HomeIntent.OpenRelationshipPrompt(id)) },
+                onTagAll = { ids -> intent(HomeIntent.StartRelationshipWizard(ids)) },
                 intent = intent,
             )
         }
@@ -295,9 +306,13 @@ data class HomeViewState(
                 .firstOrNull { it.id == promptSmokeId }
                 ?.date
                 ?.toPendingTriggerLabel(pendingLabelLocale)
+            val wizardActive = relationshipWizardQueue.isNotEmpty()
             RelationshipPromptSheet(
+                promptKey = promptSmokeId,
                 availableTriggers = availableTriggers,
                 dateLabel = dateLabel,
+                wizardStep = if (wizardActive) relationshipWizardTotal - relationshipWizardQueue.size + 1 else null,
+                wizardTotal = if (wizardActive) relationshipWizardTotal else 0,
                 onSave = { tags -> intent(HomeIntent.SaveSmokeRelationship(promptSmokeId, tags)) },
                 onSkip = { intent(HomeIntent.SkipSmokeRelationship(promptSmokeId)) },
                 onDismiss = { intent(HomeIntent.DismissRelationshipPrompt) },
@@ -336,6 +351,7 @@ private fun HomeContent(
     showCravingHint: Boolean,
     pendingRelationshipSmokes: List<PendingTriggerSmoke>,
     onOpenRelationship: (String) -> Unit,
+    onTagAll: (List<String>) -> Unit,
     intent: (HomeIntent) -> Unit,
 ) {
     val hasLoadedContent = smokesPerDay != null || timeSinceLastCigarette != null || goalProgress != null
@@ -442,6 +458,7 @@ private fun HomeContent(
                         RelationshipReminderCard(
                             pending = pendingRelationshipSmokes,
                             onOpen = onOpenRelationship,
+                            onTagAll = onTagAll,
                         )
                     }
                 }

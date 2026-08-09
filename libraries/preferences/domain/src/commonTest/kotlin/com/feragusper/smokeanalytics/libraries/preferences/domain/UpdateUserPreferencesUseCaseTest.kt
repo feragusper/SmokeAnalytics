@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.preferences.domain
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,7 +9,7 @@ class UpdateUserPreferencesUseCaseTest {
 
     private val fakeRepository = object : UserPreferencesRepository {
         var stored = UserPreferences()
-        override suspend fun fetch(): UserPreferences = stored
+        override suspend fun fetch(source: DataSource): UserPreferences = stored
         override suspend fun update(preferences: UserPreferences) { stored = preferences }
     }
 

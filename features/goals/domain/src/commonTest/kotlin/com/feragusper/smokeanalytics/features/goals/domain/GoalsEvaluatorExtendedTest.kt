@@ -59,6 +59,42 @@ class GoalsEvaluatorExtendedTest {
     }
 
     @Test
+    fun dailyCap_weeklyScore_countsNonConsecutiveDaysAndRewardsStreaks() {
+        // Week starts Mon 2026-05-04; "today" is Thu 2026-05-07. Cap = 5/day.
+        val smokes = buildList {
+            add(smokeAt("2026-05-04T08:00:00Z")) // Mon: 1 smoke -> completed
+            repeat(8) { add(smokeAt("2026-05-05T08:00:0${it}Z")) } // Tue: 8 smokes -> over cap
+            add(smokeAt("2026-05-06T08:00:00Z")) // Wed: completed
+            add(smokeAt("2026-05-07T08:00:00Z")) // Thu (today): completed
+        }
+        val result = useCase(
+            activeGoal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
+            smokes = smokes,
+            preferences = preferences,
+            now = Instant.parse("2026-05-07T12:00:00Z"),
+        )
+        assertNotNull(result)
+        val week = assertNotNull(result.weeklyScore)
+        assertEquals(4, week.trackedDays)
+        assertEquals(3, week.completedDays)
+        assertEquals(2, week.longestStreak) // Wed + Thu
+        assertEquals(4, week.points) // 1 (Mon) + 1 (Wed) + 2 (Thu continues)
+    }
+
+    @Test
+    fun dailyCap_zeroSmokes_hasNoScoreYet() {
+        val result = useCase(
+            activeGoal = SmokingGoal.DailyCap(maxCigarettesPerDay = 5),
+            smokes = emptyList(),
+            preferences = preferences,
+            now = Instant.parse("2026-05-07T12:00:00Z"),
+        )
+        assertNotNull(result)
+        assertEquals(0, assertNotNull(result.weeklyScore).trackedDays)
+        assertEquals(0, assertNotNull(result.monthlyScore).trackedDays)
+    }
+
+    @Test
     fun reductionWeek_withBaseline_completed() {
         // Previous week: 10 smokes, current week: 5 smokes → 50% reduction
         val previousWeekSmokes = (0 until 10).map { i ->

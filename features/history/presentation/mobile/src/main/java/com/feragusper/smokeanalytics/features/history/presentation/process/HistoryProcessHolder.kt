@@ -150,7 +150,7 @@ class HistoryProcessHolder constructor(
         when (fetchSessionUseCase()) {
             is Session.Anonymous -> emit(HistoryResult.NotLoggedIn(dayStart))
             is Session.LoggedIn -> {
-                emit(HistoryResult.Loading)
+                emit(HistoryResult.Loading(dayStart))
                 val selectedBucketDate = dayStart.dayBucketDate(
                     timeZone = timeZone,
                     dayStartHour = preferences.dayStartHour,
@@ -222,7 +222,8 @@ class HistoryProcessHolder constructor(
             }
 
             is Session.LoggedIn -> {
-                emit(HistoryResult.Loading)
+                // A skeleton placeholder row, not the full-screen loading — the existing list stays.
+                emit(HistoryResult.AddSmokeInFlight)
                 val preferences = fetchUserPreferencesUseCase()
                 val timeZone = TimeZone.currentSystemDefault()
                 val locationAvailability = locationCaptureService.locationTrackingAvailability(

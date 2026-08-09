@@ -4,6 +4,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeRelationship
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import kotlin.test.BeforeTest
@@ -54,9 +55,9 @@ class EditSmokeUseCaseTest {
         override suspend fun addSmoke(timestamp: Instant, location: GeoPoint?): String = "fake-id"
         override suspend fun setSmokeRelationship(id: String, relationship: SmokeRelationship) = Unit
         override suspend fun deleteSmoke(id: String) = Unit
-        override suspend fun fetchSmokes(start: Instant?, end: Instant?): List<Smoke> =
+        override suspend fun fetchSmokes(start: Instant?, end: Instant?, source: DataSource): List<Smoke> =
             emptyList()
 
-        override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?) = error("Not needed for this test")
+        override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?, source: DataSource) = error("Not needed for this test")
     }
 }

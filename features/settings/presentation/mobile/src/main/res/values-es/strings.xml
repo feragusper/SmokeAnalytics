@@ -114,7 +114,7 @@
     <string name="about_body">Un diario personal de fumado enfocado en la visibilidad por sobre la culpa. Ayuda a revisar el día, comparar tendencias largas, estimar el costo y entender dónde o cuándo el fumado tiende a agruparse.</string>
     <string name="about_copyright_line">Smoke Analytics © Fernando Perez. Todos los derechos reservados.</string>
     <string name="settings_appearance">Apariencia e idioma</string>
-    <string name="settings_appearance_subtitle">Tema e idioma de la app.</string>
+    <string name="settings_appearance_subtitle">Tema, acento e idioma de la app.</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Claro</string>

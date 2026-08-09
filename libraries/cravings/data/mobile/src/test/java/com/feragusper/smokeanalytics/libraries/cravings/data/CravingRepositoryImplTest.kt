@@ -11,6 +11,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.Source
+import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -28,7 +30,7 @@ class CravingRepositoryImplTest {
     private val collectionReference = mockk<CollectionReference>()
     private val uid = "uid"
 
-    private val repository = CravingRepositoryImpl(
+    private val repository: CravingRepository = CravingRepositoryImpl(
         firebaseFirestore = firebaseFirestore,
         firebaseAuth = firebaseAuth,
     )
@@ -76,7 +78,7 @@ class CravingRepositoryImplTest {
         every {
             collectionReference.orderBy(CravingEntity.Fields.CREATED_AT_MILLIS, Direction.DESCENDING)
         } returns query
-        every { query.get() } returns taskOf(querySnapshotOf(cravingDoc("c1", createdAtMillis = 5_000.0, outcome = "RESISTED", points = 18.0)))
+        every { query.get(any<Source>()) } returns taskOf(querySnapshotOf(cravingDoc("c1", createdAtMillis = 5_000.0, outcome = "RESISTED", points = 18.0)))
 
         val result = repository.fetchCravings()
 
@@ -92,7 +94,7 @@ class CravingRepositoryImplTest {
         every {
             collectionReference.whereEqualTo(CravingEntity.Fields.OUTCOME, CravingOutcome.PENDING.name)
         } returns query
-        every { query.get() } returns taskOf(
+        every { query.get(any<Source>()) } returns taskOf(
             querySnapshotOf(
                 cravingDoc("old", createdAtMillis = 1_000.0, outcome = "PENDING"),
                 cravingDoc("new", createdAtMillis = 9_000.0, outcome = "PENDING"),

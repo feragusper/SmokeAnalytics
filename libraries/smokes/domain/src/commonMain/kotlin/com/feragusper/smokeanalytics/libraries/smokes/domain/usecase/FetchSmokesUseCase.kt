@@ -1,6 +1,7 @@
 // commonMain
 package com.feragusper.smokeanalytics.libraries.smokes.domain.usecase
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import kotlinx.datetime.Instant
 
@@ -11,5 +12,6 @@ class FetchSmokesUseCase(
     suspend operator fun invoke(
         start: Instant? = null,
         end: Instant? = null,
-    ) = smokeRepository.fetchSmokes(start, end)
+        source: DataSource = DataSource.DEFAULT,
+    ) = smokeRepository.fetchSmokes(start, end, source)
 }

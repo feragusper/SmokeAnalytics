@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.cravings.domain.repository
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import kotlinx.datetime.Instant
@@ -24,17 +25,21 @@ interface CravingRepository {
      *
      * @param start Inclusive lower bound on [Craving.createdAt], or null.
      * @param end Exclusive upper bound on [Craving.createdAt], or null.
+     * @param source Where to read from (cache-first vs server). Defaults to Firestore's default.
      */
     suspend fun fetchCravings(
         start: Instant? = null,
         end: Instant? = null,
+        source: DataSource = DataSource.DEFAULT,
     ): List<Craving>
 
     /**
      * Returns the single pending craving, if any. There is at most one active
      * craving at a time.
+     *
+     * @param source Where to read from (cache-first vs server). Defaults to Firestore's default.
      */
-    suspend fun fetchActiveCraving(): Craving?
+    suspend fun fetchActiveCraving(source: DataSource = DataSource.DEFAULT): Craving?
 
     /**
      * Resolves a craving with its final outcome and the points earned.

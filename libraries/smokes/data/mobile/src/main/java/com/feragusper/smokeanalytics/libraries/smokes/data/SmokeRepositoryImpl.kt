@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.libraries.smokes.data
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Query.Direction
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -87,14 +89,16 @@ class SmokeRepositoryImpl constructor(
 
     override suspend fun fetchSmokes(
         startDate: Instant?,
-        endDate: Instant?
+        endDate: Instant?,
+        source: DataSource,
     ): List<Smoke> {
         val startMillis = (startDate ?: firstInstantThisMonth()).toEpochMilliseconds().toDouble()
         val endMillis = (endDate ?: nextDayStartInstant()).toEpochMilliseconds().toDouble()
 
         return runFirestoreCall("fetch smokes", smokesPath()) {
-            val canonicalDocuments = fetchSmokeQuery(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis, endMillis)
-            val legacyDocuments = fetchSmokeQuery(LegacySmokeFields.TIMESTAMP_MILLIS, startMillis, endMillis)
+            val firestoreSource = source.toFirestoreSource()
+            val canonicalDocuments = fetchSmokeQuery(SmokeEntity.Fields.TIMESTAMP_MILLIS, startMillis, endMillis, firestoreSource)
+            val legacyDocuments = fetchSmokeQuery(LegacySmokeFields.TIMESTAMP_MILLIS, startMillis, endMillis, firestoreSource)
 
             val currentRecords = (canonicalDocuments.current + legacyDocuments.current)
                 .mapNotNull { it.toSmokeRecord() }
@@ -118,7 +122,11 @@ class SmokeRepositoryImpl constructor(
         }
     }
 
-    override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?): SmokeCount {
+    override suspend fun fetchSmokeCount(
+        dayStartHour: Int,
+        manualDayStartEpochMillis: Long?,
+        source: DataSource,
+    ): SmokeCount {
         val monthStart = currentMonthStartInstant(
             dayStartHour = dayStartHour,
             manualDayStartEpochMillis = manualDayStartEpochMillis,
@@ -133,6 +141,7 @@ class SmokeRepositoryImpl constructor(
                 dayStartHour = dayStartHour,
                 manualDayStartEpochMillis = manualDayStartEpochMillis,
             ),
+            source = source,
         ).toSmokeCountListResult(dayStartHour, manualDayStartEpochMillis)
     }
 
@@ -162,16 +171,17 @@ class SmokeRepositoryImpl constructor(
         timestampField: String,
         startMillis: Double,
         endMillis: Double,
+        source: Source,
     ): SmokeDocuments {
         val result = queryByTimestamp(timestampField)
             .whereGreaterThanOrEqualTo(timestampField, startMillis)
             .whereLessThan(timestampField, endMillis)
-            .get()
+            .get(source)
             .await()
         val previousDocument = queryByTimestamp(timestampField)
             .whereLessThan(timestampField, startMillis)
             .limit(1)
-            .get()
+            .get(source)
             .await()
             .documents
             .firstOrNull()
@@ -181,6 +191,13 @@ class SmokeRepositoryImpl constructor(
 
     private fun queryByTimestamp(timestampField: String): Query =
         smokesQuery().orderBy(timestampField, Direction.DESCENDING)
+
+    // Firestore bills reads served from the server; CACHE reads are free and work offline.
+    private fun DataSource.toFirestoreSource(): Source = when (this) {
+        DataSource.CACHE -> Source.CACHE
+        DataSource.SERVER -> Source.SERVER
+        DataSource.DEFAULT -> Source.DEFAULT
+    }
 
     private suspend fun <T> runFirestoreCall(operation: String, path: String, block: suspend () -> T): T =
         try {

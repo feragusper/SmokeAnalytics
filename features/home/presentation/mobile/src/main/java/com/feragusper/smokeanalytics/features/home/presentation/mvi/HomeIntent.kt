@@ -101,6 +101,14 @@ sealed class HomeIntent : MVIIntent {
     data class OpenRelationshipPrompt(val smokeId: String) : HomeIntent()
 
     /**
+     * Starts the "tag all" wizard: walks the pending smokes one by one, opening the prompt
+     * for each in order until the queue is exhausted or the user closes it.
+     *
+     * @property ids The ordered pending smoke ids to tag, first shown first.
+     */
+    data class StartRelationshipWizard(val ids: List<String>) : HomeIntent()
+
+    /**
      * Saves the tags the user attached to a smoke (built-in keys and/or custom strings).
      */
     data class SaveSmokeRelationship(

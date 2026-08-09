@@ -14,6 +14,8 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.Source
+import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -31,7 +33,7 @@ class SmokeRepositoryImplTest {
     private val firebaseAuth: FirebaseAuth = mockk()
     private val firebaseFirestore: FirebaseFirestore = mockk()
     private val appContext: Context = mockk(relaxed = true)
-    private val smokeRepository = SmokeRepositoryImpl(
+    private val smokeRepository: SmokeRepository = SmokeRepositoryImpl(
         firebaseAuth = firebaseAuth,
         firebaseFirestore = firebaseFirestore,
         appContext = appContext,
@@ -292,7 +294,7 @@ class SmokeRepositoryImplTest {
                 previousQuery.limit(1)
             } returns previousLimitedQuery
 
-            every { finalQuery.get() } answers {
+            every { finalQuery.get(any<Source>()) } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true
@@ -305,7 +307,7 @@ class SmokeRepositoryImplTest {
                     every { exception } returns null
                 }
             }
-            every { previousLimitedQuery.get() } answers {
+            every { previousLimitedQuery.get(any<Source>()) } answers {
                 mockk<Task<QuerySnapshot>>().apply {
                     every { isComplete } returns true
                     every { isSuccessful } returns true

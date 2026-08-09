@@ -41,10 +41,12 @@ fun SmokeAnalyticsTheme(
     }
 
     // Apply the user's accent by overriding the primary pair; Default leaves the scheme untouched.
-    val colorScheme = if (accent.primary != null) {
+    // The accent picks a mode-specific tone so it stays legible on both light and dark surfaces.
+    val accentPrimary = accent.primary(darkTheme)
+    val colorScheme = if (accentPrimary != null) {
         baseColorScheme.copy(
-            primary = accent.primary,
-            onPrimary = accent.onPrimary ?: baseColorScheme.onPrimary,
+            primary = accentPrimary,
+            onPrimary = accent.onPrimary(darkTheme) ?: baseColorScheme.onPrimary,
         )
     } else {
         baseColorScheme

@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":libraries:preferences:domain"))
+    implementation(project(":libraries:architecture:domain"))
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
 

@@ -13,9 +13,11 @@ import kotlinx.datetime.Instant
 sealed interface HistoryResult : MVIResult {
 
     /**
-     * Indicates that a loading state is in progress.
+     * A fetch is in progress for [selectedDate]. The reducer skeletonizes the list only when this
+     * is a different day than what's on screen — a same-day refresh (after a mutation) keeps the
+     * list so the per-row skeletons show instead of a full-list flash.
      */
-    data object Loading : HistoryResult
+    data class Loading(val selectedDate: Instant) : HistoryResult
 
     data class EditSmokeInFlight(
         val id: String,
@@ -24,6 +26,12 @@ sealed interface HistoryResult : MVIResult {
     data class DeleteSmokeInFlight(
         val id: String,
     ) : HistoryResult
+
+    /**
+     * A new smoke is being added: the list shows a skeleton placeholder row previewing the item
+     * about to appear, without blanking the whole screen.
+     */
+    data object AddSmokeInFlight : HistoryResult
 
     /**
      * Indicates that the user is not logged in and the selected date is preserved.

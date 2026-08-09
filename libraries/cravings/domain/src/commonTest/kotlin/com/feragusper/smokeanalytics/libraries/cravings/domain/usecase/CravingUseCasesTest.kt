@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.cravings.domain.usecase
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
@@ -31,12 +32,12 @@ private class FakeCravingRepository : CravingRepository {
         return Craving(id = "new", createdAt = createdAt, targetAt = targetAt)
     }
 
-    override suspend fun fetchCravings(start: Instant?, end: Instant?): List<Craving> {
+    override suspend fun fetchCravings(start: Instant?, end: Instant?, source: DataSource): List<Craving> {
         fetchRange = start to end
         return cravings
     }
 
-    override suspend fun fetchActiveCraving(): Craving? = activeCraving
+    override suspend fun fetchActiveCraving(source: DataSource): Craving? = activeCraving
 
     override suspend fun resolveCraving(
         id: String,

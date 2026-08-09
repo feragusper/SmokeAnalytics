@@ -3,6 +3,7 @@ package com.feragusper.smokeanalytics.libraries.preferences.data
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.google.firebase.FirebaseApp
@@ -10,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -21,12 +23,29 @@ class UserPreferencesRepositoryImpl constructor(
     private val appContext: Context,
 ) : UserPreferencesRepository {
 
-    override suspend fun fetch(): UserPreferences {
-        // Default source: server when online, local cache when offline.
+    override suspend fun fetch(source: DataSource): UserPreferences {
         val snapshot = runFirestoreProfileCall("fetch preferences") {
-            document().get().await()
+            val firestoreSource = source.toFirestoreSource()
+            try {
+                document().get(firestoreSource).await()
+            } catch (e: FirebaseFirestoreException) {
+                // A CACHE read throws UNAVAILABLE when the profile doc isn't cached yet
+                // (e.g. right after login). Fall back to the server so the first load works.
+                if (firestoreSource == Source.CACHE) {
+                    document().get(Source.SERVER).await()
+                } else {
+                    throw e
+                }
+            }
         }
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
+    }
+
+    // Firestore bills reads served from the server; CACHE reads are free and work offline.
+    private fun DataSource.toFirestoreSource(): Source = when (this) {
+        DataSource.CACHE -> Source.CACHE
+        DataSource.SERVER -> Source.SERVER
+        DataSource.DEFAULT -> Source.DEFAULT
     }
 
     override suspend fun update(preferences: UserPreferences) {

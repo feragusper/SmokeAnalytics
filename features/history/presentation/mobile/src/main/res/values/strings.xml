@@ -18,6 +18,7 @@
     <string name="history_entries">%1$d entries</string>
     <string name="history_saving_edit">Saving edit…</string>
     <string name="history_deleting">Deleting…</string>
+    <string name="history_adding">Adding…</string>
     <string name="history_dow_mon">MON</string>
     <string name="history_dow_tue">TUE</string>
     <string name="history_dow_wed">WED</string>

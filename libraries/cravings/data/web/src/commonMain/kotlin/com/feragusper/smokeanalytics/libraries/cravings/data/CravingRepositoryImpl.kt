@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.cravings.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
@@ -43,7 +44,9 @@ class CravingRepositoryImpl(
         )
     }
 
-    override suspend fun fetchCravings(start: Instant?, end: Instant?): List<Craving> {
+    // The KMP web SDK reads through its own cache/network layer; the source hint is only
+    // actioned on the mobile (Android) Firestore SDK, so it is accepted and ignored here.
+    override suspend fun fetchCravings(start: Instant?, end: Instant?, source: DataSource): List<Craving> {
         var query: Query = cravingsCollection()
             .orderBy(CravingEntity.Fields.CREATED_AT_MILLIS, Direction.DESCENDING)
         if (start != null) {
@@ -57,7 +60,7 @@ class CravingRepositoryImpl(
         return query.get().documents.mapNotNull { it.toCraving() }
     }
 
-    override suspend fun fetchActiveCraving(): Craving? =
+    override suspend fun fetchActiveCraving(source: DataSource): Craving? =
         // Only filter by outcome (no orderBy) so Firestore doesn't require a composite
         // index. There is at most one pending craving; pick the most recent client-side.
         cravingsCollection()

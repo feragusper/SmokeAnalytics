@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.firstInstantThisMonth
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentMonthStartInstant
 import com.feragusper.smokeanalytics.libraries.architecture.domain.currentWeekStartInstant
@@ -117,9 +118,12 @@ class SmokeRepositoryImpl(
     /**
      * @see SmokeRepository.fetchSmokes
      */
+    // The KMP web SDK always reads through its own cache/network layer; the source hint is
+    // only actioned on the mobile (Android) Firestore SDK, so it is accepted and ignored here.
     override suspend fun fetchSmokes(
         start: Instant?,
         end: Instant?,
+        source: DataSource,
     ): List<Smoke> {
         val startMillis = (start ?: firstInstantThisMonth()).toEpochMilliseconds().toDouble()
         val endMillis = (end ?: nextDayStartInstant()).toEpochMilliseconds().toDouble()
@@ -163,7 +167,11 @@ class SmokeRepositoryImpl(
     /**
      * @see SmokeRepository.fetchSmokeCount
      */
-    override suspend fun fetchSmokeCount(dayStartHour: Int, manualDayStartEpochMillis: Long?): SmokeCount {
+    override suspend fun fetchSmokeCount(
+        dayStartHour: Int,
+        manualDayStartEpochMillis: Long?,
+        source: DataSource,
+    ): SmokeCount {
         val monthStart = currentMonthStartInstant(
             dayStartHour = dayStartHour,
             manualDayStartEpochMillis = manualDayStartEpochMillis,

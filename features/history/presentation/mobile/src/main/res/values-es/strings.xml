@@ -18,6 +18,7 @@
     <string name="history_entries">%1$d registros</string>
     <string name="history_saving_edit">Guardando edición…</string>
     <string name="history_deleting">Eliminando…</string>
+    <string name="history_adding">Agregando…</string>
     <string name="history_dow_mon">LUN</string>
     <string name="history_dow_tue">MAR</string>
     <string name="history_dow_wed">MIÉ</string>

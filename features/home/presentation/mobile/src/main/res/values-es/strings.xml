@@ -199,6 +199,8 @@
     <string name="home_other">Otro</string>
     <string name="home_type_and_add">Escribí y tocá Agregar…</string>
     <string name="home_logged">Registrado %1$s</string>
+    <string name="home_tag_all">Etiquetar todos</string>
+    <string name="home_wizard_step">%1$d de %2$d</string>
     <plurals name="home_pending_needs_trigger">
         <item quantity="one">%1$d cigarrillo todavía necesita un disparador — etiquetalo abajo.</item>
         <item quantity="other">%1$d cigarrillos todavía necesitan un disparador — etiquetalos de a uno.</item>
