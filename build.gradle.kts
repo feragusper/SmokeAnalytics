@@ -30,15 +30,3 @@ plugins {
     // Apply the SonarQube plugin globally for static code analysis.
     sonarqube
 }
-
-sonar {
-    properties {
-        // iosMain is KMP glue for the native SwiftUI app; it's exercised by the iOS app/tests,
-        // never by the JVM/Kover run that feeds Sonar, so it can never show coverage here.
-        // Keep it analyzed for issues but out of the coverage quality gate.
-        property(
-            "sonar.coverage.exclusions",
-            "**/iosMain/**",
-        )
-    }
-}
