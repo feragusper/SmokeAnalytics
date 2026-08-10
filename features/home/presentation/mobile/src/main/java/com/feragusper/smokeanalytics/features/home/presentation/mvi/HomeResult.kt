@@ -59,6 +59,20 @@ sealed interface HomeResult : MVIResult {
     data class AddSmokeSuccess(val smokeId: String) : HomeResult
 
     /**
+     * The "tag all" wizard started: open the prompt for the first pending smoke and queue the rest.
+     *
+     * @property ids The ordered pending smoke ids to walk through.
+     */
+    data class RelationshipWizardStarted(val ids: List<String>) : HomeResult
+
+    /**
+     * A smoke's relationship save/skip started: close the prompt immediately and mark the row as
+     * in-flight so the reminder card shows a skeleton until the refetch removes it. In the wizard,
+     * this advances to the next queued smoke instead of closing.
+     */
+    data class RelationshipSaving(val smokeId: String) : HomeResult
+
+    /**
      * A smoke's relationship was saved or skipped; the home should refetch and close the prompt.
      */
     data object RelationshipUpdated : HomeResult

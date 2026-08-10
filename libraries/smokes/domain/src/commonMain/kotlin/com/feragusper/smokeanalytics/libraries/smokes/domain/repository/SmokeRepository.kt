@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.smokes.domain.repository
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.SmokeCount
 import com.feragusper.smokeanalytics.libraries.smokes.domain.model.GeoPoint
@@ -34,22 +35,26 @@ interface SmokeRepository {
      *
      * @param start The start date.
      * @param end The end date.
+     * @param source Where to read from (cache-first vs server). Defaults to Firestore's default.
      *
      * @return The smokes.
      */
     suspend fun fetchSmokes(
         start: Instant? = null,
         end: Instant? = null,
+        source: DataSource = DataSource.DEFAULT,
     ): List<Smoke>
 
     /**
      * Fetches the smoke count.
      *
+     * @param source Where to read from (cache-first vs server). Defaults to Firestore's default.
      * @return The smoke count.
      */
     suspend fun fetchSmokeCount(
         dayStartHour: Int = 0,
         manualDayStartEpochMillis: Long? = null,
+        source: DataSource = DataSource.DEFAULT,
     ): SmokeCount
 
     /**

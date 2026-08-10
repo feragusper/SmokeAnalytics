@@ -19,7 +19,9 @@ import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.FetchCrav
 import com.feragusper.smokeanalytics.libraries.cravings.domain.usecase.ResolveCravingUseCase
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeIntent
 import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
+import com.feragusper.smokeanalytics.libraries.architecture.domain.ReadFreshnessGate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsSource
 import com.feragusper.smokeanalytics.libraries.architecture.domain.shouldOfferStartNewDay
@@ -84,6 +86,7 @@ class HomeProcessHolder constructor(
     private val fetchCravingsUseCase: FetchCravingsUseCase,
     private val resolveCravingUseCase: ResolveCravingUseCase,
     private val analyticsTracker: AnalyticsTracker,
+    private val readFreshnessGate: ReadFreshnessGate,
     private val evaluateGoalProgressUseCase: EvaluateGoalProgressUseCase = EvaluateGoalProgressUseCase(),
     private val cravingWaitCalculator: CravingWaitCalculator = CravingWaitCalculator(),
 ) : MVIProcessHolder<HomeIntent, HomeResult> {
@@ -109,6 +112,7 @@ class HomeProcessHolder constructor(
         HomeIntent.DismissCravingHint -> flow { emit(HomeResult.CravingHintDismissed) }
         HomeIntent.DismissCravingCelebration -> flow { emit(HomeResult.CravingCelebrationDismissed) }
         is HomeIntent.OpenRelationshipPrompt -> flow { emit(HomeResult.AddSmokeSuccess(intent.smokeId)) }
+        is HomeIntent.StartRelationshipWizard -> flow { emit(HomeResult.RelationshipWizardStarted(intent.ids)) }
         is HomeIntent.SaveSmokeRelationship -> processSaveRelationship(intent)
         is HomeIntent.SkipSmokeRelationship -> processSkipRelationship(intent)
         HomeIntent.DismissRelationshipPrompt -> flow { emit(HomeResult.RelationshipPromptDismissed) }
@@ -118,6 +122,8 @@ class HomeProcessHolder constructor(
      * Persists the triggers the user attached to a smoke, then refreshes the home.
      */
     private fun processSaveRelationship(intent: HomeIntent.SaveSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        // Close the sheet and skeletonize the row up front, before the write round-trip.
+        emit(HomeResult.RelationshipSaving(intent.smokeId))
         setSmokeRelationshipUseCase(
             id = intent.smokeId,
             relationship = SmokeRelationship.Tagged(tags = intent.tags),
@@ -150,6 +156,7 @@ class HomeProcessHolder constructor(
      * Marks a smoke as having no particular trigger so it stops appearing in the reminder.
      */
     private fun processSkipRelationship(intent: HomeIntent.SkipSmokeRelationship): Flow<HomeResult> = flow<HomeResult> {
+        emit(HomeResult.RelationshipSaving(intent.smokeId))
         setSmokeRelationshipUseCase(id = intent.smokeId, relationship = SmokeRelationship.Skipped)
         analyticsTracker.relationshipSkipped()
         emit(HomeResult.RelationshipUpdated)
@@ -170,13 +177,18 @@ class HomeProcessHolder constructor(
             is Session.Anonymous -> emit(HomeResult.NotLoggedIn)
             is Session.LoggedIn -> {
                 emit(if (isRefresh) HomeResult.RefreshLoading else HomeResult.Loading)
-                val preferences = fetchUserPreferencesUseCase()
+                // Offline-first: a background load (RefreshFetchSmokes) reads from the local cache
+                // for free; an explicit pull-to-refresh or cold start (FetchSmokes) forces a server
+                // read. The gate also forces the server every few hours so other devices sync.
+                val source = readFreshnessGate.resolveSource(forceRefresh = !isRefresh)
+                val preferences = fetchUserPreferencesUseCase(source = source)
                 val locationTrackingAvailability = locationCaptureService.locationTrackingAvailability(
                     preferences.locationTrackingEnabled
                 )
                 val smokeCounts = fetchSmokeCountListUseCase.invoke(
                     dayStartHour = preferences.dayStartHour,
                     manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+                    source = source,
                 )
                 val timeZone = TimeZone.currentSystemDefault()
                 val now = Clock.System.now()
@@ -194,17 +206,18 @@ class HomeProcessHolder constructor(
                 val previousMonthWindowEnd =
                     minOf(previousMonthStart + monthElapsed, currentMonthStart)
                 val previousMonthCount =
-                    fetchSmokesUseCase(start = previousMonthStart, end = previousMonthWindowEnd).size
-                val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences))
+                    fetchSmokesUseCase(start = previousMonthStart, end = previousMonthWindowEnd, source = source).size
+                val goalSmokes = fetchSmokesUseCase(start = goalDataFetchStart(preferences), source = source)
                 val goalProgress = evaluateGoalProgressUseCase(preferences.activeGoal, goalSmokes, preferences)
                 // Smokes still missing a relationship within the lookback window (e.g. logged
                 // from the watch, or whose prompt was dismissed) drive the home reminder card.
                 val pendingRelationshipSmokes = fetchSmokesUseCase(
                     start = now.minus(RELATIONSHIP_LOOKBACK_DAYS.days),
                     end = now,
+                    source = source,
                 ).filter { it.relationship.isPending && it.date >= RelationshipTrackingSince }
-                val activeCraving = fetchActiveCravingUseCase()
-                val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences)).toCravingStats()
+                val activeCraving = fetchActiveCravingUseCase(source = source)
+                val cravingStats = fetchCravingsUseCase(start = goalDataFetchStart(preferences), source = source).toCravingStats()
                 val greetingState = greetingStateFor(
                     hourOfDay = Clock.System.now()
                         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).hour,
@@ -251,6 +264,9 @@ class HomeProcessHolder constructor(
                         ),
                     )
                 )
+                // A server read repopulated the cache and refreshed the TTL window, so the
+                // next few background loads can be served from the cache for free.
+                if (source == DataSource.SERVER) readFreshnessGate.markServerLoad()
                 widgetRefreshService.refreshHomeSnapshot(smokeCounts.toWidgetSnapshot(preferences, goalProgress))
             }
         }

@@ -1,0 +1,80 @@
+package com.feragusper.smokeanalytics.shared
+
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokeStatsUseCase
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+
+/** One bar of the daily chart: [label] is the day-of-month, [count] the cigarettes that day. */
+data class StatsBar(val label: String, val count: Int)
+
+/** A trigger/tag and how many cigarettes in the period carried it. */
+data class StatsTrigger(val label: String, val count: Int)
+
+/** Period keys shared with the Swift segmented control. */
+object StatsPeriodKeys {
+    const val DAY = "day"
+    const val WEEK = "week"
+    const val MONTH = "month"
+    const val YEAR = "year"
+}
+
+/** Swift-friendly Analytics snapshot for a selected period. [elapsedCount] is how many leading
+ * buckets have already happened — the rest are the future part of the period (drawn dashed). */
+data class StatsSnapshot(
+    val periodTotal: Int,
+    val dailyAverage: Double,
+    val bars: List<StatsBar>,
+    val elapsedCount: Int,
+    val triggers: List<StatsTrigger>,
+)
+
+/** Swift-facing entry point for the Analytics screen. */
+class StatsFacade : KoinComponent {
+
+    private val fetchStats: FetchSmokeStatsUseCase by inject()
+
+    @Throws(Throwable::class)
+    suspend fun load(periodKey: String): StatsSnapshot {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val periodType = when (periodKey) {
+            StatsPeriodKeys.DAY -> FetchSmokeStatsUseCase.PeriodType.DAY
+            StatsPeriodKeys.WEEK -> FetchSmokeStatsUseCase.PeriodType.WEEK
+            StatsPeriodKeys.YEAR -> FetchSmokeStatsUseCase.PeriodType.YEAR
+            else -> FetchSmokeStatsUseCase.PeriodType.MONTH
+        }
+        val stats = fetchStats(
+            year = now.year,
+            month = now.monthNumber,
+            day = now.dayOfMonth,
+            periodType = periodType,
+        )
+        // The chart's buckets depend on the period; entries are already in display order except the
+        // day-of-month map which is keyed by number.
+        // Buckets match the Android chart: hourly / day-of-week / week-of-month / month-of-year.
+        // The full period is kept; the caller draws the elapsed part solid and the rest dashed.
+        val bars = when (periodKey) {
+            StatsPeriodKeys.DAY -> stats.hourly.entries.map { StatsBar(it.key, it.value) }
+            StatsPeriodKeys.WEEK -> stats.weekly.entries.map { StatsBar(it.key, it.value) }
+            StatsPeriodKeys.YEAR -> stats.yearly.entries.map { StatsBar(it.key, it.value) }
+            else -> stats.monthly.entries.map { StatsBar(it.key, it.value) }
+        }
+        val elapsedCount = when (periodKey) {
+            StatsPeriodKeys.DAY -> bars.count { (it.label.substringBefore(":").toIntOrNull() ?: 0) <= now.hour }
+            StatsPeriodKeys.WEEK -> now.dayOfWeek.isoDayNumber
+            StatsPeriodKeys.YEAR -> now.monthNumber
+            else -> ((now.dayOfMonth - 1) / 7) + 1
+        }.coerceIn(1, bars.size)
+
+        return StatsSnapshot(
+            periodTotal = bars.take(elapsedCount).sumOf { it.count },
+            dailyAverage = stats.dailyAverage.toDouble(),
+            bars = bars,
+            elapsedCount = elapsedCount,
+            triggers = stats.triggerBreakdown.map { StatsTrigger(label = it.label, count = it.count) },
+        )
+    }
+}

@@ -199,6 +199,8 @@
     <string name="home_other">Other</string>
     <string name="home_type_and_add">Type and press Add…</string>
     <string name="home_logged">Logged %1$s</string>
+    <string name="home_tag_all">Tag all</string>
+    <string name="home_wizard_step">%1$d of %2$d</string>
     <plurals name="home_pending_needs_trigger">
         <item quantity="one">%1$d cigarette still needs a trigger — tag it below.</item>
         <item quantity="other">%1$d cigarettes still need a trigger — tag them one at a time.</item>

@@ -155,6 +155,8 @@ open class AppStrings internal constructor() {
     open val heroMSuppCurrentRead: String = "Current read"
     open fun consistencyStreakDays(days: Int): String =
         if (days == 1) "$days day completed in a row" else "$days days completed in a row"
+    open fun goalScoreWeek(days: Int, points: Int): String = "This week: $days days on goal · $points pts"
+    open fun goalScoreMonth(days: Int, points: Int): String = "This month: $days days on goal · $points pts"
     open val consistencyNoGoal: String = "Add a daily cap, reduction target, or mindful gap to make the day easier to read."
     open val consistencyCapStillWithin: String = "Still within today's cap."
     open val consistencyCapReachedHold: String = "You've reached the cap. Holding here keeps the day intact."

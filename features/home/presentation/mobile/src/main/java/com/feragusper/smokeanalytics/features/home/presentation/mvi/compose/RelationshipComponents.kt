@@ -4,12 +4,14 @@ import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsScre
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTarget
 import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
 import org.koin.compose.koinInject
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import com.valentinilk.shimmer.shimmer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
@@ -62,6 +66,7 @@ import kotlinx.datetime.toLocalDateTime
 internal fun RelationshipReminderCard(
     pending: List<PendingTriggerSmoke>,
     onOpen: (smokeId: String) -> Unit,
+    onTagAll: (ids: List<String>) -> Unit = {},
 ) {
     val shown = pending.take(MAX_PENDING_SHOWN)
     val analytics = koinInject<AnalyticsTracker>()
@@ -87,27 +92,31 @@ internal fun RelationshipReminderCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             shown.forEach { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = item.label,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    TextButton(onClick = {
-                        analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.RELATIONSHIP_OPEN)
-                        onOpen(item.id)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                if (item.saving) {
+                    PendingTriggerSkeletonRow()
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = item.label,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium,
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.home_add_trigger))
+                        TextButton(onClick = {
+                            analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.RELATIONSHIP_OPEN)
+                            onOpen(item.id)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.home_add_trigger))
+                        }
                     }
                 }
             }
@@ -118,6 +127,21 @@ internal fun RelationshipReminderCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // "Tag all" walks every still-taggable smoke one at a time in a wizard. Only worth
+            // offering when at least two rows aren't already being saved.
+            val taggableIds = pending.filterNot { it.saving }.map { it.id }
+            if (taggableIds.size >= 2) {
+                Button(
+                    onClick = {
+                        analytics.buttonTap(AnalyticsScreen.HOME, AnalyticsTarget.RELATIONSHIP_OPEN)
+                        onTagAll(taggableIds)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(stringResource(R.string.home_tag_all), fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
@@ -126,7 +150,37 @@ internal fun RelationshipReminderCard(
 internal data class PendingTriggerSmoke(
     val id: String,
     val label: String,
+    /** True while its relationship save/skip is in flight — the row renders as a skeleton. */
+    val saving: Boolean = false,
 )
+
+/** Placeholder row shown in place of a pending item while its relationship save/skip is in flight. */
+@Composable
+private fun PendingTriggerSkeletonRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 16.dp)
+                .height(16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                .shimmer(),
+        )
+        Spacer(
+            modifier = Modifier
+                .width(96.dp)
+                .height(32.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                .shimmer(),
+        )
+    }
+}
 
 private const val MAX_PENDING_SHOWN = 8
 
@@ -154,6 +208,12 @@ internal fun Instant.toPendingTriggerLabel(
 internal fun RelationshipPromptSheet(
     availableTriggers: List<TriggerOption>?,
     dateLabel: String? = null,
+    /** Identifies the smoke being tagged; when it changes (wizard advance) the selection resets. */
+    promptKey: Any? = Unit,
+    /** 1-based position in the "tag all" wizard, or null when tagging a single smoke. */
+    wizardStep: Int? = null,
+    /** Total smokes in the wizard run, for the "X of N" label. */
+    wizardTotal: Int = 0,
     onSave: (tags: Set<String>) -> Unit,
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
@@ -163,9 +223,11 @@ internal fun RelationshipPromptSheet(
     // chips don't pop in mid-dialog when a background refresh lands; while it's still
     // null the sheet shows a loading indicator instead of a partial default list.
     val catalog = remember(availableTriggers != null) { availableTriggers }
-    var adHoc by remember { mutableStateOf(listOf<TriggerOption>()) }
-    var selectedKeys by remember { mutableStateOf(emptySet<String>()) }
-    var draft by remember { mutableStateOf("") }
+    // Keyed on the smoke id so the wizard resets chips/draft when it advances to the next smoke,
+    // while the sheet itself stays open (no close/open flicker between steps).
+    var adHoc by remember(promptKey) { mutableStateOf(listOf<TriggerOption>()) }
+    var selectedKeys by remember(promptKey) { mutableStateOf(emptySet<String>()) }
+    var draft by remember(promptKey) { mutableStateOf("") }
 
     val options = catalog?.plus(adHoc.filter { extra -> catalog.none { it.key == extra.key } })
 
@@ -186,6 +248,14 @@ internal fun RelationshipPromptSheet(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (wizardStep != null && wizardTotal > 0) {
+                Text(
+                    text = stringResource(R.string.home_wizard_step, wizardStep, wizardTotal),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             Text(
                 text = stringResource(R.string.home_what_related),
                 style = MaterialTheme.typography.titleLarge,
@@ -285,7 +355,7 @@ private fun RelationshipReminderCardPreview() {
         RelationshipReminderCard(
             pending = listOf(
                 PendingTriggerSmoke("1", "Mon Jun 24 · 14:30"),
-                PendingTriggerSmoke("2", "Mon Jun 24 · 09:05"),
+                PendingTriggerSmoke("2", "Mon Jun 24 · 09:05", saving = true),
             ),
             onOpen = {},
         )

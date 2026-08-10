@@ -21,7 +21,7 @@ Google reviews the Wear OS experience before it becomes available on Play.
 
 The `deployment_playstore.yml` workflow builds:
 
-- `:apps:mobile:bundleProductionRelease`
+- `:apps:android:bundleProductionRelease`
 - `:apps:wear:bundleProductionRelease`
 
 Fastlane uploads to Open testing:

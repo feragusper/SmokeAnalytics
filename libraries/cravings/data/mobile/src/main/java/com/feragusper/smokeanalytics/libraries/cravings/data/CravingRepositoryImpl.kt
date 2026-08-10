@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.cravings.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.Craving
 import com.feragusper.smokeanalytics.libraries.cravings.domain.model.CravingOutcome
 import com.feragusper.smokeanalytics.libraries.cravings.domain.repository.CravingRepository
@@ -7,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query.Direction
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import kotlinx.datetime.Instant
 
@@ -34,7 +36,7 @@ class CravingRepositoryImpl constructor(
         )
     }
 
-    override suspend fun fetchCravings(start: Instant?, end: Instant?): List<Craving> {
+    override suspend fun fetchCravings(start: Instant?, end: Instant?, source: DataSource): List<Craving> {
         var query = cravingsCollection()
             .orderBy(CravingEntity.Fields.CREATED_AT_MILLIS, Direction.DESCENDING)
         if (start != null) {
@@ -49,15 +51,15 @@ class CravingRepositoryImpl constructor(
                 end.toEpochMilliseconds().toDouble(),
             )
         }
-        return query.get().await().documents.mapNotNull { it.toCraving() }
+        return query.get(source.toFirestoreSource()).await().documents.mapNotNull { it.toCraving() }
     }
 
-    override suspend fun fetchActiveCraving(): Craving? =
+    override suspend fun fetchActiveCraving(source: DataSource): Craving? =
         // Only filter by outcome (no orderBy) so Firestore doesn't require a composite
         // index. There is at most one pending craving; pick the most recent client-side.
         cravingsCollection()
             .whereEqualTo(CravingEntity.Fields.OUTCOME, CravingOutcome.PENDING.name)
-            .get()
+            .get(source.toFirestoreSource())
             .await()
             .documents
             .mapNotNull { it.toCraving() }
@@ -87,6 +89,13 @@ class CravingRepositoryImpl constructor(
     private fun cravingsCollection() = firebaseAuth.currentUser?.uid?.let { uid ->
         firebaseFirestore.collection("$USERS/$uid/$CRAVINGS")
     } ?: throw IllegalStateException("User not logged in")
+
+    // Firestore bills reads served from the server; CACHE reads are free and work offline.
+    private fun DataSource.toFirestoreSource(): Source = when (this) {
+        DataSource.CACHE -> Source.CACHE
+        DataSource.SERVER -> Source.SERVER
+        DataSource.DEFAULT -> Source.DEFAULT
+    }
 
     private fun cravingPayload(
         createdAt: Instant,

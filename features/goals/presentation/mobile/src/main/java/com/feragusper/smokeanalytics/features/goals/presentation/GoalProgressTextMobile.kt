@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.feragusper.smokeanalytics.features.goals.domain.GoalBaselineKind
 import com.feragusper.smokeanalytics.features.goals.domain.GoalCelebrationKind
 import com.feragusper.smokeanalytics.features.goals.domain.GoalProgressSpec
+import com.feragusper.smokeanalytics.features.goals.domain.GoalScore
 import com.feragusper.smokeanalytics.features.goals.domain.GoalSupportingSpec
 import com.feragusper.smokeanalytics.features.goals.domain.GoalTargetSpec
 import com.feragusper.smokeanalytics.features.goals.domain.GoalTitleKind
@@ -74,3 +75,11 @@ internal fun GoalCelebrationKind.text(): String = when (this) {
 @Composable
 internal fun goalStreakText(days: Int): String =
     pluralStringResource(R.plurals.goals_streak_days, days, days)
+
+@Composable
+internal fun goalWeeklyScoreText(score: GoalScore): String =
+    stringResource(R.string.goals_score_week, score.completedDays, score.points)
+
+@Composable
+internal fun goalMonthlyScoreText(score: GoalScore): String =
+    stringResource(R.string.goals_score_month, score.completedDays, score.points)

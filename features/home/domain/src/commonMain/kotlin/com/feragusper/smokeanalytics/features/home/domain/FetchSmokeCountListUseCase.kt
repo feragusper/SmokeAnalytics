@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.features.home.domain
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.smokes.domain.repository.SmokeRepository
 
 /**
@@ -25,7 +26,8 @@ class FetchSmokeCountListUseCase(
     suspend operator fun invoke(
         dayStartHour: Int = 0,
         manualDayStartEpochMillis: Long? = null,
-    ) = smokeRepository.fetchSmokeCount(dayStartHour, manualDayStartEpochMillis).let {
+        source: DataSource = DataSource.DEFAULT,
+    ) = smokeRepository.fetchSmokeCount(dayStartHour, manualDayStartEpochMillis, source).let {
         SmokeCountListResult(
             todaysSmokes = it.today,
             countByWeek = it.week,

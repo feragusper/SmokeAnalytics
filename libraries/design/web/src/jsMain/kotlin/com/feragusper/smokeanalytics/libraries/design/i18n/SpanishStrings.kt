@@ -151,6 +151,8 @@ object SpanishStrings : AppStrings() {
     override val heroMSuppCurrentRead: String = "Lectura actual"
     override fun consistencyStreakDays(days: Int): String =
         if (days == 1) "Llevás $days día seguido" else "Llevás $days días seguidos"
+    override fun goalScoreWeek(days: Int, points: Int): String = "Esta semana: $days días en objetivo · $points pts"
+    override fun goalScoreMonth(days: Int, points: Int): String = "Este mes: $days días en objetivo · $points pts"
     override val consistencyNoGoal: String = "Agregá un tope diario, objetivo de reducción o intervalo para leer mejor el día."
     override val consistencyCapStillWithin: String = "Todavía dentro del tope de hoy."
     override val consistencyCapReachedHold: String = "Llegaste al tope. Mantenerte acá deja el día intacto."

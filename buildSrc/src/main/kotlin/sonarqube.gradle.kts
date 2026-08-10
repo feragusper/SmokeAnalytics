@@ -34,6 +34,10 @@ val sonarCoverageExclusionGlobs: List<String> = listOf(
     "**/*Application.kt",
     "**/*Activity.kt",
     "**/theme/**",
+    // KMP glue for the native SwiftUI app (Shared XCFramework facades, iOS Koin wiring).
+    // It's exercised by the iOS target, never by the JVM/Kover run that feeds Sonar, so it
+    // can never report coverage here and would only drag down new-code coverage.
+    "**/iosMain/**",
 )
 
 // Global SonarQube configuration.

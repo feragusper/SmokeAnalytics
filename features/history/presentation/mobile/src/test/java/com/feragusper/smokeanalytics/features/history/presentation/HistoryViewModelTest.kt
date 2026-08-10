@@ -55,7 +55,7 @@ class HistoryViewModelTest {
 
     @Test
     fun `GIVEN loading result THEN displayLoading is true`() = runTest {
-        viewModel = createViewModel(HistoryResult.Loading)
+        viewModel = createViewModel(HistoryResult.Loading(now))
 
         viewModel.onScreenVisible()
 
@@ -168,7 +168,7 @@ class HistoryViewModelTest {
         // so we provide a second result to avoid infinite loop
         every { processHolder.processIntent(any()) } returnsMany listOf(
             flowOf(HistoryResult.DeleteSmokeSuccess),
-            flowOf(HistoryResult.Loading),
+            flowOf(HistoryResult.Loading(now)),
         )
 
         viewModel = HistoryViewModel(processHolder).also { it.navigator = navigator }

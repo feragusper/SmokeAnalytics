@@ -2,6 +2,7 @@ package com.feragusper.smokeanalytics.features.history.presentation
 
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryIntent
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult
+import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.AddSmokeInFlight
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.AddSmokeSuccess
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.DeleteSmokeSuccess
 import com.feragusper.smokeanalytics.features.history.presentation.mvi.HistoryResult.DeleteSmokeInFlight
@@ -39,9 +40,13 @@ class HistoryViewModel constructor(
         result: HistoryResult
     ): HistoryViewState =
         when (result) {
-            Loading -> previous.copy(
+            is Loading -> previous.copy(
                 displayLoading = true,
                 error = null,
+                // Move the header to the new day now, and drop the old list so it skeletonizes.
+                // Same day (a post-mutation refresh) keeps the list — per-row skeletons cover it.
+                selectedDate = result.selectedDate,
+                smokes = if (result.selectedDate != previous.selectedDate) null else previous.smokes,
             )
 
             is EditSmokeInFlight -> previous.copy(
@@ -56,11 +61,17 @@ class HistoryViewModel constructor(
                 error = null,
             )
 
+            AddSmokeInFlight -> previous.copy(
+                isAddingSmoke = true,
+                error = null,
+            )
+
             is NotLoggedIn -> previous.copy(
                 displayLoading = false,
                 error = Error.NotLoggedIn,
                 selectedDate = result.selectedDate,
                 smokes = null,
+                isAddingSmoke = false,
             )
 
             is FetchSmokesSuccess -> previous.copy(
@@ -73,16 +84,17 @@ class HistoryViewModel constructor(
                 use24HourClock = result.use24HourClock,
                 pendingSmokeId = null,
                 pendingAction = null,
+                isAddingSmoke = false,
                 rowInteractionEpoch = previous.rowInteractionEpoch + 1,
             )
 
             DeleteSmokeSuccess, EditSmokeSuccess, AddSmokeSuccess -> {
+                // Keep the in-flight markers (pendingSmokeId / isAddingSmoke) until the refetch
+                // lands. The state is a conflated StateFlow, so if we cleared them here the write's
+                // in-flight state would be dropped between this near-instant success and the local
+                // write — the skeleton would never render. FetchSmokesSuccess clears them.
                 intents().trySend(HistoryIntent.FetchSmokes(previous.selectedDate))
-                previous.copy(
-                    pendingSmokeId = null,
-                    pendingAction = null,
-                    rowInteractionEpoch = previous.rowInteractionEpoch + 1,
-                )
+                previous
             }
 
             is Error -> previous.copy(
@@ -90,6 +102,7 @@ class HistoryViewModel constructor(
                 error = result,
                 pendingSmokeId = null,
                 pendingAction = null,
+                isAddingSmoke = false,
             )
 
             FetchSmokesError -> previous.copy(
@@ -97,6 +110,7 @@ class HistoryViewModel constructor(
                 error = Error.Generic,
                 pendingSmokeId = null,
                 pendingAction = null,
+                isAddingSmoke = false,
             )
 
             NavigateUp -> {

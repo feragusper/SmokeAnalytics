@@ -15,13 +15,17 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -42,22 +46,22 @@ import com.feragusper.smokeanalytics.features.goals.domain.EvaluateGoalProgressU
 import com.feragusper.smokeanalytics.features.home.domain.FetchSmokeCountListUseCase
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetSnapshot
 import com.feragusper.smokeanalytics.libraries.preferences.domain.FetchUserPreferencesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.AddSmokeUseCase
 import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.FetchSmokesUseCase
+import com.feragusper.smokeanalytics.libraries.smokes.domain.usecase.SyncWithWearUseCase
+import org.koin.mp.KoinPlatform.getKoin
+import timber.log.Timber
 
 class HomeStatusWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetSnapshotStore.readFreshOrStored(context)
         val openAppIntent = Intent(context, MainActivity::class.java)
-        val quickAddIntent = Intent(context, MainActivity::class.java).apply {
-            action = MainActivity.ACTION_WIDGET_QUICK_ADD
-        }
         provideContent {
             GlanceTheme {
                 WidgetContent(
                     snapshot = snapshot,
                     openAppIntent = openAppIntent,
-                    quickAddIntent = quickAddIntent,
                 )
             }
         }
@@ -68,11 +72,50 @@ class HomeStatusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = HomeStatusWidget()
 }
 
+/**
+ * Logs a smoke straight from the widget's "+ Track" chip — no app launch, no dependency on the
+ * in-app FAB being wired up (which is why the old open-the-app-and-hope path could end up tracking
+ * nothing). After logging it recomputes the snapshot and re-renders so the counts update in place.
+ * If the direct log fails (e.g. the user is signed out), it falls back to opening the app on the
+ * quick-add path so authentication can be handled there.
+ */
+class TrackSmokeAction : ActionCallback {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters,
+    ) {
+        val koin = getKoin()
+        val logged = runCatching { koin.get<AddSmokeUseCase>().invoke() }
+            .onFailure { Timber.w(it, "Widget quick-add failed; opening app instead") }
+            .isSuccess
+        if (!logged) {
+            openAppForQuickAdd(context)
+            return
+        }
+        // Recompute + persist the snapshot from fresh data (readFreshOrStored writes on success),
+        // then re-render every widget instance so "Today" and the next-smoke countdown reflect the
+        // just-logged cigarette immediately.
+        runCatching { WidgetSnapshotStore.readFreshOrStored(context) }
+            .onFailure { Timber.w(it, "Widget snapshot refresh after quick-add failed") }
+        runCatching { koin.get<SyncWithWearUseCase>().invoke() }
+            .onFailure { Timber.w(it, "Widget quick-add succeeded but Wear sync failed") }
+        HomeStatusWidget().updateAll(context)
+    }
+
+    private fun openAppForQuickAdd(context: Context) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            action = MainActivity.ACTION_WIDGET_QUICK_ADD
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+}
+
 @Composable
 private fun WidgetContent(
     snapshot: WidgetSnapshot,
     openAppIntent: Intent,
-    quickAddIntent: Intent,
 ) {
     val widgetSize = LocalSize.current
     val compact = widgetSize.height < 150.dp || widgetSize.width < 220.dp
@@ -92,7 +135,6 @@ private fun WidgetContent(
     ) {
         WidgetHeader(
             compact = compact,
-            quickAddIntent = quickAddIntent,
         )
         Spacer(GlanceModifier.height(if (compact) 6.dp else 10.dp))
         GapHeroCard(
@@ -133,7 +175,6 @@ private fun WidgetContent(
 @Composable
 private fun WidgetHeader(
     compact: Boolean,
-    quickAddIntent: Intent,
 ) {
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
@@ -165,10 +206,7 @@ private fun WidgetHeader(
                 )
             }
         }
-        QuickAddChip(
-            label = "+ Track",
-            intent = quickAddIntent,
-        )
+        QuickAddChip(label = "+ Track")
     }
 }
 
@@ -349,14 +387,13 @@ private fun MetricCard(
 @Composable
 private fun QuickAddChip(
     label: String,
-    intent: Intent,
 ) {
     Text(
         text = label,
         modifier = GlanceModifier
             .background(WidgetColors.Primary)
             .cornerRadius(999.dp)
-            .clickable(actionStartActivity(intent))
+            .clickable(actionRunCallback<TrackSmokeAction>())
             .padding(horizontal = 16.dp, vertical = 10.dp),
         style = TextStyle(
             color = WidgetColors.OnPrimary,

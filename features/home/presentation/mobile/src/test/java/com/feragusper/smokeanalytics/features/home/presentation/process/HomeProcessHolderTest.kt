@@ -10,6 +10,7 @@ import com.feragusper.smokeanalytics.features.home.presentation.mvi.HomeResult
 import com.feragusper.smokeanalytics.libraries.architecture.domain.Coordinate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationCaptureService
 import com.feragusper.smokeanalytics.libraries.architecture.domain.LocationTrackingAvailability
+import com.feragusper.smokeanalytics.libraries.architecture.domain.ReadFreshnessGate
 import com.feragusper.smokeanalytics.libraries.architecture.domain.WidgetRefreshService
 import com.feragusper.smokeanalytics.libraries.authentication.domain.FetchSessionUseCase
 import com.feragusper.smokeanalytics.libraries.authentication.domain.Session
@@ -103,13 +104,14 @@ class HomeProcessHolderTest {
             fetchCravingsUseCase = fetchCravingsUseCase,
             resolveCravingUseCase = resolveCravingUseCase,
             analyticsTracker = NoOpAnalyticsTracker,
+            readFreshnessGate = ReadFreshnessGate(),
         )
 
-        coEvery { fetchActiveCravingUseCase() } returns null
-        coEvery { fetchCravingsUseCase.invoke(any(), any()) } returns emptyList()
+        coEvery { fetchActiveCravingUseCase(any()) } returns null
+        coEvery { fetchCravingsUseCase.invoke(any(), any(), any()) } returns emptyList()
 
         coEvery { syncWithWearUseCase.invoke() } just Runs
-        coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+        coEvery { fetchUserPreferencesUseCase(any()) } returns UserPreferences()
         coEvery { updateUserPreferencesUseCase.invoke(any()) } just Runs
         coEvery { locationCaptureService.locationTrackingAvailability(any()) } answers {
             val preferenceEnabled = firstArg<Boolean>()
@@ -120,8 +122,8 @@ class HomeProcessHolderTest {
             )
         }
         coEvery { locationCaptureService.captureCurrentLocation() } returns null
-        coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
-        coEvery { fetchSmokesUseCase.invoke(any(), any()) } returns emptyList()
+        coEvery { fetchSmokeCountListUseCase.invoke(any(), any(), any()) } returns SmokeCountListResult(emptyList(), 0, 0, null)
+        coEvery { fetchSmokesUseCase.invoke(any(), any(), any()) } returns emptyList()
         coEvery { widgetRefreshService.refreshHomeSnapshot(any()) } just Runs
     }
 
@@ -154,7 +156,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN tracking a craving and it is already a good time THEN no wait is needed`() = runTest {
             // No active goal -> the calculator says it's fine to smoke now.
-            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences()
+            coEvery { fetchUserPreferencesUseCase(any()) } returns UserPreferences()
 
             processHolder.processIntent(HomeIntent.TrackCraving).test {
                 awaitItem() shouldBeEqualTo HomeResult.CravingNoWaitNeeded
@@ -165,10 +167,10 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN tracking a craving before the goal gap THEN a pending craving is created`() = runTest {
             val lastSmoke = Smoke(id = "s1", date = Clock.System.now() - 10.minutes)
-            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(
+            coEvery { fetchUserPreferencesUseCase(any()) } returns UserPreferences(
                 activeGoal = SmokingGoal.MindfulGap(targetMinutes = 60),
             )
-            coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } returns
+            coEvery { fetchSmokeCountListUseCase.invoke(any(), any(), any()) } returns
                 SmokeCountListResult(emptyList(), 0, 0, lastSmoke)
             val created = Craving(id = "c1", createdAt = Clock.System.now())
             coEvery { addCravingUseCase.invoke(any(), any()) } returns created
@@ -233,7 +235,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN location preference is enabled and ready THEN smoke is logged first then location attached`() = runTest {
             val locationSlot = slot<GeoPoint>()
-            coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
+            coEvery { fetchUserPreferencesUseCase(any()) } returns UserPreferences(locationTrackingEnabled = true)
             coEvery { locationCaptureService.captureCurrentLocation() } returns Coordinate(12.3, 45.6)
             coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
             coEvery { editSmokeUseCase.invoke(any(), any(), any()) } just Runs
@@ -256,7 +258,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN location preference is enabled but permission is missing THEN add smoke skips location capture`() =
             runTest {
-                coEvery { fetchUserPreferencesUseCase() } returns UserPreferences(locationTrackingEnabled = true)
+                coEvery { fetchUserPreferencesUseCase(any()) } returns UserPreferences(locationTrackingEnabled = true)
                 coEvery { locationCaptureService.locationTrackingAvailability(true) } returns LocationTrackingAvailability(
                     preferenceEnabled = true,
                     permissionGranted = false,
@@ -315,7 +317,7 @@ class HomeProcessHolderTest {
         @Test
         fun `WHEN widget refresh fails after adding smoke THEN tracking still succeeds`() = runTest {
             coEvery { addSmokeUseCase.invoke(any()) } returns "smoke-id"
-            coEvery { fetchSmokeCountListUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
+            coEvery { fetchSmokeCountListUseCase.invoke(any(), any(), any()) } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(HomeIntent.AddSmoke).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading
@@ -327,7 +329,7 @@ class HomeProcessHolderTest {
 
         @Test
         fun `WHEN goal smoke fetch fails THEN fetch returns error instead of empty progress`() = runTest {
-            coEvery { fetchSmokesUseCase.invoke(any(), any()) } throws IllegalStateException("Quota exceeded")
+            coEvery { fetchSmokesUseCase.invoke(any(), any(), any()) } throws IllegalStateException("Quota exceeded")
 
             processHolder.processIntent(HomeIntent.FetchSmokes).test {
                 awaitItem() shouldBeEqualTo HomeResult.Loading

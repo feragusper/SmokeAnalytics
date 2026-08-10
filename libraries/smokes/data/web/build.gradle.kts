@@ -9,8 +9,12 @@ kotlin {
         binaries.library()
     }
 
+    iosArm64()
+    iosSimulatorArm64()
+
     sourceSets {
-        val jsMain by getting {
+        // Shared GitLive-Firebase implementation, consumed by both the web (js) and iOS targets.
+        val commonMain by getting {
             dependencies {
                 implementation(project(":libraries:smokes:domain"))
                 implementation(project(":libraries:architecture:domain"))

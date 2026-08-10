@@ -4,6 +4,7 @@ import android.content.Context
 import com.feragusper.smokeanalytics.libraries.preferences.domain.AccountTier
 import com.feragusper.smokeanalytics.libraries.preferences.domain.SmokingGoal
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
+import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -11,6 +12,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -31,7 +33,7 @@ class UserPreferencesRepositoryImplTest {
     private val profileCollection: CollectionReference = mockk()
     private val preferencesDocument: DocumentReference = mockk()
 
-    private val repository = UserPreferencesRepositoryImpl(
+    private val repository: UserPreferencesRepository = UserPreferencesRepositoryImpl(
         firestore = firestore,
         auth = auth,
         appContext = appContext,
@@ -66,7 +68,7 @@ class UserPreferencesRepositoryImplTest {
         val payloadSlot = slot<Map<String, Any?>>()
 
         every { preferencesDocument.set(capture(payloadSlot)) } returns voidTask()
-        every { preferencesDocument.get() } returns taskOf(preferencesSnapshot(preferences))
+        every { preferencesDocument.get(any<Source>()) } returns taskOf(preferencesSnapshot(preferences))
 
         repository.update(preferences)
 
@@ -98,7 +100,7 @@ class UserPreferencesRepositoryImplTest {
                 activeGoal = SmokingGoal.ReductionVsPreviousWeek(reductionPercent = 20.0),
             )
 
-            every { preferencesDocument.get() } returns taskOf(
+            every { preferencesDocument.get(any<Source>()) } returns taskOf(
                 preferencesSnapshot(
                     preferences = preferences,
                     canonicalFields = false,
@@ -113,7 +115,7 @@ class UserPreferencesRepositoryImplTest {
 
     @Test
     fun `GIVEN Firestore fails WHEN fetch is called THEN it wraps the error with diagnostics`() = runTest {
-        every { preferencesDocument.get() } throws RuntimeException("network down")
+        every { preferencesDocument.get(any<Source>()) } throws RuntimeException("network down")
 
         val error = assertThrows<IllegalStateException> {
             repository.fetch()

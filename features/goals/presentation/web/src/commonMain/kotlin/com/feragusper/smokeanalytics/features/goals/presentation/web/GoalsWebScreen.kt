@@ -156,6 +156,12 @@ private fun GoalProgressPanel(
                 if (progress.hasStreak) {
                     Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.consistencyStreakDays(progress.streakDays)) }
                 }
+                progress.weeklyScore?.takeIf { it.trackedDays > 0 }?.let {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.goalScoreWeek(it.completedDays, it.points)) }
+                }
+                progress.monthlyScore?.takeIf { it.trackedDays > 0 }?.let {
+                    Div(attrs = { classes(SmokeWebStyles.helperText) }) { Text(strings.goalScoreMonth(it.completedDays, it.points)) }
+                }
             }
             PrimaryButton(text = strings.configureGoal, onClick = onConfigure)
         }

@@ -173,6 +173,9 @@ class HomeViewModel constructor(
                     activeCraving = result.activeCraving,
                     cravingStats = result.cravingStats,
                     pendingRelationshipSmokes = result.pendingRelationshipSmokes,
+                    // Drop in-flight markers for rows the refetch already resolved (no longer pending).
+                    savingRelationshipSmokeIds = previous.savingRelationshipSmokeIds
+                        .intersect(result.pendingRelationshipSmokes.map { it.id }.toSet()),
                     availableTriggers = result.availableTriggers,
                 )
             }
@@ -248,18 +251,45 @@ class HomeViewModel constructor(
                 )
             }
 
-            HomeResult.RelationshipUpdated -> {
-                // Relationship saved/skipped: silently refresh the pending list and close the prompt.
-                intents().trySend(HomeIntent.RefreshFetchSmokes)
-                previous.copy(relationshipPromptSmokeId = null)
+            is HomeResult.RelationshipWizardStarted -> previous.copy(
+                relationshipWizardQueue = result.ids,
+                relationshipWizardTotal = result.ids.size,
+                relationshipPromptSmokeId = result.ids.firstOrNull(),
+            )
+
+            is HomeResult.RelationshipSaving -> {
+                // In the wizard, advance to the next queued smoke; otherwise close the sheet.
+                // Either way the just-saved row stays and skeletonizes until the refetch drops it.
+                val remainingQueue = previous.relationshipWizardQueue.filterNot { it == result.smokeId }
+                previous.copy(
+                    relationshipPromptSmokeId = remainingQueue.firstOrNull(),
+                    relationshipWizardQueue = remainingQueue,
+                    relationshipWizardTotal = if (remainingQueue.isEmpty()) 0 else previous.relationshipWizardTotal,
+                    savingRelationshipSmokeIds = previous.savingRelationshipSmokeIds + result.smokeId,
+                )
             }
 
-            HomeResult.RelationshipPromptDismissed -> previous.copy(relationshipPromptSmokeId = null)
+            HomeResult.RelationshipUpdated -> {
+                // Relationship saved/skipped: silently refresh so the pending list drops the row.
+                intents().trySend(HomeIntent.RefreshFetchSmokes)
+                previous
+            }
+
+            HomeResult.RelationshipPromptDismissed -> previous.copy(
+                relationshipPromptSmokeId = null,
+                relationshipWizardQueue = emptyList(),
+                relationshipWizardTotal = 0,
+            )
 
             is Error -> previous.copy(
                 displayLoading = false,
                 displayRefreshLoading = false,
                 error = result,
+                // A failed save/skip leaves no way to clear a specific row; restore all so the
+                // skeleton reverts to an actionable row the user can retry.
+                savingRelationshipSmokeIds = emptySet(),
+                relationshipWizardQueue = emptyList(),
+                relationshipWizardTotal = 0,
             )
         }
     }

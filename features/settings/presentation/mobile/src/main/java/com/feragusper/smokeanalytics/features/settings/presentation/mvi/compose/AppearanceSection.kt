@@ -1,8 +1,15 @@
 package com.feragusper.smokeanalytics.features.settings.presentation.mvi.compose
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -15,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -25,8 +33,13 @@ import android.os.LocaleList
 import androidx.core.os.LocaleListCompat
 import androidx.appcompat.app.AppCompatDelegate
 import com.feragusper.smokeanalytics.features.settings.presentation.R
+import com.feragusper.smokeanalytics.libraries.architecture.domain.AnalyticsTracker
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.AccentHolder
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.MobileAccent
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.ThemeMode
 import com.feragusper.smokeanalytics.libraries.design.compose.theme.ThemeModeHolder
+import com.feragusper.smokeanalytics.libraries.design.compose.theme.resolveDarkTheme
+import org.koin.compose.koinInject
 
 /**
  * Theme + language controls. Both are device-local (theme via [ThemeModeHolder], language via
@@ -37,7 +50,41 @@ import com.feragusper.smokeanalytics.libraries.design.compose.theme.ThemeModeHol
 internal fun AppearanceSection() {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         ThemeModeGroup()
+        AccentGroup()
         LanguageGroup()
+    }
+}
+
+/** Accent color swatches; applied immediately and stored locally on the device. */
+@Composable
+private fun AccentGroup() {
+    val context = LocalContext.current
+    val analytics = koinInject<AnalyticsTracker>()
+    val current = AccentHolder.current
+    // Preview the tone that will actually apply under the current theme mode.
+    val darkTheme = ThemeModeHolder.current.resolveDarkTheme()
+    SettingsChoiceGroup(title = stringResource(R.string.settings_accent)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MobileAccent.entries.forEach { accent ->
+                val swatch = accent.primary(darkTheme) ?: MaterialTheme.colorScheme.primary
+                val selected = accent == current
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(swatch)
+                        .border(
+                            width = if (selected) 3.dp else 1.dp,
+                            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape,
+                        )
+                        .clickable {
+                            AccentHolder.set(context, accent)
+                            analytics.accentChanged(accent.id)
+                        },
+                )
+            }
+        }
     }
 }
 

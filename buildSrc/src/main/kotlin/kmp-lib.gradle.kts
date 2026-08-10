@@ -16,6 +16,11 @@ kotlin {
         browser()
     }
 
+    // iOS targets for the SwiftUI app sharing this domain/data code.
+    // Default hierarchy template auto-creates the intermediate iosMain/iosTest source sets.
+    iosArm64()
+    iosSimulatorArm64()
+
     jvmToolchain(17)
 
     sourceSets {

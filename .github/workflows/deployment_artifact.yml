@@ -36,11 +36,11 @@ jobs:
 
           echo "✅ local.properties configured for staging."
 
-          mkdir -p ./apps/mobile/src/staging/
-          echo "$GOOGLE_SERVICES_JSON_STAGING" > ./apps/mobile/src/staging/google-services.json.asc
-          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
+          mkdir -p ./apps/android/src/staging/
+          echo "$GOOGLE_SERVICES_JSON_STAGING" > ./apps/android/src/staging/google-services.json.asc
+          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/android/src/staging/google-services.json.asc > ./apps/android/src/staging/google-services.json
 
-          if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
+          if [ ! -s ./apps/android/src/staging/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (staging)!"
             exit 1
           fi
@@ -48,10 +48,10 @@ jobs:
           echo "✅ Staging google-services.json decrypted."
 
       - name: Build Staging Debug APK
-        run: ./gradlew :apps:mobile:assembleStagingDebug --stacktrace
+        run: ./gradlew :apps:android:assembleStagingDebug --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: mobile
-          path: ./apps/mobile/build/outputs/apk/staging/debug/*.apk
+          path: ./apps/android/build/outputs/apk/staging/debug/*.apk

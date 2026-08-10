@@ -37,7 +37,7 @@ The product is organized around four core destinations:
 
 ## Platforms
 
-- `apps/mobile`: Android app, the visual source of truth for the product
+- `apps/android`: Android app, the visual source of truth for the product
 - `apps/web`: Compose for Web version aligned to the same product model
 - `apps/wear`: Wear OS surface for quick status and lightweight interaction
 
@@ -135,15 +135,15 @@ Local Android and product-specific keys live in `local.properties`. Typical entr
 
 The mobile Firebase configs used by the current repo live at:
 
-- `apps/mobile/src/staging/google-services.json`
-- `apps/mobile/src/production/google-services.json`
+- `apps/android/src/staging/google-services.json`
+- `apps/android/src/production/google-services.json`
 
 ## Build And Run
 
 ### Mobile
 
 ```bash
-./gradlew :apps:mobile:assembleStagingDebug
+./gradlew :apps:android:assembleStagingDebug
 ```
 
 ### Web

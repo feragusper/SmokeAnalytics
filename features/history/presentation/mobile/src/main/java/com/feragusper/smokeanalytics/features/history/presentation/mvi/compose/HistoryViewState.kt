@@ -79,6 +79,7 @@ import com.feragusper.smokeanalytics.libraries.smokes.domain.model.Smoke
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.DatePickerDialog
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.EmptySmokes
 import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SwipeToDismissRow
+import com.feragusper.smokeanalytics.libraries.smokes.presentation.compose.SmokeSkeletonRow
 import com.valentinilk.shimmer.shimmer
 import androidx.compose.ui.platform.LocalLocale
 import kotlinx.datetime.DatePeriod
@@ -101,6 +102,8 @@ data class HistoryViewState(
     internal val selectedDate: Instant = Clock.System.now(),
     internal val pendingSmokeId: String? = null,
     internal val pendingAction: com.feragusper.smokeanalytics.features.history.presentation.HistoryPendingAction? = null,
+    /** A new smoke is being added — the list shows a skeleton placeholder for the incoming row. */
+    internal val isAddingSmoke: Boolean = false,
     internal val rowInteractionEpoch: Int = 0,
     internal val use24HourClock: Boolean = true,
 ) : MVIViewState<HistoryIntent> {
@@ -116,7 +119,8 @@ data class HistoryViewState(
         var showDatePicker by remember { mutableStateOf(false) }
         var calendarExpanded by remember { mutableStateOf(true) }
         val selectedLocalDate = selectedDate.toLocalDateTime(timeZone).date
-        val entriesCount = smokes?.size ?: 0
+        // Null while loading so the header shows a placeholder instead of a misleading "0 entries".
+        val entriesCount = smokes?.size
         val fabScroll = rememberFabScrollState()
 
         // Gate on the live session, not just the last result: a stale sign-out can leave old
@@ -231,6 +235,16 @@ data class HistoryViewState(
                     }
                 }
 
+                // A new smoke is committing: a skeleton row previews the item about to land, on top
+                // of whatever is already listed (or on its own when the day was empty).
+                if (isAddingSmoke) {
+                    item {
+                        SmokeSkeletonRow(
+                            contentDescription = stringResource(R.string.history_adding),
+                        )
+                    }
+                }
+
                 when {
                     displayLoading && smokes == null -> {
                         items(4) {
@@ -280,7 +294,7 @@ data class HistoryViewState(
                         }
                     }
 
-                    error == null -> {
+                    error == null && !isAddingSmoke -> {
                         item { EmptySmokes(modifier = Modifier.padding(top = 48.dp)) }
                     }
                 }
@@ -388,7 +402,7 @@ private fun ArchiveHeader(
 @Composable
 private fun ArchiveListHeader(
     selectedLocalDate: LocalDate,
-    entriesCount: Int,
+    entriesCount: Int?,
     onPickDate: () -> Unit,
 ) {
     val locale = LocalLocale.current.platformLocale
@@ -404,11 +418,24 @@ private fun ArchiveListHeader(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
         )
-        Text(
-            text = stringResource(R.string.history_entries, entriesCount),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (entriesCount != null) {
+            Text(
+                text = stringResource(R.string.history_entries, entriesCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            // Loading: a small shimmer stands in for the count, never "0 entries".
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 3.dp)
+                    .width(72.dp)
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .shimmer()
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+            )
+        }
     }
 }
 

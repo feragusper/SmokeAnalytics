@@ -17,6 +17,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.until
 import kotlin.time.Clock
 
@@ -80,6 +81,39 @@ class EvaluateGoalProgressUseCase(
             endDateInclusive = yesterdayBucketDate,
             maxPerDay = goal.maxCigarettesPerDay,
         )
+        val firstTrackedDate = countsByBucketDate.keys.minOrNull()
+        val weekStartDate = currentWeekStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        ).dayBucketDate(
+            timeZone = timeZone,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        val monthStartDate = currentMonthStartInstant(
+            now = now,
+            timeZone = timeZone,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        ).dayBucketDate(
+            timeZone = timeZone,
+            dayStartHour = preferences.dayStartHour,
+            manualDayStartEpochMillis = preferences.manualDayStartEpochMillis,
+        )
+        val weeklyScore = countsByBucketDate.windowScore(
+            windowStart = weekStartDate,
+            endDateInclusive = currentBucketDate,
+            maxPerDay = goal.maxCigarettesPerDay,
+            firstTrackedDate = firstTrackedDate,
+        )
+        val monthlyScore = countsByBucketDate.windowScore(
+            windowStart = monthStartDate,
+            endDateInclusive = currentBucketDate,
+            maxPerDay = goal.maxCigarettesPerDay,
+            firstTrackedDate = firstTrackedDate,
+        )
         val status = when {
             todayCount < goal.maxCigarettesPerDay -> GoalStatus.OnTrack
             todayCount == goal.maxCigarettesPerDay -> GoalStatus.Completed
@@ -115,6 +149,8 @@ class EvaluateGoalProgressUseCase(
             celebration = celebration,
             streakDays = streakDays,
             isBroken = todayCount > goal.maxCigarettesPerDay,
+            weeklyScore = weeklyScore,
+            monthlyScore = monthlyScore,
         )
     }
 
@@ -276,6 +312,44 @@ private fun Map<LocalDate, Int>.consecutiveCompletedDays(
         cursor = cursor.minus(1, DateTimeUnit.DAY)
     }
     return streak
+}
+
+/**
+ * Scores the tracked days in [windowStart]..[endDateInclusive] against a daily cap.
+ *
+ * Days before the first tracked day are ignored so an untracked past does not inflate the count.
+ * A day with no logged smokes counts as 0, so it stays within the cap (mirrors the streak logic).
+ * Each completed day scores 1 point and every consecutive continuation scores 1 more.
+ */
+private fun Map<LocalDate, Int>.windowScore(
+    windowStart: LocalDate,
+    endDateInclusive: LocalDate,
+    maxPerDay: Int,
+    firstTrackedDate: LocalDate?,
+): GoalScore {
+    if (firstTrackedDate == null) return GoalScore(0, 0, 0, 0)
+    val start = maxOf(windowStart, firstTrackedDate)
+    if (start > endDateInclusive) return GoalScore(0, 0, 0, 0)
+    var completedDays = 0
+    var trackedDays = 0
+    var points = 0
+    var runLength = 0
+    var longestStreak = 0
+    var cursor = start
+    while (cursor <= endDateInclusive) {
+        trackedDays += 1
+        val count = this[cursor] ?: 0
+        if (count <= maxPerDay) {
+            completedDays += 1
+            runLength += 1
+            points += if (runLength > 1) 2 else 1
+            if (runLength > longestStreak) longestStreak = runLength
+        } else {
+            runLength = 0
+        }
+        cursor = cursor.plus(1, DateTimeUnit.DAY)
+    }
+    return GoalScore(completedDays, trackedDays, longestStreak, points)
 }
 
 fun goalDataFetchStart(

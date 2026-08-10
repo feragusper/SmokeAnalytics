@@ -1,5 +1,6 @@
 package com.feragusper.smokeanalytics.libraries.preferences.data
 
+import com.feragusper.smokeanalytics.libraries.architecture.domain.DataSource
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferences
 import com.feragusper.smokeanalytics.libraries.preferences.domain.UserPreferencesRepository
 import dev.gitlive.firebase.Firebase
@@ -14,7 +15,9 @@ class UserPreferencesRepositoryImpl(
     private val auth: FirebaseAuth = Firebase.auth,
 ) : UserPreferencesRepository {
 
-    override suspend fun fetch(): UserPreferences {
+    // The KMP web SDK reads through its own cache/network layer; the source hint is only
+    // actioned on the mobile (Android) Firestore SDK, so it is accepted and ignored here.
+    override suspend fun fetch(source: DataSource): UserPreferences {
         val snapshot = document().get()
         return snapshot.toUserPreferencesEntity()?.toDomain() ?: UserPreferences()
     }

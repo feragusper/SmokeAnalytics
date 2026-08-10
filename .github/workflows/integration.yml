@@ -61,22 +61,22 @@ jobs:
 
           echo "✅ local.properties configured for staging."
 
-          mkdir -p ./apps/mobile/src/staging/
-          echo "$GOOGLE_SERVICES_JSON_STAGING" > ./apps/mobile/src/staging/google-services.json.asc
-          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/staging/google-services.json.asc > ./apps/mobile/src/staging/google-services.json
-          if [ ! -s ./apps/mobile/src/staging/google-services.json ]; then
+          mkdir -p ./apps/android/src/staging/
+          echo "$GOOGLE_SERVICES_JSON_STAGING" > ./apps/android/src/staging/google-services.json.asc
+          gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/android/src/staging/google-services.json.asc > ./apps/android/src/staging/google-services.json
+          if [ ! -s ./apps/android/src/staging/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (staging)!"
             exit 1
           fi
 
-          mkdir -p ./apps/mobile/src/production/
-          echo "$GOOGLE_SERVICES_JSON" > ./apps/mobile/src/production/google-services.json.input
-          if grep -q '"project_info"' ./apps/mobile/src/production/google-services.json.input; then
-            cp ./apps/mobile/src/production/google-services.json.input ./apps/mobile/src/production/google-services.json
+          mkdir -p ./apps/android/src/production/
+          echo "$GOOGLE_SERVICES_JSON" > ./apps/android/src/production/google-services.json.input
+          if grep -q '"project_info"' ./apps/android/src/production/google-services.json.input; then
+            cp ./apps/android/src/production/google-services.json.input ./apps/android/src/production/google-services.json
           else
-            gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/mobile/src/production/google-services.json.input > ./apps/mobile/src/production/google-services.json
+            gpg -d --passphrase "$GPG_PASSPHRASE" --batch ./apps/android/src/production/google-services.json.input > ./apps/android/src/production/google-services.json
           fi
-          if [ ! -s ./apps/mobile/src/production/google-services.json ]; then
+          if [ ! -s ./apps/android/src/production/google-services.json ]; then
             echo "❌ Decryption failed or file is empty (production)!"
             exit 1
           fi
