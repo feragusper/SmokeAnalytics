@@ -2,10 +2,16 @@
 <resources>
 
     <!--
-      Post-splash app theme. Kept as the plain AppCompat NoActionBar shell the app has
-      always used; Compose owns the real look. Named so the splash theme can point at it.
+      Post-splash app theme. Plain AppCompat NoActionBar shell; Compose owns the real look.
+      DayNight (not the old fixed .Light) so the window background follows the system light/dark
+      setting: under edge-to-edge enforcement the system bars are transparent, so the window
+      background is what shows behind the status-bar strip before/between Compose frames. A fixed
+      light background there left white dark-mode bar icons on a white strip (invisible). The
+      explicit windowBackground tracks the Compose scheme background exactly (see @color/window_background).
     -->
-    <style name="Theme.SmokeAnalytics" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.SmokeAnalytics" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
 
     <!--
       System splash shown on cold start (Android 12+ native, backported below via

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark-mode window background; mirrors the Compose `darkColorScheme.background` (0xFF071112)
+         so the transparent status-bar strip stays dark behind the white dark-mode bar icons. -->
+    <color name="window_background">#071112</color>
+</resources>

@@ -75,10 +75,12 @@
                 android:value="true" />
         </service>
 
-        <!-- Meta-data to indicate wearable standalone support -->
+        <!-- Meta-data to indicate wearable standalone support. Must stay in sync with the Wear
+             manifest: the Wear app is standalone so Play delivers/updates it independently instead
+             of treating it as an embedded app that gets removed when this phone app updates. -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
-            android:value="false" />
+            android:value="true" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

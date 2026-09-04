@@ -1,12 +1,14 @@
 package com.feragusper.smokeanalytics.libraries.design.compose.theme
 
 import android.app.Activity
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -68,6 +70,12 @@ fun SmokeAnalyticsTheme(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 window.isNavigationBarContrastEnforced = false
             }
+            // Under edge-to-edge the system bars are transparent, so the window background is what
+            // shows behind the status-bar strip before/between Compose frames. Tie it to the SAME
+            // scheme background that drives the content (and the bar-icon appearance above) so the
+            // strip is never a light surface under the white dark-mode icons — the regression that
+            // left the status-bar icons white-on-white. Single source of truth: `darkTheme`.
+            window.setBackgroundDrawable(ColorDrawable(colorScheme.background.toArgb()))
         }
     }
 

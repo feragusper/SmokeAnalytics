@@ -3,4 +3,10 @@
     <!-- Brand teal used by the system splash window; matches the launcher background and the
          Compose splash so cold start reads as one continuous screen. -->
     <color name="splash_background">#249898</color>
+
+    <!-- Window background shown behind the (now transparent, edge-to-edge) system bars before /
+         between Compose frames. Must track the Compose light/dark background (see the design
+         `lightColorScheme.background` / `darkColorScheme.background`) so the status-bar strip is
+         never a light surface under white dark-mode icons. Dark value in values-night/colors.xml. -->
+    <color name="window_background">#F6F8F8</color>
 </resources>
