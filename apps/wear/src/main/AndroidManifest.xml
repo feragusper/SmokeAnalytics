@@ -51,11 +51,12 @@
             android:required="true" />
         <!--
                Set to true if your app is Standalone, that is, it does not require the handheld
-               app to run.
+               app to run. Kept true so Google Play delivers/updates the Wear app independently and
+               does not remove it (and its Tile) from the watch when the phone app updates.
         -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
-            android:value="false" />
+            android:value="true" />
 
         <meta-data
             android:name="com.google.android.wearable.capability"
